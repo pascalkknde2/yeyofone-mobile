@@ -53,4 +53,9 @@
     <string name="accept">Accept</string>
     <string name="decline">Decline</string>
     <string name="dismiss">Dismiss</string>
+    <string name="background_service_channel">YeyoFone service</string>
+    <string name="incoming_call_channel">Incoming calls</string>
+    <string name="ready_for_calls">Ready for calls</string>
+    <string name="sip_service_running">SIP registration is active</string>
+    <string name="call_in_progress">Call in progress</string>
 </resources>

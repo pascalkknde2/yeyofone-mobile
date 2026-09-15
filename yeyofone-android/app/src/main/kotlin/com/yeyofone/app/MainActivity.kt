@@ -3,8 +3,13 @@
 package com.yeyofone.app
 
 import android.Manifest
+import android.app.NotificationManager
+import android.content.Intent
 import android.content.pm.PackageManager
+import android.net.Uri
+import android.os.Build
 import android.os.Bundle
+import android.provider.Settings
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
@@ -59,8 +64,51 @@ import kotlinx.coroutines.launch
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        setShowWhenLocked(true)
+        setTurnScreenOn(true)
+        IncomingCallService.start(this)
         val app = application as YeyoFoneApplication
-        setContent { MaterialTheme { AccountsApp(app.accountRepository, app.callManager) } }
+        setContent {
+            RequestBackgroundCallPermissions()
+            MaterialTheme { AccountsApp(app.accountRepository, app.callManager) }
+        }
+    }
+}
+
+@Composable
+private fun RequestBackgroundCallPermissions() {
+    val context = LocalContext.current
+    val fullScreenLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) {}
+    fun requestFullScreenAccessIfNeeded() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE &&
+            !context.getSystemService(NotificationManager::class.java).canUseFullScreenIntent()
+        ) {
+            fullScreenLauncher.launch(
+                Intent(
+                    Settings.ACTION_MANAGE_APP_USE_FULL_SCREEN_INTENT,
+                    Uri.parse("package:${context.packageName}"),
+                ),
+            )
+        }
+    }
+    val runtimeLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
+        requestFullScreenAccessIfNeeded()
+    }
+    androidx.compose.runtime.LaunchedEffect(Unit) {
+        val required = buildList {
+            add(Manifest.permission.RECORD_AUDIO)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                add(Manifest.permission.POST_NOTIFICATIONS)
+            }
+        }
+        val missing = required.filter {
+            ContextCompat.checkSelfPermission(context, it) != PackageManager.PERMISSION_GRANTED
+        }
+        if (missing.isNotEmpty()) {
+            runtimeLauncher.launch(missing.toTypedArray())
+        } else {
+            requestFullScreenAccessIfNeeded()
+        }
     }
 }
 

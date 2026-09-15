@@ -1,0 +1,224 @@
+package com.yeyofone.app
+
+import android.app.Notification
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.app.PendingIntent
+import android.app.Service
+import android.content.BroadcastReceiver
+import android.content.Context
+import android.content.Intent
+import android.media.AudioAttributes
+import android.media.Ringtone
+import android.media.RingtoneManager
+import android.net.Uri
+import android.os.IBinder
+import androidx.core.content.ContextCompat
+import com.yeyofone.core.model.CallDirection
+import com.yeyofone.core.model.CallId
+import com.yeyofone.core.model.CallSession
+import com.yeyofone.core.model.CallState
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.launch
+
+class IncomingCallService : Service() {
+    private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+    private val notifications by lazy { getSystemService(NotificationManager::class.java) }
+    private var ringtone: Ringtone? = null
+
+    override fun onCreate() {
+        super.onCreate()
+        createChannels()
+        startForeground(SERVICE_NOTIFICATION_ID, serviceNotification())
+
+        val app = application as YeyoFoneApplication
+        serviceScope.launch {
+            app.callManager.sessions.collectLatest(::updateCallNotification)
+        }
+    }
+
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int = START_STICKY
+
+    override fun onBind(intent: Intent?): IBinder? = null
+
+    override fun onDestroy() {
+        serviceScope.cancel()
+        stopRinging()
+        notifications.cancel(CALL_NOTIFICATION_ID)
+        super.onDestroy()
+    }
+
+    private fun createChannels() {
+        notifications.createNotificationChannels(
+            listOf(
+                NotificationChannel(
+                    SERVICE_CHANNEL_ID,
+                    getString(R.string.background_service_channel),
+                    NotificationManager.IMPORTANCE_LOW,
+                ),
+                NotificationChannel(
+                    CALL_CHANNEL_ID,
+                    getString(R.string.incoming_call_channel),
+                    NotificationManager.IMPORTANCE_HIGH,
+                ).apply {
+                    lockscreenVisibility = Notification.VISIBILITY_PUBLIC
+                    setSound(null, null)
+                    enableVibration(true)
+                },
+            ),
+        )
+    }
+
+    private fun serviceNotification(): Notification = Notification.Builder(this, SERVICE_CHANNEL_ID)
+        .setSmallIcon(R.drawable.ic_phone)
+        .setContentTitle(getString(R.string.ready_for_calls))
+        .setContentText(getString(R.string.sip_service_running))
+        .setContentIntent(openAppIntent())
+        .setOngoing(true)
+        .setCategory(Notification.CATEGORY_SERVICE)
+        .build()
+
+    private fun updateCallNotification(sessions: List<CallSession>) {
+        val active = sessions.lastOrNull { !it.state.isTerminal() }
+        if (active == null) {
+            stopRinging()
+            notifications.cancel(CALL_NOTIFICATION_ID)
+            return
+        }
+
+        val incoming = active.direction == CallDirection.INCOMING &&
+            (active.state == CallState.Incoming || active.state == CallState.Ringing)
+        if (incoming) startRinging() else stopRinging()
+        val builder = Notification.Builder(this, CALL_CHANNEL_ID)
+            .setSmallIcon(R.drawable.ic_phone)
+            .setContentTitle(
+                getString(if (incoming) R.string.incoming_call_title else R.string.call_in_progress),
+            )
+            .setContentText(active.remoteUri)
+            .setContentIntent(openAppIntent())
+            .setOngoing(true)
+            .setCategory(Notification.CATEGORY_CALL)
+            .setVisibility(Notification.VISIBILITY_PUBLIC)
+            .setOnlyAlertOnce(!incoming)
+
+        if (incoming) {
+            builder
+                .setFullScreenIntent(openAppIntent(), true)
+                .addAction(
+                    Notification.Action.Builder(
+                        null,
+                        getString(R.string.decline),
+                        actionIntent(ACTION_DECLINE, active.id),
+                    ).build(),
+                )
+                .addAction(
+                    Notification.Action.Builder(
+                        null,
+                        getString(R.string.accept),
+                        actionIntent(ACTION_ACCEPT, active.id),
+                    ).build(),
+                )
+        } else {
+            builder.addAction(
+                Notification.Action.Builder(
+                    null,
+                    getString(R.string.hang_up),
+                    actionIntent(ACTION_HANG_UP, active.id),
+                ).build(),
+            )
+        }
+
+        notifications.notify(CALL_NOTIFICATION_ID, builder.build())
+    }
+
+    private fun startRinging() {
+        if (ringtone?.isPlaying == true) return
+        runCatching {
+            ringtone = RingtoneManager.getRingtone(
+                this,
+                RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE),
+            )?.apply {
+                audioAttributes = AudioAttributes.Builder()
+                    .setUsage(AudioAttributes.USAGE_NOTIFICATION_RINGTONE)
+                    .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                    .build()
+                isLooping = true
+                play()
+            }
+        }
+    }
+
+    private fun stopRinging() {
+        runCatching { ringtone?.stop() }
+        ringtone = null
+    }
+
+    private fun openAppIntent(): PendingIntent = PendingIntent.getActivity(
+        this,
+        0,
+        Intent(this, MainActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP
+        },
+        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+    )
+
+    private fun actionIntent(action: String, callId: CallId): PendingIntent = PendingIntent.getBroadcast(
+        this,
+        action.hashCode(),
+        Intent(this, CallActionReceiver::class.java).apply {
+            this.action = action
+            data = Uri.parse("yeyofone://call/${callId.value}/$action")
+            putExtra(EXTRA_CALL_ID, callId.value)
+        },
+        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+    )
+
+    companion object {
+        const val ACTION_ACCEPT = "com.yeyofone.app.action.ACCEPT"
+        const val ACTION_DECLINE = "com.yeyofone.app.action.DECLINE"
+        const val ACTION_HANG_UP = "com.yeyofone.app.action.HANG_UP"
+        const val EXTRA_CALL_ID = "call_id"
+
+        private const val SERVICE_CHANNEL_ID = "yeyofone_service"
+        private const val CALL_CHANNEL_ID = "incoming_calls_v2"
+        private const val SERVICE_NOTIFICATION_ID = 1001
+        private const val CALL_NOTIFICATION_ID = 1002
+
+        fun start(context: Context) {
+            ContextCompat.startForegroundService(context, Intent(context, IncomingCallService::class.java))
+        }
+    }
+}
+
+class CallActionReceiver : BroadcastReceiver() {
+    override fun onReceive(context: Context, intent: Intent) {
+        val callId = intent.getStringExtra(IncomingCallService.EXTRA_CALL_ID)?.let(::CallId) ?: return
+        val pendingResult = goAsync()
+        val manager = (context.applicationContext as YeyoFoneApplication).callManager
+        CoroutineScope(SupervisorJob() + Dispatchers.Default).launch {
+            try {
+                when (intent.action) {
+                    IncomingCallService.ACTION_ACCEPT -> manager.answer(callId)
+                    IncomingCallService.ACTION_DECLINE -> manager.reject(callId)
+                    IncomingCallService.ACTION_HANG_UP -> manager.end(callId)
+                }
+            } finally {
+                pendingResult.finish()
+            }
+        }
+    }
+}
+
+class BootReceiver : BroadcastReceiver() {
+    override fun onReceive(context: Context, intent: Intent) {
+        if (intent.action == Intent.ACTION_BOOT_COMPLETED) {
+            IncomingCallService.start(context)
+        }
+    }
+}
+
+private fun CallState.isTerminal(): Boolean = this is CallState.Disconnected || this is CallState.Failed
