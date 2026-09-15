@@ -4,29 +4,40 @@ import org.pjsip.pjsua2.Endpoint
 import org.pjsip.pjsua2.EpConfig
 import org.pjsip.pjsua2.TransportConfig
 import org.pjsip.pjsua2.pjsip_transport_type_e
+import com.yeyofone.core.model.CallDirection
 import com.yeyofone.core.model.SipAccount
 import com.yeyofone.core.model.SipAccountId
 import com.yeyofone.core.model.TransportProtocol
+import com.yeyofone.core.voip.NativeCallEvent
 import com.yeyofone.core.voip.NativeRegistrationEvent
 import org.pjsip.pjsua2.AccountConfig
 import org.pjsip.pjsua2.AuthCredInfo
 import org.pjsip.pjsua2.AuthCredInfoVector
+import org.pjsip.pjsua2.CallOpParam
+import org.pjsip.pjsua2.OnCallMediaStateParam
+import org.pjsip.pjsua2.OnCallStateParam
+import org.pjsip.pjsua2.OnIncomingCallParam
 import org.pjsip.pjsua2.OnRegStateParam
 import org.pjsip.pjsua2.StringVector
 import org.pjsip.pjsua2.pjmedia_srtp_use
+import org.pjsip.pjsua2.pjsip_inv_state
+import java.util.UUID
 
 /** Owns all generated PJSUA2 objects. Calls are serialized by [PjsipEngine]. */
 internal class Pjsua2EndpointBackend : EndpointBackend {
     private var endpoint: Endpoint? = null
     private val accounts = mutableMapOf<SipAccountId, NativeAccount>()
+    private val calls = mutableMapOf<String, NativeCall>()
+    private var callEventCallback: ((NativeCallEvent) -> Unit)? = null
+
+    override fun setCallEventListener(callback: (NativeCallEvent) -> Unit) {
+        callEventCallback = callback
+    }
 
     override fun create() {
         check(endpoint == null) { "PJSIP endpoint already exists" }
         NativeLibrary.load()
-        endpoint = Endpoint().also {
-            it.libCreate()
-            it.libRegisterThread("yeyofone-pjsip")
-        }
+        endpoint = Endpoint().also { it.libCreate() }
     }
 
     override fun initialize(configuration: PjsipEngineConfiguration) {
@@ -60,6 +71,8 @@ internal class Pjsua2EndpointBackend : EndpointBackend {
     override fun destroy() {
         val current = endpoint ?: return
         endpoint = null
+        calls.values.forEach { runCatching { it.hangup(CallOpParam(true)) }; it.delete() }
+        calls.clear()
         accounts.values.forEach { it.shutdown(); it.delete() }
         accounts.clear()
         try {
@@ -104,7 +117,9 @@ internal class Pjsua2EndpointBackend : EndpointBackend {
             }
             config.mediaConfig.srtpUse = if (account.nat.srtpEnabled) {
                 pjmedia_srtp_use.PJMEDIA_SRTP_MANDATORY
-            } else pjmedia_srtp_use.PJMEDIA_SRTP_OPTIONAL
+            } else {
+                pjmedia_srtp_use.PJMEDIA_SRTP_DISABLED
+            }
             NativeAccount(account.id, callback).also { native ->
                 native.create(config)
                 accounts[account.id] = native
@@ -125,7 +140,63 @@ internal class Pjsua2EndpointBackend : EndpointBackend {
         accounts.remove(accountId)?.let { it.shutdown(); it.delete() }
     }
 
-    private class NativeAccount(
+    override fun makeCall(
+        accountId: SipAccountId,
+        destination: String,
+        callback: (NativeCallEvent) -> Unit,
+    ): String {
+        val account = checkNotNull(accounts[accountId]) { "Native account does not exist" }
+        val id = UUID.randomUUID().toString()
+        val call = NativeCall(id, accountId, destination, CallDirection.OUTGOING, account, -1, callback)
+        calls[id] = call
+        val prm = CallOpParam(true)
+        try {
+            call.makeCall(destination, prm)
+        } catch (e: Exception) {
+            calls.remove(id)
+            call.delete()
+            callback(
+                NativeCallEvent(
+                    id,
+                    accountId,
+                    destination,
+                    CallDirection.OUTGOING,
+                    pjsip_inv_state.PJSIP_INV_STATE_DISCONNECTED,
+                    0,
+                    e.message?.take(120),
+                ),
+            )
+        } finally {
+            prm.delete()
+        }
+        return id
+    }
+
+    override fun hangupCall(callId: String) {
+        val call = calls[callId] ?: return
+        val prm = CallOpParam(true)
+        try {
+            call.hangup(prm)
+        } catch (_: Exception) {
+            // Best-effort: the call may already be disconnecting.
+        } finally {
+            prm.delete()
+        }
+    }
+
+    override fun answerCall(callId: String) {
+        val call = calls[callId] ?: return
+        val prm = CallOpParam(true).apply { statusCode = 200 }
+        try {
+            call.answer(prm)
+        } catch (_: Exception) {
+            // Best-effort: the call may already have been cancelled by the caller.
+        } finally {
+            prm.delete()
+        }
+    }
+
+    private inner class NativeAccount(
         private val id: SipAccountId,
         private val callback: (NativeRegistrationEvent) -> Unit,
     ) : org.pjsip.pjsua2.Account() {
@@ -138,6 +209,80 @@ internal class Pjsua2EndpointBackend : EndpointBackend {
                     prm.expiration,
                 ),
             )
+        }
+
+        override fun onIncomingCall(prm: OnIncomingCallParam) {
+            val listener = callEventCallback
+            if (listener == null) {
+                val call = org.pjsip.pjsua2.Call(this, prm.callId)
+                val op = CallOpParam(true).apply { statusCode = 486 }
+                try {
+                    call.hangup(op)
+                } catch (_: Exception) {
+                    // Best-effort rejection when no one is listening for incoming calls.
+                } finally {
+                    op.delete()
+                    call.delete()
+                }
+                return
+            }
+            val callId = UUID.randomUUID().toString()
+            val call = NativeCall(callId, id, "", CallDirection.INCOMING, this, prm.callId, listener)
+            calls[callId] = call
+            runCatching { call.getInfo().remoteUri }.getOrNull()?.let { call.remoteUri = it }
+            val ringing = CallOpParam(true).apply { statusCode = 180 }
+            try {
+                call.answer(ringing)
+            } catch (_: Exception) {
+                // Best-effort: proceed even if the provisional response could not be sent.
+            } finally {
+                ringing.delete()
+            }
+            call.reportState()
+        }
+    }
+
+    private inner class NativeCall(
+        private val id: String,
+        private val accountId: SipAccountId,
+        var remoteUri: String,
+        private val direction: CallDirection,
+        account: NativeAccount,
+        nativeCallId: Int,
+        private val callback: (NativeCallEvent) -> Unit,
+    ) : org.pjsip.pjsua2.Call(account, nativeCallId) {
+        fun reportState() {
+            val info = runCatching { getInfo() }.getOrNull()
+            val invState = info?.state ?: pjsip_inv_state.PJSIP_INV_STATE_DISCONNECTED
+            callback(
+                NativeCallEvent(
+                    id,
+                    accountId,
+                    remoteUri,
+                    direction,
+                    invState,
+                    info?.lastStatusCode ?: 0,
+                    info?.lastReason?.replace(Regex("[\\r\\n]"), " ")?.take(120),
+                ),
+            )
+            if (invState == pjsip_inv_state.PJSIP_INV_STATE_DISCONNECTED) {
+                calls.remove(id)
+                delete()
+            }
+        }
+
+        override fun onCallState(prm: OnCallStateParam) = reportState()
+
+        override fun onCallMediaState(prm: OnCallMediaStateParam) {
+            val info = runCatching { getInfo() }.getOrNull() ?: return
+            val hasActiveAudio = info.media.any { it.status == org.pjsip.pjsua2.pjsua_call_media_status.PJSUA_CALL_MEDIA_ACTIVE }
+            if (!hasActiveAudio) return
+            val ep = endpoint ?: return
+            runCatching {
+                val audio = getAudioMedia(-1)
+                audio.startTransmit(ep.audDevManager().playbackDevMedia)
+                ep.audDevManager().captureDevMedia.startTransmit(audio)
+            }
         }
     }
 

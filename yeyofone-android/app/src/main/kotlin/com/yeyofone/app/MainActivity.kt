@@ -2,9 +2,13 @@
 
 package com.yeyofone.app
 
+import android.Manifest
+import android.content.pm.PackageManager
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -32,24 +36,31 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.yeyofone.core.account.AccountDraft
 import com.yeyofone.core.account.AccountRepository
 import com.yeyofone.core.account.RoomAccountRepository
+import com.yeyofone.core.model.CallDirection
+import com.yeyofone.core.model.CallId
+import com.yeyofone.core.model.CallSession
+import com.yeyofone.core.model.CallState
 import com.yeyofone.core.model.NatConfiguration
 import com.yeyofone.core.model.SecurityMode
 import com.yeyofone.core.model.SipAccount
 import com.yeyofone.core.model.TransportProtocol
+import com.yeyofone.core.voip.CallManager
 import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        val repository = (application as YeyoFoneApplication).accountRepository
-        setContent { MaterialTheme { AccountsApp(repository) } }
+        val app = application as YeyoFoneApplication
+        setContent { MaterialTheme { AccountsApp(app.accountRepository, app.callManager) } }
     }
 }
 
@@ -57,12 +68,22 @@ private sealed interface Screen {
     data object List : Screen
     data class Detail(val account: SipAccount) : Screen
     data class Edit(val account: SipAccount?) : Screen
+    data class Dial(val account: SipAccount) : Screen
 }
 
 @Composable
-private fun AccountsApp(repository: AccountRepository) {
+private fun AccountsApp(repository: AccountRepository, callManager: CallManager) {
     val accounts by repository.observeAccounts().collectAsStateWithLifecycle(emptyList())
+    val sessions by callManager.sessions.collectAsStateWithLifecycle(emptyList())
     var screen: Screen by remember { mutableStateOf(Screen.List) }
+    var dismissedIncoming by remember { mutableStateOf(setOf<CallId>()) }
+    val incoming = sessions.firstOrNull { it.direction == CallDirection.INCOMING && it.id !in dismissedIncoming }
+
+    if (incoming != null) {
+        IncomingCallScreen(incoming, callManager) { dismissedIncoming = dismissedIncoming + incoming.id }
+        return
+    }
+
     when (val current = screen) {
         Screen.List -> AccountList(accounts, { screen = Screen.Edit(null) }) { screen = Screen.Detail(it) }
         is Screen.Detail -> AccountDetail(
@@ -70,8 +91,10 @@ private fun AccountsApp(repository: AccountRepository) {
             repository = repository,
             onBack = { screen = Screen.List },
             onEdit = { screen = Screen.Edit(current.account) },
+            onCall = { screen = Screen.Dial(current.account) },
         )
         is Screen.Edit -> AccountEditor(current.account, repository) { screen = Screen.List }
+        is Screen.Dial -> DialScreen(current.account, callManager) { screen = Screen.Detail(current.account) }
     }
 }
 
@@ -105,6 +128,7 @@ private fun AccountDetail(
     repository: AccountRepository,
     onBack: () -> Unit,
     onEdit: () -> Unit,
+    onCall: () -> Unit,
 ) {
     val scope = rememberCoroutineScope()
     var confirmDelete by remember { mutableStateOf(false) }
@@ -122,6 +146,7 @@ private fun AccountDetail(
                 Button(onClick = { scope.launch { repository.setEnabled(account.id, !account.enabled) } }) {
                     Text(stringResource(if (account.enabled) R.string.disabled else R.string.enabled))
                 }
+                Button(onClick = onCall) { Text(stringResource(R.string.call)) }
                 TextButton(onClick = { confirmDelete = true }) { Text(stringResource(R.string.delete)) }
                 TextButton(onClick = onBack) { Text(stringResource(R.string.cancel)) }
             }
@@ -140,6 +165,128 @@ private fun AccountDetail(
         )
     }
 }
+
+@Composable
+private fun DialScreen(account: SipAccount, callManager: CallManager, onBack: () -> Unit) {
+    var destination by remember { mutableStateOf("") }
+    var activeCallId by remember { mutableStateOf<CallId?>(null) }
+    var permissionDenied by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
+    val sessions by callManager.sessions.collectAsStateWithLifecycle(emptyList())
+    val activeSession = sessions.firstOrNull { it.id == activeCallId }
+
+    val permissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+        if (granted) {
+            permissionDenied = false
+            scope.launch { activeCallId = callManager.call(account.id, destination) }
+        } else {
+            permissionDenied = true
+        }
+    }
+    val context = LocalContext.current
+
+    Scaffold(topBar = { TopAppBar(title = { Text(stringResource(R.string.call)) }) }) { padding ->
+        Column(Modifier.padding(padding).padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Text(account.displayName, style = MaterialTheme.typography.headlineSmall)
+            Field(stringResource(R.string.destination_number), destination) { destination = it }
+            if (permissionDenied) {
+                Text(stringResource(R.string.microphone_permission_required), color = MaterialTheme.colorScheme.error)
+            }
+            activeSession?.let { session ->
+                Text(stringResource(R.string.remote_uri_value, session.remoteUri))
+                Text(stringResource(session.state.statusLabel()))
+            }
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Button(
+                    enabled = destination.isNotBlank() && (activeSession == null || activeSession.state.isTerminal()),
+                    onClick = {
+                        val granted = ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) ==
+                            PackageManager.PERMISSION_GRANTED
+                        if (granted) {
+                            permissionDenied = false
+                            scope.launch { activeCallId = callManager.call(account.id, destination) }
+                        } else {
+                            permissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
+                        }
+                    },
+                ) { Text(stringResource(R.string.call)) }
+                if (activeSession != null && !activeSession.state.isTerminal()) {
+                    Button(onClick = { scope.launch { callManager.end(activeSession.id) } }) {
+                        Text(stringResource(R.string.hang_up))
+                    }
+                }
+                TextButton(onClick = onBack) { Text(stringResource(R.string.cancel)) }
+            }
+        }
+    }
+}
+
+@Composable
+private fun IncomingCallScreen(session: CallSession, callManager: CallManager, onDismiss: () -> Unit) {
+    var permissionDenied by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
+    val sessions by callManager.sessions.collectAsStateWithLifecycle(emptyList())
+    val current = sessions.firstOrNull { it.id == session.id } ?: session
+    val context = LocalContext.current
+
+    val permissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+        if (granted) {
+            permissionDenied = false
+            scope.launch { callManager.answer(current.id) }
+        } else {
+            permissionDenied = true
+        }
+    }
+
+    Scaffold(topBar = { TopAppBar(title = { Text(stringResource(R.string.incoming_call_title)) }) }) { padding ->
+        Column(Modifier.padding(padding).padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Text(stringResource(R.string.incoming_from_value, current.remoteUri), style = MaterialTheme.typography.headlineSmall)
+            Text(stringResource(current.state.statusLabel()))
+            if (permissionDenied) {
+                Text(stringResource(R.string.microphone_permission_required), color = MaterialTheme.colorScheme.error)
+            }
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                when {
+                    current.state == CallState.Incoming || current.state == CallState.Ringing -> {
+                        Button(onClick = {
+                            val granted = ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) ==
+                                PackageManager.PERMISSION_GRANTED
+                            if (granted) {
+                                permissionDenied = false
+                                scope.launch { callManager.answer(current.id) }
+                            } else {
+                                permissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
+                            }
+                        }) { Text(stringResource(R.string.accept)) }
+                        TextButton(onClick = { scope.launch { callManager.reject(current.id) } }) {
+                            Text(stringResource(R.string.decline))
+                        }
+                    }
+                    current.state.isTerminal() -> {
+                        TextButton(onClick = onDismiss) { Text(stringResource(R.string.dismiss)) }
+                    }
+                    else -> {
+                        Button(onClick = { scope.launch { callManager.end(current.id) } }) {
+                            Text(stringResource(R.string.hang_up))
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+private fun CallState.statusLabel(): Int = when (this) {
+    CallState.Preparing, CallState.Calling -> R.string.calling_status
+    CallState.EarlyMedia, CallState.Ringing, CallState.Incoming -> R.string.ringing_status
+    CallState.Connecting -> R.string.connecting_status
+    CallState.Connected, CallState.Held, CallState.Transferring -> R.string.connected_status
+    CallState.Disconnecting -> R.string.ending_status
+    is CallState.Disconnected -> R.string.call_ended_status
+    is CallState.Failed -> R.string.call_failed_status
+}
+
+private fun CallState.isTerminal(): Boolean = this is CallState.Disconnected || this is CallState.Failed
 
 @Composable
 private fun AccountEditor(existing: SipAccount?, repository: AccountRepository, onDone: () -> Unit) {

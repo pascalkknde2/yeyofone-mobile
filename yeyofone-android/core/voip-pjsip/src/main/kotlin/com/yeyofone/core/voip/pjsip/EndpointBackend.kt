@@ -2,6 +2,7 @@ package com.yeyofone.core.voip.pjsip
 
 import com.yeyofone.core.model.SipAccount
 import com.yeyofone.core.model.SipAccountId
+import com.yeyofone.core.voip.NativeCallEvent
 import com.yeyofone.core.voip.NativeRegistrationEvent
 
 /** Internal seam around generated PJSUA2 bindings; native objects never cross this boundary. */
@@ -16,6 +17,13 @@ internal interface EndpointBackend {
     fun setRegistration(accountId: SipAccountId, renew: Boolean): Unit =
         error("Registration is not supported by this backend")
     fun removeAccount(accountId: SipAccountId) = Unit
+    fun makeCall(accountId: SipAccountId, destination: String, callback: (NativeCallEvent) -> Unit): String =
+        error("Calling is not supported by this backend")
+    fun answerCall(callId: String): Unit =
+        error("Calling is not supported by this backend")
+    fun hangupCall(callId: String): Unit =
+        error("Calling is not supported by this backend")
+    fun setCallEventListener(callback: (NativeCallEvent) -> Unit) = Unit
 }
 
 enum class SipTransport { UDP, TCP, TLS }

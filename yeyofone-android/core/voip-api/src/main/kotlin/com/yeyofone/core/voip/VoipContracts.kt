@@ -47,6 +47,24 @@ interface SipRegistrationGateway {
     suspend fun remove(accountId: SipAccountId)
 }
 
+data class NativeCallEvent(
+    val callId: String,
+    val accountId: SipAccountId,
+    val remoteUri: String,
+    val direction: CallDirection,
+    val invState: Int,
+    val lastStatusCode: Int,
+    val lastReason: String?,
+)
+
+/** Platform-neutral gateway; implementations keep all PJSUA2 objects internal. */
+interface SipCallGateway {
+    val callEvents: Flow<NativeCallEvent>
+    suspend fun makeCall(accountId: SipAccountId, destination: String): String
+    suspend fun answer(callId: String)
+    suspend fun hangup(callId: String)
+}
+
 interface CallManager {
     val sessions: StateFlow<List<CallSession>>
     suspend fun call(accountId: SipAccountId, destination: String): CallId

@@ -3,7 +3,9 @@ package com.yeyofone.core.voip.pjsip
 import com.yeyofone.core.model.VoipError
 import com.yeyofone.core.voip.EngineState
 import com.yeyofone.core.voip.SipEngine
+import com.yeyofone.core.voip.SipCallGateway
 import com.yeyofone.core.voip.SipRegistrationGateway
+import com.yeyofone.core.voip.NativeCallEvent
 import com.yeyofone.core.voip.NativeRegistrationEvent
 import com.yeyofone.core.model.SipAccount
 import com.yeyofone.core.model.SipAccountId
@@ -27,13 +29,15 @@ class PjsipEngine internal constructor(
     private val configuration: PjsipEngineConfiguration,
     private val dispatcher: CoroutineDispatcher,
     private val dispatcherOwner: Closeable? = null,
-) : SipEngine, SipRegistrationGateway, Closeable {
+) : SipEngine, SipRegistrationGateway, SipCallGateway, Closeable {
     private val lifecycleMutex = Mutex()
     private val mutableState = MutableStateFlow<EngineState>(EngineState.Uninitialized)
 
     override val state: StateFlow<EngineState> = mutableState.asStateFlow()
     private val mutableEvents = MutableSharedFlow<NativeRegistrationEvent>(extraBufferCapacity = 32)
     override val events: SharedFlow<NativeRegistrationEvent> = mutableEvents.asSharedFlow()
+    private val mutableCallEvents = MutableSharedFlow<NativeCallEvent>(extraBufferCapacity = 32)
+    override val callEvents: SharedFlow<NativeCallEvent> = mutableCallEvents.asSharedFlow()
 
     override suspend fun createOrUpdate(account: SipAccount, password: CharArray) {
         check(state.value == EngineState.Running) { "PJSIP engine is not running" }
@@ -50,6 +54,21 @@ class PjsipEngine internal constructor(
         withContext(dispatcher) { backend.removeAccount(accountId) }
     }
 
+    override suspend fun makeCall(accountId: SipAccountId, destination: String): String {
+        check(state.value == EngineState.Running) { "PJSIP engine is not running" }
+        return withContext(dispatcher) {
+            backend.makeCall(accountId, destination) { mutableCallEvents.tryEmit(it) }
+        }
+    }
+
+    override suspend fun answer(callId: String) {
+        withContext(dispatcher) { backend.answerCall(callId) }
+    }
+
+    override suspend fun hangup(callId: String) {
+        withContext(dispatcher) { backend.hangupCall(callId) }
+    }
+
     override suspend fun start() = lifecycleMutex.withLock {
         if (state.value == EngineState.Running || state.value == EngineState.Initializing) return
 
@@ -60,6 +79,7 @@ class PjsipEngine internal constructor(
                 backend.initialize(configuration)
                 backend.createTransports(configuration.transports)
                 backend.start()
+                backend.setCallEventListener { mutableCallEvents.tryEmit(it) }
             }
             mutableState.value = EngineState.Running
         } catch (cancellation: CancellationException) {

@@ -2,6 +2,7 @@ package com.yeyofone.app
 
 import android.app.Application
 import com.yeyofone.core.account.RoomAccountRepository
+import com.yeyofone.core.calling.CallCoordinator
 import com.yeyofone.core.model.SipAccountId
 import com.yeyofone.core.registration.AndroidNetworkStatus
 import com.yeyofone.core.registration.RegistrationCoordinator
@@ -30,6 +31,7 @@ class YeyoFoneApplication : Application() {
             applicationScope,
         )
     }
+    val callManager by lazy { CallCoordinator(accountRepository, engine, applicationScope) }
 
     override fun onCreate() {
         super.onCreate()

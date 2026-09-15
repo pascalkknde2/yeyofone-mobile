@@ -36,4 +36,21 @@
     <string name="voicemail_optional">Voicemail number (optional)</string>
     <string name="caller_id_optional">Caller ID (optional)</string>
     <string name="save_failed">Unable to save account</string>
+    <string name="call">Call</string>
+    <string name="hang_up">Hang up</string>
+    <string name="destination_number">Number or SIP URI</string>
+    <string name="microphone_permission_required">Microphone permission is required to place a call</string>
+    <string name="remote_uri_value">Calling %1$s</string>
+    <string name="calling_status">Calling…</string>
+    <string name="ringing_status">Ringing…</string>
+    <string name="connecting_status">Connecting…</string>
+    <string name="connected_status">Connected</string>
+    <string name="ending_status">Ending…</string>
+    <string name="call_ended_status">Call ended</string>
+    <string name="call_failed_status">Call failed</string>
+    <string name="incoming_call_title">Incoming call</string>
+    <string name="incoming_from_value">Incoming call from %1$s</string>
+    <string name="accept">Accept</string>
+    <string name="decline">Decline</string>
+    <string name="dismiss">Dismiss</string>
 </resources>

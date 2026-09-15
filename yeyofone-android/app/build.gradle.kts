@@ -33,6 +33,7 @@ dependencies {
     implementation(project(":core:account-data"))
     implementation(project(":core:model"))
     implementation(project(":core:registration"))
+    implementation(project(":core:calling"))
     implementation(project(":core:voip-api"))
     implementation(project(":core:voip-pjsip"))
     implementation("androidx.activity:activity-compose:1.9.0")
