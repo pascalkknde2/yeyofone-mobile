@@ -1,0 +1,133 @@
+{
+  "formatVersion": 1,
+  "database": {
+    "version": 2,
+    "identityHash": "4ba9eca3d81def4b6fdc1e625e3adfb6",
+    "entities": [
+      {
+        "tableName": "sip_accounts",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `displayName` TEXT NOT NULL, `username` TEXT NOT NULL, `authenticationUsername` TEXT NOT NULL, `domain` TEXT NOT NULL, `registrarUri` TEXT NOT NULL, `outboundProxyUri` TEXT, `port` INTEGER NOT NULL, `transport` TEXT NOT NULL, `securityMode` TEXT NOT NULL, `stunServer` TEXT, `turnServer` TEXT, `turnUsername` TEXT, `iceEnabled` INTEGER NOT NULL, `srtpEnabled` INTEGER NOT NULL, `registrationExpirySeconds` INTEGER NOT NULL, `voicemailNumber` TEXT, `callerId` TEXT, `enabled` INTEGER NOT NULL, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "displayName",
+            "columnName": "displayName",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "username",
+            "columnName": "username",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "authenticationUsername",
+            "columnName": "authenticationUsername",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "domain",
+            "columnName": "domain",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "registrarUri",
+            "columnName": "registrarUri",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "outboundProxyUri",
+            "columnName": "outboundProxyUri",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "port",
+            "columnName": "port",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "transport",
+            "columnName": "transport",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "securityMode",
+            "columnName": "securityMode",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "stunServer",
+            "columnName": "stunServer",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "turnServer",
+            "columnName": "turnServer",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "turnUsername",
+            "columnName": "turnUsername",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "iceEnabled",
+            "columnName": "iceEnabled",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "srtpEnabled",
+            "columnName": "srtpEnabled",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "registrationExpirySeconds",
+            "columnName": "registrationExpirySeconds",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "voicemailNumber",
+            "columnName": "voicemailNumber",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "callerId",
+            "columnName": "callerId",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "enabled",
+            "columnName": "enabled",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        }
+      }
+    ],
+    "setupQueries": [
+      "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '4ba9eca3d81def4b6fdc1e625e3adfb6')"
+    ]
+  }
+}

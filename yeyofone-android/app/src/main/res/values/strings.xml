@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">YeyoFone</string>
+    <string name="accounts_title">SIP accounts</string>
+    <string name="add_account">Add account</string>
+    <string name="no_accounts">No SIP accounts configured</string>
+    <string name="edit_account">Edit account</string>
+    <string name="account_details">Account details</string>
+    <string name="save">Save</string>
+    <string name="cancel">Cancel</string>
+    <string name="delete">Delete</string>
+    <string name="confirm_delete">Delete this account and its stored secret?</string>
+    <string name="enabled">Enabled</string>
+    <string name="disabled">Disabled</string>
+    <string name="sip_identity">SIP: %1$s@%2$s</string>
+    <string name="registrar_value">Registrar: %1$s</string>
+    <string name="transport_value">Transport: %1$s · port %2$d</string>
+    <string name="expiry_value">Registration expiry: %1$d seconds</string>
+    <string name="voicemail_value">Voicemail: %1$s</string>
+    <string name="caller_id_value">Caller ID: %1$s</string>
+    <string name="display_name">Display name</string>
+    <string name="sip_username">SIP username</string>
+    <string name="authentication_username">Authentication username</string>
+    <string name="password">Password</string>
+    <string name="new_password_optional">New password (optional)</string>
+    <string name="domain">Domain</string>
+    <string name="registrar_uri">Registrar URI</string>
+    <string name="outbound_proxy_optional">Outbound proxy URI (optional)</string>
+    <string name="port">Port</string>
+    <string name="stun_server_optional">STUN server (optional)</string>
+    <string name="turn_server_optional">TURN server (optional)</string>
+    <string name="turn_username_optional">TURN username (optional)</string>
+    <string name="enable_ice">Enable ICE</string>
+    <string name="require_srtp">Require SRTP media</string>
+    <string name="registration_expiry">Registration expiry seconds</string>
+    <string name="voicemail_optional">Voicemail number (optional)</string>
+    <string name="caller_id_optional">Caller ID (optional)</string>
+    <string name="save_failed">Unable to save account</string>
+</resources>
