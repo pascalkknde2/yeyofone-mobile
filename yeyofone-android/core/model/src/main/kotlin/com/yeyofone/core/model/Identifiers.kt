@@ -9,3 +9,8 @@ value class SipAccountId(val value: String) {
 value class CallId(val value: String) {
     init { require(value.isNotBlank()) { "Call ID must not be blank" } }
 }
+
+@JvmInline
+value class CallHistoryId(val value: String) {
+    init { require(value.isNotBlank()) { "Call history ID must not be blank" } }
+}

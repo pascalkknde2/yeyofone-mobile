@@ -4,12 +4,15 @@ import com.yeyofone.core.account.AccountRepository
 import com.yeyofone.core.model.CallDirection
 import com.yeyofone.core.model.CallEndReason
 import com.yeyofone.core.model.CallId
+import com.yeyofone.core.model.CallHistoryEntry
+import com.yeyofone.core.model.CallHistoryId
 import com.yeyofone.core.model.CallSession
 import com.yeyofone.core.model.CallState
 import com.yeyofone.core.model.MediaState
 import com.yeyofone.core.model.SipAccountId
 import com.yeyofone.core.model.VoipError
 import com.yeyofone.core.voip.CallManager
+import com.yeyofone.core.voip.CallHistoryRepository
 import com.yeyofone.core.voip.MediaManager
 import com.yeyofone.core.voip.NativeCallEvent
 import com.yeyofone.core.voip.SipCallGateway
@@ -26,6 +29,7 @@ class CallCoordinator(
     private val accounts: AccountRepository,
     private val gateway: SipCallGateway,
     scope: CoroutineScope,
+    private val history: CallHistoryRepository? = null,
 ) : CallManager, MediaManager {
     private val mutableSessions = MutableStateFlow<List<CallSession>>(emptyList())
     override val sessions: StateFlow<List<CallSession>> = mutableSessions.asStateFlow()
@@ -53,16 +57,16 @@ class CallCoordinator(
         }
         val nativeId = gateway.makeCall(accountId, uri)
         val id = CallId(nativeId)
-        mutableSessions.update {
-            it + CallSession(
-                id = id,
-                accountId = accountId,
-                remoteUri = uri,
-                direction = CallDirection.OUTGOING,
-                state = CallState.Preparing,
-                createdAt = Instant.now(),
-            )
-        }
+        val session = CallSession(
+            id = id,
+            accountId = accountId,
+            remoteUri = uri,
+            direction = CallDirection.OUTGOING,
+            state = CallState.Preparing,
+            createdAt = Instant.now(),
+        )
+        mutableSessions.update { it + session }
+        history?.upsert(session.toHistoryEntry())
         return id
     }
 
@@ -91,7 +95,7 @@ class CallCoordinator(
     private fun mediaState(callId: CallId): MutableStateFlow<MediaState> =
         mediaStates.getOrPut(callId) { MutableStateFlow(MediaState()) }
 
-    private fun onCallEvent(event: NativeCallEvent) {
+    private suspend fun onCallEvent(event: NativeCallEvent) {
         val id = CallId(event.callId)
         val state = event.toCallState()
         val now = Instant.now()
@@ -118,8 +122,24 @@ class CallCoordinator(
                 }
             }
         }
+        mutableSessions.value.firstOrNull { it.id == id }?.let { history?.upsert(it.toHistoryEntry()) }
     }
 }
+
+private fun CallSession.toHistoryEntry() = CallHistoryEntry(
+    id = CallHistoryId(id.value),
+    accountId = accountId,
+    remoteUri = remoteUri,
+    direction = direction,
+    startedAt = createdAt,
+    connectedAt = connectedAt,
+    endedAt = endedAt,
+    endReason = when (val current = state) {
+        is CallState.Disconnected -> current.reason
+        is CallState.Failed -> CallEndReason.UNKNOWN
+        else -> null
+    },
+)
 
 private fun NativeCallEvent.toCallState(): CallState = when (invState) {
     PJSIP_INV_STATE_CALLING -> CallState.Calling

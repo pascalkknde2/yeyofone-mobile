@@ -65,4 +65,15 @@
     <string name="earpiece">Earpiece</string>
     <string name="speaker">Speaker</string>
     <string name="headset">Headset</string>
+    <string name="recent_calls">Recent calls</string>
+    <string name="no_recent_calls">No recent calls</string>
+    <string name="clear_all">Clear all</string>
+    <string name="confirm_clear_history">Clear all call history?</string>
+    <string name="call_back">Call back</string>
+    <string name="missed_call">Missed</string>
+    <string name="incoming_call">Incoming</string>
+    <string name="outgoing_call">Outgoing</string>
+    <string name="call_history_summary">%1$s · %2$d:%3$02d</string>
+    <string name="missed_call_notification">Missed call</string>
+    <string name="missed_calls_channel">Missed calls</string>
 </resources>

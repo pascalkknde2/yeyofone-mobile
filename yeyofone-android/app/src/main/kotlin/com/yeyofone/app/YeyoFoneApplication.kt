@@ -2,6 +2,7 @@ package com.yeyofone.app
 
 import android.app.Application
 import com.yeyofone.core.account.RoomAccountRepository
+import com.yeyofone.core.account.RoomCallHistoryRepository
 import com.yeyofone.core.calling.CallCoordinator
 import com.yeyofone.core.model.SipAccountId
 import com.yeyofone.core.registration.AndroidNetworkStatus
@@ -19,6 +20,7 @@ import kotlinx.coroutines.launch
 class YeyoFoneApplication : Application() {
     private val applicationScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     val accountRepository by lazy { RoomAccountRepository.create(this) }
+    val callHistory by lazy { RoomCallHistoryRepository.create(this) }
     private val engine by lazy {
         PjsipEngine.create(PjsipEngineConfiguration(transports = setOf(SipTransport.UDP, SipTransport.TCP)))
     }
@@ -31,7 +33,7 @@ class YeyoFoneApplication : Application() {
             applicationScope,
         )
     }
-    val callManager by lazy { CallCoordinator(accountRepository, engine, applicationScope) }
+    val callManager by lazy { CallCoordinator(accountRepository, engine, applicationScope, callHistory) }
     val audioRouteManager by lazy { AndroidAudioRouteManager(this) }
 
     override fun onCreate() {

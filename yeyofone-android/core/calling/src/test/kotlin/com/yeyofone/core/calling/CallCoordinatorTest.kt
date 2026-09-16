@@ -3,6 +3,8 @@ package com.yeyofone.core.calling
 import com.yeyofone.core.account.AccountDraft
 import com.yeyofone.core.account.AccountRepository
 import com.yeyofone.core.model.CallDirection
+import com.yeyofone.core.model.CallHistoryEntry
+import com.yeyofone.core.model.CallHistoryId
 import com.yeyofone.core.model.CallState
 import com.yeyofone.core.model.NatConfiguration
 import com.yeyofone.core.model.SecurityMode
@@ -11,6 +13,7 @@ import com.yeyofone.core.model.SipAccountId
 import com.yeyofone.core.model.SipServerConfiguration
 import com.yeyofone.core.model.TransportProtocol
 import com.yeyofone.core.voip.NativeCallEvent
+import com.yeyofone.core.voip.CallHistoryRepository
 import com.yeyofone.core.voip.NativeMediaEvent
 import com.yeyofone.core.voip.SipCallGateway
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -139,6 +142,27 @@ class CallCoordinatorTest {
         assertTrue(coordinator.observe(callId).value.held)
     }
 
+    @Test
+    fun `terminal unanswered incoming call is recorded as missed`() = runTest {
+        val accountId = SipAccountId("one")
+        val gateway = FakeGateway()
+        val history = FakeHistory()
+        CallCoordinator(FakeAccounts(mapOf(accountId to account(accountId))), gateway, backgroundScope, history)
+        runCurrent()
+
+        gateway.emit(
+            "missed-1", accountId, PJSIP_INV_STATE_INCOMING, 0,
+            direction = CallDirection.INCOMING,
+        )
+        gateway.emit(
+            "missed-1", accountId, PJSIP_INV_STATE_DISCONNECTED, 487,
+            direction = CallDirection.INCOMING,
+        )
+        runCurrent()
+
+        assertTrue(history.entries.single().missed)
+    }
+
     private fun account(id: SipAccountId) = SipAccount(
         id, "Account ${id.value}", id.value, id.value,
         SipServerConfiguration("pbx.example.com", "sip:pbx.example.com", null, 5060, TransportProtocol.UDP, SecurityMode.ALLOW_INSECURE),
@@ -201,6 +225,26 @@ class CallCoordinatorTest {
             mutableCallEvents.emit(
                 NativeCallEvent(callId, accountId, remoteUri, direction, invState, lastStatusCode, null),
             )
+        }
+    }
+
+    private class FakeHistory : CallHistoryRepository {
+        val entries = mutableListOf<CallHistoryEntry>()
+        private val state = MutableStateFlow<List<CallHistoryEntry>>(emptyList())
+
+        override fun observeHistory(): Flow<List<CallHistoryEntry>> = state
+        override suspend fun upsert(entry: CallHistoryEntry) {
+            entries.removeAll { it.id == entry.id }
+            entries += entry
+            state.value = entries.toList()
+        }
+        override suspend fun delete(id: CallHistoryId) {
+            entries.removeAll { it.id == id }
+            state.value = entries.toList()
+        }
+        override suspend fun clear() {
+            entries.clear()
+            state.value = emptyList()
         }
     }
 

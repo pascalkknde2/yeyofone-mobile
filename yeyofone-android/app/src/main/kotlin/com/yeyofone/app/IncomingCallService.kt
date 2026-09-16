@@ -29,6 +29,7 @@ class IncomingCallService : Service() {
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     private val notifications by lazy { getSystemService(NotificationManager::class.java) }
     private var ringtone: Ringtone? = null
+    private val notifiedMissedCalls = mutableSetOf<CallId>()
 
     override fun onCreate() {
         super.onCreate()
@@ -69,6 +70,11 @@ class IncomingCallService : Service() {
                     setSound(null, null)
                     enableVibration(true)
                 },
+                NotificationChannel(
+                    MISSED_CHANNEL_ID,
+                    getString(R.string.missed_calls_channel),
+                    NotificationManager.IMPORTANCE_DEFAULT,
+                ),
             ),
         )
     }
@@ -83,6 +89,7 @@ class IncomingCallService : Service() {
         .build()
 
     private fun updateCallNotification(sessions: List<CallSession>) {
+        sessions.filter { it.isMissedCall() && notifiedMissedCalls.add(it.id) }.forEach(::notifyMissedCall)
         val active = sessions.lastOrNull { !it.state.isTerminal() }
         if (active == null) {
             stopRinging()
@@ -135,6 +142,21 @@ class IncomingCallService : Service() {
         notifications.notify(CALL_NOTIFICATION_ID, builder.build())
     }
 
+    private fun notifyMissedCall(session: CallSession) {
+        val id = MISSED_NOTIFICATION_BASE + (session.id.value.hashCode() and Int.MAX_VALUE) % 100_000
+        notifications.notify(
+            id,
+            Notification.Builder(this, MISSED_CHANNEL_ID)
+                .setSmallIcon(R.drawable.ic_phone)
+                .setContentTitle(getString(R.string.missed_call_notification))
+                .setContentText(session.remoteUri)
+                .setContentIntent(openAppIntent())
+                .setCategory(Notification.CATEGORY_MISSED_CALL)
+                .setAutoCancel(true)
+                .build(),
+        )
+    }
+
     private fun startRinging() {
         if (ringtone?.isPlaying == true) return
         runCatching {
@@ -185,8 +207,10 @@ class IncomingCallService : Service() {
 
         private const val SERVICE_CHANNEL_ID = "yeyofone_service"
         private const val CALL_CHANNEL_ID = "incoming_calls_v2"
+        private const val MISSED_CHANNEL_ID = "missed_calls"
         private const val SERVICE_NOTIFICATION_ID = 1001
         private const val CALL_NOTIFICATION_ID = 1002
+        private const val MISSED_NOTIFICATION_BASE = 2000
 
         fun start(context: Context) {
             ContextCompat.startForegroundService(context, Intent(context, IncomingCallService::class.java))
@@ -222,3 +246,6 @@ class BootReceiver : BroadcastReceiver() {
 }
 
 private fun CallState.isTerminal(): Boolean = this is CallState.Disconnected || this is CallState.Failed
+
+private fun CallSession.isMissedCall(): Boolean =
+    direction == CallDirection.INCOMING && connectedAt == null && state.isTerminal()

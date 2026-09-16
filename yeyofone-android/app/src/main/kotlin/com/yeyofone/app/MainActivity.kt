@@ -51,6 +51,7 @@ import com.yeyofone.core.account.AccountDraft
 import com.yeyofone.core.account.AccountRepository
 import com.yeyofone.core.account.RoomAccountRepository
 import com.yeyofone.core.model.CallDirection
+import com.yeyofone.core.model.CallHistoryEntry
 import com.yeyofone.core.model.CallId
 import com.yeyofone.core.model.CallSession
 import com.yeyofone.core.model.CallState
@@ -60,9 +61,12 @@ import com.yeyofone.core.model.SecurityMode
 import com.yeyofone.core.model.SipAccount
 import com.yeyofone.core.model.TransportProtocol
 import com.yeyofone.core.voip.CallManager
+import com.yeyofone.core.voip.CallHistoryRepository
 import com.yeyofone.core.voip.AudioRouteManager
 import com.yeyofone.core.voip.MediaManager
 import kotlinx.coroutines.launch
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -74,7 +78,13 @@ class MainActivity : ComponentActivity() {
         setContent {
             RequestBackgroundCallPermissions()
             MaterialTheme {
-                AccountsApp(app.accountRepository, app.callManager, app.callManager, app.audioRouteManager)
+                AccountsApp(
+                    app.accountRepository,
+                    app.callHistory,
+                    app.callManager,
+                    app.callManager,
+                    app.audioRouteManager,
+                )
             }
         }
     }
@@ -124,12 +134,14 @@ private sealed interface Screen {
     data object List : Screen
     data class Detail(val account: SipAccount) : Screen
     data class Edit(val account: SipAccount?) : Screen
-    data class Dial(val account: SipAccount) : Screen
+    data class Dial(val account: SipAccount, val destination: String = "") : Screen
+    data object History : Screen
 }
 
 @Composable
 private fun AccountsApp(
     repository: AccountRepository,
+    history: CallHistoryRepository,
     callManager: CallManager,
     mediaManager: MediaManager,
     audioRoutes: AudioRouteManager,
@@ -148,7 +160,12 @@ private fun AccountsApp(
     }
 
     when (val current = screen) {
-        Screen.List -> AccountList(accounts, { screen = Screen.Edit(null) }) { screen = Screen.Detail(it) }
+        Screen.List -> AccountList(
+            accounts,
+            onAdd = { screen = Screen.Edit(null) },
+            onHistory = { screen = Screen.History },
+            onOpen = { screen = Screen.Detail(it) },
+        )
         is Screen.Detail -> AccountDetail(
             account = accounts.firstOrNull { it.id == current.account.id } ?: current.account,
             repository = repository,
@@ -157,16 +174,42 @@ private fun AccountsApp(
             onCall = { screen = Screen.Dial(current.account) },
         )
         is Screen.Edit -> AccountEditor(current.account, repository) { screen = Screen.List }
-        is Screen.Dial -> DialScreen(current.account, callManager, mediaManager, audioRoutes) {
+        is Screen.Dial -> DialScreen(
+            current.account,
+            current.destination,
+            callManager,
+            mediaManager,
+            audioRoutes,
+        ) {
             screen = Screen.Detail(current.account)
         }
+        Screen.History -> CallHistoryScreen(
+            history = history,
+            accounts = accounts,
+            onBack = { screen = Screen.List },
+            onCallBack = { entry ->
+                accounts.firstOrNull { it.id == entry.accountId }?.let {
+                    screen = Screen.Dial(it, entry.remoteUri)
+                }
+            },
+        )
     }
 }
 
 @Composable
-private fun AccountList(accounts: List<SipAccount>, onAdd: () -> Unit, onOpen: (SipAccount) -> Unit) {
+private fun AccountList(
+    accounts: List<SipAccount>,
+    onAdd: () -> Unit,
+    onHistory: () -> Unit,
+    onOpen: (SipAccount) -> Unit,
+) {
     Scaffold(
-        topBar = { TopAppBar(title = { Text(stringResource(R.string.accounts_title)) }) },
+        topBar = {
+            TopAppBar(
+                title = { Text(stringResource(R.string.accounts_title)) },
+                actions = { TextButton(onClick = onHistory) { Text(stringResource(R.string.recent_calls)) } },
+            )
+        },
         floatingActionButton = { Button(onClick = onAdd) { Text(stringResource(R.string.add_account)) } },
     ) { padding ->
         if (accounts.isEmpty()) {
@@ -186,6 +229,86 @@ private fun AccountList(accounts: List<SipAccount>, onAdd: () -> Unit, onOpen: (
         }
     }
 }
+
+@Composable
+private fun CallHistoryScreen(
+    history: CallHistoryRepository,
+    accounts: List<SipAccount>,
+    onBack: () -> Unit,
+    onCallBack: (CallHistoryEntry) -> Unit,
+) {
+    val entries by history.observeHistory().collectAsStateWithLifecycle(emptyList())
+    val scope = rememberCoroutineScope()
+    var confirmClear by remember { mutableStateOf(false) }
+
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text(stringResource(R.string.recent_calls)) },
+                actions = {
+                    if (entries.isNotEmpty()) {
+                        TextButton(onClick = { confirmClear = true }) { Text(stringResource(R.string.clear_all)) }
+                    }
+                    TextButton(onClick = onBack) { Text(stringResource(R.string.cancel)) }
+                },
+            )
+        },
+    ) { padding ->
+        if (entries.isEmpty()) {
+            Text(stringResource(R.string.no_recent_calls), Modifier.padding(padding).padding(24.dp))
+        } else {
+            LazyColumn(Modifier.fillMaxSize().padding(padding)) {
+                items(entries, key = { it.id.value }) { entry ->
+                    val accountExists = accounts.any { it.id == entry.accountId }
+                    Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Text(entry.remoteUri, style = MaterialTheme.typography.titleMedium)
+                        Text(entry.summary())
+                        Text(HISTORY_TIME_FORMATTER.format(entry.startedAt))
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Button(enabled = accountExists, onClick = { onCallBack(entry) }) {
+                                Text(stringResource(R.string.call_back))
+                            }
+                            TextButton(onClick = { scope.launch { history.delete(entry.id) } }) {
+                                Text(stringResource(R.string.delete))
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    if (confirmClear) {
+        AlertDialog(
+            onDismissRequest = { confirmClear = false },
+            text = { Text(stringResource(R.string.confirm_clear_history)) },
+            confirmButton = {
+                TextButton(onClick = { scope.launch { history.clear() }; confirmClear = false }) {
+                    Text(stringResource(R.string.clear_all))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { confirmClear = false }) { Text(stringResource(R.string.cancel)) }
+            },
+        )
+    }
+}
+
+@Composable
+private fun CallHistoryEntry.summary(): String {
+    val directionLabel = stringResource(
+        when {
+            missed -> R.string.missed_call
+            direction == CallDirection.INCOMING -> R.string.incoming_call
+            else -> R.string.outgoing_call
+        },
+    )
+    val totalSeconds = duration.seconds
+    return stringResource(R.string.call_history_summary, directionLabel, totalSeconds / 60, totalSeconds % 60)
+}
+
+private val HISTORY_TIME_FORMATTER: DateTimeFormatter =
+    DateTimeFormatter.ofPattern("dd MMM yyyy, HH:mm").withZone(ZoneId.systemDefault())
 
 @Composable
 private fun AccountDetail(
@@ -234,12 +357,13 @@ private fun AccountDetail(
 @Composable
 private fun DialScreen(
     account: SipAccount,
+    initialDestination: String,
     callManager: CallManager,
     mediaManager: MediaManager,
     audioRoutes: AudioRouteManager,
     onBack: () -> Unit,
 ) {
-    var destination by remember { mutableStateOf("") }
+    var destination by remember(initialDestination) { mutableStateOf(initialDestination) }
     var activeCallId by remember { mutableStateOf<CallId?>(null) }
     var permissionDenied by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()

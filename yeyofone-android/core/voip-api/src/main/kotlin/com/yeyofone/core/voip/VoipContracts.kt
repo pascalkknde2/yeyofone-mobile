@@ -83,6 +83,13 @@ interface CallManager {
     suspend fun end(callId: CallId)
 }
 
+interface CallHistoryRepository {
+    fun observeHistory(): Flow<List<CallHistoryEntry>>
+    suspend fun upsert(entry: CallHistoryEntry)
+    suspend fun delete(id: CallHistoryId)
+    suspend fun clear()
+}
+
 interface MediaManager {
     fun observe(callId: CallId): StateFlow<MediaState>
     suspend fun setMuted(callId: CallId, muted: Boolean)
