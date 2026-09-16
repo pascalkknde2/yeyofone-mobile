@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "498228915363",
+    "project_id": "yeyofone",
+    "storage_bucket": "yeyofone.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:498228915363:android:68d58a55ee18276e89a316",
+        "android_client_info": {
+          "package_name": "com.yeyofone.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDhfs3IqkhBkvUuEU8OAcX877gYUN5mfDA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

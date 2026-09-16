@@ -4,6 +4,7 @@ plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
     id("org.jetbrains.kotlin.plugin.compose")
+    id("com.google.gms.google-services")
 }
 
 android {
@@ -38,12 +39,12 @@ dependencies {
     implementation(project(":core:voip-pjsip"))
     implementation("androidx.activity:activity-compose:1.9.0")
     implementation("androidx.lifecycle:lifecycle-runtime-compose:2.8.2")
-    // Push-wake skeleton (see YeyoFoneFirebaseMessagingService). Inert until a real Firebase
-    // project's google-services.json is added and the com.google.gms.google-services plugin is
-    // applied here; FCM will not route messages to this app without that, so this dependency
-    // alone does not change runtime behavior or require any credentials to build.
-    implementation(platform("com.google.firebase:firebase-bom:33.5.1"))
-    implementation("com.google.firebase:firebase-messaging-ktx")
+    // Push-wake skeleton (see YeyoFoneFirebaseMessagingService). Now backed by a real Firebase
+    // project (app/google-services.json, project "yeyofone") - FCM can route messages here.
+    // The PBX side still needs to trigger a push on an unanswered INVITE; see HANDOFF.md.
+    implementation(platform("com.google.firebase:firebase-bom:34.19.0"))
+    implementation("com.google.firebase:firebase-messaging")
+    implementation("com.google.firebase:firebase-analytics")
     implementation(platform("androidx.compose:compose-bom:2024.06.00"))
     implementation("androidx.compose.foundation:foundation")
     implementation("androidx.compose.material3:material3")

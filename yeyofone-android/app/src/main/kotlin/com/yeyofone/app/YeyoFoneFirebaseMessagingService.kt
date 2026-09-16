@@ -13,6 +13,7 @@ import com.google.firebase.messaging.RemoteMessage
  * trigger. See HANDOFF.md for what the PBX side still needs to provide.
  */
 class YeyoFoneFirebaseMessagingService : FirebaseMessagingService() {
+    @Suppress("OVERRIDE_DEPRECATION")
     override fun onNewToken(token: String) {
         // TODO: send this token to the PBX/server side once it exists, so it can target this
         // device's registration when a push-worthy INVITE arrives. Persisted locally for now so
