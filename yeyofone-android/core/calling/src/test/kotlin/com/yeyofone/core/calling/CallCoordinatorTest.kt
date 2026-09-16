@@ -25,6 +25,7 @@ import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
+import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -143,6 +144,39 @@ class CallCoordinatorTest {
     }
 
     @Test
+    fun `DTMF delegates valid digit for connected call`() = runTest {
+        val id = SipAccountId("one")
+        val gateway = FakeGateway()
+        val coordinator = CallCoordinator(FakeAccounts(mapOf(id to account(id))), gateway, backgroundScope)
+        val callId = coordinator.call(id, "1001")
+        runCurrent()
+        gateway.emit(callId.value, id, invState = PJSIP_INV_STATE_CONFIRMED, lastStatusCode = 200)
+        runCurrent()
+
+        coordinator.sendDtmf(callId, '#')
+
+        assertEquals(callId.value to '#', gateway.lastDtmf)
+    }
+
+    @Test
+    fun `DTMF rejects unsupported digit disconnected call and held call`() = runTest {
+        val id = SipAccountId("one")
+        val gateway = FakeGateway()
+        val coordinator = CallCoordinator(FakeAccounts(mapOf(id to account(id))), gateway, backgroundScope)
+        val callId = coordinator.call(id, "1001")
+        runCurrent()
+
+        assertFailsWith<IllegalArgumentException> { coordinator.sendDtmf(callId, 'A') }
+        assertFailsWith<IllegalStateException> { coordinator.sendDtmf(callId, '1') }
+
+        gateway.emit(callId.value, id, invState = PJSIP_INV_STATE_CONFIRMED, lastStatusCode = 200)
+        gateway.emitMedia(callId.value, muted = false, held = true)
+        runCurrent()
+        assertFailsWith<IllegalStateException> { coordinator.sendDtmf(callId, '1') }
+        assertEquals(null, gateway.lastDtmf)
+    }
+
+    @Test
     fun `terminal unanswered incoming call is recorded as missed`() = runTest {
         val accountId = SipAccountId("one")
         val gateway = FakeGateway()
@@ -187,6 +221,7 @@ class CallCoordinatorTest {
         val answered = mutableListOf<String>()
         var lastMute: Pair<String, Boolean>? = null
         var lastHold: Pair<String, Boolean>? = null
+        var lastDtmf: Pair<String, Char>? = null
         private var counter = 0
 
         override suspend fun makeCall(accountId: SipAccountId, destination: String): String {
@@ -208,6 +243,10 @@ class CallCoordinatorTest {
 
         override suspend fun setHeld(callId: String, held: Boolean) {
             lastHold = callId to held
+        }
+
+        override suspend fun sendDtmf(callId: String, digit: Char) {
+            lastDtmf = callId to digit
         }
 
         suspend fun emitMedia(callId: String, muted: Boolean, held: Boolean) {

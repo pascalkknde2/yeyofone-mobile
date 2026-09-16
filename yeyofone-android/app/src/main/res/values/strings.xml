@@ -65,6 +65,10 @@
     <string name="earpiece">Earpiece</string>
     <string name="speaker">Speaker</string>
     <string name="headset">Headset</string>
+    <string name="keypad">Keypad</string>
+    <string name="hide_keypad">Hide keypad</string>
+    <string name="dtmf_digits_value">DTMF: %1$s</string>
+    <string name="dtmf_unavailable_on_hold">Resume the call to send keypad tones</string>
     <string name="recent_calls">Recent calls</string>
     <string name="no_recent_calls">No recent calls</string>
     <string name="clear_all">Clear all</string>

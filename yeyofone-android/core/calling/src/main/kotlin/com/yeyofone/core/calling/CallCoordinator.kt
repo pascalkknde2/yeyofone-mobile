@@ -82,6 +82,15 @@ class CallCoordinator(
         gateway.hangup(callId.value)
     }
 
+    override suspend fun sendDtmf(callId: CallId, digit: Char) {
+        require(digit in DTMF_DIGITS) { "Unsupported DTMF digit" }
+        val session = sessions.value.firstOrNull { it.id == callId }
+            ?: error("Call does not exist")
+        check(session.state == CallState.Connected) { "DTMF requires a connected call" }
+        check(!mediaState(callId).value.held) { "DTMF is unavailable while the call is held" }
+        gateway.sendDtmf(callId.value, digit)
+    }
+
     override fun observe(callId: CallId): StateFlow<MediaState> = mediaState(callId).asStateFlow()
 
     override suspend fun setMuted(callId: CallId, muted: Boolean) {
@@ -170,3 +179,4 @@ private const val PJSIP_INV_STATE_EARLY = PJSIP_INV_STATE_INCOMING + 1
 private const val PJSIP_INV_STATE_CONNECTING = PJSIP_INV_STATE_EARLY + 1
 private const val PJSIP_INV_STATE_CONFIRMED = PJSIP_INV_STATE_CONNECTING + 1
 private const val PJSIP_INV_STATE_DISCONNECTED = PJSIP_INV_STATE_CONFIRMED + 1
+private const val DTMF_DIGITS = "0123456789*#"

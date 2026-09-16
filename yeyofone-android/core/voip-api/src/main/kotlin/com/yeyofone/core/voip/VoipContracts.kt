@@ -71,6 +71,7 @@ interface SipCallGateway {
     suspend fun makeCall(accountId: SipAccountId, destination: String): String
     suspend fun answer(callId: String)
     suspend fun hangup(callId: String)
+    suspend fun sendDtmf(callId: String, digit: Char): Unit = error("DTMF is not supported")
     suspend fun setMuted(callId: String, muted: Boolean): Unit = error("Mute is not supported")
     suspend fun setHeld(callId: String, held: Boolean): Unit = error("Hold is not supported")
 }
@@ -81,6 +82,7 @@ interface CallManager {
     suspend fun answer(callId: CallId)
     suspend fun reject(callId: CallId)
     suspend fun end(callId: CallId)
+    suspend fun sendDtmf(callId: CallId, digit: Char)
 }
 
 interface CallHistoryRepository {

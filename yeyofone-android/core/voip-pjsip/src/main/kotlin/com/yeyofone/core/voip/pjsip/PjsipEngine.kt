@@ -72,6 +72,10 @@ class PjsipEngine internal constructor(
         withContext(dispatcher) { backend.hangupCall(callId) }
     }
 
+    override suspend fun sendDtmf(callId: String, digit: Char) {
+        withContext(dispatcher) { backend.sendDtmf(callId, digit) }
+    }
+
     override suspend fun setMuted(callId: String, muted: Boolean) {
         withContext(dispatcher) { backend.setMuted(callId, muted) }
     }

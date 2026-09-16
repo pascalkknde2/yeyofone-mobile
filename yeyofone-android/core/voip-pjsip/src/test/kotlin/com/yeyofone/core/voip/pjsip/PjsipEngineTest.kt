@@ -66,6 +66,16 @@ class PjsipEngineTest {
         assertEquals(EngineState.Stopped, engine.state.value)
     }
 
+    @Test
+    fun `DTMF is serialized through the endpoint backend`() = runTest(dispatcher) {
+        val backend = RecordingBackend()
+        val engine = PjsipEngine(backend, PjsipEngineConfiguration(), dispatcher)
+
+        engine.sendDtmf("call-1", '#')
+
+        assertEquals("dtmf:call-1:#", backend.calls.single())
+    }
+
     private class RecordingBackend(private val failAt: String? = null) : EndpointBackend {
         val calls = mutableListOf<String>()
         override fun create() = record("create")
@@ -74,6 +84,7 @@ class PjsipEngineTest {
             record("transports:${transports.joinToString { it.name }}")
         override fun start() = record("start")
         override fun destroy() = record("destroy")
+        override fun sendDtmf(callId: String, digit: Char) = record("dtmf:$callId:$digit")
 
         private fun record(call: String) {
             calls += call

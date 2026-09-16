@@ -15,6 +15,7 @@ import org.pjsip.pjsua2.AccountConfig
 import org.pjsip.pjsua2.AuthCredInfo
 import org.pjsip.pjsua2.AuthCredInfoVector
 import org.pjsip.pjsua2.CallOpParam
+import org.pjsip.pjsua2.CallSendDtmfParam
 import org.pjsip.pjsua2.OnCallMediaStateParam
 import org.pjsip.pjsua2.OnCallStateParam
 import org.pjsip.pjsua2.OnIncomingCallParam
@@ -23,6 +24,7 @@ import org.pjsip.pjsua2.StringVector
 import org.pjsip.pjsua2.pjmedia_srtp_use
 import org.pjsip.pjsua2.pjsua_call_flag
 import org.pjsip.pjsua2.pjsua_call_media_status
+import org.pjsip.pjsua2.pjsua_dtmf_method
 import org.pjsip.pjsua2.pjsip_inv_state
 import java.util.UUID
 
@@ -199,6 +201,19 @@ internal class Pjsua2EndpointBackend : EndpointBackend {
             call.answer(prm)
         } catch (_: Exception) {
             // Best-effort: the call may already have been cancelled by the caller.
+        } finally {
+            prm.delete()
+        }
+    }
+
+    override fun sendDtmf(callId: String, digit: Char) {
+        val call = checkNotNull(calls[callId]) { "Native call does not exist" }
+        val prm = CallSendDtmfParam().apply {
+            method = pjsua_dtmf_method.PJSUA_DTMF_METHOD_RFC2833
+            digits = digit.toString()
+        }
+        try {
+            call.sendDtmf(prm)
         } finally {
             prm.delete()
         }

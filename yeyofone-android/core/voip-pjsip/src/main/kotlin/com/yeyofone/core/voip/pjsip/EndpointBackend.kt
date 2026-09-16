@@ -24,6 +24,8 @@ internal interface EndpointBackend {
         error("Calling is not supported by this backend")
     fun hangupCall(callId: String): Unit =
         error("Calling is not supported by this backend")
+    fun sendDtmf(callId: String, digit: Char): Unit =
+        error("DTMF is not supported by this backend")
     fun setMuted(callId: String, muted: Boolean): Unit =
         error("Mute is not supported by this backend")
     fun setHeld(callId: String, held: Boolean): Unit =

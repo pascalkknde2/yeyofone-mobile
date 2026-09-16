@@ -391,7 +391,7 @@ private fun DialScreen(
                 Text(stringResource(R.string.remote_uri_value, session.remoteUri))
                 Text(stringResource(session.state.statusLabel()))
                 if (session.state == CallState.Connected || session.state == CallState.Held) {
-                    InCallControls(session.id, mediaManager, audioRoutes)
+                    InCallControls(session.id, callManager, mediaManager, audioRoutes)
                 }
             }
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -450,7 +450,7 @@ private fun IncomingCallScreen(
                 Text(stringResource(R.string.microphone_permission_required), color = MaterialTheme.colorScheme.error)
             }
             if (current.state == CallState.Connected || current.state == CallState.Held) {
-                InCallControls(current.id, mediaManager, audioRoutes)
+                InCallControls(current.id, callManager, mediaManager, audioRoutes)
             }
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 when {
@@ -484,11 +484,18 @@ private fun IncomingCallScreen(
 }
 
 @Composable
-private fun InCallControls(callId: CallId, mediaManager: MediaManager, audioRoutes: AudioRouteManager) {
+private fun InCallControls(
+    callId: CallId,
+    callManager: CallManager,
+    mediaManager: MediaManager,
+    audioRoutes: AudioRouteManager,
+) {
     val media by mediaManager.observe(callId).collectAsStateWithLifecycle()
     val routes by audioRoutes.availableRoutes.collectAsStateWithLifecycle()
     val selected by audioRoutes.selectedRoute.collectAsStateWithLifecycle()
     val scope = rememberCoroutineScope()
+    var showKeypad by remember(callId) { mutableStateOf(false) }
+    var enteredDigits by remember(callId) { mutableStateOf("") }
 
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -497,6 +504,9 @@ private fun InCallControls(callId: CallId, mediaManager: MediaManager, audioRout
             }
             Button(onClick = { scope.launch { mediaManager.setHeld(callId, !media.held) } }) {
                 Text(stringResource(if (media.held) R.string.resume else R.string.hold))
+            }
+            Button(onClick = { showKeypad = !showKeypad }) {
+                Text(stringResource(if (showKeypad) R.string.hide_keypad else R.string.keypad))
             }
         }
         Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -508,8 +518,31 @@ private fun InCallControls(callId: CallId, mediaManager: MediaManager, audioRout
                 )
             }
         }
+        if (showKeypad) {
+            if (enteredDigits.isNotEmpty()) {
+                Text(stringResource(R.string.dtmf_digits_value, enteredDigits))
+            }
+            DTMF_KEYS.chunked(3).forEach { row ->
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    row.forEach { digit ->
+                        Button(
+                            enabled = !media.held,
+                            onClick = {
+                                enteredDigits += digit
+                                scope.launch { callManager.sendDtmf(callId, digit) }
+                            },
+                        ) { Text(digit.toString()) }
+                    }
+                }
+            }
+            if (media.held) {
+                Text(stringResource(R.string.dtmf_unavailable_on_hold))
+            }
+        }
     }
 }
+
+private const val DTMF_KEYS = "123456789*0#"
 
 @Composable
 private fun AudioRoute.label(): String = when (this) {
