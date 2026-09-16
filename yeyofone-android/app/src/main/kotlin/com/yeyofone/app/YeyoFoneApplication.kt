@@ -38,6 +38,10 @@ class YeyoFoneApplication : Application() {
 
     override fun onCreate() {
         super.onCreate()
+        // Starting here (not just from MainActivity.onCreate()) ensures the SIP registration and
+        // incoming-call notification path come up whenever the process is created for any reason
+        // - including a push-triggered cold start - not only when the user opens the UI.
+        IncomingCallService.start(this)
         applicationScope.launch {
             engine.start()
             var previous = emptyMap<SipAccountId, Any>()
