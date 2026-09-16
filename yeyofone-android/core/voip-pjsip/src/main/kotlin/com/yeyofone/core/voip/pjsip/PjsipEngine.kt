@@ -8,6 +8,7 @@ import com.yeyofone.core.voip.SipRegistrationGateway
 import com.yeyofone.core.voip.NativeCallEvent
 import com.yeyofone.core.voip.NativeMediaEvent
 import com.yeyofone.core.voip.NativeRegistrationEvent
+import com.yeyofone.core.voip.NativeTransferEvent
 import com.yeyofone.core.model.SipAccount
 import com.yeyofone.core.model.SipAccountId
 import kotlinx.coroutines.CoroutineDispatcher
@@ -41,6 +42,8 @@ class PjsipEngine internal constructor(
     override val callEvents: SharedFlow<NativeCallEvent> = mutableCallEvents.asSharedFlow()
     private val mutableMediaEvents = MutableSharedFlow<NativeMediaEvent>(extraBufferCapacity = 32)
     override val mediaEvents: SharedFlow<NativeMediaEvent> = mutableMediaEvents.asSharedFlow()
+    private val mutableTransferEvents = MutableSharedFlow<NativeTransferEvent>(extraBufferCapacity = 32)
+    override val transferEvents: SharedFlow<NativeTransferEvent> = mutableTransferEvents.asSharedFlow()
 
     override suspend fun createOrUpdate(account: SipAccount, password: CharArray) {
         check(state.value == EngineState.Running) { "PJSIP engine is not running" }
@@ -76,6 +79,10 @@ class PjsipEngine internal constructor(
         withContext(dispatcher) { backend.sendDtmf(callId, digit) }
     }
 
+    override suspend fun transfer(callId: String, destination: String) {
+        withContext(dispatcher) { backend.transferCall(callId, destination) }
+    }
+
     override suspend fun setMuted(callId: String, muted: Boolean) {
         withContext(dispatcher) { backend.setMuted(callId, muted) }
     }
@@ -96,6 +103,7 @@ class PjsipEngine internal constructor(
                 backend.start()
                 backend.setCallEventListener { mutableCallEvents.tryEmit(it) }
                 backend.setMediaEventListener { mutableMediaEvents.tryEmit(it) }
+                backend.setTransferEventListener { mutableTransferEvents.tryEmit(it) }
             }
             mutableState.value = EngineState.Running
         } catch (cancellation: CancellationException) {

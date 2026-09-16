@@ -69,6 +69,13 @@
     <string name="hide_keypad">Hide keypad</string>
     <string name="dtmf_digits_value">DTMF: %1$s</string>
     <string name="dtmf_unavailable_on_hold">Resume the call to send keypad tones</string>
+    <string name="transfer">Transfer</string>
+    <string name="transfer_destination">Transfer destination</string>
+    <string name="transfer_now">Transfer now</string>
+    <string name="transferring_status">Transferring…</string>
+    <string name="transfer_pending">Transferring to %1$s…</string>
+    <string name="transfer_succeeded">Transfer accepted by %1$s</string>
+    <string name="transfer_failed">Transfer failed (%1$s) %2$s</string>
     <string name="recent_calls">Recent calls</string>
     <string name="no_recent_calls">No recent calls</string>
     <string name="clear_all">Clear all</string>

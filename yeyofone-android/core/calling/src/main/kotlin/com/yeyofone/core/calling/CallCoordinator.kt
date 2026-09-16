@@ -10,11 +10,13 @@ import com.yeyofone.core.model.CallSession
 import com.yeyofone.core.model.CallState
 import com.yeyofone.core.model.MediaState
 import com.yeyofone.core.model.SipAccountId
+import com.yeyofone.core.model.TransferState
 import com.yeyofone.core.model.VoipError
 import com.yeyofone.core.voip.CallManager
 import com.yeyofone.core.voip.CallHistoryRepository
 import com.yeyofone.core.voip.MediaManager
 import com.yeyofone.core.voip.NativeCallEvent
+import com.yeyofone.core.voip.NativeTransferEvent
 import com.yeyofone.core.voip.SipCallGateway
 import java.time.Instant
 import kotlinx.coroutines.CoroutineScope
@@ -45,16 +47,15 @@ class CallCoordinator(
                 mediaState(id).value = mediaState(id).value.copy(muted = event.muted, held = event.held)
             }
         }
+        scope.launch {
+            gateway.transferEvents.collect { event -> onTransferEvent(event) }
+        }
     }
 
     override suspend fun call(accountId: SipAccountId, destination: String): CallId {
         val account = accounts.observeAccount(accountId).first()
             ?: error("Account does not exist")
-        val uri = when {
-            destination.startsWith("sip:", ignoreCase = true) -> destination
-            destination.contains('@') -> "sip:$destination"
-            else -> "sip:$destination@${account.server.domain}"
-        }
+        val uri = destination.toSipUri(account.server.domain)
         val nativeId = gateway.makeCall(accountId, uri)
         val id = CallId(nativeId)
         val session = CallSession(
@@ -89,6 +90,36 @@ class CallCoordinator(
         check(session.state == CallState.Connected) { "DTMF requires a connected call" }
         check(!mediaState(callId).value.held) { "DTMF is unavailable while the call is held" }
         gateway.sendDtmf(callId.value, digit)
+    }
+
+    override suspend fun transfer(callId: CallId, destination: String) {
+        require(destination.isNotBlank()) { "Transfer destination must not be blank" }
+        val session = sessions.value.firstOrNull { it.id == callId }
+            ?: error("Call does not exist")
+        check(session.state == CallState.Connected) { "Transfer requires a connected call" }
+        check(!mediaState(callId).value.held) { "Transfer is unavailable while the call is held" }
+        val account = accounts.observeAccount(session.accountId).first()
+            ?: error("Account does not exist")
+        val uri = destination.toSipUri(account.server.domain)
+        mutableSessions.update { current ->
+            current.map {
+                if (it.id == callId) it.copy(state = CallState.Transferring, transfer = TransferState.Pending(uri)) else it
+            }
+        }
+        try {
+            gateway.transfer(callId.value, uri)
+        } catch (error: Exception) {
+            mutableSessions.update { current ->
+                current.map {
+                    if (it.id == callId) {
+                        it.copy(
+                            state = CallState.Connected,
+                            transfer = TransferState.Failed(uri, null, error.message?.take(120)),
+                        )
+                    } else it
+                }
+            }
+        }
     }
 
     override fun observe(callId: CallId): StateFlow<MediaState> = mediaState(callId).asStateFlow()
@@ -133,6 +164,37 @@ class CallCoordinator(
         }
         mutableSessions.value.firstOrNull { it.id == id }?.let { history?.upsert(it.toHistoryEntry()) }
     }
+
+    private fun onTransferEvent(event: NativeTransferEvent) {
+        val id = CallId(event.callId)
+        mutableSessions.update { sessions ->
+            sessions.map { session ->
+                if (session.id != id) return@map session
+                val destination = when (val transfer = session.transfer) {
+                    is TransferState.Pending -> transfer.destination
+                    is TransferState.Succeeded -> transfer.destination
+                    is TransferState.Failed -> transfer.destination
+                    TransferState.Idle -> return@map session
+                }
+                when {
+                    !event.final -> session
+                    event.statusCode in 200..299 -> session.copy(
+                        transfer = TransferState.Succeeded(destination),
+                    )
+                    else -> session.copy(
+                        state = CallState.Connected,
+                        transfer = TransferState.Failed(destination, event.statusCode, event.safeReason),
+                    )
+                }
+            }
+        }
+    }
+}
+
+private fun String.toSipUri(domain: String): String = when {
+    startsWith("sip:", ignoreCase = true) -> this
+    contains('@') -> "sip:$this"
+    else -> "sip:$this@$domain"
 }
 
 private fun CallSession.toHistoryEntry() = CallHistoryEntry(

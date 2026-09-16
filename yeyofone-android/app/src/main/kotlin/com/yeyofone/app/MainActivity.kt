@@ -60,6 +60,7 @@ import com.yeyofone.core.model.NatConfiguration
 import com.yeyofone.core.model.SecurityMode
 import com.yeyofone.core.model.SipAccount
 import com.yeyofone.core.model.TransportProtocol
+import com.yeyofone.core.model.TransferState
 import com.yeyofone.core.voip.CallManager
 import com.yeyofone.core.voip.CallHistoryRepository
 import com.yeyofone.core.voip.AudioRouteManager
@@ -491,11 +492,15 @@ private fun InCallControls(
     audioRoutes: AudioRouteManager,
 ) {
     val media by mediaManager.observe(callId).collectAsStateWithLifecycle()
+    val sessions by callManager.sessions.collectAsStateWithLifecycle()
+    val transfer = sessions.firstOrNull { it.id == callId }?.transfer ?: TransferState.Idle
     val routes by audioRoutes.availableRoutes.collectAsStateWithLifecycle()
     val selected by audioRoutes.selectedRoute.collectAsStateWithLifecycle()
     val scope = rememberCoroutineScope()
     var showKeypad by remember(callId) { mutableStateOf(false) }
     var enteredDigits by remember(callId) { mutableStateOf("") }
+    var showTransfer by remember(callId) { mutableStateOf(false) }
+    var transferDestination by remember(callId) { mutableStateOf("") }
 
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -508,6 +513,10 @@ private fun InCallControls(
             Button(onClick = { showKeypad = !showKeypad }) {
                 Text(stringResource(if (showKeypad) R.string.hide_keypad else R.string.keypad))
             }
+            Button(
+                enabled = !media.held && transfer !is TransferState.Pending && transfer !is TransferState.Succeeded,
+                onClick = { showTransfer = !showTransfer },
+            ) { Text(stringResource(R.string.transfer)) }
         }
         Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
             routes.forEach { route ->
@@ -539,6 +548,32 @@ private fun InCallControls(
                 Text(stringResource(R.string.dtmf_unavailable_on_hold))
             }
         }
+        if (showTransfer) {
+            Field(stringResource(R.string.transfer_destination), transferDestination) { transferDestination = it }
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Button(
+                    enabled = transferDestination.isNotBlank() && transfer !is TransferState.Pending,
+                    onClick = {
+                        scope.launch { callManager.transfer(callId, transferDestination) }
+                        showTransfer = false
+                    },
+                ) { Text(stringResource(R.string.transfer_now)) }
+                TextButton(onClick = { showTransfer = false }) { Text(stringResource(R.string.cancel)) }
+            }
+        }
+        when (transfer) {
+            TransferState.Idle -> Unit
+            is TransferState.Pending -> Text(stringResource(R.string.transfer_pending, transfer.destination))
+            is TransferState.Succeeded -> Text(stringResource(R.string.transfer_succeeded, transfer.destination))
+            is TransferState.Failed -> Text(
+                stringResource(
+                    R.string.transfer_failed,
+                    transfer.statusCode?.toString() ?: "—",
+                    transfer.reason.orEmpty(),
+                ),
+                color = MaterialTheme.colorScheme.error,
+            )
+        }
     }
 }
 
@@ -556,7 +591,8 @@ private fun CallState.statusLabel(): Int = when (this) {
     CallState.Preparing, CallState.Calling -> R.string.calling_status
     CallState.EarlyMedia, CallState.Ringing, CallState.Incoming -> R.string.ringing_status
     CallState.Connecting -> R.string.connecting_status
-    CallState.Connected, CallState.Held, CallState.Transferring -> R.string.connected_status
+    CallState.Connected, CallState.Held -> R.string.connected_status
+    CallState.Transferring -> R.string.transferring_status
     CallState.Disconnecting -> R.string.ending_status
     is CallState.Disconnected -> R.string.call_ended_status
     is CallState.Failed -> R.string.call_failed_status

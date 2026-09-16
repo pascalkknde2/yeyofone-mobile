@@ -64,14 +64,23 @@ data class NativeMediaEvent(
     val held: Boolean,
 )
 
+data class NativeTransferEvent(
+    val callId: String,
+    val statusCode: Int,
+    val safeReason: String?,
+    val final: Boolean,
+)
+
 /** Platform-neutral gateway; implementations keep all PJSUA2 objects internal. */
 interface SipCallGateway {
     val callEvents: Flow<NativeCallEvent>
     val mediaEvents: Flow<NativeMediaEvent> get() = emptyFlow()
+    val transferEvents: Flow<NativeTransferEvent> get() = emptyFlow()
     suspend fun makeCall(accountId: SipAccountId, destination: String): String
     suspend fun answer(callId: String)
     suspend fun hangup(callId: String)
     suspend fun sendDtmf(callId: String, digit: Char): Unit = error("DTMF is not supported")
+    suspend fun transfer(callId: String, destination: String): Unit = error("Transfer is not supported")
     suspend fun setMuted(callId: String, muted: Boolean): Unit = error("Mute is not supported")
     suspend fun setHeld(callId: String, held: Boolean): Unit = error("Hold is not supported")
 }
@@ -83,6 +92,7 @@ interface CallManager {
     suspend fun reject(callId: CallId)
     suspend fun end(callId: CallId)
     suspend fun sendDtmf(callId: CallId, digit: Char)
+    suspend fun transfer(callId: CallId, destination: String)
 }
 
 interface CallHistoryRepository {

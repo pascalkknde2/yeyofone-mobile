@@ -5,6 +5,7 @@ import com.yeyofone.core.model.SipAccountId
 import com.yeyofone.core.voip.NativeCallEvent
 import com.yeyofone.core.voip.NativeMediaEvent
 import com.yeyofone.core.voip.NativeRegistrationEvent
+import com.yeyofone.core.voip.NativeTransferEvent
 
 /** Internal seam around generated PJSUA2 bindings; native objects never cross this boundary. */
 internal interface EndpointBackend {
@@ -26,12 +27,15 @@ internal interface EndpointBackend {
         error("Calling is not supported by this backend")
     fun sendDtmf(callId: String, digit: Char): Unit =
         error("DTMF is not supported by this backend")
+    fun transferCall(callId: String, destination: String): Unit =
+        error("Transfer is not supported by this backend")
     fun setMuted(callId: String, muted: Boolean): Unit =
         error("Mute is not supported by this backend")
     fun setHeld(callId: String, held: Boolean): Unit =
         error("Hold is not supported by this backend")
     fun setCallEventListener(callback: (NativeCallEvent) -> Unit) = Unit
     fun setMediaEventListener(callback: (NativeMediaEvent) -> Unit) = Unit
+    fun setTransferEventListener(callback: (NativeTransferEvent) -> Unit) = Unit
 }
 
 enum class SipTransport { UDP, TCP, TLS }

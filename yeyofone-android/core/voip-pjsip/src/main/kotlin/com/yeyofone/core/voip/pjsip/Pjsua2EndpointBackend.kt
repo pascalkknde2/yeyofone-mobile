@@ -11,6 +11,7 @@ import com.yeyofone.core.model.TransportProtocol
 import com.yeyofone.core.voip.NativeCallEvent
 import com.yeyofone.core.voip.NativeMediaEvent
 import com.yeyofone.core.voip.NativeRegistrationEvent
+import com.yeyofone.core.voip.NativeTransferEvent
 import org.pjsip.pjsua2.AccountConfig
 import org.pjsip.pjsua2.AuthCredInfo
 import org.pjsip.pjsua2.AuthCredInfoVector
@@ -19,6 +20,7 @@ import org.pjsip.pjsua2.CallSendDtmfParam
 import org.pjsip.pjsua2.OnCallMediaStateParam
 import org.pjsip.pjsua2.OnCallStateParam
 import org.pjsip.pjsua2.OnIncomingCallParam
+import org.pjsip.pjsua2.OnCallTransferStatusParam
 import org.pjsip.pjsua2.OnRegStateParam
 import org.pjsip.pjsua2.StringVector
 import org.pjsip.pjsua2.pjmedia_srtp_use
@@ -35,6 +37,7 @@ internal class Pjsua2EndpointBackend : EndpointBackend {
     private val calls = mutableMapOf<String, NativeCall>()
     private var callEventCallback: ((NativeCallEvent) -> Unit)? = null
     private var mediaEventCallback: ((NativeMediaEvent) -> Unit)? = null
+    private var transferEventCallback: ((NativeTransferEvent) -> Unit)? = null
 
     override fun setCallEventListener(callback: (NativeCallEvent) -> Unit) {
         callEventCallback = callback
@@ -42,6 +45,10 @@ internal class Pjsua2EndpointBackend : EndpointBackend {
 
     override fun setMediaEventListener(callback: (NativeMediaEvent) -> Unit) {
         mediaEventCallback = callback
+    }
+
+    override fun setTransferEventListener(callback: (NativeTransferEvent) -> Unit) {
+        transferEventCallback = callback
     }
 
     override fun create() {
@@ -219,6 +226,16 @@ internal class Pjsua2EndpointBackend : EndpointBackend {
         }
     }
 
+    override fun transferCall(callId: String, destination: String) {
+        val call = checkNotNull(calls[callId]) { "Native call does not exist" }
+        val prm = CallOpParam(true)
+        try {
+            call.xfer(destination, prm)
+        } finally {
+            prm.delete()
+        }
+    }
+
     override fun setMuted(callId: String, muted: Boolean) {
         val call = calls[callId] ?: return
         val ep = endpoint ?: return
@@ -325,6 +342,17 @@ internal class Pjsua2EndpointBackend : EndpointBackend {
         }
 
         override fun onCallState(prm: OnCallStateParam) = reportState()
+
+        override fun onCallTransferStatus(prm: OnCallTransferStatusParam) {
+            transferEventCallback?.invoke(
+                NativeTransferEvent(
+                    callId = id,
+                    statusCode = prm.statusCode,
+                    safeReason = prm.reason?.replace(Regex("[\\r\\n]"), " ")?.take(120),
+                    final = prm.finalNotify,
+                ),
+            )
+        }
 
         override fun onCallMediaState(prm: OnCallMediaStateParam) {
             val info = runCatching { getInfo() }.getOrNull() ?: return

@@ -11,9 +11,17 @@ data class CallSession(
     val createdAt: Instant,
     val connectedAt: Instant? = null,
     val endedAt: Instant? = null,
+    val transfer: TransferState = TransferState.Idle,
 )
 
 enum class CallDirection { INCOMING, OUTGOING }
+
+sealed interface TransferState {
+    data object Idle : TransferState
+    data class Pending(val destination: String) : TransferState
+    data class Succeeded(val destination: String) : TransferState
+    data class Failed(val destination: String, val statusCode: Int?, val reason: String?) : TransferState
+}
 
 sealed interface CallState {
     data object Preparing : CallState

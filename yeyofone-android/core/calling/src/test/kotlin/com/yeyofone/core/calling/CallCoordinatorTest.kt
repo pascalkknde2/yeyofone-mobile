@@ -12,9 +12,11 @@ import com.yeyofone.core.model.SipAccount
 import com.yeyofone.core.model.SipAccountId
 import com.yeyofone.core.model.SipServerConfiguration
 import com.yeyofone.core.model.TransportProtocol
+import com.yeyofone.core.model.TransferState
 import com.yeyofone.core.voip.NativeCallEvent
 import com.yeyofone.core.voip.CallHistoryRepository
 import com.yeyofone.core.voip.NativeMediaEvent
+import com.yeyofone.core.voip.NativeTransferEvent
 import com.yeyofone.core.voip.SipCallGateway
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
@@ -177,6 +179,45 @@ class CallCoordinatorTest {
     }
 
     @Test
+    fun `blind transfer resolves destination and reports success`() = runTest {
+        val id = SipAccountId("one")
+        val gateway = FakeGateway()
+        val coordinator = CallCoordinator(FakeAccounts(mapOf(id to account(id))), gateway, backgroundScope)
+        val callId = coordinator.call(id, "1001")
+        runCurrent()
+        gateway.emit(callId.value, id, invState = PJSIP_INV_STATE_CONFIRMED, lastStatusCode = 200)
+        runCurrent()
+
+        coordinator.transfer(callId, "1002")
+        assertEquals(callId.value to "sip:1002@pbx.example.com", gateway.lastTransfer)
+        assertIs<TransferState.Pending>(coordinator.sessions.value.single().transfer)
+
+        gateway.emitTransfer(callId.value, 200, final = true)
+        runCurrent()
+        assertIs<TransferState.Succeeded>(coordinator.sessions.value.single().transfer)
+    }
+
+    @Test
+    fun `failed blind transfer restores connected call and prevents duplicate request`() = runTest {
+        val id = SipAccountId("one")
+        val gateway = FakeGateway()
+        val coordinator = CallCoordinator(FakeAccounts(mapOf(id to account(id))), gateway, backgroundScope)
+        val callId = coordinator.call(id, "1001")
+        runCurrent()
+        gateway.emit(callId.value, id, invState = PJSIP_INV_STATE_CONFIRMED, lastStatusCode = 200)
+        runCurrent()
+
+        coordinator.transfer(callId, "1002")
+        assertFailsWith<IllegalStateException> { coordinator.transfer(callId, "1003") }
+        gateway.emitTransfer(callId.value, 404, "Not Found", final = true)
+        runCurrent()
+
+        val session = coordinator.sessions.value.single()
+        assertEquals(CallState.Connected, session.state)
+        assertEquals(404, assertIs<TransferState.Failed>(session.transfer).statusCode)
+    }
+
+    @Test
     fun `terminal unanswered incoming call is recorded as missed`() = runTest {
         val accountId = SipAccountId("one")
         val gateway = FakeGateway()
@@ -216,12 +257,15 @@ class CallCoordinatorTest {
         override val callEvents: Flow<NativeCallEvent> = mutableCallEvents
         private val mutableMediaEvents = MutableSharedFlow<NativeMediaEvent>(extraBufferCapacity = 8)
         override val mediaEvents: Flow<NativeMediaEvent> = mutableMediaEvents
+        private val mutableTransferEvents = MutableSharedFlow<NativeTransferEvent>(extraBufferCapacity = 8)
+        override val transferEvents: Flow<NativeTransferEvent> = mutableTransferEvents
         var lastDestination: String? = null
         val hungUp = mutableListOf<String>()
         val answered = mutableListOf<String>()
         var lastMute: Pair<String, Boolean>? = null
         var lastHold: Pair<String, Boolean>? = null
         var lastDtmf: Pair<String, Char>? = null
+        var lastTransfer: Pair<String, String>? = null
         private var counter = 0
 
         override suspend fun makeCall(accountId: SipAccountId, destination: String): String {
@@ -247,6 +291,14 @@ class CallCoordinatorTest {
 
         override suspend fun sendDtmf(callId: String, digit: Char) {
             lastDtmf = callId to digit
+        }
+
+        override suspend fun transfer(callId: String, destination: String) {
+            lastTransfer = callId to destination
+        }
+
+        suspend fun emitTransfer(callId: String, statusCode: Int, reason: String? = null, final: Boolean) {
+            mutableTransferEvents.emit(NativeTransferEvent(callId, statusCode, reason, final))
         }
 
         suspend fun emitMedia(callId: String, muted: Boolean, held: Boolean) {
