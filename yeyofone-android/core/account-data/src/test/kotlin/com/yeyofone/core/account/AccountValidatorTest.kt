@@ -52,6 +52,15 @@ class AccountValidatorTest {
     }
 
     @Test
+    fun `ICE requires a STUN server`() {
+        val failure = assertFailsWith<AccountValidationException.InvalidField> {
+            AccountValidator.validate(validDraft(nat = NatConfiguration(iceEnabled = true)))
+        }
+        assertEquals("stunServer", failure.field)
+        AccountValidator.validate(validDraft(nat = NatConfiguration(iceEnabled = true, stunServer = "stun.example.com")))
+    }
+
+    @Test
     fun `repository rejects duplicates and clears command secret`() = runTest {
         val dao = FakeDao()
         val secrets = FakeSecrets()

@@ -25,6 +25,12 @@ object AccountValidator {
         if (!draft.nat.turnServer.isNullOrBlank() && draft.nat.turnUsername.isNullOrBlank()) {
             invalid("turnUsername", "is required when a TURN server is configured")
         }
+        if (draft.nat.iceEnabled && draft.nat.stunServer.isNullOrBlank()) {
+            // Without a resolved STUN server, ICE can only offer host candidates - unreachable
+            // from outside the device's own NAT - which silently breaks any call the device
+            // itself originates while leaving inbound calls looking fine.
+            invalid("stunServer", "is required when ICE is enabled")
+        }
         draft.voicemailNumber?.takeIf(String::isNotBlank)?.let {
             if (!phonePattern.matches(it)) invalid("voicemailNumber", "contains unsupported characters")
         }

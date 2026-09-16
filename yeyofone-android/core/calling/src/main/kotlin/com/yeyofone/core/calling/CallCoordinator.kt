@@ -96,11 +96,21 @@ class CallCoordinator(
     override suspend fun reject(callId: CallId) {
         commandMutex.withLock {
             val session = sessions.value.firstOrNull { it.id == callId } ?: return
-            if (session.state != CallState.Incoming && session.state != CallState.Ringing) return
-            mutableSessions.update { current ->
-                current.map { if (it.id == callId) it.copy(state = CallState.Disconnecting) else it }
+            if (session.state == CallState.Disconnecting || session.state.isTerminal()) return
+            if (session.state == CallState.Incoming || session.state == CallState.Ringing) {
+                mutableSessions.update { current ->
+                    current.map { if (it.id == callId) it.copy(state = CallState.Disconnecting) else it }
+                }
             }
-            runCatching { gateway.hangup(callId.value) }
+            try {
+                gateway.hangup(callId.value)
+            } catch (error: Exception) {
+                mutableSessions.update { current ->
+                    current.map {
+                        if (it.id == callId) it.copy(state = CallState.Failed(VoipError.Native(error.message ?: "Reject failed"))) else it
+                    }
+                }
+            }
         }
     }
 
@@ -149,32 +159,37 @@ class CallCoordinator(
 
     override suspend fun attendedTransfer(callId: CallId, destinationCallId: CallId) {
         require(callId != destinationCallId) { "Attended transfer requires two different calls" }
-        val source = sessions.value.firstOrNull { it.id == callId }
-            ?: error("Source call does not exist")
-        val destination = sessions.value.firstOrNull { it.id == destinationCallId }
-            ?: error("Destination call does not exist")
-        check(source.accountId == destination.accountId) { "Calls must use the same SIP account" }
-        check(source.state == CallState.Connected) { "Source call must be connected" }
-        check(destination.state == CallState.Connected) { "Destination call must be connected" }
-        check(mediaState(callId).value.held) { "Source call must be held" }
-        check(source.transfer !is TransferState.Pending) { "Transfer is already pending" }
-        val target = destination.remoteUri
-        mutableSessions.update { current ->
-            current.map {
-                if (it.id == callId) it.copy(state = CallState.Transferring, transfer = TransferState.Pending(target)) else it
-            }
-        }
-        try {
-            gateway.attendedTransfer(callId.value, destinationCallId.value)
-        } catch (error: Exception) {
+        commandMutex.withLock {
+            val source = sessions.value.firstOrNull { it.id == callId }
+                ?: error("Source call does not exist")
+            val destination = sessions.value.firstOrNull { it.id == destinationCallId }
+                ?: error("Destination call does not exist")
+            check(source.accountId == destination.accountId) { "Calls must use the same SIP account" }
+            check(source.state == CallState.Connected) { "Source call must be connected" }
+            check(destination.state == CallState.Connected) { "Destination call must be connected" }
+            check(mediaState(callId).value.held) { "Source call must be held" }
+            check(source.transfer !is TransferState.Pending) { "Transfer is already pending" }
+            val target = destination.remoteUri
             mutableSessions.update { current ->
                 current.map {
-                    if (it.id == callId) {
-                        it.copy(
-                            state = CallState.Connected,
-                            transfer = TransferState.Failed(target, null, error.message?.take(120)),
-                        )
-                    } else it
+                    if (it.id == callId) it.copy(state = CallState.Transferring, transfer = TransferState.Pending(target)) else it
+                }
+            }
+            try {
+                gateway.attendedTransfer(callId.value, destinationCallId.value)
+            } catch (error: Exception) {
+                mutableSessions.update { current ->
+                    current.map {
+                        // Only resurrect the session if it's still where we left it - a concurrent
+                        // native disconnect event may have already moved it on while the transfer
+                        // attempt was in flight.
+                        if (it.id == callId && it.state == CallState.Transferring) {
+                            it.copy(
+                                state = CallState.Connected,
+                                transfer = TransferState.Failed(target, null, error.message?.take(120)),
+                            )
+                        } else it
+                    }
                 }
             }
         }
@@ -253,6 +268,8 @@ class CallCoordinator(
         }
     }
 }
+
+private fun CallState.isTerminal(): Boolean = this is CallState.Disconnected || this is CallState.Failed
 
 private fun String.toSipUri(domain: String): String = when {
     startsWith("sip:", ignoreCase = true) -> this

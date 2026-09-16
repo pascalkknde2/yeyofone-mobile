@@ -13,6 +13,7 @@ import android.media.Ringtone
 import android.media.RingtoneManager
 import android.net.Uri
 import android.os.IBinder
+import android.util.Log
 import androidx.core.content.ContextCompat
 import com.yeyofone.core.model.CallDirection
 import com.yeyofone.core.model.CallId
@@ -22,7 +23,11 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 
 class IncomingCallService : Service() {
@@ -38,7 +43,11 @@ class IncomingCallService : Service() {
 
         val app = application as YeyoFoneApplication
         serviceScope.launch {
-            app.callManager.sessions.collectLatest(::updateCallNotification)
+            // Re-evaluate on every foreground/background transition too, not just call-state
+            // changes - otherwise backgrounding mid-call (with no further session update) leaves
+            // the in-call notification suppressed with no way to hang up from outside the app.
+            app.callManager.sessions.combine(AppVisibility.isForegroundFlow) { sessions, _ -> sessions }
+                .collectLatest(::updateCallNotification)
         }
     }
 
@@ -209,6 +218,7 @@ class IncomingCallService : Service() {
         const val ACTION_HANG_UP = "com.yeyofone.app.action.HANG_UP"
         const val EXTRA_CALL_ID = "call_id"
 
+        private const val TAG = "IncomingCallService"
         private const val SERVICE_CHANNEL_ID = "yeyofone_service"
         private const val CALL_CHANNEL_ID = "incoming_calls_v2"
         private const val MISSED_CHANNEL_ID = "missed_calls"
@@ -217,15 +227,26 @@ class IncomingCallService : Service() {
         private const val MISSED_NOTIFICATION_BASE = 2000
 
         fun start(context: Context) {
-            ContextCompat.startForegroundService(context, Intent(context, IncomingCallService::class.java))
+            // Android 12+ can refuse a foreground-service start from a non-exempt background
+            // context (ForegroundServiceStartNotAllowedException). Callers such as
+            // Application.onCreate() can run in exactly that context, so this must not crash them;
+            // a call that arrives while the service isn't running will still show as a missed call.
+            runCatching {
+                ContextCompat.startForegroundService(context, Intent(context, IncomingCallService::class.java))
+            }.onFailure { Log.w(TAG, "Could not start IncomingCallService", it) }
         }
     }
 }
 
 /** Process-level visibility shared by the activity and the notification service. */
 internal object AppVisibility {
-    @Volatile
-    var isForeground: Boolean = false
+    private val mutableIsForeground = MutableStateFlow(false)
+    val isForegroundFlow: StateFlow<Boolean> = mutableIsForeground.asStateFlow()
+    var isForeground: Boolean
+        get() = mutableIsForeground.value
+        set(value) {
+            mutableIsForeground.value = value
+        }
 }
 
 class CallActionReceiver : BroadcastReceiver() {

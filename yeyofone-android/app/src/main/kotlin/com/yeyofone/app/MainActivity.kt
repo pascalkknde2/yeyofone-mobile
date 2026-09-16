@@ -66,7 +66,6 @@ import com.yeyofone.core.voip.CallManager
 import com.yeyofone.core.voip.CallHistoryRepository
 import com.yeyofone.core.voip.AudioRouteManager
 import com.yeyofone.core.voip.MediaManager
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -520,19 +519,20 @@ private fun InCallControls(
     val consultation = sessions.firstOrNull { it.id == consultationCallId }
 
     LaunchedEffect(consultation?.id, consultation?.state) {
+        // A later media update from the peer (e.g. a final re-INVITE) is handled reactively by
+        // the native onCallMediaState callback, which reattaches on its own ACTIVE event - no
+        // fixed-delay retry needed here.
         if (consultation?.state == CallState.Connected) {
-            mediaManager.setMuted(consultation.id, false)
-            // Some SIP peers send a final media update shortly after the call enters the
-            // connected state. Reattach after that negotiation so the replacement audio
-            // port is connected to the Android capture and playback devices.
-            delay(3_000)
             mediaManager.setMuted(consultation.id, false)
         }
     }
 
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Button(onClick = { scope.launch { mediaManager.setMuted(callId, !media.muted) } }) {
+            Button(
+                enabled = !media.held,
+                onClick = { scope.launch { mediaManager.setMuted(callId, !media.muted) } },
+            ) {
                 Text(stringResource(if (media.muted) R.string.unmute else R.string.mute))
             }
             Button(onClick = { scope.launch { mediaManager.setHeld(callId, !media.held) } }) {

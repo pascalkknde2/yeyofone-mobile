@@ -277,6 +277,13 @@ internal class Pjsua2EndpointBackend : EndpointBackend {
         val audio = runCatching { call.getAudioMedia(-1) }.getOrNull() ?: return
         if (muted) {
             ep.audDevManager().captureDevMedia.stopTransmit(audio)
+        } else if (locallyHeldCallIds.contains(callId)) {
+            // Held calls are deliberately detached from the sound device (see setHeld/
+            // onCallMediaState) so they can't steal a consultation call's conference port.
+            // Unmuting a held call must not undo that detachment.
+            call.muted = muted
+            call.reportMediaState()
+            return
         } else {
             val devices = ep.audDevManager()
             if (!devices.sndIsActive()) {
@@ -440,12 +447,21 @@ internal class Pjsua2EndpointBackend : EndpointBackend {
             }
             val locallyHeld = info.media.any { it.status == pjsua_call_media_status.PJSUA_CALL_MEDIA_LOCAL_HOLD } ||
                 locallyHeldCallIds.contains(id)
+            val isOnHold = locallyHeld || info.media.any {
+                it.status == pjsua_call_media_status.PJSUA_CALL_MEDIA_REMOTE_HOLD
+            }
             val ep = endpoint ?: return
-            Log.i(
-                MEDIA_LOG_TAG,
-                "call=$id media=${info.media.joinToString { "${it.index}:${it.type}:${it.dir}:${it.status}" }} activePorts=${ep.mediaActivePorts()} localHeld=$locallyHeld",
-            )
-            logAudioTransport()
+            if (Log.isLoggable(MEDIA_LOG_TAG, Log.DEBUG)) {
+                // Gated: building this string and logAudioTransport()'s extra native round-trips
+                // run on every media transition on the PJSIP signaling thread, not just once, so
+                // this must stay off unless someone has explicitly enabled debug logging for the
+                // tag (adb shell setprop log.tag.YeyoFoneMedia DEBUG).
+                Log.d(
+                    MEDIA_LOG_TAG,
+                    "call=$id media=${info.media.joinToString { "${it.index}:${it.type}:${it.dir}:${it.status}" }} activePorts=${ep.mediaActivePorts()} localHeld=$locallyHeld",
+                )
+                logAudioTransport()
+            }
             // A held call can emit a delayed ACTIVE media callback while its
             // re-INVITE is settling. Never reconnect that leg to the sound
             // device, or it can steal the consultation call's conference port.
@@ -458,7 +474,7 @@ internal class Pjsua2EndpointBackend : EndpointBackend {
                     if (!muted) ep.audDevManager().captureDevMedia.startTransmit(audio)
                     Log.i(MEDIA_LOG_TAG, "call=$id attached port=${audio.portId}")
                 }.onFailure { Log.e(MEDIA_LOG_TAG, "call=$id attach failed", it) }
-            } else {
+            } else if (isOnHold) {
                 // PJSIP's conference connections survive a SIP hold unless explicitly detached.
                 // Leaving the held call connected can consume the sound device while a consultation
                 // call is active, producing silence on the new leg.
@@ -468,6 +484,11 @@ internal class Pjsua2EndpointBackend : EndpointBackend {
                     ep.audDevManager().captureDevMedia.stopTransmit(audio)
                     Log.i(MEDIA_LOG_TAG, "call=$id detached port=${audio.portId}")
                 }.onFailure { Log.w(MEDIA_LOG_TAG, "call=$id detach skipped", it) }
+            } else {
+                // NONE/ERROR are ambiguous, possibly-transient statuses (e.g. mid codec/ICE
+                // renegotiation) rather than a deliberate hold - leave existing routing untouched
+                // rather than risk a permanent detach with no later callback to reattach it.
+                Log.w(MEDIA_LOG_TAG, "call=$id media status is neither active nor on hold; routing left unchanged")
             }
             reportMediaState(locallyHeld)
         }
