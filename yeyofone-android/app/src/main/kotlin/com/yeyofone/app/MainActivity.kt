@@ -35,6 +35,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -65,11 +66,22 @@ import com.yeyofone.core.voip.CallManager
 import com.yeyofone.core.voip.CallHistoryRepository
 import com.yeyofone.core.voip.AudioRouteManager
 import com.yeyofone.core.voip.MediaManager
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
 class MainActivity : ComponentActivity() {
+    override fun onStart() {
+        super.onStart()
+        AppVisibility.isForeground = true
+    }
+
+    override fun onStop() {
+        AppVisibility.isForeground = false
+        super.onStop()
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setShowWhenLocked(true)
@@ -493,7 +505,8 @@ private fun InCallControls(
 ) {
     val media by mediaManager.observe(callId).collectAsStateWithLifecycle()
     val sessions by callManager.sessions.collectAsStateWithLifecycle()
-    val transfer = sessions.firstOrNull { it.id == callId }?.transfer ?: TransferState.Idle
+    val session = sessions.firstOrNull { it.id == callId }
+    val transfer = session?.transfer ?: TransferState.Idle
     val routes by audioRoutes.availableRoutes.collectAsStateWithLifecycle()
     val selected by audioRoutes.selectedRoute.collectAsStateWithLifecycle()
     val scope = rememberCoroutineScope()
@@ -501,6 +514,21 @@ private fun InCallControls(
     var enteredDigits by remember(callId) { mutableStateOf("") }
     var showTransfer by remember(callId) { mutableStateOf(false) }
     var transferDestination by remember(callId) { mutableStateOf("") }
+    var showConsultation by remember(callId) { mutableStateOf(false) }
+    var consultationDestination by remember(callId) { mutableStateOf("") }
+    var consultationCallId by remember(callId) { mutableStateOf<CallId?>(null) }
+    val consultation = sessions.firstOrNull { it.id == consultationCallId }
+
+    LaunchedEffect(consultation?.id, consultation?.state) {
+        if (consultation?.state == CallState.Connected) {
+            mediaManager.setMuted(consultation.id, false)
+            // Some SIP peers send a final media update shortly after the call enters the
+            // connected state. Reattach after that negotiation so the replacement audio
+            // port is connected to the Android capture and playback devices.
+            delay(3_000)
+            mediaManager.setMuted(consultation.id, false)
+        }
+    }
 
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -513,10 +541,21 @@ private fun InCallControls(
             Button(onClick = { showKeypad = !showKeypad }) {
                 Text(stringResource(if (showKeypad) R.string.hide_keypad else R.string.keypad))
             }
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             Button(
-                enabled = !media.held && transfer !is TransferState.Pending && transfer !is TransferState.Succeeded,
+                enabled = !media.held && consultationCallId == null &&
+                    transfer !is TransferState.Pending && transfer !is TransferState.Succeeded,
                 onClick = { showTransfer = !showTransfer },
             ) { Text(stringResource(R.string.transfer)) }
+            Button(
+                enabled = consultationCallId == null && transfer !is TransferState.Pending &&
+                    transfer !is TransferState.Succeeded,
+                onClick = {
+                    showConsultation = true
+                    scope.launch { mediaManager.setHeld(callId, true) }
+                },
+            ) { Text(stringResource(R.string.consult_transfer)) }
         }
         Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
             routes.forEach { route ->
@@ -561,6 +600,45 @@ private fun InCallControls(
                 TextButton(onClick = { showTransfer = false }) { Text(stringResource(R.string.cancel)) }
             }
         }
+        if (showConsultation) {
+            Field(stringResource(R.string.consultation_destination), consultationDestination) {
+                consultationDestination = it
+            }
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Button(
+                    enabled = consultationDestination.isNotBlank() && session != null && media.held,
+                    onClick = {
+                        val current = session ?: return@Button
+                        scope.launch {
+                            consultationCallId = callManager.call(current.accountId, consultationDestination)
+                        }
+                        showConsultation = false
+                    },
+                ) { Text(stringResource(R.string.start_consultation)) }
+                TextButton(onClick = {
+                    showConsultation = false
+                    scope.launch { mediaManager.setHeld(callId, false) }
+                }) { Text(stringResource(R.string.cancel)) }
+            }
+            if (!media.held) Text(stringResource(R.string.waiting_for_hold))
+        }
+        consultation?.let { consult ->
+            Text(stringResource(R.string.consultation_call, consult.remoteUri))
+            Text(stringResource(consult.state.statusLabel()))
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Button(
+                    enabled = consult.state == CallState.Connected && media.held,
+                    onClick = { scope.launch { callManager.attendedTransfer(callId, consult.id) } },
+                ) { Text(stringResource(R.string.complete_transfer)) }
+                Button(onClick = {
+                    scope.launch {
+                        if (!consult.state.isTerminal()) callManager.end(consult.id)
+                        mediaManager.setHeld(callId, false)
+                        consultationCallId = null
+                    }
+                }) { Text(stringResource(R.string.return_to_caller)) }
+            }
+        }
         when (transfer) {
             TransferState.Idle -> Unit
             is TransferState.Pending -> Text(stringResource(R.string.transfer_pending, transfer.destination))
@@ -590,7 +668,7 @@ private fun AudioRoute.label(): String = when (this) {
 private fun CallState.statusLabel(): Int = when (this) {
     CallState.Preparing, CallState.Calling -> R.string.calling_status
     CallState.EarlyMedia, CallState.Ringing, CallState.Incoming -> R.string.ringing_status
-    CallState.Connecting -> R.string.connecting_status
+    CallState.Answering, CallState.Connecting -> R.string.connecting_status
     CallState.Connected, CallState.Held -> R.string.connected_status
     CallState.Transferring -> R.string.transferring_status
     CallState.Disconnecting -> R.string.ending_status
@@ -614,7 +692,7 @@ private fun AccountEditor(existing: SipAccount?, repository: AccountRepository, 
     var stun by remember { mutableStateOf(existing?.nat?.stunServer.orEmpty()) }
     var turn by remember { mutableStateOf(existing?.nat?.turnServer.orEmpty()) }
     var turnUsername by remember { mutableStateOf(existing?.nat?.turnUsername.orEmpty()) }
-    var ice by remember { mutableStateOf(existing?.nat?.iceEnabled ?: true) }
+    var ice by remember { mutableStateOf(existing?.nat?.iceEnabled ?: false) }
     var srtp by remember { mutableStateOf(existing?.nat?.srtpEnabled ?: false) }
     var expiry by remember { mutableStateOf(existing?.registrationExpirySeconds?.toString() ?: "300") }
     var voicemail by remember { mutableStateOf(existing?.voicemailNumber.orEmpty()) }

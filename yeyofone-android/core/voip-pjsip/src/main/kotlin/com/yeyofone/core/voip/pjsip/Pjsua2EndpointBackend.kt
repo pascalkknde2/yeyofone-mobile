@@ -1,5 +1,6 @@
 package com.yeyofone.core.voip.pjsip
 
+import android.util.Log
 import org.pjsip.pjsua2.Endpoint
 import org.pjsip.pjsua2.EpConfig
 import org.pjsip.pjsua2.TransportConfig
@@ -27,7 +28,10 @@ import org.pjsip.pjsua2.pjmedia_srtp_use
 import org.pjsip.pjsua2.pjsua_call_flag
 import org.pjsip.pjsua2.pjsua_call_media_status
 import org.pjsip.pjsua2.pjsua_dtmf_method
+import org.pjsip.pjsua2.pjsua_stun_use
+import org.pjsip.pjsua2.pjmedia_type
 import org.pjsip.pjsua2.pjsip_inv_state
+import java.util.concurrent.ConcurrentHashMap
 import java.util.UUID
 
 /** Owns all generated PJSUA2 objects. Calls are serialized by [PjsipEngine]. */
@@ -35,6 +39,7 @@ internal class Pjsua2EndpointBackend : EndpointBackend {
     private var endpoint: Endpoint? = null
     private val accounts = mutableMapOf<SipAccountId, NativeAccount>()
     private val calls = mutableMapOf<String, NativeCall>()
+    private val locallyHeldCallIds = ConcurrentHashMap.newKeySet<String>()
     private var callEventCallback: ((NativeCallEvent) -> Unit)? = null
     private var mediaEventCallback: ((NativeMediaEvent) -> Unit)? = null
     private var transferEventCallback: ((NativeTransferEvent) -> Unit)? = null
@@ -90,6 +95,7 @@ internal class Pjsua2EndpointBackend : EndpointBackend {
         endpoint = null
         calls.values.forEach { runCatching { it.hangup(CallOpParam(true)) }; it.delete() }
         calls.clear()
+        locallyHeldCallIds.clear()
         accounts.values.forEach { it.shutdown(); it.delete() }
         accounts.clear()
         try {
@@ -126,8 +132,25 @@ internal class Pjsua2EndpointBackend : EndpointBackend {
                 proxies.add(it.withTransport(account.server.transport))
                 config.sipConfig.proxies = proxies
             }
+            val stunServer = account.nat.stunServer?.takeIf { it.isNotBlank() }
+            if (stunServer != null) {
+                val stunServers = StringVector().apply { add(stunServer) }
+                try {
+                    requireEndpoint().natUpdateStunServers(stunServers, false)
+                } catch (_: Exception) {
+                    // Best-effort: fall through with STUN disabled below if resolution fails.
+                } finally {
+                    stunServers.delete()
+                }
+            }
             config.natConfig.apply {
                 iceEnabled = account.nat.iceEnabled
+                // Without a resolved STUN server, ICE can only offer host candidates, which are
+                // unreachable from outside the device's own NAT. Disabling STUN explicitly here
+                // (rather than leaving PJSUA_STUN_USE_DEFAULT) avoids silently depending on
+                // whatever another account most recently registered with natUpdateStunServers.
+                sipStunUse = if (stunServer != null) pjsua_stun_use.PJSUA_STUN_USE_DEFAULT else pjsua_stun_use.PJSUA_STUN_USE_DISABLED
+                mediaStunUse = if (stunServer != null) pjsua_stun_use.PJSUA_STUN_USE_DEFAULT else pjsua_stun_use.PJSUA_STUN_USE_DISABLED
                 turnEnabled = !account.nat.turnServer.isNullOrBlank()
                 account.nat.turnServer?.let { turnServer = it }
                 account.nat.turnUsername?.let { turnUserName = it }
@@ -236,6 +259,18 @@ internal class Pjsua2EndpointBackend : EndpointBackend {
         }
     }
 
+    override fun attendedTransferCall(callId: String, destinationCallId: String) {
+        require(callId != destinationCallId) { "Attended transfer requires two different calls" }
+        val call = checkNotNull(calls[callId]) { "Native source call does not exist" }
+        val destinationCall = checkNotNull(calls[destinationCallId]) { "Native destination call does not exist" }
+        val prm = CallOpParam(true)
+        try {
+            call.xferReplaces(destinationCall, prm)
+        } finally {
+            prm.delete()
+        }
+    }
+
     override fun setMuted(callId: String, muted: Boolean) {
         val call = calls[callId] ?: return
         val ep = endpoint ?: return
@@ -243,7 +278,34 @@ internal class Pjsua2EndpointBackend : EndpointBackend {
         if (muted) {
             ep.audDevManager().captureDevMedia.stopTransmit(audio)
         } else {
-            ep.audDevManager().captureDevMedia.startTransmit(audio)
+            val devices = ep.audDevManager()
+            if (!devices.sndIsActive()) {
+                devices.setSndDevMode(0)
+                Log.i(MEDIA_LOG_TAG, "call=$callId reopened sound device")
+            }
+            val playback = devices.playbackDevMedia
+            val capture = devices.captureDevMedia
+            // A conference port can be reused after a SIP hold. Restore neutral
+            // per-port gains so a previous held/muted route cannot silence the new leg.
+            audio.adjustTxLevel(1f)
+            audio.adjustRxLevel(1f)
+            capture.adjustTxLevel(1f)
+            playback.adjustRxLevel(1f)
+            audio.startTransmit(playback)
+            capture.startTransmit(audio)
+            logBridge(callId, audio, capture, devices.sndIsActive())
+            runCatching {
+                val stat = call.getStreamStat(0)
+                try {
+                    Log.i(
+                        MEDIA_LOG_TAG,
+                        "call=$callId reattached port=${audio.portId} rtpTx=${stat.rtcp.txStat.pkt} rtpRx=${stat.rtcp.rxStat.pkt}",
+                    )
+                } finally {
+                    stat.delete()
+                }
+            }.onFailure { Log.w(MEDIA_LOG_TAG, "call=$callId stream stats unavailable", it) }
+            call.logAudioTransport()
         }
         call.muted = muted
         call.reportMediaState()
@@ -251,6 +313,20 @@ internal class Pjsua2EndpointBackend : EndpointBackend {
 
     override fun setHeld(callId: String, held: Boolean) {
         val call = calls[callId] ?: return
+        if (held) locallyHeldCallIds.add(callId)
+        if (held) {
+            // Detach while getAudioMedia() still refers to the active conference port.
+            // After the hold re-INVITE PJSIP may replace it with a new inactive port,
+            // making it too late to disconnect the original sound-device routes.
+            endpoint?.let { ep ->
+                runCatching {
+                    val audio = call.getAudioMedia(-1)
+                    audio.stopTransmit(ep.audDevManager().playbackDevMedia)
+                    ep.audDevManager().captureDevMedia.stopTransmit(audio)
+                    Log.i(MEDIA_LOG_TAG, "call=$callId pre-hold detached port=${audio.portId}")
+                }.onFailure { Log.w(MEDIA_LOG_TAG, "call=$callId pre-hold detach skipped", it) }
+            }
+        }
         val prm = CallOpParam(true)
         try {
             if (held) {
@@ -258,6 +334,7 @@ internal class Pjsua2EndpointBackend : EndpointBackend {
             } else {
                 prm.opt.flag = pjsua_call_flag.PJSUA_CALL_UNHOLD.toLong()
                 call.reinvite(prm)
+                locallyHeldCallIds.remove(callId)
             }
         } finally {
             prm.delete()
@@ -337,6 +414,7 @@ internal class Pjsua2EndpointBackend : EndpointBackend {
             )
             if (invState == pjsip_inv_state.PJSIP_INV_STATE_DISCONNECTED) {
                 calls.remove(id)
+                locallyHeldCallIds.remove(id)
                 delete()
             }
         }
@@ -356,16 +434,42 @@ internal class Pjsua2EndpointBackend : EndpointBackend {
 
         override fun onCallMediaState(prm: OnCallMediaStateParam) {
             val info = runCatching { getInfo() }.getOrNull() ?: return
-            val hasActiveAudio = info.media.any { it.status == pjsua_call_media_status.PJSUA_CALL_MEDIA_ACTIVE }
-            if (hasActiveAudio) {
-                val ep = endpoint ?: return
+            val hasActiveAudio = info.media.any {
+                it.type == pjmedia_type.PJMEDIA_TYPE_AUDIO &&
+                    it.status == pjsua_call_media_status.PJSUA_CALL_MEDIA_ACTIVE
+            }
+            val locallyHeld = info.media.any { it.status == pjsua_call_media_status.PJSUA_CALL_MEDIA_LOCAL_HOLD } ||
+                locallyHeldCallIds.contains(id)
+            val ep = endpoint ?: return
+            Log.i(
+                MEDIA_LOG_TAG,
+                "call=$id media=${info.media.joinToString { "${it.index}:${it.type}:${it.dir}:${it.status}" }} activePorts=${ep.mediaActivePorts()} localHeld=$locallyHeld",
+            )
+            logAudioTransport()
+            // A held call can emit a delayed ACTIVE media callback while its
+            // re-INVITE is settling. Never reconnect that leg to the sound
+            // device, or it can steal the consultation call's conference port.
+            if (hasActiveAudio && !locallyHeld) {
                 runCatching {
                     val audio = getAudioMedia(-1)
+                    audio.adjustTxLevel(1f)
+                    audio.adjustRxLevel(1f)
                     audio.startTransmit(ep.audDevManager().playbackDevMedia)
                     if (!muted) ep.audDevManager().captureDevMedia.startTransmit(audio)
-                }
+                    Log.i(MEDIA_LOG_TAG, "call=$id attached port=${audio.portId}")
+                }.onFailure { Log.e(MEDIA_LOG_TAG, "call=$id attach failed", it) }
+            } else {
+                // PJSIP's conference connections survive a SIP hold unless explicitly detached.
+                // Leaving the held call connected can consume the sound device while a consultation
+                // call is active, producing silence on the new leg.
+                runCatching {
+                    val audio = getAudioMedia(-1)
+                    audio.stopTransmit(ep.audDevManager().playbackDevMedia)
+                    ep.audDevManager().captureDevMedia.stopTransmit(audio)
+                    Log.i(MEDIA_LOG_TAG, "call=$id detached port=${audio.portId}")
+                }.onFailure { Log.w(MEDIA_LOG_TAG, "call=$id detach skipped", it) }
             }
-            reportMediaState(info.media.any { it.status == pjsua_call_media_status.PJSUA_CALL_MEDIA_LOCAL_HOLD })
+            reportMediaState(locallyHeld)
         }
 
         fun reportMediaState(held: Boolean? = null) {
@@ -374,9 +478,43 @@ internal class Pjsua2EndpointBackend : EndpointBackend {
             }.getOrDefault(false)
             mediaEventCallback?.invoke(NativeMediaEvent(id, muted, localHold))
         }
+
+        fun logAudioTransport() {
+            runCatching {
+                val stream = getStreamInfo(0)
+                val transport = getMedTransportInfo(0)
+                try {
+                    Log.i(
+                        MEDIA_LOG_TAG,
+                        "call=$id localRtp=${transport.localRtpName} remoteRtp=${stream.remoteRtpAddress} " +
+                            "sourceRtp=${transport.srcRtpName} codec=${stream.codecName}/${stream.codecClockRate}",
+                    )
+                } finally {
+                    transport.delete()
+                    stream.delete()
+                }
+            }.onFailure { Log.w(MEDIA_LOG_TAG, "call=$id transport info unavailable", it) }
+        }
     }
 
     private fun requireEndpoint(): Endpoint = checkNotNull(endpoint) { "PJSIP endpoint is not created" }
+
+    private fun logBridge(callId: String, audio: org.pjsip.pjsua2.AudioMedia, capture: org.pjsip.pjsua2.AudioMedia, active: Boolean) {
+        runCatching {
+            val callPort = audio.portInfo
+            val capturePort = capture.portInfo
+            try {
+                Log.i(
+                    MEDIA_LOG_TAG,
+                    "call=$callId sndActive=$active callPort=${callPort.portId}->${callPort.listeners.joinToString()} " +
+                        "capturePort=${capturePort.portId}->${capturePort.listeners.joinToString()}",
+                )
+            } finally {
+                callPort.delete()
+                capturePort.delete()
+            }
+        }.onFailure { Log.w(MEDIA_LOG_TAG, "call=$callId bridge info unavailable", it) }
+    }
 
     private object NativeLibrary {
         init {
@@ -397,3 +535,5 @@ private fun String.withTransport(transport: TransportProtocol): String {
     if (contains(";transport=", ignoreCase = true)) return this
     return "$this;transport=${transport.name.lowercase()}"
 }
+
+private const val MEDIA_LOG_TAG = "YeyoFoneMedia"

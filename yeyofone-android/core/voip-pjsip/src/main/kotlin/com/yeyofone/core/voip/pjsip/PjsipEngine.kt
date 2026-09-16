@@ -83,6 +83,10 @@ class PjsipEngine internal constructor(
         withContext(dispatcher) { backend.transferCall(callId, destination) }
     }
 
+    override suspend fun attendedTransfer(callId: String, destinationCallId: String) {
+        withContext(dispatcher) { backend.attendedTransferCall(callId, destinationCallId) }
+    }
+
     override suspend fun setMuted(callId: String, muted: Boolean) {
         withContext(dispatcher) { backend.setMuted(callId, muted) }
     }

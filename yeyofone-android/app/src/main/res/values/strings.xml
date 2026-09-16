@@ -76,6 +76,13 @@
     <string name="transfer_pending">Transferring to %1$s…</string>
     <string name="transfer_succeeded">Transfer accepted by %1$s</string>
     <string name="transfer_failed">Transfer failed (%1$s) %2$s</string>
+    <string name="consult_transfer">Consult transfer</string>
+    <string name="consultation_destination">Consultation destination</string>
+    <string name="start_consultation">Start consultation</string>
+    <string name="consultation_call">Consultation: %1$s</string>
+    <string name="complete_transfer">Complete transfer</string>
+    <string name="return_to_caller">Return to caller</string>
+    <string name="waiting_for_hold">Waiting for the original call to be placed on hold…</string>
     <string name="recent_calls">Recent calls</string>
     <string name="no_recent_calls">No recent calls</string>
     <string name="clear_all">Clear all</string>

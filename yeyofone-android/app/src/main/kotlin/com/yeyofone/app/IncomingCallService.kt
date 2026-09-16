@@ -100,6 +100,10 @@ class IncomingCallService : Service() {
         val incoming = active.direction == CallDirection.INCOMING &&
             (active.state == CallState.Incoming || active.state == CallState.Ringing)
         if (incoming) startRinging() else stopRinging()
+        if (AppVisibility.isForeground) {
+            notifications.cancel(CALL_NOTIFICATION_ID)
+            return
+        }
         val builder = Notification.Builder(this, CALL_CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_phone)
             .setContentTitle(
@@ -218,6 +222,12 @@ class IncomingCallService : Service() {
     }
 }
 
+/** Process-level visibility shared by the activity and the notification service. */
+internal object AppVisibility {
+    @Volatile
+    var isForeground: Boolean = false
+}
+
 class CallActionReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         val callId = intent.getStringExtra(IncomingCallService.EXTRA_CALL_ID)?.let(::CallId) ?: return
@@ -226,7 +236,17 @@ class CallActionReceiver : BroadcastReceiver() {
         CoroutineScope(SupervisorJob() + Dispatchers.Default).launch {
             try {
                 when (intent.action) {
-                    IncomingCallService.ACTION_ACCEPT -> manager.answer(callId)
+                    IncomingCallService.ACTION_ACCEPT -> {
+                        manager.answer(callId)
+                        context.startActivity(
+                            Intent(context, MainActivity::class.java).apply {
+                                flags = Intent.FLAG_ACTIVITY_NEW_TASK or
+                                    Intent.FLAG_ACTIVITY_SINGLE_TOP or
+                                    Intent.FLAG_ACTIVITY_CLEAR_TOP
+                                putExtra(IncomingCallService.EXTRA_CALL_ID, callId.value)
+                            },
+                        )
+                    }
                     IncomingCallService.ACTION_DECLINE -> manager.reject(callId)
                     IncomingCallService.ACTION_HANG_UP -> manager.end(callId)
                 }

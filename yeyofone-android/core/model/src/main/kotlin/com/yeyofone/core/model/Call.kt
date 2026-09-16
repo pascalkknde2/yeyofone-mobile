@@ -29,6 +29,7 @@ sealed interface CallState {
     data object EarlyMedia : CallState
     data object Ringing : CallState
     data object Incoming : CallState
+    data object Answering : CallState
     data object Connecting : CallState
     data object Connected : CallState
     data object Held : CallState

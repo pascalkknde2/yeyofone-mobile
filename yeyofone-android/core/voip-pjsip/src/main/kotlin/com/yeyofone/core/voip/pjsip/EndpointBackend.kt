@@ -29,6 +29,8 @@ internal interface EndpointBackend {
         error("DTMF is not supported by this backend")
     fun transferCall(callId: String, destination: String): Unit =
         error("Transfer is not supported by this backend")
+    fun attendedTransferCall(callId: String, destinationCallId: String): Unit =
+        error("Attended transfer is not supported by this backend")
     fun setMuted(callId: String, muted: Boolean): Unit =
         error("Mute is not supported by this backend")
     fun setHeld(callId: String, held: Boolean): Unit =

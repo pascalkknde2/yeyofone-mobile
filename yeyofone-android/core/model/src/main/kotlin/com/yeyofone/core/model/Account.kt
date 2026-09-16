@@ -42,7 +42,7 @@ data class NatConfiguration(
     val stunServer: String? = null,
     val turnServer: String? = null,
     val turnUsername: String? = null,
-    val iceEnabled: Boolean = true,
+    val iceEnabled: Boolean = false,
     val srtpEnabled: Boolean = false,
 )
 

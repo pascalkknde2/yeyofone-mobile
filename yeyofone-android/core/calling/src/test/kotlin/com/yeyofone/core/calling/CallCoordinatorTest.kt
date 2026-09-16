@@ -5,6 +5,7 @@ import com.yeyofone.core.account.AccountRepository
 import com.yeyofone.core.model.CallDirection
 import com.yeyofone.core.model.CallHistoryEntry
 import com.yeyofone.core.model.CallHistoryId
+import com.yeyofone.core.model.CallId
 import com.yeyofone.core.model.CallState
 import com.yeyofone.core.model.NatConfiguration
 import com.yeyofone.core.model.SecurityMode
@@ -110,6 +111,39 @@ class CallCoordinatorTest {
         coordinator.answer(coordinator.sessions.value.single().id)
 
         assertTrue(gateway.answered.contains("native-incoming-1"))
+        assertEquals(CallState.Answering, coordinator.sessions.value.single().state)
+    }
+
+    @Test
+    fun `double answer executes only once for one call id`() = runTest {
+        val id = SipAccountId("one")
+        val gateway = FakeGateway()
+        val coordinator = CallCoordinator(FakeAccounts(mapOf(id to account(id))), gateway, backgroundScope)
+        runCurrent()
+        gateway.emit("incoming-1", id, PJSIP_INV_STATE_INCOMING, 0, direction = CallDirection.INCOMING)
+        runCurrent()
+
+        coordinator.answer(CallId("incoming-1"))
+        coordinator.answer(CallId("incoming-1"))
+
+        assertEquals(listOf("incoming-1"), gateway.answered)
+        assertEquals(1, coordinator.sessions.value.count { it.id == CallId("incoming-1") })
+    }
+
+    @Test
+    fun `duplicate incoming events keep one session and do not regress answering`() = runTest {
+        val id = SipAccountId("one")
+        val gateway = FakeGateway()
+        val coordinator = CallCoordinator(FakeAccounts(mapOf(id to account(id))), gateway, backgroundScope)
+        runCurrent()
+        gateway.emit("incoming-1", id, PJSIP_INV_STATE_INCOMING, 0, direction = CallDirection.INCOMING)
+        runCurrent()
+        coordinator.answer(CallId("incoming-1"))
+        gateway.emit("incoming-1", id, PJSIP_INV_STATE_INCOMING, 0, direction = CallDirection.INCOMING)
+        runCurrent()
+
+        assertEquals(1, coordinator.sessions.value.count { it.id == CallId("incoming-1") })
+        assertEquals(CallState.Answering, coordinator.sessions.value.single().state)
     }
 
     @Test
@@ -218,6 +252,37 @@ class CallCoordinatorTest {
     }
 
     @Test
+    fun `attended transfer requires held source and connected consultation call`() = runTest {
+        val id = SipAccountId("one")
+        val gateway = FakeGateway()
+        val coordinator = CallCoordinator(FakeAccounts(mapOf(id to account(id))), gateway, backgroundScope)
+        val sourceId = coordinator.call(id, "1001")
+        val destinationId = coordinator.call(id, "1002")
+        runCurrent()
+        gateway.emit(sourceId.value, id, invState = PJSIP_INV_STATE_CONFIRMED, lastStatusCode = 200)
+        gateway.emit(destinationId.value, id, invState = PJSIP_INV_STATE_CONFIRMED, lastStatusCode = 200)
+        runCurrent()
+
+        assertFailsWith<IllegalStateException> { coordinator.attendedTransfer(sourceId, destinationId) }
+        gateway.emitMedia(sourceId.value, muted = false, held = true)
+        runCurrent()
+        coordinator.attendedTransfer(sourceId, destinationId)
+
+        assertEquals(sourceId.value to destinationId.value, gateway.lastAttendedTransfer)
+        assertEquals(CallState.Transferring, coordinator.sessions.value.first { it.id == sourceId }.state)
+    }
+
+    @Test
+    fun `attended transfer rejects the same call as source and destination`() = runTest {
+        val id = SipAccountId("one")
+        val gateway = FakeGateway()
+        val coordinator = CallCoordinator(FakeAccounts(mapOf(id to account(id))), gateway, backgroundScope)
+        val callId = coordinator.call(id, "1001")
+
+        assertFailsWith<IllegalArgumentException> { coordinator.attendedTransfer(callId, callId) }
+    }
+
+    @Test
     fun `terminal unanswered incoming call is recorded as missed`() = runTest {
         val accountId = SipAccountId("one")
         val gateway = FakeGateway()
@@ -266,6 +331,7 @@ class CallCoordinatorTest {
         var lastHold: Pair<String, Boolean>? = null
         var lastDtmf: Pair<String, Char>? = null
         var lastTransfer: Pair<String, String>? = null
+        var lastAttendedTransfer: Pair<String, String>? = null
         private var counter = 0
 
         override suspend fun makeCall(accountId: SipAccountId, destination: String): String {
@@ -295,6 +361,10 @@ class CallCoordinatorTest {
 
         override suspend fun transfer(callId: String, destination: String) {
             lastTransfer = callId to destination
+        }
+
+        override suspend fun attendedTransfer(callId: String, destinationCallId: String) {
+            lastAttendedTransfer = callId to destinationCallId
         }
 
         suspend fun emitTransfer(callId: String, statusCode: Int, reason: String? = null, final: Boolean) {

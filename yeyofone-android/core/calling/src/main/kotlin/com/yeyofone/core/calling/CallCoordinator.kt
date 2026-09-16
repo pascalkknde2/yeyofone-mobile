@@ -26,6 +26,8 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 
 class CallCoordinator(
     private val accounts: AccountRepository,
@@ -36,6 +38,7 @@ class CallCoordinator(
     private val mutableSessions = MutableStateFlow<List<CallSession>>(emptyList())
     override val sessions: StateFlow<List<CallSession>> = mutableSessions.asStateFlow()
     private val mediaStates = mutableMapOf<CallId, MutableStateFlow<MediaState>>()
+    private val commandMutex = Mutex()
 
     init {
         scope.launch {
@@ -72,11 +75,33 @@ class CallCoordinator(
     }
 
     override suspend fun answer(callId: CallId) {
-        gateway.answer(callId.value)
+        commandMutex.withLock {
+            val session = sessions.value.firstOrNull { it.id == callId } ?: return
+            if (session.state != CallState.Incoming && session.state != CallState.Ringing) return
+            mutableSessions.update { current ->
+                current.map { if (it.id == callId) it.copy(state = CallState.Answering) else it }
+            }
+            try {
+                gateway.answer(callId.value)
+            } catch (error: Exception) {
+                mutableSessions.update { current ->
+                    current.map {
+                        if (it.id == callId) it.copy(state = CallState.Failed(VoipError.Native(error.message ?: "Answer failed"))) else it
+                    }
+                }
+            }
+        }
     }
 
     override suspend fun reject(callId: CallId) {
-        gateway.hangup(callId.value)
+        commandMutex.withLock {
+            val session = sessions.value.firstOrNull { it.id == callId } ?: return
+            if (session.state != CallState.Incoming && session.state != CallState.Ringing) return
+            mutableSessions.update { current ->
+                current.map { if (it.id == callId) it.copy(state = CallState.Disconnecting) else it }
+            }
+            runCatching { gateway.hangup(callId.value) }
+        }
     }
 
     override suspend fun end(callId: CallId) {
@@ -122,6 +147,39 @@ class CallCoordinator(
         }
     }
 
+    override suspend fun attendedTransfer(callId: CallId, destinationCallId: CallId) {
+        require(callId != destinationCallId) { "Attended transfer requires two different calls" }
+        val source = sessions.value.firstOrNull { it.id == callId }
+            ?: error("Source call does not exist")
+        val destination = sessions.value.firstOrNull { it.id == destinationCallId }
+            ?: error("Destination call does not exist")
+        check(source.accountId == destination.accountId) { "Calls must use the same SIP account" }
+        check(source.state == CallState.Connected) { "Source call must be connected" }
+        check(destination.state == CallState.Connected) { "Destination call must be connected" }
+        check(mediaState(callId).value.held) { "Source call must be held" }
+        check(source.transfer !is TransferState.Pending) { "Transfer is already pending" }
+        val target = destination.remoteUri
+        mutableSessions.update { current ->
+            current.map {
+                if (it.id == callId) it.copy(state = CallState.Transferring, transfer = TransferState.Pending(target)) else it
+            }
+        }
+        try {
+            gateway.attendedTransfer(callId.value, destinationCallId.value)
+        } catch (error: Exception) {
+            mutableSessions.update { current ->
+                current.map {
+                    if (it.id == callId) {
+                        it.copy(
+                            state = CallState.Connected,
+                            transfer = TransferState.Failed(target, null, error.message?.take(120)),
+                        )
+                    } else it
+                }
+            }
+        }
+    }
+
     override fun observe(callId: CallId): StateFlow<MediaState> = mediaState(callId).asStateFlow()
 
     override suspend fun setMuted(callId: CallId, muted: Boolean) {
@@ -154,6 +212,11 @@ class CallCoordinator(
             } else {
                 sessions.map { session ->
                     if (session.id != id) return@map session
+                    if ((session.state == CallState.Answering ||
+                            session.state == CallState.Connecting ||
+                            session.state == CallState.Connected) &&
+                        (state == CallState.Incoming || state == CallState.Ringing)
+                    ) return@map session
                     session.copy(
                         state = state,
                         connectedAt = session.connectedAt ?: now.takeIf { state == CallState.Connected },

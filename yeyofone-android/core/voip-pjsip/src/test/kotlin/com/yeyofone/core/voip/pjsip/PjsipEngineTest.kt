@@ -86,6 +86,16 @@ class PjsipEngineTest {
         assertEquals("transfer:call-1:sip:1002@pbx.example.com", backend.calls.single())
     }
 
+    @Test
+    fun `attended transfer is serialized through the endpoint backend`() = runTest(dispatcher) {
+        val backend = RecordingBackend()
+        val engine = PjsipEngine(backend, PjsipEngineConfiguration(), dispatcher)
+
+        engine.attendedTransfer("call-1", "call-2")
+
+        assertEquals("attended:call-1:call-2", backend.calls.single())
+    }
+
     private class RecordingBackend(private val failAt: String? = null) : EndpointBackend {
         val calls = mutableListOf<String>()
         override fun create() = record("create")
@@ -96,6 +106,8 @@ class PjsipEngineTest {
         override fun destroy() = record("destroy")
         override fun sendDtmf(callId: String, digit: Char) = record("dtmf:$callId:$digit")
         override fun transferCall(callId: String, destination: String) = record("transfer:$callId:$destination")
+        override fun attendedTransferCall(callId: String, destinationCallId: String) =
+            record("attended:$callId:$destinationCallId")
 
         private fun record(call: String) {
             calls += call
