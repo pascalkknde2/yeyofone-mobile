@@ -1,28 +1,34 @@
 package com.yeyofone.app
 
-import android.content.Context
 import android.util.Log
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 
 /**
  * Wakes the process for an incoming call when it has been killed (not force-stopped) and has no
- * live SIP registration left to receive the INVITE over. Inert until a real Firebase project is
- * wired up (see app/build.gradle.kts): FCM will not route messages to this app, and this service
- * will never be instantiated, without a google-services.json and the matching PBX-side push
- * trigger. See HANDOFF.md for what the PBX side still needs to provide.
+ * live SIP registration left to receive the INVITE over. See PushRelayClient for how the token
+ * reaches the PBX side.
  */
 class YeyoFoneFirebaseMessagingService : FirebaseMessagingService() {
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+
     @Suppress("OVERRIDE_DEPRECATION")
     override fun onNewToken(token: String) {
-        // TODO: send this token to the PBX/server side once it exists, so it can target this
-        // device's registration when a push-worthy INVITE arrives. Persisted locally for now so
-        // whatever sends it can read the current token without waiting for another rotation.
-        getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-            .edit()
-            .putString(KEY_TOKEN, token)
-            .apply()
+        PushRelayClient.saveToken(this, token)
         Log.i(TAG, "FCM token refreshed")
+
+        val app = application as YeyoFoneApplication
+        scope.launch {
+            val extensions = app.accountRepository.observeAccounts().first()
+                .filter { it.enabled }
+                .map { it.username }
+            extensions.forEach { extension -> PushRelayClient.register(this@YeyoFoneFirebaseMessagingService, extension, token) }
+        }
     }
 
     override fun onMessageReceived(message: RemoteMessage) {
@@ -34,9 +40,7 @@ class YeyoFoneFirebaseMessagingService : FirebaseMessagingService() {
         IncomingCallService.start(this)
     }
 
-    companion object {
-        private const val TAG = "YeyoFonePush"
-        private const val PREFS_NAME = "yeyofone_push"
-        private const val KEY_TOKEN = "fcm_token"
+    private companion object {
+        const val TAG = "YeyoFonePush"
     }
 }

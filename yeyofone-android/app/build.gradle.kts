@@ -17,6 +17,12 @@ android {
         targetSdk = 34
         versionCode = 1
         versionName = "0.1.0"
+
+        // Push-relay wiring (see yeyofone-push-relay, a separate project - this repo stays
+        // client-only per MAIN-IDEA.md). Empty by default so a normal build never depends on
+        // it; set via -PpushRelayUrl=... -PpushRelaySecret=... or gradle.properties.
+        buildConfigField("String", "PUSH_RELAY_URL", "\"${project.findProperty("pushRelayUrl") ?: ""}\"")
+        buildConfigField("String", "PUSH_RELAY_SECRET", "\"${project.findProperty("pushRelaySecret") ?: ""}\"")
     }
 
     compileOptions {
@@ -24,7 +30,7 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
 
-    buildFeatures { compose = true }
+    buildFeatures { compose = true; buildConfig = true }
 
 }
 

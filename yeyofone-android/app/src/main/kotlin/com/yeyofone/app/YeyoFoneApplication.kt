@@ -50,7 +50,15 @@ class YeyoFoneApplication : Application() {
                 previous.keys.minus(current.keys).forEach { registration.unregister(it) }
                 accounts.forEach { account ->
                     val changed = previous[account.id] != account
-                    if (account.enabled && changed) registration.register(account.id)
+                    if (account.enabled && changed) {
+                        registration.register(account.id)
+                        // Covers the case where the FCM token arrived before this account existed
+                        // or was enabled - onNewToken only fires again on a token rotation, not on
+                        // every app start, so it wouldn't otherwise register this extension.
+                        PushRelayClient.cachedToken(this@YeyoFoneApplication)?.let { token ->
+                            launch(Dispatchers.IO) { PushRelayClient.register(this@YeyoFoneApplication, account.username, token) }
+                        }
+                    }
                     if (!account.enabled && previous[account.id] != account) registration.unregister(account.id)
                 }
                 previous = current
