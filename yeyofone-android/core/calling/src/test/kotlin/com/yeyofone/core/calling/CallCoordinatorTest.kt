@@ -25,6 +25,7 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.yield
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
@@ -144,6 +145,47 @@ class CallCoordinatorTest {
 
         assertEquals(1, coordinator.sessions.value.count { it.id == CallId("incoming-1") })
         assertEquals(CallState.Answering, coordinator.sessions.value.single().state)
+    }
+
+    @Test
+    fun `caller cancelling before answer disconnects the call and stale answer is ignored`() = runTest {
+        val id = SipAccountId("one")
+        val gateway = FakeGateway()
+        val coordinator = CallCoordinator(FakeAccounts(mapOf(id to account(id))), gateway, backgroundScope)
+        runCurrent()
+        gateway.emit("incoming-1", id, PJSIP_INV_STATE_INCOMING, 0, direction = CallDirection.INCOMING)
+        runCurrent()
+
+        gateway.emit("incoming-1", id, PJSIP_INV_STATE_DISCONNECTED, 487, direction = CallDirection.INCOMING)
+        runCurrent()
+        assertIs<CallState.Disconnected>(coordinator.sessions.value.single().state)
+
+        // A stale Answer arriving after the cancel must not resurrect the call.
+        coordinator.answer(CallId("incoming-1"))
+        assertTrue(gateway.answered.isEmpty())
+        assertIs<CallState.Disconnected>(coordinator.sessions.value.single().state)
+    }
+
+    @Test
+    fun `caller cancelling while answer is in flight is not overwritten by the answer failure`() = runTest {
+        val id = SipAccountId("one")
+        val gateway = FakeGateway()
+        val coordinator = CallCoordinator(FakeAccounts(mapOf(id to account(id))), gateway, backgroundScope)
+        runCurrent()
+        gateway.emit("incoming-1", id, PJSIP_INV_STATE_INCOMING, 0, direction = CallDirection.INCOMING)
+        runCurrent()
+
+        // Simulate the native cancel event arriving concurrently, before gateway.answer() throws.
+        gateway.failAnswer = true
+        gateway.cancelDuringAnswer = {
+            gateway.emit("incoming-1", id, PJSIP_INV_STATE_DISCONNECTED, 487, direction = CallDirection.INCOMING)
+            yield()
+        }
+        coordinator.answer(CallId("incoming-1"))
+        runCurrent()
+
+        val session = coordinator.sessions.value.single()
+        assertIs<CallState.Disconnected>(session.state)
     }
 
     @Test
@@ -332,6 +374,8 @@ class CallCoordinatorTest {
         var lastDtmf: Pair<String, Char>? = null
         var lastTransfer: Pair<String, String>? = null
         var lastAttendedTransfer: Pair<String, String>? = null
+        var cancelDuringAnswer: (suspend () -> Unit)? = null
+        var failAnswer = false
         private var counter = 0
 
         override suspend fun makeCall(accountId: SipAccountId, destination: String): String {
@@ -340,7 +384,9 @@ class CallCoordinatorTest {
         }
 
         override suspend fun answer(callId: String) {
+            cancelDuringAnswer?.invoke()
             answered += callId
+            if (failAnswer) error("native answer failed")
         }
 
         override suspend fun hangup(callId: String) {

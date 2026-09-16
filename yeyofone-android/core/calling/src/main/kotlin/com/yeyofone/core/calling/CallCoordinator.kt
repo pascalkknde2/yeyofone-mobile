@@ -86,7 +86,12 @@ class CallCoordinator(
             } catch (error: Exception) {
                 mutableSessions.update { current ->
                     current.map {
-                        if (it.id == callId) it.copy(state = CallState.Failed(VoipError.Native(error.message ?: "Answer failed"))) else it
+                        // A concurrent native event (e.g. the caller cancelling) may have already
+                        // moved this session on while gateway.answer() was in flight - don't
+                        // resurrect a call that's already correctly Disconnected/Failed.
+                        if (it.id == callId && it.state == CallState.Answering) {
+                            it.copy(state = CallState.Failed(VoipError.Native(error.message ?: "Answer failed")))
+                        } else it
                     }
                 }
             }
@@ -107,7 +112,11 @@ class CallCoordinator(
             } catch (error: Exception) {
                 mutableSessions.update { current ->
                     current.map {
-                        if (it.id == callId) it.copy(state = CallState.Failed(VoipError.Native(error.message ?: "Reject failed"))) else it
+                        // As with answer(), a concurrent native event may have already resolved
+                        // this call while gateway.hangup() was in flight.
+                        if (it.id == callId && !it.state.isTerminal()) {
+                            it.copy(state = CallState.Failed(VoipError.Native(error.message ?: "Reject failed")))
+                        } else it
                     }
                 }
             }
