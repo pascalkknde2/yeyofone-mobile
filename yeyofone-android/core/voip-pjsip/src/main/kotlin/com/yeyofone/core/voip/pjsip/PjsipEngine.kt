@@ -6,6 +6,7 @@ import com.yeyofone.core.voip.SipEngine
 import com.yeyofone.core.voip.SipCallGateway
 import com.yeyofone.core.voip.SipRegistrationGateway
 import com.yeyofone.core.voip.NativeCallEvent
+import com.yeyofone.core.voip.NativeMediaEvent
 import com.yeyofone.core.voip.NativeRegistrationEvent
 import com.yeyofone.core.model.SipAccount
 import com.yeyofone.core.model.SipAccountId
@@ -38,6 +39,8 @@ class PjsipEngine internal constructor(
     override val events: SharedFlow<NativeRegistrationEvent> = mutableEvents.asSharedFlow()
     private val mutableCallEvents = MutableSharedFlow<NativeCallEvent>(extraBufferCapacity = 32)
     override val callEvents: SharedFlow<NativeCallEvent> = mutableCallEvents.asSharedFlow()
+    private val mutableMediaEvents = MutableSharedFlow<NativeMediaEvent>(extraBufferCapacity = 32)
+    override val mediaEvents: SharedFlow<NativeMediaEvent> = mutableMediaEvents.asSharedFlow()
 
     override suspend fun createOrUpdate(account: SipAccount, password: CharArray) {
         check(state.value == EngineState.Running) { "PJSIP engine is not running" }
@@ -69,6 +72,14 @@ class PjsipEngine internal constructor(
         withContext(dispatcher) { backend.hangupCall(callId) }
     }
 
+    override suspend fun setMuted(callId: String, muted: Boolean) {
+        withContext(dispatcher) { backend.setMuted(callId, muted) }
+    }
+
+    override suspend fun setHeld(callId: String, held: Boolean) {
+        withContext(dispatcher) { backend.setHeld(callId, held) }
+    }
+
     override suspend fun start() = lifecycleMutex.withLock {
         if (state.value == EngineState.Running || state.value == EngineState.Initializing) return
 
@@ -80,6 +91,7 @@ class PjsipEngine internal constructor(
                 backend.createTransports(configuration.transports)
                 backend.start()
                 backend.setCallEventListener { mutableCallEvents.tryEmit(it) }
+                backend.setMediaEventListener { mutableMediaEvents.tryEmit(it) }
             }
             mutableState.value = EngineState.Running
         } catch (cancellation: CancellationException) {

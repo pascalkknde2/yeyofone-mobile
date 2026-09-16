@@ -58,4 +58,11 @@
     <string name="ready_for_calls">Ready for calls</string>
     <string name="sip_service_running">SIP registration is active</string>
     <string name="call_in_progress">Call in progress</string>
+    <string name="mute">Mute</string>
+    <string name="unmute">Unmute</string>
+    <string name="hold">Hold</string>
+    <string name="resume">Resume</string>
+    <string name="earpiece">Earpiece</string>
+    <string name="speaker">Speaker</string>
+    <string name="headset">Headset</string>
 </resources>

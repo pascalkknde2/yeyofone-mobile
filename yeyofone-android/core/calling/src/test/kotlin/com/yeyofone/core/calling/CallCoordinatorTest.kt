@@ -11,6 +11,7 @@ import com.yeyofone.core.model.SipAccountId
 import com.yeyofone.core.model.SipServerConfiguration
 import com.yeyofone.core.model.TransportProtocol
 import com.yeyofone.core.voip.NativeCallEvent
+import com.yeyofone.core.voip.NativeMediaEvent
 import com.yeyofone.core.voip.SipCallGateway
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
@@ -119,6 +120,25 @@ class CallCoordinatorTest {
         assertTrue(gateway.hungUp.contains("native-incoming-1"))
     }
 
+    @Test
+    fun `mute and hold delegate and update from native media events`() = runTest {
+        val id = SipAccountId("one")
+        val gateway = FakeGateway()
+        val coordinator = CallCoordinator(FakeAccounts(mapOf(id to account(id))), gateway, backgroundScope)
+        val callId = coordinator.call(id, "1001")
+        runCurrent()
+
+        coordinator.setMuted(callId, true)
+        coordinator.setHeld(callId, true)
+        assertEquals(callId.value to true, gateway.lastMute)
+        assertEquals(callId.value to true, gateway.lastHold)
+
+        gateway.emitMedia(callId.value, muted = true, held = true)
+        runCurrent()
+        assertTrue(coordinator.observe(callId).value.muted)
+        assertTrue(coordinator.observe(callId).value.held)
+    }
+
     private fun account(id: SipAccountId) = SipAccount(
         id, "Account ${id.value}", id.value, id.value,
         SipServerConfiguration("pbx.example.com", "sip:pbx.example.com", null, 5060, TransportProtocol.UDP, SecurityMode.ALLOW_INSECURE),
@@ -136,9 +156,13 @@ class CallCoordinatorTest {
     private class FakeGateway : SipCallGateway {
         private val mutableCallEvents = MutableSharedFlow<NativeCallEvent>(extraBufferCapacity = 8)
         override val callEvents: Flow<NativeCallEvent> = mutableCallEvents
+        private val mutableMediaEvents = MutableSharedFlow<NativeMediaEvent>(extraBufferCapacity = 8)
+        override val mediaEvents: Flow<NativeMediaEvent> = mutableMediaEvents
         var lastDestination: String? = null
         val hungUp = mutableListOf<String>()
         val answered = mutableListOf<String>()
+        var lastMute: Pair<String, Boolean>? = null
+        var lastHold: Pair<String, Boolean>? = null
         private var counter = 0
 
         override suspend fun makeCall(accountId: SipAccountId, destination: String): String {
@@ -152,6 +176,18 @@ class CallCoordinatorTest {
 
         override suspend fun hangup(callId: String) {
             hungUp += callId
+        }
+
+        override suspend fun setMuted(callId: String, muted: Boolean) {
+            lastMute = callId to muted
+        }
+
+        override suspend fun setHeld(callId: String, held: Boolean) {
+            lastHold = callId to held
+        }
+
+        suspend fun emitMedia(callId: String, muted: Boolean, held: Boolean) {
+            mutableMediaEvents.emit(NativeMediaEvent(callId, muted, held))
         }
 
         suspend fun emit(

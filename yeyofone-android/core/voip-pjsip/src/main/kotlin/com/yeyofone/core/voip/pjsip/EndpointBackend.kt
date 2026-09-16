@@ -3,6 +3,7 @@ package com.yeyofone.core.voip.pjsip
 import com.yeyofone.core.model.SipAccount
 import com.yeyofone.core.model.SipAccountId
 import com.yeyofone.core.voip.NativeCallEvent
+import com.yeyofone.core.voip.NativeMediaEvent
 import com.yeyofone.core.voip.NativeRegistrationEvent
 
 /** Internal seam around generated PJSUA2 bindings; native objects never cross this boundary. */
@@ -23,7 +24,12 @@ internal interface EndpointBackend {
         error("Calling is not supported by this backend")
     fun hangupCall(callId: String): Unit =
         error("Calling is not supported by this backend")
+    fun setMuted(callId: String, muted: Boolean): Unit =
+        error("Mute is not supported by this backend")
+    fun setHeld(callId: String, held: Boolean): Unit =
+        error("Hold is not supported by this backend")
     fun setCallEventListener(callback: (NativeCallEvent) -> Unit) = Unit
+    fun setMediaEventListener(callback: (NativeMediaEvent) -> Unit) = Unit
 }
 
 enum class SipTransport { UDP, TCP, TLS }

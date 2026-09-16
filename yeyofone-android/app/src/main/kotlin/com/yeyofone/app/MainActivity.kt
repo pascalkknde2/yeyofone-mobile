@@ -54,11 +54,14 @@ import com.yeyofone.core.model.CallDirection
 import com.yeyofone.core.model.CallId
 import com.yeyofone.core.model.CallSession
 import com.yeyofone.core.model.CallState
+import com.yeyofone.core.model.AudioRoute
 import com.yeyofone.core.model.NatConfiguration
 import com.yeyofone.core.model.SecurityMode
 import com.yeyofone.core.model.SipAccount
 import com.yeyofone.core.model.TransportProtocol
 import com.yeyofone.core.voip.CallManager
+import com.yeyofone.core.voip.AudioRouteManager
+import com.yeyofone.core.voip.MediaManager
 import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
@@ -70,7 +73,9 @@ class MainActivity : ComponentActivity() {
         val app = application as YeyoFoneApplication
         setContent {
             RequestBackgroundCallPermissions()
-            MaterialTheme { AccountsApp(app.accountRepository, app.callManager) }
+            MaterialTheme {
+                AccountsApp(app.accountRepository, app.callManager, app.callManager, app.audioRouteManager)
+            }
         }
     }
 }
@@ -97,6 +102,9 @@ private fun RequestBackgroundCallPermissions() {
     androidx.compose.runtime.LaunchedEffect(Unit) {
         val required = buildList {
             add(Manifest.permission.RECORD_AUDIO)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                add(Manifest.permission.BLUETOOTH_CONNECT)
+            }
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                 add(Manifest.permission.POST_NOTIFICATIONS)
             }
@@ -120,7 +128,12 @@ private sealed interface Screen {
 }
 
 @Composable
-private fun AccountsApp(repository: AccountRepository, callManager: CallManager) {
+private fun AccountsApp(
+    repository: AccountRepository,
+    callManager: CallManager,
+    mediaManager: MediaManager,
+    audioRoutes: AudioRouteManager,
+) {
     val accounts by repository.observeAccounts().collectAsStateWithLifecycle(emptyList())
     val sessions by callManager.sessions.collectAsStateWithLifecycle(emptyList())
     var screen: Screen by remember { mutableStateOf(Screen.List) }
@@ -128,7 +141,9 @@ private fun AccountsApp(repository: AccountRepository, callManager: CallManager)
     val incoming = sessions.firstOrNull { it.direction == CallDirection.INCOMING && it.id !in dismissedIncoming }
 
     if (incoming != null) {
-        IncomingCallScreen(incoming, callManager) { dismissedIncoming = dismissedIncoming + incoming.id }
+        IncomingCallScreen(incoming, callManager, mediaManager, audioRoutes) {
+            dismissedIncoming = dismissedIncoming + incoming.id
+        }
         return
     }
 
@@ -142,7 +157,9 @@ private fun AccountsApp(repository: AccountRepository, callManager: CallManager)
             onCall = { screen = Screen.Dial(current.account) },
         )
         is Screen.Edit -> AccountEditor(current.account, repository) { screen = Screen.List }
-        is Screen.Dial -> DialScreen(current.account, callManager) { screen = Screen.Detail(current.account) }
+        is Screen.Dial -> DialScreen(current.account, callManager, mediaManager, audioRoutes) {
+            screen = Screen.Detail(current.account)
+        }
     }
 }
 
@@ -215,7 +232,13 @@ private fun AccountDetail(
 }
 
 @Composable
-private fun DialScreen(account: SipAccount, callManager: CallManager, onBack: () -> Unit) {
+private fun DialScreen(
+    account: SipAccount,
+    callManager: CallManager,
+    mediaManager: MediaManager,
+    audioRoutes: AudioRouteManager,
+    onBack: () -> Unit,
+) {
     var destination by remember { mutableStateOf("") }
     var activeCallId by remember { mutableStateOf<CallId?>(null) }
     var permissionDenied by remember { mutableStateOf(false) }
@@ -243,6 +266,9 @@ private fun DialScreen(account: SipAccount, callManager: CallManager, onBack: ()
             activeSession?.let { session ->
                 Text(stringResource(R.string.remote_uri_value, session.remoteUri))
                 Text(stringResource(session.state.statusLabel()))
+                if (session.state == CallState.Connected || session.state == CallState.Held) {
+                    InCallControls(session.id, mediaManager, audioRoutes)
+                }
             }
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Button(
@@ -270,7 +296,13 @@ private fun DialScreen(account: SipAccount, callManager: CallManager, onBack: ()
 }
 
 @Composable
-private fun IncomingCallScreen(session: CallSession, callManager: CallManager, onDismiss: () -> Unit) {
+private fun IncomingCallScreen(
+    session: CallSession,
+    callManager: CallManager,
+    mediaManager: MediaManager,
+    audioRoutes: AudioRouteManager,
+    onDismiss: () -> Unit,
+) {
     var permissionDenied by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
     val sessions by callManager.sessions.collectAsStateWithLifecycle(emptyList())
@@ -292,6 +324,9 @@ private fun IncomingCallScreen(session: CallSession, callManager: CallManager, o
             Text(stringResource(current.state.statusLabel()))
             if (permissionDenied) {
                 Text(stringResource(R.string.microphone_permission_required), color = MaterialTheme.colorScheme.error)
+            }
+            if (current.state == CallState.Connected || current.state == CallState.Held) {
+                InCallControls(current.id, mediaManager, audioRoutes)
             }
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 when {
@@ -322,6 +357,42 @@ private fun IncomingCallScreen(session: CallSession, callManager: CallManager, o
             }
         }
     }
+}
+
+@Composable
+private fun InCallControls(callId: CallId, mediaManager: MediaManager, audioRoutes: AudioRouteManager) {
+    val media by mediaManager.observe(callId).collectAsStateWithLifecycle()
+    val routes by audioRoutes.availableRoutes.collectAsStateWithLifecycle()
+    val selected by audioRoutes.selectedRoute.collectAsStateWithLifecycle()
+    val scope = rememberCoroutineScope()
+
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Button(onClick = { scope.launch { mediaManager.setMuted(callId, !media.muted) } }) {
+                Text(stringResource(if (media.muted) R.string.unmute else R.string.mute))
+            }
+            Button(onClick = { scope.launch { mediaManager.setHeld(callId, !media.held) } }) {
+                Text(stringResource(if (media.held) R.string.resume else R.string.hold))
+            }
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            routes.forEach { route ->
+                FilterChip(
+                    selected = route == selected,
+                    onClick = { scope.launch { audioRoutes.select(route) } },
+                    label = { Text(route.label()) },
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun AudioRoute.label(): String = when (this) {
+    AudioRoute.Earpiece -> stringResource(R.string.earpiece)
+    AudioRoute.Speaker -> stringResource(R.string.speaker)
+    is AudioRoute.WiredHeadset -> name ?: stringResource(R.string.headset)
+    is AudioRoute.Bluetooth -> name
 }
 
 private fun CallState.statusLabel(): Int = when (this) {

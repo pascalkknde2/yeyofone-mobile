@@ -6,9 +6,11 @@ import com.yeyofone.core.model.CallEndReason
 import com.yeyofone.core.model.CallId
 import com.yeyofone.core.model.CallSession
 import com.yeyofone.core.model.CallState
+import com.yeyofone.core.model.MediaState
 import com.yeyofone.core.model.SipAccountId
 import com.yeyofone.core.model.VoipError
 import com.yeyofone.core.voip.CallManager
+import com.yeyofone.core.voip.MediaManager
 import com.yeyofone.core.voip.NativeCallEvent
 import com.yeyofone.core.voip.SipCallGateway
 import java.time.Instant
@@ -24,13 +26,20 @@ class CallCoordinator(
     private val accounts: AccountRepository,
     private val gateway: SipCallGateway,
     scope: CoroutineScope,
-) : CallManager {
+) : CallManager, MediaManager {
     private val mutableSessions = MutableStateFlow<List<CallSession>>(emptyList())
     override val sessions: StateFlow<List<CallSession>> = mutableSessions.asStateFlow()
+    private val mediaStates = mutableMapOf<CallId, MutableStateFlow<MediaState>>()
 
     init {
         scope.launch {
             gateway.callEvents.collect { event -> onCallEvent(event) }
+        }
+        scope.launch {
+            gateway.mediaEvents.collect { event ->
+                val id = CallId(event.callId)
+                mediaState(id).value = mediaState(id).value.copy(muted = event.muted, held = event.held)
+            }
         }
     }
 
@@ -68,6 +77,19 @@ class CallCoordinator(
     override suspend fun end(callId: CallId) {
         gateway.hangup(callId.value)
     }
+
+    override fun observe(callId: CallId): StateFlow<MediaState> = mediaState(callId).asStateFlow()
+
+    override suspend fun setMuted(callId: CallId, muted: Boolean) {
+        gateway.setMuted(callId.value, muted)
+    }
+
+    override suspend fun setHeld(callId: CallId, held: Boolean) {
+        gateway.setHeld(callId.value, held)
+    }
+
+    private fun mediaState(callId: CallId): MutableStateFlow<MediaState> =
+        mediaStates.getOrPut(callId) { MutableStateFlow(MediaState()) }
 
     private fun onCallEvent(event: NativeCallEvent) {
         val id = CallId(event.callId)

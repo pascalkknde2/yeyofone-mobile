@@ -3,6 +3,7 @@ package com.yeyofone.core.voip
 import com.yeyofone.core.model.*
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.emptyFlow
 
 sealed interface EngineState {
     data object Uninitialized : EngineState
@@ -57,12 +58,21 @@ data class NativeCallEvent(
     val lastReason: String?,
 )
 
+data class NativeMediaEvent(
+    val callId: String,
+    val muted: Boolean,
+    val held: Boolean,
+)
+
 /** Platform-neutral gateway; implementations keep all PJSUA2 objects internal. */
 interface SipCallGateway {
     val callEvents: Flow<NativeCallEvent>
+    val mediaEvents: Flow<NativeMediaEvent> get() = emptyFlow()
     suspend fun makeCall(accountId: SipAccountId, destination: String): String
     suspend fun answer(callId: String)
     suspend fun hangup(callId: String)
+    suspend fun setMuted(callId: String, muted: Boolean): Unit = error("Mute is not supported")
+    suspend fun setHeld(callId: String, held: Boolean): Unit = error("Hold is not supported")
 }
 
 interface CallManager {

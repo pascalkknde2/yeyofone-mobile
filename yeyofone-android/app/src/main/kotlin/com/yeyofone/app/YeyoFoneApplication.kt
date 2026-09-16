@@ -32,6 +32,7 @@ class YeyoFoneApplication : Application() {
         )
     }
     val callManager by lazy { CallCoordinator(accountRepository, engine, applicationScope) }
+    val audioRouteManager by lazy { AndroidAudioRouteManager(this) }
 
     override fun onCreate() {
         super.onCreate()

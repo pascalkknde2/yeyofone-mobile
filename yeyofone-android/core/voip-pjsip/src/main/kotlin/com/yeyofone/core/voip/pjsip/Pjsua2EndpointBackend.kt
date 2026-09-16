@@ -9,6 +9,7 @@ import com.yeyofone.core.model.SipAccount
 import com.yeyofone.core.model.SipAccountId
 import com.yeyofone.core.model.TransportProtocol
 import com.yeyofone.core.voip.NativeCallEvent
+import com.yeyofone.core.voip.NativeMediaEvent
 import com.yeyofone.core.voip.NativeRegistrationEvent
 import org.pjsip.pjsua2.AccountConfig
 import org.pjsip.pjsua2.AuthCredInfo
@@ -20,6 +21,8 @@ import org.pjsip.pjsua2.OnIncomingCallParam
 import org.pjsip.pjsua2.OnRegStateParam
 import org.pjsip.pjsua2.StringVector
 import org.pjsip.pjsua2.pjmedia_srtp_use
+import org.pjsip.pjsua2.pjsua_call_flag
+import org.pjsip.pjsua2.pjsua_call_media_status
 import org.pjsip.pjsua2.pjsip_inv_state
 import java.util.UUID
 
@@ -29,9 +32,14 @@ internal class Pjsua2EndpointBackend : EndpointBackend {
     private val accounts = mutableMapOf<SipAccountId, NativeAccount>()
     private val calls = mutableMapOf<String, NativeCall>()
     private var callEventCallback: ((NativeCallEvent) -> Unit)? = null
+    private var mediaEventCallback: ((NativeMediaEvent) -> Unit)? = null
 
     override fun setCallEventListener(callback: (NativeCallEvent) -> Unit) {
         callEventCallback = callback
+    }
+
+    override fun setMediaEventListener(callback: (NativeMediaEvent) -> Unit) {
+        mediaEventCallback = callback
     }
 
     override fun create() {
@@ -196,6 +204,34 @@ internal class Pjsua2EndpointBackend : EndpointBackend {
         }
     }
 
+    override fun setMuted(callId: String, muted: Boolean) {
+        val call = calls[callId] ?: return
+        val ep = endpoint ?: return
+        val audio = runCatching { call.getAudioMedia(-1) }.getOrNull() ?: return
+        if (muted) {
+            ep.audDevManager().captureDevMedia.stopTransmit(audio)
+        } else {
+            ep.audDevManager().captureDevMedia.startTransmit(audio)
+        }
+        call.muted = muted
+        call.reportMediaState()
+    }
+
+    override fun setHeld(callId: String, held: Boolean) {
+        val call = calls[callId] ?: return
+        val prm = CallOpParam(true)
+        try {
+            if (held) {
+                call.setHold(prm)
+            } else {
+                prm.opt.flag = pjsua_call_flag.PJSUA_CALL_UNHOLD.toLong()
+                call.reinvite(prm)
+            }
+        } finally {
+            prm.delete()
+        }
+    }
+
     private inner class NativeAccount(
         private val id: SipAccountId,
         private val callback: (NativeRegistrationEvent) -> Unit,
@@ -251,6 +287,8 @@ internal class Pjsua2EndpointBackend : EndpointBackend {
         nativeCallId: Int,
         private val callback: (NativeCallEvent) -> Unit,
     ) : org.pjsip.pjsua2.Call(account, nativeCallId) {
+        var muted: Boolean = false
+
         fun reportState() {
             val info = runCatching { getInfo() }.getOrNull()
             val invState = info?.state ?: pjsip_inv_state.PJSIP_INV_STATE_DISCONNECTED
@@ -275,14 +313,23 @@ internal class Pjsua2EndpointBackend : EndpointBackend {
 
         override fun onCallMediaState(prm: OnCallMediaStateParam) {
             val info = runCatching { getInfo() }.getOrNull() ?: return
-            val hasActiveAudio = info.media.any { it.status == org.pjsip.pjsua2.pjsua_call_media_status.PJSUA_CALL_MEDIA_ACTIVE }
-            if (!hasActiveAudio) return
-            val ep = endpoint ?: return
-            runCatching {
-                val audio = getAudioMedia(-1)
-                audio.startTransmit(ep.audDevManager().playbackDevMedia)
-                ep.audDevManager().captureDevMedia.startTransmit(audio)
+            val hasActiveAudio = info.media.any { it.status == pjsua_call_media_status.PJSUA_CALL_MEDIA_ACTIVE }
+            if (hasActiveAudio) {
+                val ep = endpoint ?: return
+                runCatching {
+                    val audio = getAudioMedia(-1)
+                    audio.startTransmit(ep.audDevManager().playbackDevMedia)
+                    if (!muted) ep.audDevManager().captureDevMedia.startTransmit(audio)
+                }
             }
+            reportMediaState(info.media.any { it.status == pjsua_call_media_status.PJSUA_CALL_MEDIA_LOCAL_HOLD })
+        }
+
+        fun reportMediaState(held: Boolean? = null) {
+            val localHold = held ?: runCatching {
+                getInfo().media.any { it.status == pjsua_call_media_status.PJSUA_CALL_MEDIA_LOCAL_HOLD }
+            }.getOrDefault(false)
+            mediaEventCallback?.invoke(NativeMediaEvent(id, muted, localHold))
         }
     }
 
