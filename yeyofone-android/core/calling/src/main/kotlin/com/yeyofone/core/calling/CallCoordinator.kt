@@ -19,6 +19,7 @@ import com.yeyofone.core.voip.NativeCallEvent
 import com.yeyofone.core.voip.NativeTransferEvent
 import com.yeyofone.core.voip.SipCallGateway
 import java.time.Instant
+import java.util.concurrent.ConcurrentHashMap
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -38,6 +39,7 @@ class CallCoordinator(
     private val mutableSessions = MutableStateFlow<List<CallSession>>(emptyList())
     override val sessions: StateFlow<List<CallSession>> = mutableSessions.asStateFlow()
     private val mediaStates = mutableMapOf<CallId, MutableStateFlow<MediaState>>()
+    private val locallyEndedCalls = ConcurrentHashMap.newKeySet<CallId>()
     private val commandMutex = Mutex()
 
     init {
@@ -124,7 +126,24 @@ class CallCoordinator(
     }
 
     override suspend fun end(callId: CallId) {
-        gateway.hangup(callId.value)
+        val session = sessions.value.firstOrNull { it.id == callId } ?: return
+        if (session.state == CallState.Disconnecting || session.state.isTerminal()) return
+        locallyEndedCalls += callId
+        mutableSessions.update { current ->
+            current.map { if (it.id == callId) it.copy(state = CallState.Disconnecting) else it }
+        }
+        try {
+            gateway.hangup(callId.value)
+        } catch (error: Exception) {
+            locallyEndedCalls -= callId
+            mutableSessions.update { current ->
+                current.map {
+                    if (it.id == callId && it.state == CallState.Disconnecting) {
+                        it.copy(state = CallState.Failed(VoipError.Native(error.message ?: "Hangup failed")))
+                    } else it
+                }
+            }
+        }
     }
 
     override suspend fun sendDtmf(callId: CallId, digit: Char) {
@@ -219,7 +238,12 @@ class CallCoordinator(
 
     private suspend fun onCallEvent(event: NativeCallEvent) {
         val id = CallId(event.callId)
-        val state = event.toCallState()
+        val nativeState = event.toCallState()
+        val state = if (event.invState == PJSIP_INV_STATE_DISCONNECTED && locallyEndedCalls.remove(id)) {
+            CallState.Disconnected(CallEndReason.LOCAL_HANGUP)
+        } else {
+            nativeState
+        }
         val now = Instant.now()
         mutableSessions.update { sessions ->
             if (sessions.none { it.id == id }) {

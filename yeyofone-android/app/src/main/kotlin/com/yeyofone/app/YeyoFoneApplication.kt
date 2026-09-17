@@ -24,7 +24,7 @@ class YeyoFoneApplication : Application() {
     private val engine by lazy {
         PjsipEngine.create(PjsipEngineConfiguration(transports = setOf(SipTransport.UDP, SipTransport.TCP)))
     }
-    private val registration by lazy {
+    val registration by lazy {
         RegistrationCoordinator(
             accountRepository,
             RoomAccountRepository.secretProvider(this),

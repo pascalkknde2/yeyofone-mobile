@@ -9,8 +9,10 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.media.AudioAttributes
+import android.media.AudioManager
 import android.media.Ringtone
 import android.media.RingtoneManager
+import android.media.ToneGenerator
 import android.net.Uri
 import android.os.IBinder
 import android.util.Log
@@ -23,17 +25,20 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.Job
 
 class IncomingCallService : Service() {
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     private val notifications by lazy { getSystemService(NotificationManager::class.java) }
     private var ringtone: Ringtone? = null
+    private var fallbackToneJob: Job? = null
     private val notifiedMissedCalls = mutableSetOf<CallId>()
 
     override fun onCreate() {
@@ -171,12 +176,11 @@ class IncomingCallService : Service() {
     }
 
     private fun startRinging() {
-        if (ringtone?.isPlaying == true) return
-        runCatching {
-            ringtone = RingtoneManager.getRingtone(
-                this,
-                RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE),
-            )?.apply {
+        if (ringtone?.isPlaying == true || fallbackToneJob?.isActive == true) return
+        val started = runCatching {
+            val uri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE)
+                ?: RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
+            ringtone = uri?.let { RingtoneManager.getRingtone(this, it) }?.apply {
                 audioAttributes = AudioAttributes.Builder()
                     .setUsage(AudioAttributes.USAGE_NOTIFICATION_RINGTONE)
                     .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
@@ -184,12 +188,37 @@ class IncomingCallService : Service() {
                 isLooping = true
                 play()
             }
+            ringtone?.isPlaying == true
+        }.onFailure { Log.w(TAG, "Unable to play the system ringtone", it) }.getOrDefault(false)
+        if (started) {
+            Log.i(TAG, "Incoming-call ringtone started")
+            return
+        }
+
+        // Some emulators and devices have no configured default ringtone. Keep incoming calls
+        // audible in that case instead of silently returning a null Ringtone.
+        fallbackToneJob = serviceScope.launch {
+            val tone = runCatching { ToneGenerator(AudioManager.STREAM_RING, 100) }
+                .onFailure { Log.e(TAG, "Unable to create fallback incoming-call tone", it) }
+                .getOrNull() ?: return@launch
+            Log.i(TAG, "Incoming-call fallback tone started")
+            try {
+                while (true) {
+                    tone.startTone(ToneGenerator.TONE_SUP_RINGTONE, 1_500)
+                    delay(2_000)
+                }
+            } finally {
+                tone.stopTone()
+                tone.release()
+            }
         }
     }
 
     private fun stopRinging() {
         runCatching { ringtone?.stop() }
         ringtone = null
+        fallbackToneJob?.cancel()
+        fallbackToneJob = null
     }
 
     private fun openAppIntent(): PendingIntent = PendingIntent.getActivity(

@@ -78,6 +78,27 @@ class CallCoordinatorTest {
         coordinator.end(callId)
 
         assertTrue(gateway.hungUp.contains(callId.value))
+        assertEquals(CallState.Disconnecting, coordinator.sessions.value.single().state)
+    }
+
+    @Test
+    fun `local hangup maps any native disconnect response to local hangup`() = runTest {
+        val id = SipAccountId("one")
+        val gateway = FakeGateway()
+        val coordinator = CallCoordinator(FakeAccounts(mapOf(id to account(id))), gateway, backgroundScope)
+        runCurrent()
+        val callId = coordinator.call(id, "1001")
+        gateway.emit(callId.value, id, invState = PJSIP_INV_STATE_CONFIRMED, lastStatusCode = 200)
+        runCurrent()
+
+        coordinator.end(callId)
+        gateway.emit(callId.value, id, invState = PJSIP_INV_STATE_DISCONNECTED, lastStatusCode = 481)
+        runCurrent()
+
+        assertEquals(
+            CallState.Disconnected(com.yeyofone.core.model.CallEndReason.LOCAL_HANGUP),
+            coordinator.sessions.value.single().state,
+        )
     }
 
     @Test

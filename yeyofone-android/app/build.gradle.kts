@@ -45,6 +45,9 @@ dependencies {
     implementation(project(":core:voip-pjsip"))
     implementation("androidx.activity:activity-compose:1.9.0")
     implementation("androidx.lifecycle:lifecycle-runtime-compose:2.8.2")
+    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.2")
+    testImplementation(kotlin("test"))
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.10.2")
     // Push-wake skeleton (see YeyoFoneFirebaseMessagingService). Now backed by a real Firebase
     // project (app/google-services.json, project "yeyofone") - FCM can route messages here.
     // The PBX side still needs to trigger a push on an unanswered INVITE; see HANDOFF.md.

@@ -39,7 +39,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -48,9 +47,8 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.yeyofone.core.account.AccountDraft
-import com.yeyofone.core.account.AccountRepository
-import com.yeyofone.core.account.RoomAccountRepository
 import com.yeyofone.core.model.CallDirection
 import com.yeyofone.core.model.CallHistoryEntry
 import com.yeyofone.core.model.CallId
@@ -62,11 +60,6 @@ import com.yeyofone.core.model.SecurityMode
 import com.yeyofone.core.model.SipAccount
 import com.yeyofone.core.model.TransportProtocol
 import com.yeyofone.core.model.TransferState
-import com.yeyofone.core.voip.CallManager
-import com.yeyofone.core.voip.CallHistoryRepository
-import com.yeyofone.core.voip.AudioRouteManager
-import com.yeyofone.core.voip.MediaManager
-import kotlinx.coroutines.launch
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
@@ -90,13 +83,8 @@ class MainActivity : ComponentActivity() {
         setContent {
             RequestBackgroundCallPermissions()
             MaterialTheme {
-                AccountsApp(
-                    app.accountRepository,
-                    app.callHistory,
-                    app.callManager,
-                    app.callManager,
-                    app.audioRouteManager,
-                )
+                val viewModel: YeyoFoneViewModel = viewModel(factory = YeyoFoneViewModel.Factory(app))
+                AccountsApp(viewModel)
             }
         }
     }
@@ -142,67 +130,42 @@ private fun RequestBackgroundCallPermissions() {
     }
 }
 
-private sealed interface Screen {
-    data object List : Screen
-    data class Detail(val account: SipAccount) : Screen
-    data class Edit(val account: SipAccount?) : Screen
-    data class Dial(val account: SipAccount, val destination: String = "") : Screen
-    data object History : Screen
-}
-
 @Composable
-private fun AccountsApp(
-    repository: AccountRepository,
-    history: CallHistoryRepository,
-    callManager: CallManager,
-    mediaManager: MediaManager,
-    audioRoutes: AudioRouteManager,
-) {
-    val accounts by repository.observeAccounts().collectAsStateWithLifecycle(emptyList())
-    val sessions by callManager.sessions.collectAsStateWithLifecycle(emptyList())
-    var screen: Screen by remember { mutableStateOf(Screen.List) }
-    var dismissedIncoming by remember { mutableStateOf(setOf<CallId>()) }
-    val incoming = sessions.firstOrNull { it.direction == CallDirection.INCOMING && it.id !in dismissedIncoming }
+private fun AccountsApp(viewModel: YeyoFoneViewModel) {
+    val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val incoming = state.sessions.firstOrNull {
+        it.direction == CallDirection.INCOMING && it.id !in state.dismissedIncomingCalls
+    }
 
     if (incoming != null) {
-        IncomingCallScreen(incoming, callManager, mediaManager, audioRoutes) {
-            dismissedIncoming = dismissedIncoming + incoming.id
-        }
+        IncomingCallScreen(incoming, state, viewModel)
         return
     }
 
-    when (val current = screen) {
-        Screen.List -> AccountList(
-            accounts,
-            onAdd = { screen = Screen.Edit(null) },
-            onHistory = { screen = Screen.History },
-            onOpen = { screen = Screen.Detail(it) },
+    when (val current = state.screen) {
+        AppScreen.Accounts -> AccountList(
+            state.accounts,
+            onAdd = { viewModel.editAccount(null) },
+            onHistory = viewModel::showHistory,
+            onOpen = { viewModel.showAccount(it.id) },
         )
-        is Screen.Detail -> AccountDetail(
-            account = accounts.firstOrNull { it.id == current.account.id } ?: current.account,
-            repository = repository,
-            onBack = { screen = Screen.List },
-            onEdit = { screen = Screen.Edit(current.account) },
-            onCall = { screen = Screen.Dial(current.account) },
-        )
-        is Screen.Edit -> AccountEditor(current.account, repository) { screen = Screen.List }
-        is Screen.Dial -> DialScreen(
-            current.account,
-            current.destination,
-            callManager,
-            mediaManager,
-            audioRoutes,
-        ) {
-            screen = Screen.Detail(current.account)
+        is AppScreen.Detail -> state.accounts.firstOrNull { it.id == current.accountId }?.let { account ->
+            AccountDetail(account, viewModel)
         }
-        Screen.History -> CallHistoryScreen(
-            history = history,
-            accounts = accounts,
-            onBack = { screen = Screen.List },
+        is AppScreen.Edit -> AccountEditor(
+            state.accounts.firstOrNull { it.id == current.accountId },
+            viewModel,
+            viewModel::showAccounts,
+        )
+        is AppScreen.Dial -> state.accounts.firstOrNull { it.id == current.accountId }?.let { account ->
+            DialScreen(account, current.destination, state, viewModel)
+        }
+        AppScreen.History -> CallHistoryScreen(
+            entries = state.history,
+            accounts = state.accounts,
+            viewModel = viewModel,
             onCallBack = { entry ->
-                accounts.firstOrNull { it.id == entry.accountId }?.let {
-                    screen = Screen.Dial(it, entry.remoteUri)
-                }
+                viewModel.dial(entry.accountId, entry.remoteUri)
             },
         )
     }
@@ -244,13 +207,11 @@ private fun AccountList(
 
 @Composable
 private fun CallHistoryScreen(
-    history: CallHistoryRepository,
+    entries: List<CallHistoryEntry>,
     accounts: List<SipAccount>,
-    onBack: () -> Unit,
+    viewModel: YeyoFoneViewModel,
     onCallBack: (CallHistoryEntry) -> Unit,
 ) {
-    val entries by history.observeHistory().collectAsStateWithLifecycle(emptyList())
-    val scope = rememberCoroutineScope()
     var confirmClear by remember { mutableStateOf(false) }
 
     Scaffold(
@@ -261,7 +222,7 @@ private fun CallHistoryScreen(
                     if (entries.isNotEmpty()) {
                         TextButton(onClick = { confirmClear = true }) { Text(stringResource(R.string.clear_all)) }
                     }
-                    TextButton(onClick = onBack) { Text(stringResource(R.string.cancel)) }
+                    TextButton(onClick = viewModel::showAccounts) { Text(stringResource(R.string.cancel)) }
                 },
             )
         },
@@ -280,7 +241,7 @@ private fun CallHistoryScreen(
                             Button(enabled = accountExists, onClick = { onCallBack(entry) }) {
                                 Text(stringResource(R.string.call_back))
                             }
-                            TextButton(onClick = { scope.launch { history.delete(entry.id) } }) {
+                            TextButton(onClick = { viewModel.deleteHistory(entry.id) }) {
                                 Text(stringResource(R.string.delete))
                             }
                         }
@@ -295,7 +256,7 @@ private fun CallHistoryScreen(
             onDismissRequest = { confirmClear = false },
             text = { Text(stringResource(R.string.confirm_clear_history)) },
             confirmButton = {
-                TextButton(onClick = { scope.launch { history.clear() }; confirmClear = false }) {
+                TextButton(onClick = { viewModel.clearHistory(); confirmClear = false }) {
                     Text(stringResource(R.string.clear_all))
                 }
             },
@@ -323,69 +284,20 @@ private val HISTORY_TIME_FORMATTER: DateTimeFormatter =
     DateTimeFormatter.ofPattern("dd MMM yyyy, HH:mm").withZone(ZoneId.systemDefault())
 
 @Composable
-private fun AccountDetail(
-    account: SipAccount,
-    repository: AccountRepository,
-    onBack: () -> Unit,
-    onEdit: () -> Unit,
-    onCall: () -> Unit,
-) {
-    val scope = rememberCoroutineScope()
-    var confirmDelete by remember { mutableStateOf(false) }
-    Scaffold(topBar = { TopAppBar(title = { Text(stringResource(R.string.account_details)) }) }) { padding ->
-        Column(Modifier.padding(padding).padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            Text(account.displayName, style = MaterialTheme.typography.headlineSmall)
-            Text(stringResource(R.string.sip_identity, account.username, account.server.domain))
-            Text(stringResource(R.string.registrar_value, account.server.registrarUri))
-            Text(stringResource(R.string.transport_value, account.server.transport.name, account.server.port))
-            Text(stringResource(R.string.expiry_value, account.registrationExpirySeconds))
-            account.voicemailNumber?.let { Text(stringResource(R.string.voicemail_value, it)) }
-            account.callerId?.let { Text(stringResource(R.string.caller_id_value, it)) }
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Button(onClick = onEdit) { Text(stringResource(R.string.edit_account)) }
-                Button(onClick = { scope.launch { repository.setEnabled(account.id, !account.enabled) } }) {
-                    Text(stringResource(if (account.enabled) R.string.disabled else R.string.enabled))
-                }
-                Button(onClick = onCall) { Text(stringResource(R.string.call)) }
-                TextButton(onClick = { confirmDelete = true }) { Text(stringResource(R.string.delete)) }
-                TextButton(onClick = onBack) { Text(stringResource(R.string.cancel)) }
-            }
-        }
-    }
-    if (confirmDelete) {
-        AlertDialog(
-            onDismissRequest = { confirmDelete = false },
-            text = { Text(stringResource(R.string.confirm_delete)) },
-            confirmButton = {
-                TextButton(onClick = { scope.launch { repository.delete(account.id); onBack() } }) {
-                    Text(stringResource(R.string.delete))
-                }
-            },
-            dismissButton = { TextButton(onClick = { confirmDelete = false }) { Text(stringResource(R.string.cancel)) } },
-        )
-    }
-}
-
-@Composable
 private fun DialScreen(
     account: SipAccount,
     initialDestination: String,
-    callManager: CallManager,
-    mediaManager: MediaManager,
-    audioRoutes: AudioRouteManager,
-    onBack: () -> Unit,
+    state: YeyoFoneUiState,
+    viewModel: YeyoFoneViewModel,
 ) {
     var destination by remember(initialDestination) { mutableStateOf(initialDestination) }
-    var activeCallId by remember { mutableStateOf<CallId?>(null) }
     var permissionDenied by remember { mutableStateOf(false) }
-    val scope = rememberCoroutineScope()
-    val sessions by callManager.sessions.collectAsStateWithLifecycle(emptyList())
-    val activeSession = sessions.firstOrNull { it.id == activeCallId }
+    val activeSession = state.sessions.firstOrNull { it.id == state.activeCallId }
 
     val permissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
         if (granted) {
             permissionDenied = false
-            scope.launch { activeCallId = callManager.call(account.id, destination) }
+            viewModel.startCall(account.id, destination)
         } else {
             permissionDenied = true
         }
@@ -403,7 +315,7 @@ private fun DialScreen(
                 Text(stringResource(R.string.remote_uri_value, session.remoteUri))
                 Text(stringResource(session.state.statusLabel()))
                 if (session.state == CallState.Connected || session.state == CallState.Held) {
-                    InCallControls(session.id, callManager, mediaManager, audioRoutes)
+                    InCallControls(session.id, state, viewModel)
                 }
             }
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -414,18 +326,18 @@ private fun DialScreen(
                             PackageManager.PERMISSION_GRANTED
                         if (granted) {
                             permissionDenied = false
-                            scope.launch { activeCallId = callManager.call(account.id, destination) }
+                            viewModel.startCall(account.id, destination)
                         } else {
                             permissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
                         }
                     },
                 ) { Text(stringResource(R.string.call)) }
                 if (activeSession != null && !activeSession.state.isTerminal()) {
-                    Button(onClick = { scope.launch { callManager.end(activeSession.id) } }) {
+                    Button(onClick = { viewModel.end(activeSession.id) }) {
                         Text(stringResource(R.string.hang_up))
                     }
                 }
-                TextButton(onClick = onBack) { Text(stringResource(R.string.cancel)) }
+                TextButton(onClick = { viewModel.showAccount(account.id) }) { Text(stringResource(R.string.cancel)) }
             }
         }
     }
@@ -434,21 +346,17 @@ private fun DialScreen(
 @Composable
 private fun IncomingCallScreen(
     session: CallSession,
-    callManager: CallManager,
-    mediaManager: MediaManager,
-    audioRoutes: AudioRouteManager,
-    onDismiss: () -> Unit,
+    state: YeyoFoneUiState,
+    viewModel: YeyoFoneViewModel,
 ) {
     var permissionDenied by remember { mutableStateOf(false) }
-    val scope = rememberCoroutineScope()
-    val sessions by callManager.sessions.collectAsStateWithLifecycle(emptyList())
-    val current = sessions.firstOrNull { it.id == session.id } ?: session
+    val current = state.sessions.firstOrNull { it.id == session.id } ?: session
     val context = LocalContext.current
 
     val permissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
         if (granted) {
             permissionDenied = false
-            scope.launch { callManager.answer(current.id) }
+            viewModel.answer(current.id)
         } else {
             permissionDenied = true
         }
@@ -462,7 +370,7 @@ private fun IncomingCallScreen(
                 Text(stringResource(R.string.microphone_permission_required), color = MaterialTheme.colorScheme.error)
             }
             if (current.state == CallState.Connected || current.state == CallState.Held) {
-                InCallControls(current.id, callManager, mediaManager, audioRoutes)
+                InCallControls(current.id, state, viewModel)
             }
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 when {
@@ -472,20 +380,22 @@ private fun IncomingCallScreen(
                                 PackageManager.PERMISSION_GRANTED
                             if (granted) {
                                 permissionDenied = false
-                                scope.launch { callManager.answer(current.id) }
+                                viewModel.answer(current.id)
                             } else {
                                 permissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
                             }
                         }) { Text(stringResource(R.string.accept)) }
-                        TextButton(onClick = { scope.launch { callManager.reject(current.id) } }) {
+                        TextButton(onClick = { viewModel.reject(current.id) }) {
                             Text(stringResource(R.string.decline))
                         }
                     }
                     current.state.isTerminal() -> {
-                        TextButton(onClick = onDismiss) { Text(stringResource(R.string.dismiss)) }
+                        TextButton(onClick = { viewModel.dismissIncoming(current.id) }) {
+                            Text(stringResource(R.string.dismiss))
+                        }
                     }
                     else -> {
-                        Button(onClick = { scope.launch { callManager.end(current.id) } }) {
+                        Button(onClick = { viewModel.end(current.id) }) {
                             Text(stringResource(R.string.hang_up))
                         }
                     }
@@ -498,32 +408,26 @@ private fun IncomingCallScreen(
 @Composable
 private fun InCallControls(
     callId: CallId,
-    callManager: CallManager,
-    mediaManager: MediaManager,
-    audioRoutes: AudioRouteManager,
+    state: YeyoFoneUiState,
+    viewModel: YeyoFoneViewModel,
 ) {
-    val media by mediaManager.observe(callId).collectAsStateWithLifecycle()
-    val sessions by callManager.sessions.collectAsStateWithLifecycle()
-    val session = sessions.firstOrNull { it.id == callId }
+    val media by viewModel.observeMedia(callId).collectAsStateWithLifecycle()
+    val session = state.sessions.firstOrNull { it.id == callId }
     val transfer = session?.transfer ?: TransferState.Idle
-    val routes by audioRoutes.availableRoutes.collectAsStateWithLifecycle()
-    val selected by audioRoutes.selectedRoute.collectAsStateWithLifecycle()
-    val scope = rememberCoroutineScope()
     var showKeypad by remember(callId) { mutableStateOf(false) }
     var enteredDigits by remember(callId) { mutableStateOf("") }
     var showTransfer by remember(callId) { mutableStateOf(false) }
     var transferDestination by remember(callId) { mutableStateOf("") }
     var showConsultation by remember(callId) { mutableStateOf(false) }
     var consultationDestination by remember(callId) { mutableStateOf("") }
-    var consultationCallId by remember(callId) { mutableStateOf<CallId?>(null) }
-    val consultation = sessions.firstOrNull { it.id == consultationCallId }
+    val consultation = state.sessions.firstOrNull { it.id == state.consultationCallId }
 
     LaunchedEffect(consultation?.id, consultation?.state) {
         // A later media update from the peer (e.g. a final re-INVITE) is handled reactively by
         // the native onCallMediaState callback, which reattaches on its own ACTIVE event - no
         // fixed-delay retry needed here.
         if (consultation?.state == CallState.Connected) {
-            mediaManager.setMuted(consultation.id, false)
+            viewModel.setMuted(consultation.id, false)
         }
     }
 
@@ -531,11 +435,11 @@ private fun InCallControls(
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             Button(
                 enabled = !media.held,
-                onClick = { scope.launch { mediaManager.setMuted(callId, !media.muted) } },
+                onClick = { viewModel.setMuted(callId, !media.muted) },
             ) {
                 Text(stringResource(if (media.muted) R.string.unmute else R.string.mute))
             }
-            Button(onClick = { scope.launch { mediaManager.setHeld(callId, !media.held) } }) {
+            Button(onClick = { viewModel.setHeld(callId, !media.held) }) {
                 Text(stringResource(if (media.held) R.string.resume else R.string.hold))
             }
             Button(onClick = { showKeypad = !showKeypad }) {
@@ -544,24 +448,24 @@ private fun InCallControls(
         }
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             Button(
-                enabled = !media.held && consultationCallId == null &&
+                enabled = !media.held && state.consultationCallId == null &&
                     transfer !is TransferState.Pending && transfer !is TransferState.Succeeded,
                 onClick = { showTransfer = !showTransfer },
             ) { Text(stringResource(R.string.transfer)) }
             Button(
-                enabled = consultationCallId == null && transfer !is TransferState.Pending &&
+                enabled = state.consultationCallId == null && transfer !is TransferState.Pending &&
                     transfer !is TransferState.Succeeded,
                 onClick = {
                     showConsultation = true
-                    scope.launch { mediaManager.setHeld(callId, true) }
+                    viewModel.setHeld(callId, true)
                 },
             ) { Text(stringResource(R.string.consult_transfer)) }
         }
         Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-            routes.forEach { route ->
+            state.availableRoutes.forEach { route ->
                 FilterChip(
-                    selected = route == selected,
-                    onClick = { scope.launch { audioRoutes.select(route) } },
+                    selected = route == state.selectedRoute,
+                    onClick = { viewModel.selectAudioRoute(route) },
                     label = { Text(route.label()) },
                 )
             }
@@ -577,7 +481,7 @@ private fun InCallControls(
                             enabled = !media.held,
                             onClick = {
                                 enteredDigits += digit
-                                scope.launch { callManager.sendDtmf(callId, digit) }
+                                viewModel.sendDtmf(callId, digit)
                             },
                         ) { Text(digit.toString()) }
                     }
@@ -593,7 +497,7 @@ private fun InCallControls(
                 Button(
                     enabled = transferDestination.isNotBlank() && transfer !is TransferState.Pending,
                     onClick = {
-                        scope.launch { callManager.transfer(callId, transferDestination) }
+                        viewModel.transfer(callId, transferDestination)
                         showTransfer = false
                     },
                 ) { Text(stringResource(R.string.transfer_now)) }
@@ -609,15 +513,13 @@ private fun InCallControls(
                     enabled = consultationDestination.isNotBlank() && session != null && media.held,
                     onClick = {
                         val current = session ?: return@Button
-                        scope.launch {
-                            consultationCallId = callManager.call(current.accountId, consultationDestination)
-                        }
+                        viewModel.startConsultation(current.accountId, consultationDestination)
                         showConsultation = false
                     },
                 ) { Text(stringResource(R.string.start_consultation)) }
                 TextButton(onClick = {
                     showConsultation = false
-                    scope.launch { mediaManager.setHeld(callId, false) }
+                    viewModel.setHeld(callId, false)
                 }) { Text(stringResource(R.string.cancel)) }
             }
             if (!media.held) Text(stringResource(R.string.waiting_for_hold))
@@ -628,14 +530,10 @@ private fun InCallControls(
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Button(
                     enabled = consult.state == CallState.Connected && media.held,
-                    onClick = { scope.launch { callManager.attendedTransfer(callId, consult.id) } },
+                    onClick = { viewModel.completeTransfer(callId, consult.id) },
                 ) { Text(stringResource(R.string.complete_transfer)) }
                 Button(onClick = {
-                    scope.launch {
-                        if (!consult.state.isTerminal()) callManager.end(consult.id)
-                        mediaManager.setHeld(callId, false)
-                        consultationCallId = null
-                    }
+                    viewModel.returnToCaller(callId, consult)
                 }) { Text(stringResource(R.string.return_to_caller)) }
             }
         }
@@ -679,7 +577,7 @@ private fun CallState.statusLabel(): Int = when (this) {
 private fun CallState.isTerminal(): Boolean = this is CallState.Disconnected || this is CallState.Failed
 
 @Composable
-private fun AccountEditor(existing: SipAccount?, repository: AccountRepository, onDone: () -> Unit) {
+private fun AccountEditor(existing: SipAccount?, viewModel: YeyoFoneViewModel, onDone: () -> Unit) {
     var displayName by remember { mutableStateOf(existing?.displayName.orEmpty()) }
     var username by remember { mutableStateOf(existing?.username.orEmpty()) }
     var authUsername by remember { mutableStateOf(existing?.authenticationUsername.orEmpty()) }
@@ -699,7 +597,6 @@ private fun AccountEditor(existing: SipAccount?, repository: AccountRepository, 
     var callerId by remember { mutableStateOf(existing?.callerId.orEmpty()) }
     var error by remember { mutableStateOf<String?>(null) }
     var saving by remember { mutableStateOf(false) }
-    val scope = rememberCoroutineScope()
     val saveFailedMessage = stringResource(R.string.save_failed)
 
     Scaffold(topBar = { TopAppBar(title = { Text(stringResource(if (existing == null) R.string.add_account else R.string.edit_account)) }) }) { padding ->
@@ -744,19 +641,19 @@ private fun AccountEditor(existing: SipAccount?, repository: AccountRepository, 
                         error = null
                         val secret = password.takeIf(String::isNotEmpty)?.toCharArray()
                         password = ""
-                        scope.launch {
-                            repository.save(
-                                AccountDraft(
-                                    id = existing?.id, displayName = displayName, username = username,
-                                    authenticationUsername = authUsername, password = secret, domain = domain,
-                                    registrarUri = registrar, outboundProxyUri = proxy, port = port.toIntOrNull() ?: 0,
-                                    transport = transport,
-                                    securityMode = if (transport == TransportProtocol.TLS) SecurityMode.REQUIRE_SECURE else SecurityMode.ALLOW_INSECURE,
-                                    nat = NatConfiguration(stun, turn, turnUsername, ice, srtp),
-                                    registrationExpirySeconds = expiry.toIntOrNull() ?: 0,
-                                    voicemailNumber = voicemail, callerId = callerId, enabled = existing?.enabled ?: true,
-                                ),
-                            ).onSuccess { onDone() }.onFailure { error = it.message ?: saveFailedMessage }
+                        viewModel.saveAccount(
+                            AccountDraft(
+                                id = existing?.id, displayName = displayName, username = username,
+                                authenticationUsername = authUsername, password = secret, domain = domain,
+                                registrarUri = registrar, outboundProxyUri = proxy, port = port.toIntOrNull() ?: 0,
+                                transport = transport,
+                                securityMode = if (transport == TransportProtocol.TLS) SecurityMode.REQUIRE_SECURE else SecurityMode.ALLOW_INSECURE,
+                                nat = NatConfiguration(stun, turn, turnUsername, ice, srtp),
+                                registrationExpirySeconds = expiry.toIntOrNull() ?: 0,
+                                voicemailNumber = voicemail, callerId = callerId, enabled = existing?.enabled ?: true,
+                            ),
+                        ) { result ->
+                            result.onSuccess { onDone() }.onFailure { error = it.message ?: saveFailedMessage }
                             saving = false
                         }
                     }) { Text(stringResource(R.string.save)) }
