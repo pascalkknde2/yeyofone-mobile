@@ -3,8 +3,6 @@ package com.yeyofone.app
 import com.yeyofone.core.account.AccountDraft
 import com.yeyofone.core.account.AccountRepository
 import com.yeyofone.core.model.AudioRoute
-import com.yeyofone.core.model.CallHistoryEntry
-import com.yeyofone.core.model.CallHistoryId
 import com.yeyofone.core.model.CallId
 import com.yeyofone.core.model.CallSession
 import com.yeyofone.core.model.MediaState
@@ -13,7 +11,6 @@ import com.yeyofone.core.model.RegistrationState
 import com.yeyofone.core.model.SipAccount
 import com.yeyofone.core.model.SipAccountId
 import com.yeyofone.core.voip.AudioRouteManager
-import com.yeyofone.core.voip.CallHistoryRepository
 import com.yeyofone.core.voip.CallManager
 import com.yeyofone.core.voip.MediaManager
 import com.yeyofone.core.voip.RegistrationManager
@@ -89,7 +86,7 @@ class YeyoFoneViewModelTest {
     @Test
     fun `setAccountEnabled delegates to AccountRepository setEnabled`() = runTest {
         val accounts = FakeAccounts()
-        val viewModel = YeyoFoneViewModel(accounts, FakeHistory(), FakeCalls(), FakeMedia(), FakeRoutes(), FakeRegistration())
+        val viewModel = YeyoFoneViewModel(accounts, FakeCalls(), FakeMedia(), FakeRoutes(), FakeRegistration())
         val id = SipAccountId("one")
 
         viewModel.setAccountEnabled(id, false)
@@ -110,7 +107,7 @@ class YeyoFoneViewModelTest {
     }
 
     private fun viewModel(registration: FakeRegistration = FakeRegistration()) =
-        YeyoFoneViewModel(FakeAccounts(), FakeHistory(), FakeCalls(), FakeMedia(), FakeRoutes(), registration)
+        YeyoFoneViewModel(FakeAccounts(), FakeCalls(), FakeMedia(), FakeRoutes(), registration)
 
     private class FakeAccounts : AccountRepository {
         val setEnabledCalls = mutableListOf<Pair<SipAccountId, Boolean>>()
@@ -121,13 +118,6 @@ class YeyoFoneViewModelTest {
             setEnabledCalls += id to enabled
         }
         override suspend fun delete(id: SipAccountId) = Unit
-    }
-
-    private class FakeHistory : CallHistoryRepository {
-        override fun observeHistory(): Flow<List<CallHistoryEntry>> = MutableStateFlow(emptyList())
-        override suspend fun upsert(entry: CallHistoryEntry) = Unit
-        override suspend fun delete(id: CallHistoryId) = Unit
-        override suspend fun clear() = Unit
     }
 
     private class FakeCalls : CallManager {

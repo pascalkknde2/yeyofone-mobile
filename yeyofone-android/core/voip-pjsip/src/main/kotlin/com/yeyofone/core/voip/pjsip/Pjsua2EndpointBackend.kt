@@ -36,6 +36,11 @@ import java.util.UUID
 
 /** Owns all generated PJSUA2 objects. Calls are serialized by [PjsipEngine]. */
 internal class Pjsua2EndpointBackend : EndpointBackend {
+    private companion object {
+        // A modest receive boost compensates for quiet remote streams while avoiding the
+        // clipping produced by the much larger gains some handset vendors require.
+        const val CALL_RECEIVE_GAIN = 1.5f
+    }
     private var endpoint: Endpoint? = null
     private val accounts = mutableMapOf<SipAccountId, NativeAccount>()
     private val calls = mutableMapOf<String, NativeCall>()
@@ -295,7 +300,7 @@ internal class Pjsua2EndpointBackend : EndpointBackend {
             // A conference port can be reused after a SIP hold. Restore neutral
             // per-port gains so a previous held/muted route cannot silence the new leg.
             audio.adjustTxLevel(1f)
-            audio.adjustRxLevel(1f)
+            audio.adjustRxLevel(CALL_RECEIVE_GAIN)
             capture.adjustTxLevel(1f)
             playback.adjustRxLevel(1f)
             audio.startTransmit(playback)
@@ -469,7 +474,7 @@ internal class Pjsua2EndpointBackend : EndpointBackend {
                 runCatching {
                     val audio = getAudioMedia(-1)
                     audio.adjustTxLevel(1f)
-                    audio.adjustRxLevel(1f)
+                    audio.adjustRxLevel(CALL_RECEIVE_GAIN)
                     audio.startTransmit(ep.audDevManager().playbackDevMedia)
                     if (!muted) ep.audDevManager().captureDevMedia.startTransmit(audio)
                     Log.i(MEDIA_LOG_TAG, "call=$id attached port=${audio.portId}")

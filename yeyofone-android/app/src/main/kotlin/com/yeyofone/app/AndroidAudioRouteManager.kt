@@ -29,6 +29,12 @@ class AndroidAudioRouteManager(context: Context) : AudioRouteManager {
         refresh()
     }
 
+    override suspend fun prepareForCall() {
+        // PJSIP uses the Android communication stream. Without this mode some devices route
+        // the call through a low-volume media stream instead of the voice-call path.
+        audio.mode = AudioManager.MODE_IN_COMMUNICATION
+    }
+
     override suspend fun select(route: AudioRoute) {
         audio.mode = AudioManager.MODE_IN_COMMUNICATION
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {

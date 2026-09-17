@@ -23,7 +23,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -50,7 +49,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.yeyofone.core.account.AccountDraft
 import com.yeyofone.core.model.CallDirection
-import com.yeyofone.core.model.CallHistoryEntry
 import com.yeyofone.core.model.CallId
 import com.yeyofone.core.model.CallSession
 import com.yeyofone.core.model.CallState
@@ -60,8 +58,16 @@ import com.yeyofone.core.model.SecurityMode
 import com.yeyofone.core.model.SipAccount
 import com.yeyofone.core.model.TransportProtocol
 import com.yeyofone.core.model.TransferState
-import java.time.ZoneId
-import java.time.format.DateTimeFormatter
+import com.yeyofone.app.data.repository.CallRepository
+import com.yeyofone.app.ui.callhistory.CallHistoryScreen
+import com.yeyofone.app.ui.callhistory.CallHistoryViewModel
+import com.yeyofone.app.ui.components.BottomNavigationBar
+import com.yeyofone.app.ui.components.CALLS_NAVIGATION
+import com.yeyofone.app.ui.components.CONTACTS_NAVIGATION
+import com.yeyofone.app.ui.components.KEYPAD_NAVIGATION
+import com.yeyofone.app.ui.dialpad.DialPadScreen
+import com.yeyofone.app.ui.dialpad.DialPadViewModel
+import com.yeyofone.app.ui.theme.YeyoFoneTheme
 
 class MainActivity : ComponentActivity() {
     override fun onStart() {
@@ -82,9 +88,13 @@ class MainActivity : ComponentActivity() {
         val app = application as YeyoFoneApplication
         setContent {
             RequestBackgroundCallPermissions()
-            MaterialTheme {
+            YeyoFoneTheme {
                 val viewModel: YeyoFoneViewModel = viewModel(factory = YeyoFoneViewModel.Factory(app))
-                AccountsApp(viewModel)
+                val callHistoryViewModel: CallHistoryViewModel = viewModel(
+                    factory = CallHistoryViewModel.Factory(CallRepository(app.callHistory)),
+                )
+                val dialPadViewModel: DialPadViewModel = viewModel()
+                AccountsApp(viewModel, callHistoryViewModel, dialPadViewModel)
             }
         }
     }
@@ -131,8 +141,13 @@ private fun RequestBackgroundCallPermissions() {
 }
 
 @Composable
-private fun AccountsApp(viewModel: YeyoFoneViewModel) {
+private fun AccountsApp(
+    viewModel: YeyoFoneViewModel,
+    callHistoryViewModel: CallHistoryViewModel,
+    dialPadViewModel: DialPadViewModel,
+) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val callHistoryState by callHistoryViewModel.uiState.collectAsStateWithLifecycle()
     val incoming = state.sessions.firstOrNull {
         it.direction == CallDirection.INCOMING && it.id !in state.dismissedIncomingCalls
     }
@@ -147,6 +162,7 @@ private fun AccountsApp(viewModel: YeyoFoneViewModel) {
             state.accounts,
             onAdd = { viewModel.editAccount(null) },
             onHistory = viewModel::showHistory,
+            onKeypad = { state.accounts.firstOrNull()?.let { viewModel.dial(it.id) } },
             onOpen = { viewModel.showAccount(it.id) },
         )
         is AppScreen.Detail -> state.accounts.firstOrNull { it.id == current.accountId }?.let { account ->
@@ -158,15 +174,39 @@ private fun AccountsApp(viewModel: YeyoFoneViewModel) {
             viewModel::showAccounts,
         )
         is AppScreen.Dial -> state.accounts.firstOrNull { it.id == current.accountId }?.let { account ->
-            DialScreen(account, current.destination, state, viewModel)
+            val activeSession = state.sessions.firstOrNull {
+                it.id == state.activeCallId && !it.state.isTerminal()
+            }
+            if (activeSession == null) {
+                LaunchedEffect(current.accountId, current.destination) {
+                    dialPadViewModel.setInitialNumber(current.destination)
+                }
+                DialPadScreen(
+                    viewModel = dialPadViewModel,
+                    onNavigateBack = { viewModel.showAccount(account.id) },
+                    onCall = { destination ->
+                        viewModel.startCall(account.id, destination)
+                        dialPadViewModel.clearNumber()
+                    },
+                )
+            } else {
+                DialScreen(account, current.destination, state, viewModel)
+            }
         }
         AppScreen.History -> CallHistoryScreen(
-            entries = state.history,
-            accounts = state.accounts,
-            viewModel = viewModel,
-            onCallBack = { entry ->
-                viewModel.dial(entry.accountId, entry.remoteUri)
+            uiState = callHistoryState,
+            accountIds = state.accounts.mapTo(mutableSetOf()) { it.id },
+            onTabSelected = callHistoryViewModel::onTabSelected,
+            onNavigationItemSelected = { destination ->
+                when (destination) {
+                    CONTACTS_NAVIGATION -> viewModel.showAccounts()
+                    KEYPAD_NAVIGATION -> state.accounts.firstOrNull()?.let { viewModel.dial(it.id) }
+                }
             },
+            onCallBack = { entry ->
+                viewModel.dial(entry.accountId, entry.dialDestination)
+            },
+            onClear = callHistoryViewModel::clear,
         )
     }
 }
@@ -176,6 +216,7 @@ private fun AccountList(
     accounts: List<SipAccount>,
     onAdd: () -> Unit,
     onHistory: () -> Unit,
+    onKeypad: () -> Unit,
     onOpen: (SipAccount) -> Unit,
 ) {
     Scaffold(
@@ -186,6 +227,17 @@ private fun AccountList(
             )
         },
         floatingActionButton = { Button(onClick = onAdd) { Text(stringResource(R.string.add_account)) } },
+        bottomBar = {
+            BottomNavigationBar(
+                selectedIndex = CONTACTS_NAVIGATION,
+                onItemSelected = {
+                    when (it) {
+                        CALLS_NAVIGATION -> onHistory()
+                        KEYPAD_NAVIGATION -> onKeypad()
+                    }
+                },
+            )
+        },
     ) { padding ->
         if (accounts.isEmpty()) {
             Text(stringResource(R.string.no_accounts), Modifier.padding(padding).padding(24.dp))
@@ -204,84 +256,6 @@ private fun AccountList(
         }
     }
 }
-
-@Composable
-private fun CallHistoryScreen(
-    entries: List<CallHistoryEntry>,
-    accounts: List<SipAccount>,
-    viewModel: YeyoFoneViewModel,
-    onCallBack: (CallHistoryEntry) -> Unit,
-) {
-    var confirmClear by remember { mutableStateOf(false) }
-
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text(stringResource(R.string.recent_calls)) },
-                actions = {
-                    if (entries.isNotEmpty()) {
-                        TextButton(onClick = { confirmClear = true }) { Text(stringResource(R.string.clear_all)) }
-                    }
-                    TextButton(onClick = viewModel::showAccounts) { Text(stringResource(R.string.cancel)) }
-                },
-            )
-        },
-    ) { padding ->
-        if (entries.isEmpty()) {
-            Text(stringResource(R.string.no_recent_calls), Modifier.padding(padding).padding(24.dp))
-        } else {
-            LazyColumn(Modifier.fillMaxSize().padding(padding)) {
-                items(entries, key = { it.id.value }) { entry ->
-                    val accountExists = accounts.any { it.id == entry.accountId }
-                    Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                        Text(entry.remoteUri, style = MaterialTheme.typography.titleMedium)
-                        Text(entry.summary())
-                        Text(HISTORY_TIME_FORMATTER.format(entry.startedAt))
-                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            Button(enabled = accountExists, onClick = { onCallBack(entry) }) {
-                                Text(stringResource(R.string.call_back))
-                            }
-                            TextButton(onClick = { viewModel.deleteHistory(entry.id) }) {
-                                Text(stringResource(R.string.delete))
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    if (confirmClear) {
-        AlertDialog(
-            onDismissRequest = { confirmClear = false },
-            text = { Text(stringResource(R.string.confirm_clear_history)) },
-            confirmButton = {
-                TextButton(onClick = { viewModel.clearHistory(); confirmClear = false }) {
-                    Text(stringResource(R.string.clear_all))
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { confirmClear = false }) { Text(stringResource(R.string.cancel)) }
-            },
-        )
-    }
-}
-
-@Composable
-private fun CallHistoryEntry.summary(): String {
-    val directionLabel = stringResource(
-        when {
-            missed -> R.string.missed_call
-            direction == CallDirection.INCOMING -> R.string.incoming_call
-            else -> R.string.outgoing_call
-        },
-    )
-    val totalSeconds = duration.seconds
-    return stringResource(R.string.call_history_summary, directionLabel, totalSeconds / 60, totalSeconds % 60)
-}
-
-private val HISTORY_TIME_FORMATTER: DateTimeFormatter =
-    DateTimeFormatter.ofPattern("dd MMM yyyy, HH:mm").withZone(ZoneId.systemDefault())
 
 @Composable
 private fun DialScreen(

@@ -6,8 +6,6 @@ import androidx.lifecycle.viewModelScope
 import com.yeyofone.core.account.AccountDraft
 import com.yeyofone.core.account.AccountRepository
 import com.yeyofone.core.model.AudioRoute
-import com.yeyofone.core.model.CallHistoryEntry
-import com.yeyofone.core.model.CallHistoryId
 import com.yeyofone.core.model.CallId
 import com.yeyofone.core.model.CallSession
 import com.yeyofone.core.model.MediaState
@@ -15,7 +13,6 @@ import com.yeyofone.core.model.RegistrationState
 import com.yeyofone.core.model.SipAccount
 import com.yeyofone.core.model.SipAccountId
 import com.yeyofone.core.voip.AudioRouteManager
-import com.yeyofone.core.voip.CallHistoryRepository
 import com.yeyofone.core.voip.CallManager
 import com.yeyofone.core.voip.MediaManager
 import com.yeyofone.core.voip.RegistrationManager
@@ -47,7 +44,6 @@ data class AccountPreferences(
 data class YeyoFoneUiState(
     val screen: AppScreen = AppScreen.Accounts,
     val accounts: List<SipAccount> = emptyList(),
-    val history: List<CallHistoryEntry> = emptyList(),
     val sessions: List<CallSession> = emptyList(),
     val availableRoutes: List<AudioRoute> = emptyList(),
     val selectedRoute: AudioRoute? = null,
@@ -59,14 +55,12 @@ data class YeyoFoneUiState(
 private data class CoreUiState(
     val screen: AppScreen,
     val accounts: List<SipAccount>,
-    val history: List<CallHistoryEntry>,
     val sessions: List<CallSession>,
     val routes: Pair<List<AudioRoute>, AudioRoute?>,
 )
 
 class YeyoFoneViewModel(
     private val accounts: AccountRepository,
-    private val history: CallHistoryRepository,
     private val calls: CallManager,
     private val media: MediaManager,
     private val audioRoutes: AudioRouteManager,
@@ -83,11 +77,10 @@ class YeyoFoneViewModel(
     private val coreUiState = combine(
         screen,
         accounts.observeAccounts(),
-        history.observeHistory(),
         calls.sessions,
         combine(audioRoutes.availableRoutes, audioRoutes.selectedRoute) { routes, selected -> routes to selected },
-    ) { currentScreen, accountList, historyEntries, sessions, routes ->
-        CoreUiState(currentScreen, accountList, historyEntries, sessions, routes)
+    ) { currentScreen, accountList, sessions, routes ->
+        CoreUiState(currentScreen, accountList, sessions, routes)
     }
 
     val uiState: StateFlow<YeyoFoneUiState> = combine(
@@ -99,7 +92,6 @@ class YeyoFoneViewModel(
         YeyoFoneUiState(
             screen = core.screen,
             accounts = core.accounts,
-            history = core.history,
             sessions = core.sessions,
             availableRoutes = core.routes.first,
             selectedRoute = core.routes.second,
@@ -149,14 +141,15 @@ class YeyoFoneViewModel(
         onResult(accounts.save(draft))
     }
 
-    fun deleteHistory(id: CallHistoryId) = launch { history.delete(id) }
-    fun clearHistory() = launch { history.clear() }
-
     fun startCall(accountId: SipAccountId, destination: String) = launch {
+        audioRoutes.prepareForCall()
         activeCallId.value = calls.call(accountId, destination)
     }
 
-    fun answer(callId: CallId) = launch { calls.answer(callId) }
+    fun answer(callId: CallId) = launch {
+        audioRoutes.prepareForCall()
+        calls.answer(callId)
+    }
     fun reject(callId: CallId) = launch { calls.reject(callId) }
     fun end(callId: CallId) = launch { calls.end(callId) }
     fun sendDtmf(callId: CallId, digit: Char) = launch { calls.sendDtmf(callId, digit) }
@@ -166,6 +159,7 @@ class YeyoFoneViewModel(
     }
 
     fun startConsultation(accountId: SipAccountId, destination: String) = launch {
+        audioRoutes.prepareForCall()
         consultationCallId.value = calls.call(accountId, destination)
     }
 
@@ -188,7 +182,6 @@ class YeyoFoneViewModel(
             require(modelClass.isAssignableFrom(YeyoFoneViewModel::class.java))
             return YeyoFoneViewModel(
                 app.accountRepository,
-                app.callHistory,
                 app.callManager,
                 app.callManager,
                 app.audioRouteManager,

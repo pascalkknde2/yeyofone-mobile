@@ -114,6 +114,8 @@ interface MediaManager {
 interface AudioRouteManager {
     val availableRoutes: StateFlow<List<AudioRoute>>
     val selectedRoute: StateFlow<AudioRoute?>
+    /** Puts the platform audio stack into the mode required for two-way call audio. */
+    suspend fun prepareForCall() = Unit
     suspend fun select(route: AudioRoute)
 }
 
