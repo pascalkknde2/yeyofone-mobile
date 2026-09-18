@@ -24,11 +24,8 @@ import androidx.compose.material.icons.filled.MicOff
 import androidx.compose.material.icons.filled.MoreHoriz
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.SwapHoriz
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -113,7 +110,35 @@ fun OutgoingCallScreen(
 
         Spacer(Modifier.weight(1f))
 
-        if (keypadOpen) {
+        if (transferOpen) {
+            Text(
+                text = transferDestination.ifEmpty { stringResource(R.string.transfer_destination) },
+                color = if (transferDestination.isEmpty()) CallTextSecondary else CallTextPrimary,
+                fontSize = if (transferDestination.isEmpty()) 16.sp else 32.sp,
+                fontWeight = if (transferDestination.isEmpty()) FontWeight.Normal else FontWeight.Light,
+                letterSpacing = if (transferDestination.isEmpty()) 0.sp else 2.sp,
+                textAlign = TextAlign.Center,
+            )
+            DialPad(
+                onNumberClick = { transferDestination += it },
+                modifier = Modifier.padding(horizontal = 56.dp),
+            )
+            Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                TextButton(onClick = {
+                    transferDestination = ""
+                    transferOpen = false
+                }) { Text(stringResource(R.string.cancel)) }
+                TextButton(
+                    enabled = transferDestination.isNotBlank(),
+                    onClick = {
+                        onTransfer(transferDestination)
+                        transferDestination = ""
+                        transferOpen = false
+                    },
+                ) { Text(stringResource(R.string.transfer_now)) }
+            }
+            Spacer(Modifier.height(18.dp))
+        } else if (keypadOpen) {
             DialPad(
                 onNumberClick = { if (!media.held) onDtmf(it.first()) },
                 modifier = Modifier.padding(horizontal = 56.dp),
@@ -144,6 +169,7 @@ fun OutgoingCallScreen(
             ) {
                 CallActionButton(Icons.Default.SwapHoriz, stringResource(R.string.transfer), enabled = !media.held) {
                     transferOpen = true
+                    keypadOpen = false
                 }
                 CallActionButton(Icons.Default.CallEnd, stringResource(R.string.hang_up), destructive = true, size = 72) {
                     onEndCall()
@@ -155,30 +181,6 @@ fun OutgoingCallScreen(
         }
     }
 
-    if (transferOpen) {
-        AlertDialog(
-            onDismissRequest = { transferOpen = false },
-            title = { Text(stringResource(R.string.transfer)) },
-            text = {
-                OutlinedTextField(
-                    value = transferDestination,
-                    onValueChange = { transferDestination = it },
-                    label = { Text(stringResource(R.string.transfer_destination)) },
-                    singleLine = true,
-                )
-            },
-            confirmButton = {
-                Button(
-                    enabled = transferDestination.isNotBlank(),
-                    onClick = {
-                        onTransfer(transferDestination.trim())
-                        transferOpen = false
-                    },
-                ) { Text(stringResource(R.string.transfer_now)) }
-            },
-            dismissButton = { TextButton(onClick = { transferOpen = false }) { Text(stringResource(R.string.cancel)) } },
-        )
-    }
 }
 
 @Composable
