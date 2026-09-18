@@ -185,8 +185,7 @@ private fun AccountsApp(
             summary = endedCall.toCallSummary(),
             onCallAgain = {
                 viewModel.dismissCallSummary(endedCall.id)
-                viewModel.dial(endedCall.accountId, endedCall.remoteUri)
-                viewModel.startCall(endedCall.accountId, endedCall.remoteUri)
+                viewModel.dial(endedCall.accountId, endedCall.remoteUri.toSipIdentity().extension)
             },
             onSendMessage = {
                 viewModel.dismissCallSummary(endedCall.id)

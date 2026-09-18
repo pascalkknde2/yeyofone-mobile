@@ -8,6 +8,7 @@ import kotlin.math.max
 
 data class CallSummary(
     val callerName: String,
+    val callerNumber: String,
     val remoteUri: String,
     val direction: CallDirection,
     val durationSeconds: Long,
@@ -20,8 +21,10 @@ data class CallSummary(
 fun CallSession.toCallSummary(): CallSummary {
     val finishedAt = endedAt ?: createdAt
     val duration = connectedAt?.let { max(0, finishedAt.epochSecond - it.epochSecond) } ?: 0
+    val identity = remoteUri.toSipIdentity()
     return CallSummary(
-        callerName = remoteUri.toSipIdentity().displayName,
+        callerName = identity.displayName,
+        callerNumber = identity.extension,
         remoteUri = remoteUri,
         direction = direction,
         durationSeconds = duration,

@@ -104,6 +104,10 @@ private fun CallSummaryCard(summary: CallSummary) {
         Spacer(Modifier.height(16.dp))
         Text(summary.callerName, fontSize = 24.sp, fontWeight = FontWeight.Bold, color = TextPrimary, textAlign = TextAlign.Center)
         Spacer(Modifier.height(4.dp))
+        if (summary.callerNumber.isNotBlank() && summary.callerNumber != summary.callerName) {
+            Text(summary.callerNumber, fontSize = 15.sp, fontWeight = FontWeight.Medium, color = TextSecondary)
+            Spacer(Modifier.height(4.dp))
+        }
         Text(callTypeLabel(summary), fontSize = 14.sp, fontWeight = FontWeight.Medium, color = TextSecondary)
         Spacer(Modifier.height(20.dp))
         HorizontalDivider(thickness = 1.dp, color = Color(0x0F000000))
