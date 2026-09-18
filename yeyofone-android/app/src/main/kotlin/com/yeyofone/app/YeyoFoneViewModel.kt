@@ -25,6 +25,7 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 sealed interface AppScreen {
+    data object Home : AppScreen
     data object Accounts : AppScreen
     data object History : AppScreen
     data object Chat : AppScreen
@@ -44,7 +45,7 @@ data class AccountPreferences(
 )
 
 data class YeyoFoneUiState(
-    val screen: AppScreen = AppScreen.Accounts,
+    val screen: AppScreen = AppScreen.Home,
     val accounts: List<SipAccount> = emptyList(),
     val sessions: List<CallSession> = emptyList(),
     val availableRoutes: List<AudioRoute> = emptyList(),
@@ -68,7 +69,7 @@ class YeyoFoneViewModel(
     private val audioRoutes: AudioRouteManager,
     private val registration: RegistrationManager,
 ) : ViewModel() {
-    private val screen = MutableStateFlow<AppScreen>(AppScreen.Accounts)
+    private val screen = MutableStateFlow<AppScreen>(AppScreen.Home)
     private val activeCallId = MutableStateFlow<CallId?>(null)
     private val consultationCallId = MutableStateFlow<CallId?>(null)
     private val dismissedIncomingCalls = MutableStateFlow<Set<CallId>>(emptySet())
@@ -103,6 +104,7 @@ class YeyoFoneViewModel(
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), YeyoFoneUiState())
 
+    fun showHome() { screen.value = AppScreen.Home }
     fun showAccounts() { screen.value = AppScreen.Accounts }
     fun showHistory() { screen.value = AppScreen.History }
     fun showChat() { screen.value = AppScreen.Chat }
@@ -116,6 +118,11 @@ class YeyoFoneViewModel(
 
     fun dismissIncoming(callId: CallId) {
         dismissedIncomingCalls.value = dismissedIncomingCalls.value + callId
+    }
+
+    fun dismissCallSummary(callId: CallId) {
+        dismissedIncomingCalls.value = dismissedIncomingCalls.value + callId
+        if (activeCallId.value == callId) activeCallId.value = null
     }
 
     fun setAccountEnabled(accountId: SipAccountId, enabled: Boolean) = launch { accounts.setEnabled(accountId, enabled) }

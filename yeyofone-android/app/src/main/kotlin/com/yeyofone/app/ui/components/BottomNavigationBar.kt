@@ -16,12 +16,14 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Apps
 import androidx.compose.material.icons.filled.Call
 import androidx.compose.material.icons.filled.ChatBubble
+import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.outlined.Apps
 import androidx.compose.material.icons.outlined.Call
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.ChatBubbleOutline
+import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -41,18 +43,20 @@ import com.yeyofone.app.ui.theme.InactiveGray
 import com.yeyofone.app.ui.theme.NavBackground
 import com.yeyofone.app.ui.theme.TextPrimary
 
-const val CALLS_NAVIGATION = 0
-const val CONTACTS_NAVIGATION = 1
-const val KEYPAD_NAVIGATION = 2
-const val CHAT_NAVIGATION = 3
-const val SETTINGS_NAVIGATION = 4
+const val HOME_NAVIGATION = 0
+const val KEYPAD_NAVIGATION = 1
+const val CONTACTS_NAVIGATION = 2
+const val CALLS_NAVIGATION = 3
+const val CHAT_NAVIGATION = 4
+const val SETTINGS_NAVIGATION = 5
 
 @Composable
 fun BottomNavigationBar(selectedIndex: Int, onItemSelected: (Int) -> Unit) {
     val items = listOf(
-        NavItem(stringResource(R.string.calls_navigation), Icons.Filled.Call, Icons.Outlined.Call),
-        NavItem(stringResource(R.string.contacts_navigation), Icons.Filled.Person, Icons.Outlined.Person),
+        NavItem(stringResource(R.string.home_navigation), Icons.Filled.Home, Icons.Outlined.Home),
         NavItem(stringResource(R.string.keypad), Icons.Filled.Apps, Icons.Outlined.Apps),
+        NavItem(stringResource(R.string.contacts_navigation), Icons.Filled.Person, Icons.Outlined.Person),
+        NavItem(stringResource(R.string.calls_navigation), Icons.Filled.Call, Icons.Outlined.Call),
         NavItem(stringResource(R.string.chat_navigation), Icons.Filled.ChatBubble, Icons.Outlined.ChatBubbleOutline),
         NavItem(stringResource(R.string.settings_navigation), Icons.Filled.Settings, Icons.Outlined.Settings),
     )
@@ -84,7 +88,7 @@ fun BottomNavigationBar(selectedIndex: Int, onItemSelected: (Int) -> Unit) {
                 Spacer(Modifier.height(4.dp))
                 Text(
                     item.label,
-                    fontSize = 10.sp,
+                    fontSize = 9.sp,
                     fontWeight = FontWeight.SemiBold,
                     color = if (selected) TextPrimary else InactiveGray,
                 )

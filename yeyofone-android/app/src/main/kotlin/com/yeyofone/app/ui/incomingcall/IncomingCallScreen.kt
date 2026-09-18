@@ -42,6 +42,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.yeyofone.app.R
+import com.yeyofone.app.data.model.toSipIdentity
 import com.yeyofone.app.ui.components.PrimaryCallActionButton
 import com.yeyofone.app.ui.components.SecondaryCallActionButton
 import com.yeyofone.app.ui.theme.AccentGreen
@@ -60,7 +61,7 @@ fun IncomingCallScreen(
     onMessage: (() -> Unit)? = null,
     onRemind: (() -> Unit)? = null,
 ) {
-    val callerName = callerName(remoteUri)
+    val caller = remoteUri.toSipIdentity()
     Column(
         Modifier.fillMaxSize().background(CallBackground).systemBarsPadding(),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -91,19 +92,24 @@ fun IncomingCallScreen(
                     Modifier.size(140.dp).shadow(12.dp, CircleShape).clip(CircleShape).background(Color(0xFFE4E8EC)),
                     contentAlignment = Alignment.Center,
                 ) {
-                    Text(callerInitials(callerName), fontSize = 40.sp, fontWeight = FontWeight.Bold, color = CallTextPrimary)
+                    Text(callerInitials(caller.displayName), fontSize = 40.sp, fontWeight = FontWeight.Bold, color = CallTextPrimary)
                 }
             }
             Spacer(Modifier.height(26.dp))
             Text(
-                callerName,
+                caller.displayName,
                 fontSize = 30.sp,
                 fontWeight = FontWeight.Bold,
                 color = CallTextPrimary,
                 textAlign = TextAlign.Center,
             )
             Spacer(Modifier.height(8.dp))
-            Text(remoteUri, fontSize = 16.sp, color = CallTextSecondary, textAlign = TextAlign.Center)
+            Text(
+                stringResource(R.string.extension_value, caller.extension),
+                fontSize = 16.sp,
+                color = CallTextSecondary,
+                textAlign = TextAlign.Center,
+            )
             if (permissionDenied) {
                 Spacer(Modifier.height(16.dp))
                 Text(
@@ -179,9 +185,6 @@ private fun PulsingRings() {
         Box(Modifier.size(140.dp).scale(secondScale).border(2.dp, AccentGreen.copy(alpha = secondAlpha), CircleShape))
     }
 }
-
-internal fun callerName(remoteUri: String): String = remoteUri.removePrefix("sip:").removePrefix("sips:")
-    .substringBefore('@').substringBefore(';').takeIf(String::isNotBlank) ?: remoteUri
 
 private fun callerInitials(name: String): String = name.split(' ', '.', '-', '_')
     .filter(String::isNotBlank).take(2).joinToString("") { it.first().uppercase() }.ifEmpty { "?" }

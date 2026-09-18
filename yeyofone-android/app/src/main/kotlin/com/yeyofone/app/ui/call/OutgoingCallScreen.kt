@@ -50,6 +50,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.yeyofone.app.R
+import com.yeyofone.app.data.model.toSipIdentity
 import com.yeyofone.app.ui.components.DialPad
 import com.yeyofone.app.ui.theme.AccentGreen
 import com.yeyofone.app.ui.theme.AccentRed
@@ -106,7 +107,7 @@ fun OutgoingCallScreen(
         }
 
         CallerIdentity(
-            name = displayName(session.remoteUri),
+            name = session.remoteUri.toSipIdentity().displayName,
             status = if (session.connectedAt == null) callStatus(session.state) else formatDuration(elapsedSeconds),
         )
 
@@ -244,13 +245,6 @@ internal fun formatDuration(totalSeconds: Long): String =
 
 private fun callElapsedSeconds(session: CallSession): Long =
     session.connectedAt?.let { max(0, Instant.now().epochSecond - it.epochSecond) } ?: 0
-
-private fun displayName(remoteUri: String): String = remoteUri
-    .removePrefix("sip:")
-    .substringBefore('@')
-    .substringBefore(';')
-    .takeIf { it.isNotBlank() }
-    ?: remoteUri
 
 private fun initials(name: String): String = name.split(' ', '.', '-', '_')
     .filter(String::isNotBlank)

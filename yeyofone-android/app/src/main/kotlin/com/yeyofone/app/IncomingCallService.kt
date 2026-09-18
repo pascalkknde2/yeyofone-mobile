@@ -21,6 +21,7 @@ import com.yeyofone.core.model.CallDirection
 import com.yeyofone.core.model.CallId
 import com.yeyofone.core.model.CallSession
 import com.yeyofone.core.model.CallState
+import com.yeyofone.app.data.model.toSipIdentity
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -123,7 +124,7 @@ class IncomingCallService : Service() {
             .setContentTitle(
                 getString(if (incoming) R.string.incoming_call_title else R.string.call_in_progress),
             )
-            .setContentText(active.remoteUri)
+            .setContentText(active.remoteUri.notificationIdentity())
             .setContentIntent(openAppIntent())
             .setOngoing(true)
             .setCategory(Notification.CATEGORY_CALL)
@@ -167,7 +168,7 @@ class IncomingCallService : Service() {
             Notification.Builder(this, MISSED_CHANNEL_ID)
                 .setSmallIcon(R.drawable.ic_phone)
                 .setContentTitle(getString(R.string.missed_call_notification))
-                .setContentText(session.remoteUri)
+                .setContentText(session.remoteUri.notificationIdentity())
                 .setContentIntent(openAppIntent())
                 .setCategory(Notification.CATEGORY_MISSED_CALL)
                 .setAutoCancel(true)
@@ -265,6 +266,12 @@ class IncomingCallService : Service() {
             }.onFailure { Log.w(TAG, "Could not start IncomingCallService", it) }
         }
     }
+}
+
+private fun String.notificationIdentity(): String {
+    val identity = toSipIdentity()
+    return if (identity.displayName == identity.extension) identity.extension
+    else "${identity.displayName} · Ext. ${identity.extension}"
 }
 
 /** Process-level visibility shared by the activity and the notification service. */

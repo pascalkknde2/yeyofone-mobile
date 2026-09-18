@@ -57,6 +57,7 @@ import com.yeyofone.core.model.CallSession
 import com.yeyofone.core.model.CallState
 import com.yeyofone.core.model.AudioRoute
 import com.yeyofone.core.model.NatConfiguration
+import com.yeyofone.core.model.RegistrationState
 import com.yeyofone.core.model.SecurityMode
 import com.yeyofone.core.model.SipAccount
 import com.yeyofone.core.model.TransportProtocol
@@ -65,6 +66,11 @@ import com.yeyofone.app.data.repository.CallRepository
 import com.yeyofone.app.ui.callhistory.CallHistoryScreen
 import com.yeyofone.app.ui.callhistory.CallHistoryViewModel
 import com.yeyofone.app.ui.accounts.AccountsScreen
+import com.yeyofone.app.ui.chat.ChatScreen
+import com.yeyofone.app.ui.chat.ChatViewModel
+import com.yeyofone.app.ui.callended.CallEndedScreen
+import com.yeyofone.app.data.model.toCallSummary
+import com.yeyofone.app.data.model.toSipIdentity
 import com.yeyofone.app.ui.call.OutgoingCallScreen
 import com.yeyofone.app.ui.components.BottomNavigationBar
 import com.yeyofone.app.ui.components.CALLS_NAVIGATION
@@ -72,10 +78,12 @@ import com.yeyofone.app.ui.components.CHAT_NAVIGATION
 import com.yeyofone.app.ui.components.CONTACTS_NAVIGATION
 import com.yeyofone.app.ui.components.KEYPAD_NAVIGATION
 import com.yeyofone.app.ui.components.SETTINGS_NAVIGATION
+import com.yeyofone.app.ui.components.HOME_NAVIGATION
 import com.yeyofone.app.ui.dialpad.DialPadScreen
 import com.yeyofone.app.ui.dialpad.DialPadViewModel
 import com.yeyofone.app.ui.incomingcall.IncomingCallScreen as IncomingCallContent
 import com.yeyofone.app.ui.settings.SettingsScreen
+import com.yeyofone.app.ui.main.MainScreen
 import com.yeyofone.app.ui.theme.YeyoFoneTheme
 
 class MainActivity : ComponentActivity() {
@@ -103,7 +111,8 @@ class MainActivity : ComponentActivity() {
                     factory = CallHistoryViewModel.Factory(CallRepository(app.callHistory)),
                 )
                 val dialPadViewModel: DialPadViewModel = viewModel()
-                AccountsApp(viewModel, callHistoryViewModel, dialPadViewModel)
+                val chatViewModel: ChatViewModel = viewModel()
+                AccountsApp(viewModel, callHistoryViewModel, dialPadViewModel, chatViewModel)
             }
         }
     }
@@ -154,11 +163,12 @@ private fun AccountsApp(
     viewModel: YeyoFoneViewModel,
     callHistoryViewModel: CallHistoryViewModel,
     dialPadViewModel: DialPadViewModel,
+    chatViewModel: ChatViewModel,
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val callHistoryState by callHistoryViewModel.uiState.collectAsStateWithLifecycle()
-    val incoming = state.sessions.firstOrNull {
-        it.direction == CallDirection.INCOMING && it.id !in state.dismissedIncomingCalls
+    val incoming = state.sessions.lastOrNull {
+        it.direction == CallDirection.INCOMING && !it.state.isTerminal() && it.id !in state.dismissedIncomingCalls
     }
 
     if (incoming != null) {
@@ -166,8 +176,34 @@ private fun AccountsApp(
         return
     }
 
+    val endedCall = state.sessions.lastOrNull { session ->
+        session.state.isTerminal() && session.id !in state.dismissedIncomingCalls &&
+            (session.id == state.activeCallId || session.direction == CallDirection.INCOMING)
+    }
+    if (endedCall != null) {
+        CallEndedScreen(
+            summary = endedCall.toCallSummary(),
+            onCallAgain = {
+                viewModel.dismissCallSummary(endedCall.id)
+                viewModel.dial(endedCall.accountId, endedCall.remoteUri)
+                viewModel.startCall(endedCall.accountId, endedCall.remoteUri)
+            },
+            onSendMessage = {
+                viewModel.dismissCallSummary(endedCall.id)
+                chatViewModel.openConversation(endedCall.remoteUri)
+                viewModel.showChat()
+            },
+            onClose = {
+                viewModel.dismissCallSummary(endedCall.id)
+                viewModel.showHistory()
+            },
+        )
+        return
+    }
+
     val navigateFromMenu: (Int) -> Unit = { destination ->
         when (destination) {
+            HOME_NAVIGATION -> viewModel.showHome()
             CALLS_NAVIGATION -> viewModel.showHistory()
             CONTACTS_NAVIGATION -> viewModel.showAccounts()
             KEYPAD_NAVIGATION -> state.accounts.firstOrNull()?.let { viewModel.dial(it.id) }
@@ -177,6 +213,22 @@ private fun AccountsApp(
     }
 
     when (val current = state.screen) {
+        AppScreen.Home -> {
+            val primary = state.accounts.firstOrNull()
+            val registration = primary?.let { viewModel.observeRegistration(it.id).collectAsStateWithLifecycle().value }
+            MainScreen(
+                primaryAccount = primary,
+                isRegistered = registration is RegistrationState.Registered || registration is RegistrationState.Refreshing,
+                accounts = state.accounts,
+                recentCalls = callHistoryState.calls,
+                onKeypad = { primary?.let { viewModel.dial(it.id) } },
+                onContacts = viewModel::showAccounts,
+                onHistory = viewModel::showHistory,
+                onAccountClick = { viewModel.showAccount(it.id) },
+                onCallBack = { viewModel.dial(it.accountId, it.dialDestination) },
+                onNavigationItemSelected = navigateFromMenu,
+            )
+        }
         AppScreen.Accounts -> AccountsScreen(
             accounts = state.accounts,
             onAdd = { viewModel.editAccount(null) },
@@ -238,9 +290,10 @@ private fun AccountsApp(
             },
             onClear = callHistoryViewModel::clear,
         )
-        AppScreen.Chat -> MenuDestinationScreen(
-            title = stringResource(R.string.chat_navigation),
-            selectedIndex = CHAT_NAVIGATION,
+        AppScreen.Chat -> ChatScreen(
+            viewModel = chatViewModel,
+            onBack = viewModel::showAccounts,
+            onVoiceCall = { state.accounts.firstOrNull()?.let { viewModel.dial(it.id) } },
             onNavigationItemSelected = navigateFromMenu,
         )
         AppScreen.Settings -> SettingsScreen(
@@ -354,7 +407,8 @@ private fun DialScreen(
                 Text(stringResource(R.string.microphone_permission_required), color = MaterialTheme.colorScheme.error)
             }
             activeSession?.let { session ->
-                Text(stringResource(R.string.remote_uri_value, session.remoteUri))
+                val identity = session.remoteUri.toSipIdentity()
+                Text(stringResource(R.string.caller_identity_value, identity.displayName, identity.extension))
                 Text(stringResource(session.state.statusLabel()))
                 if (session.state == CallState.Connected || session.state == CallState.Held) {
                     InCallControls(session.id, state, viewModel)
@@ -458,7 +512,8 @@ private fun IncomingCallScreen(
 
     Scaffold(topBar = { TopAppBar(title = { Text(stringResource(R.string.incoming_call_title)) }) }) { padding ->
         Column(Modifier.padding(padding).padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            Text(stringResource(R.string.incoming_from_value, current.remoteUri), style = MaterialTheme.typography.headlineSmall)
+            val identity = current.remoteUri.toSipIdentity()
+            Text(stringResource(R.string.caller_identity_value, identity.displayName, identity.extension), style = MaterialTheme.typography.headlineSmall)
             Text(stringResource(current.state.statusLabel()))
             if (permissionDenied) {
                 Text(stringResource(R.string.microphone_permission_required), color = MaterialTheme.colorScheme.error)
@@ -621,7 +676,8 @@ private fun InCallControls(
             if (!media.held) Text(stringResource(R.string.waiting_for_hold))
         }
         consultation?.let { consult ->
-            Text(stringResource(R.string.consultation_call, consult.remoteUri))
+            val identity = consult.remoteUri.toSipIdentity()
+            Text(stringResource(R.string.consultation_identity, identity.displayName, identity.extension))
             Text(stringResource(consult.state.statusLabel()))
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Button(

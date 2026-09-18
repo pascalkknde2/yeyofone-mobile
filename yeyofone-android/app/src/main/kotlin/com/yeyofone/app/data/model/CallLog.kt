@@ -38,7 +38,7 @@ internal fun CallHistoryEntry.toCallLog() = CallLog(
     id = id,
     accountId = accountId,
     remoteUri = remoteUri,
-    contactName = remoteUri.displayName(),
+    contactName = remoteUri.toSipIdentity().displayName,
     callType = when {
         missed -> CallType.MISSED
         direction == CallDirection.INCOMING -> CallType.INCOMING
@@ -47,15 +47,3 @@ internal fun CallHistoryEntry.toCallLog() = CallLog(
     timestamp = startedAt,
     duration = duration.takeUnless { missed },
 )
-
-private fun String.displayName(): String {
-    val quotedName = QUOTED_NAME.find(this)?.groupValues?.get(1)?.trim()
-    if (!quotedName.isNullOrEmpty()) return quotedName
-    return removePrefix("sip:")
-        .substringBefore('@')
-        .substringBefore('<')
-        .trim()
-        .ifEmpty { this }
-}
-
-private val QUOTED_NAME = Regex("\"([^\"]+)\"")
