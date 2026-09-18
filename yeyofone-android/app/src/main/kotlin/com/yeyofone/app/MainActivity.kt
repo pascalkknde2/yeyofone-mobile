@@ -15,21 +15,31 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -42,10 +52,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -85,6 +98,9 @@ import com.yeyofone.app.ui.incomingcall.IncomingCallScreen as IncomingCallConten
 import com.yeyofone.app.ui.settings.SettingsScreen
 import com.yeyofone.app.ui.main.MainScreen
 import com.yeyofone.app.ui.theme.YeyoFoneTheme
+import com.yeyofone.app.ui.theme.BackgroundGray
+import com.yeyofone.app.ui.theme.TextPrimary
+import com.yeyofone.app.ui.theme.TextSecondary
 
 class MainActivity : ComponentActivity() {
     override fun onStart() {
@@ -750,44 +766,93 @@ private fun AccountEditor(existing: SipAccount?, viewModel: YeyoFoneViewModel, o
     var saving by remember { mutableStateOf(false) }
     val saveFailedMessage = stringResource(R.string.save_failed)
 
-    Scaffold(topBar = { TopAppBar(title = { Text(stringResource(if (existing == null) R.string.add_account else R.string.edit_account)) }) }) { padding ->
-        LazyColumn(
-            Modifier.fillMaxSize().padding(padding).padding(horizontal = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            item { Field(stringResource(R.string.display_name), displayName) { displayName = it } }
-            item { Field(stringResource(R.string.sip_username), username) { username = it; if (authUsername.isBlank()) authUsername = it } }
-            item { Field(stringResource(R.string.authentication_username), authUsername) { authUsername = it } }
-            item {
-                OutlinedTextField(
-                    password, { password = it }, Modifier.fillMaxWidth(),
-                    label = { Text(stringResource(if (existing == null) R.string.password else R.string.new_password_optional)) },
-                    visualTransformation = PasswordVisualTransformation(), singleLine = true,
-                )
-            }
-            item { Field(stringResource(R.string.domain), domain) { domain = it } }
-            item { Field(stringResource(R.string.registrar_uri), registrar) { registrar = it } }
-            item { Field(stringResource(R.string.outbound_proxy_optional), proxy) { proxy = it } }
-            item { Field(stringResource(R.string.port), port) { port = it.filter(Char::isDigit) } }
-            item {
-                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    TransportProtocol.entries.forEach { choice ->
-                        FilterChip(selected = transport == choice, onClick = { transport = choice }, label = { Text(choice.name) })
+    Scaffold(
+        containerColor = BackgroundGray,
+        topBar = {
+            TopAppBar(
+                title = {
+                    Text(
+                        stringResource(if (existing == null) R.string.add_account else R.string.edit_account),
+                        fontWeight = FontWeight.Bold,
+                        color = TextPrimary,
+                    )
+                },
+                navigationIcon = {
+                    IconButton(onClick = onDone) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.cd_back), tint = TextPrimary)
                     }
+                },
+            )
+        },
+    ) { padding ->
+        LazyColumn(
+            Modifier.fillMaxSize().padding(padding),
+            contentPadding = PaddingValues(horizontal = 20.dp, vertical = 20.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            item {
+                EditorSectionLabel(stringResource(R.string.account_identity_section))
+            }
+            item {
+                EditorCard {
+                    Field(stringResource(R.string.display_name), displayName) { displayName = it }
+                    Field(stringResource(R.string.sip_username), username) { username = it; if (authUsername.isBlank()) authUsername = it }
+                    Field(stringResource(R.string.authentication_username), authUsername) { authUsername = it }
+                    OutlinedTextField(
+                        password, { password = it }, Modifier.fillMaxWidth(),
+                        label = { Text(stringResource(if (existing == null) R.string.password else R.string.new_password_optional)) },
+                        visualTransformation = PasswordVisualTransformation(), singleLine = true,
+                        shape = RoundedCornerShape(14.dp),
+                        colors = editorFieldColors(),
+                    )
                 }
             }
-            item { Field(stringResource(R.string.stun_server_optional), stun) { stun = it } }
-            item { Field(stringResource(R.string.turn_server_optional), turn) { turn = it } }
-            item { Field(stringResource(R.string.turn_username_optional), turnUsername) { turnUsername = it } }
-            item { CheckRow(stringResource(R.string.enable_ice), ice) { ice = it } }
-            item { CheckRow(stringResource(R.string.require_srtp), srtp) { srtp = it } }
-            item { Field(stringResource(R.string.registration_expiry), expiry) { expiry = it.filter(Char::isDigit) } }
-            item { Field(stringResource(R.string.voicemail_optional), voicemail) { voicemail = it } }
-            item { Field(stringResource(R.string.caller_id_optional), callerId) { callerId = it } }
+            item { EditorSectionLabel(stringResource(R.string.section_connection)) }
+            item {
+                EditorCard {
+                    Field(stringResource(R.string.domain), domain) { domain = it }
+                    Field(stringResource(R.string.registrar_uri), registrar) { registrar = it }
+                    Field(stringResource(R.string.outbound_proxy_optional), proxy) { proxy = it }
+                    Field(stringResource(R.string.port), port) { port = it.filter(Char::isDigit) }
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        TransportProtocol.entries.forEach { choice ->
+                            FilterChip(
+                                selected = transport == choice,
+                                onClick = { transport = choice },
+                                label = { Text(choice.name) },
+                                modifier = Modifier.weight(1f),
+                            )
+                        }
+                    }
+                    Field(stringResource(R.string.registration_expiry), expiry) { expiry = it.filter(Char::isDigit) }
+                }
+            }
+            item { EditorSectionLabel(stringResource(R.string.account_security_section)) }
+            item {
+                EditorCard {
+                    Field(stringResource(R.string.stun_server_optional), stun) { stun = it }
+                    Field(stringResource(R.string.turn_server_optional), turn) { turn = it }
+                    Field(stringResource(R.string.turn_username_optional), turnUsername) { turnUsername = it }
+                    CheckRow(stringResource(R.string.enable_ice), ice) { ice = it }
+                    CheckRow(stringResource(R.string.require_srtp), srtp) { srtp = it }
+                }
+            }
+            item { EditorSectionLabel(stringResource(R.string.account_optional_section)) }
+            item {
+                EditorCard {
+                    Field(stringResource(R.string.voicemail_optional), voicemail) { voicemail = it }
+                    Field(stringResource(R.string.caller_id_optional), callerId) { callerId = it }
+                }
+            }
             error?.let { item { Text(it, color = MaterialTheme.colorScheme.error) } }
             item {
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Button(enabled = !saving, onClick = {
+                Button(
+                    enabled = !saving,
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = TextPrimary, contentColor = Color.White),
+                    contentPadding = PaddingValues(vertical = 16.dp),
+                    onClick = {
                         saving = true
                         error = null
                         val secret = password.takeIf(String::isNotEmpty)?.toCharArray()
@@ -808,9 +873,15 @@ private fun AccountEditor(existing: SipAccount?, viewModel: YeyoFoneViewModel, o
                             result.onSuccess { onDone() }.onFailure { error = it.message ?: saveFailedMessage }
                             saving = false
                         }
-                    }) { Text(stringResource(R.string.save)) }
-                    TextButton(enabled = !saving, onClick = { password = ""; onDone() }) { Text(stringResource(R.string.cancel)) }
-                }
+                    },
+                ) { Text(stringResource(R.string.save), fontSize = 16.sp, fontWeight = FontWeight.SemiBold) }
+            }
+            item {
+                TextButton(
+                    enabled = !saving,
+                    modifier = Modifier.fillMaxWidth(),
+                    onClick = { password = ""; onDone() },
+                ) { Text(stringResource(R.string.cancel), color = TextSecondary) }
             }
         }
     }
@@ -818,13 +889,50 @@ private fun AccountEditor(existing: SipAccount?, viewModel: YeyoFoneViewModel, o
 
 @Composable
 private fun Field(label: String, value: String, onValueChange: (String) -> Unit) {
-    OutlinedTextField(value, onValueChange, Modifier.fillMaxWidth(), label = { Text(label) }, singleLine = true)
+    OutlinedTextField(
+        value, onValueChange, Modifier.fillMaxWidth(),
+        label = { Text(label) }, singleLine = true,
+        shape = RoundedCornerShape(14.dp),
+        colors = editorFieldColors(),
+    )
 }
 
 @Composable
 private fun CheckRow(label: String, checked: Boolean, onCheckedChange: (Boolean) -> Unit) {
-    Row(Modifier.fillMaxWidth().clickable { onCheckedChange(!checked) }) {
+    Row(
+        Modifier.fillMaxWidth().clickable { onCheckedChange(!checked) }.padding(vertical = 2.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
         Checkbox(checked, onCheckedChange)
-        Text(label, Modifier.padding(top = 12.dp))
+        Text(label, color = TextPrimary, fontWeight = FontWeight.Medium)
     }
 }
+
+@Composable
+private fun EditorCard(content: @Composable ColumnScope.() -> Unit) {
+    Column(
+        Modifier.fillMaxWidth().background(Color.White, RoundedCornerShape(20.dp)).padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+        content = content,
+    )
+}
+
+@Composable
+private fun EditorSectionLabel(label: String) {
+    Text(
+        label.uppercase(),
+        modifier = Modifier.padding(start = 4.dp, top = 4.dp),
+        color = TextSecondary,
+        fontSize = 12.sp,
+        fontWeight = FontWeight.Bold,
+        letterSpacing = 0.7.sp,
+    )
+}
+
+@Composable
+private fun editorFieldColors() = OutlinedTextFieldDefaults.colors(
+    focusedBorderColor = MaterialTheme.colorScheme.primary,
+    unfocusedBorderColor = Color(0xFFE2E5E9),
+    focusedContainerColor = Color(0xFFFBFBFC),
+    unfocusedContainerColor = Color(0xFFFBFBFC),
+)

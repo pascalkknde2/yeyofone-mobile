@@ -39,6 +39,9 @@
     <string name="registration_expiry">Registration expiry seconds</string>
     <string name="voicemail_optional">Voicemail number (optional)</string>
     <string name="caller_id_optional">Caller ID (optional)</string>
+    <string name="account_identity_section">Account identity</string>
+    <string name="account_security_section">Network &amp; security</string>
+    <string name="account_optional_section">Optional details</string>
     <string name="save_failed">Unable to save account</string>
     <string name="label_sip_server">SIP Server</string>
     <string name="label_username">Username</string>
