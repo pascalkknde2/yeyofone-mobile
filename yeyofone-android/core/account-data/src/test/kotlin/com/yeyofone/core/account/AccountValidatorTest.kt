@@ -19,6 +19,19 @@ import kotlin.test.assertTrue
 @OptIn(ExperimentalCoroutinesApi::class)
 class AccountValidatorTest {
     @Test
+    fun `registrar domain receives default sip scheme`() {
+        assertEquals("sip:pbx.example.com", normalizeRegistrarUri("pbx.example.com"))
+        assertEquals("sip:pbx.example.com:5070", normalizeRegistrarUri(" pbx.example.com:5070 "))
+        assertEquals("sip:pbx.example.com", normalizeRegistrarUri("sip:pbx.example.com"))
+        assertEquals("sips:pbx.example.com", normalizeRegistrarUri("sips:pbx.example.com"))
+    }
+
+    @Test
+    fun `explicit non SIP scheme remains available to validator`() {
+        assertEquals("https://pbx.example.com", normalizeRegistrarUri("https://pbx.example.com"))
+    }
+
+    @Test
     fun `valid complete account is accepted`() {
         AccountValidator.validate(validDraft())
     }

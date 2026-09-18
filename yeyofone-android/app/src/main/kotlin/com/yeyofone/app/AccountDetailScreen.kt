@@ -43,7 +43,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
@@ -114,7 +113,7 @@ fun AccountDetail(account: SipAccount, viewModel: YeyoFoneViewModel) {
                 verticalArrangement = Arrangement.spacedBy(20.dp),
                 contentPadding = PaddingValues(bottom = 40.dp),
             ) {
-                item { ProfileCard(account, registrationState) }
+                item { ProfileHeader(account, registrationState) }
                 item {
                     Section(R.string.section_connection) {
                         ConnectionRows(account)
@@ -172,44 +171,51 @@ fun AccountDetail(account: SipAccount, viewModel: YeyoFoneViewModel) {
 }
 
 @Composable
-private fun ProfileCard(account: SipAccount, registrationState: RegistrationState) {
-    Surface(shape = RoundedCornerShape(20.dp), color = Color.White, shadowElevation = 4.dp) {
-        Box(Modifier.fillMaxWidth()) {
+private fun ProfileHeader(account: SipAccount, registrationState: RegistrationState) {
+    Column(
+        Modifier.fillMaxWidth().padding(top = 12.dp, bottom = 8.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Box(
+            Modifier.size(96.dp).background(Color(0xFFE8EEFF), CircleShape),
+            contentAlignment = Alignment.Center,
+        ) {
             Box(
-                Modifier
-                    .fillMaxWidth()
-                    .height(60.dp)
-                    .background(Brush.verticalGradient(listOf(Color(0xFFE0EAFF), Color(0xFFF0F4FF)))),
-            )
-            Column(
-                Modifier.fillMaxWidth().padding(top = 20.dp, bottom = 24.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(12.dp),
+                Modifier.size(84.dp).background(Ink, CircleShape).border(3.dp, Color.White, CircleShape),
+                contentAlignment = Alignment.Center,
             ) {
                 Box(
-                    Modifier
-                        .size(80.dp)
-                        .background(Ink, CircleShape)
-                        .border(4.dp, Color.White, CircleShape),
-                    contentAlignment = Alignment.Center,
+                    Modifier.size(76.dp).border(1.dp, Color.White.copy(alpha = 0.12f), CircleShape),
                 ) {
                     Text(
                         account.displayName.initials(),
+                        modifier = Modifier.align(Alignment.Center),
                         color = Color.White,
-                        fontSize = 28.sp,
+                        fontSize = 30.sp,
                         fontWeight = FontWeight.SemiBold,
                     )
                 }
-                Text(account.displayName, fontSize = 20.sp, fontWeight = FontWeight.Bold, color = Ink)
-                Text(
-                    stringResource(R.string.extension_value, account.username),
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Medium,
-                    color = Gray,
-                )
-                val (label, statusColor) = status(account, registrationState)
-                StatusBadge(label, statusColor)
             }
+        }
+        Text(
+            account.displayName,
+            modifier = Modifier.padding(top = 16.dp),
+            fontSize = 24.sp,
+            fontWeight = FontWeight.Bold,
+            color = Ink,
+            letterSpacing = (-0.3).sp,
+        )
+        Text(
+            stringResource(R.string.extension_value, account.username),
+            modifier = Modifier.padding(top = 4.dp),
+            fontSize = 14.sp,
+            fontWeight = FontWeight.Medium,
+            color = Gray,
+            letterSpacing = 0.2.sp,
+        )
+        val (label, statusColor) = status(account, registrationState)
+        Box(Modifier.padding(top = 12.dp)) {
+            StatusBadge(label, statusColor)
         }
     }
 }

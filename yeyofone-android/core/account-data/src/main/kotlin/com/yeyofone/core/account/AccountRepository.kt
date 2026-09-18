@@ -15,6 +15,16 @@ interface AccountRepository {
     suspend fun delete(id: SipAccountId)
 }
 
+/** Adds the standard SIP scheme when the user enters only a registrar host name. */
+fun normalizeRegistrarUri(value: String): String {
+    val trimmed = value.trim()
+    val hasExplicitScheme = SIP_SCHEME.containsMatchIn(trimmed) || URI_SCHEME.containsMatchIn(trimmed)
+    return if (hasExplicitScheme || trimmed.isEmpty()) trimmed else "sip:$trimmed"
+}
+
+private val SIP_SCHEME = Regex("^sips?:", RegexOption.IGNORE_CASE)
+private val URI_SCHEME = Regex("^[A-Za-z][A-Za-z0-9+.-]*://")
+
 /** Write-only command. Secrets must not be copied into screen state, saved state, or logs. */
 class AccountDraft(
     val id: SipAccountId? = null,

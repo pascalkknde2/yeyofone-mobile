@@ -16,6 +16,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -40,6 +41,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -48,6 +50,7 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.yeyofone.core.account.AccountDraft
+import com.yeyofone.core.account.normalizeRegistrarUri
 import com.yeyofone.core.model.CallDirection
 import com.yeyofone.core.model.CallId
 import com.yeyofone.core.model.CallSession
@@ -61,12 +64,18 @@ import com.yeyofone.core.model.TransferState
 import com.yeyofone.app.data.repository.CallRepository
 import com.yeyofone.app.ui.callhistory.CallHistoryScreen
 import com.yeyofone.app.ui.callhistory.CallHistoryViewModel
+import com.yeyofone.app.ui.accounts.AccountsScreen
+import com.yeyofone.app.ui.call.OutgoingCallScreen
 import com.yeyofone.app.ui.components.BottomNavigationBar
 import com.yeyofone.app.ui.components.CALLS_NAVIGATION
+import com.yeyofone.app.ui.components.CHAT_NAVIGATION
 import com.yeyofone.app.ui.components.CONTACTS_NAVIGATION
 import com.yeyofone.app.ui.components.KEYPAD_NAVIGATION
+import com.yeyofone.app.ui.components.SETTINGS_NAVIGATION
 import com.yeyofone.app.ui.dialpad.DialPadScreen
 import com.yeyofone.app.ui.dialpad.DialPadViewModel
+import com.yeyofone.app.ui.incomingcall.IncomingCallScreen as IncomingCallContent
+import com.yeyofone.app.ui.settings.SettingsScreen
 import com.yeyofone.app.ui.theme.YeyoFoneTheme
 
 class MainActivity : ComponentActivity() {
@@ -157,13 +166,23 @@ private fun AccountsApp(
         return
     }
 
+    val navigateFromMenu: (Int) -> Unit = { destination ->
+        when (destination) {
+            CALLS_NAVIGATION -> viewModel.showHistory()
+            CONTACTS_NAVIGATION -> viewModel.showAccounts()
+            KEYPAD_NAVIGATION -> state.accounts.firstOrNull()?.let { viewModel.dial(it.id) }
+            CHAT_NAVIGATION -> viewModel.showChat()
+            SETTINGS_NAVIGATION -> viewModel.showSettings()
+        }
+    }
+
     when (val current = state.screen) {
-        AppScreen.Accounts -> AccountList(
-            state.accounts,
+        AppScreen.Accounts -> AccountsScreen(
+            accounts = state.accounts,
             onAdd = { viewModel.editAccount(null) },
-            onHistory = viewModel::showHistory,
-            onKeypad = { state.accounts.firstOrNull()?.let { viewModel.dial(it.id) } },
             onOpen = { viewModel.showAccount(it.id) },
+            onEnabledChange = { account, enabled -> viewModel.setAccountEnabled(account.id, enabled) },
+            onNavigationItemSelected = navigateFromMenu,
         )
         is AppScreen.Detail -> state.accounts.firstOrNull { it.id == current.accountId }?.let { account ->
             AccountDetail(account, viewModel)
@@ -190,23 +209,44 @@ private fun AccountsApp(
                     },
                 )
             } else {
-                DialScreen(account, current.destination, state, viewModel)
+                val media by viewModel.observeMedia(activeSession.id).collectAsStateWithLifecycle()
+                OutgoingCallScreen(
+                    session = activeSession,
+                    media = media,
+                    speakerOn = state.selectedRoute == AudioRoute.Speaker,
+                    onNavigateBack = { viewModel.showAccount(account.id) },
+                    onSpeakerChange = { enabled ->
+                        val route = if (enabled) AudioRoute.Speaker else
+                            state.availableRoutes.firstOrNull { it != AudioRoute.Speaker }
+                        route?.let(viewModel::selectAudioRoute)
+                    },
+                    onMuteChange = { viewModel.setMuted(activeSession.id, it) },
+                    onHoldChange = { viewModel.setHeld(activeSession.id, it) },
+                    onDtmf = { viewModel.sendDtmf(activeSession.id, it) },
+                    onTransfer = { viewModel.transfer(activeSession.id, it) },
+                    onEndCall = { viewModel.end(activeSession.id) },
+                )
             }
         }
         AppScreen.History -> CallHistoryScreen(
             uiState = callHistoryState,
             accountIds = state.accounts.mapTo(mutableSetOf()) { it.id },
             onTabSelected = callHistoryViewModel::onTabSelected,
-            onNavigationItemSelected = { destination ->
-                when (destination) {
-                    CONTACTS_NAVIGATION -> viewModel.showAccounts()
-                    KEYPAD_NAVIGATION -> state.accounts.firstOrNull()?.let { viewModel.dial(it.id) }
-                }
-            },
+            onNavigationItemSelected = navigateFromMenu,
             onCallBack = { entry ->
                 viewModel.dial(entry.accountId, entry.dialDestination)
             },
             onClear = callHistoryViewModel::clear,
+        )
+        AppScreen.Chat -> MenuDestinationScreen(
+            title = stringResource(R.string.chat_navigation),
+            selectedIndex = CHAT_NAVIGATION,
+            onNavigationItemSelected = navigateFromMenu,
+        )
+        AppScreen.Settings -> SettingsScreen(
+            accountCount = state.accounts.count { it.enabled },
+            onAccountsClick = viewModel::showAccounts,
+            onNavigationItemSelected = navigateFromMenu,
         )
     }
 }
@@ -217,6 +257,8 @@ private fun AccountList(
     onAdd: () -> Unit,
     onHistory: () -> Unit,
     onKeypad: () -> Unit,
+    onChat: () -> Unit,
+    onSettings: () -> Unit,
     onOpen: (SipAccount) -> Unit,
 ) {
     Scaffold(
@@ -234,6 +276,8 @@ private fun AccountList(
                     when (it) {
                         CALLS_NAVIGATION -> onHistory()
                         KEYPAD_NAVIGATION -> onKeypad()
+                        CHAT_NAVIGATION -> onChat()
+                        SETTINGS_NAVIGATION -> onSettings()
                     }
                 },
             )
@@ -252,6 +296,30 @@ private fun AccountList(
                         Text(stringResource(if (account.enabled) R.string.enabled else R.string.disabled))
                     }
                 }
+            }
+        }
+    }
+}
+
+@Composable
+private fun MenuDestinationScreen(
+    title: String,
+    selectedIndex: Int,
+    onNavigationItemSelected: (Int) -> Unit,
+) {
+    Scaffold(
+        bottomBar = {
+            BottomNavigationBar(selectedIndex, onNavigationItemSelected)
+        },
+    ) { padding ->
+        Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Text(title, style = MaterialTheme.typography.headlineMedium)
+                Text(
+                    stringResource(R.string.feature_coming_soon),
+                    modifier = Modifier.padding(top = 8.dp),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
             }
         }
     }
@@ -324,16 +392,68 @@ private fun IncomingCallScreen(
     viewModel: YeyoFoneViewModel,
 ) {
     var permissionDenied by remember { mutableStateOf(false) }
+    var actionPending by remember(currentCallKey(session)) { mutableStateOf(false) }
     val current = state.sessions.firstOrNull { it.id == session.id } ?: session
     val context = LocalContext.current
+
+    if (current.state != CallState.Incoming && current.state != CallState.Ringing && !current.state.isTerminal()) {
+        val media by viewModel.observeMedia(current.id).collectAsStateWithLifecycle()
+        OutgoingCallScreen(
+            session = current,
+            media = media,
+            speakerOn = state.selectedRoute == AudioRoute.Speaker,
+            onNavigateBack = viewModel::showAccounts,
+            onSpeakerChange = { enabled ->
+                val route = if (enabled) AudioRoute.Speaker else
+                    state.availableRoutes.firstOrNull { it != AudioRoute.Speaker }
+                route?.let(viewModel::selectAudioRoute)
+            },
+            onMuteChange = { viewModel.setMuted(current.id, it) },
+            onHoldChange = { viewModel.setHeld(current.id, it) },
+            onDtmf = { viewModel.sendDtmf(current.id, it) },
+            onTransfer = { viewModel.transfer(current.id, it) },
+            onEndCall = { viewModel.end(current.id) },
+        )
+        return
+    }
 
     val permissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
         if (granted) {
             permissionDenied = false
+            actionPending = true
             viewModel.answer(current.id)
         } else {
             permissionDenied = true
+            actionPending = false
         }
+    }
+
+    if (current.state == CallState.Incoming || current.state == CallState.Ringing) {
+        IncomingCallContent(
+            remoteUri = current.remoteUri,
+            permissionDenied = permissionDenied,
+            actionsEnabled = !actionPending,
+            onAccept = {
+                if (!actionPending) {
+                    val granted = ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) ==
+                        PackageManager.PERMISSION_GRANTED
+                    if (granted) {
+                        permissionDenied = false
+                        actionPending = true
+                        viewModel.answer(current.id)
+                    } else {
+                        permissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
+                    }
+                }
+            },
+            onDecline = {
+                if (!actionPending) {
+                    actionPending = true
+                    viewModel.reject(current.id)
+                }
+            },
+        )
+        return
     }
 
     Scaffold(topBar = { TopAppBar(title = { Text(stringResource(R.string.incoming_call_title)) }) }) { padding ->
@@ -378,6 +498,8 @@ private fun IncomingCallScreen(
         }
     }
 }
+
+private fun currentCallKey(session: CallSession): String = session.id.value
 
 @Composable
 private fun InCallControls(
@@ -619,7 +741,8 @@ private fun AccountEditor(existing: SipAccount?, viewModel: YeyoFoneViewModel, o
                             AccountDraft(
                                 id = existing?.id, displayName = displayName, username = username,
                                 authenticationUsername = authUsername, password = secret, domain = domain,
-                                registrarUri = registrar, outboundProxyUri = proxy, port = port.toIntOrNull() ?: 0,
+                                registrarUri = normalizeRegistrarUri(registrar),
+                                outboundProxyUri = proxy, port = port.toIntOrNull() ?: 0,
                                 transport = transport,
                                 securityMode = if (transport == TransportProtocol.TLS) SecurityMode.REQUIRE_SECURE else SecurityMode.ALLOW_INSECURE,
                                 nat = NatConfiguration(stun, turn, turnUsername, ice, srtp),

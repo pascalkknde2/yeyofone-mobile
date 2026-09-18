@@ -15,11 +15,14 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Apps
 import androidx.compose.material.icons.filled.Call
+import androidx.compose.material.icons.filled.ChatBubble
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.outlined.Apps
 import androidx.compose.material.icons.outlined.Call
 import androidx.compose.material.icons.outlined.Person
-import androidx.compose.material.icons.outlined.Search
+import androidx.compose.material.icons.outlined.ChatBubbleOutline
+import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -41,7 +44,8 @@ import com.yeyofone.app.ui.theme.TextPrimary
 const val CALLS_NAVIGATION = 0
 const val CONTACTS_NAVIGATION = 1
 const val KEYPAD_NAVIGATION = 2
-const val SEARCH_NAVIGATION = 3
+const val CHAT_NAVIGATION = 3
+const val SETTINGS_NAVIGATION = 4
 
 @Composable
 fun BottomNavigationBar(selectedIndex: Int, onItemSelected: (Int) -> Unit) {
@@ -49,12 +53,13 @@ fun BottomNavigationBar(selectedIndex: Int, onItemSelected: (Int) -> Unit) {
         NavItem(stringResource(R.string.calls_navigation), Icons.Filled.Call, Icons.Outlined.Call),
         NavItem(stringResource(R.string.contacts_navigation), Icons.Filled.Person, Icons.Outlined.Person),
         NavItem(stringResource(R.string.keypad), Icons.Filled.Apps, Icons.Outlined.Apps),
-        NavItem(stringResource(R.string.search_navigation), Icons.Outlined.Search, Icons.Outlined.Search),
+        NavItem(stringResource(R.string.chat_navigation), Icons.Filled.ChatBubble, Icons.Outlined.ChatBubbleOutline),
+        NavItem(stringResource(R.string.settings_navigation), Icons.Filled.Settings, Icons.Outlined.Settings),
     )
     Row(
-        Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 16.dp)
+        Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 16.dp)
             .shadow(8.dp, RoundedCornerShape(30.dp)).clip(RoundedCornerShape(30.dp))
-            .background(NavBackground).padding(vertical = 12.dp, horizontal = 10.dp),
+            .background(NavBackground).padding(vertical = 10.dp, horizontal = 4.dp),
         horizontalArrangement = Arrangement.SpaceAround,
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -62,12 +67,12 @@ fun BottomNavigationBar(selectedIndex: Int, onItemSelected: (Int) -> Unit) {
             val selected = selectedIndex == index
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
-                modifier = Modifier.clickable { onItemSelected(index) }.padding(horizontal = 8.dp, vertical = 4.dp),
+                modifier = Modifier.weight(1f).clickable { onItemSelected(index) }.padding(vertical = 4.dp),
             ) {
                 Box(
                     Modifier.clip(RoundedCornerShape(12.dp))
                         .background(if (selected) Color.Black.copy(alpha = 0.05f) else Color.Transparent)
-                        .padding(horizontal = 12.dp, vertical = 4.dp),
+                        .padding(horizontal = 10.dp, vertical = 4.dp),
                 ) {
                     Icon(
                         if (selected) item.selectedIcon else item.unselectedIcon,
