@@ -88,6 +88,8 @@ import com.yeyofone.app.ui.dialpad.DialPadViewModel
 import com.yeyofone.app.ui.incomingcall.IncomingCallScreen as IncomingCallContent
 import com.yeyofone.app.ui.main.MainScreen
 import com.yeyofone.app.ui.settings.SettingsScreen
+import com.yeyofone.app.ui.settings.AudioSettingsScreen
+import com.yeyofone.app.ui.settings.VideoSettingsScreen
 import com.yeyofone.app.ui.theme.AccentBlue
 import com.yeyofone.app.ui.theme.BackgroundGray
 import com.yeyofone.app.ui.theme.BorderLight
@@ -342,8 +344,12 @@ private fun AccountsApp(
         AppScreen.Settings -> SettingsScreen(
             accountCount = state.accounts.count { it.enabled },
             onAccountsClick = viewModel::showAccounts,
+            onAudioClick = viewModel::showAudioSettings,
+            onVideoClick = viewModel::showVideoSettings,
             onNavigationItemSelected = navigateFromMenu,
         )
+        AppScreen.AudioSettings -> AudioSettingsScreen(onBack = viewModel::showSettings)
+        AppScreen.VideoSettings -> VideoSettingsScreen(onBack = viewModel::showSettings)
     }
 }
 

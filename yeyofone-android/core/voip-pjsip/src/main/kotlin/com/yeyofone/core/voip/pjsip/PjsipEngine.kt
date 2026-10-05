@@ -113,6 +113,12 @@ class PjsipEngine internal constructor(
         } catch (cancellation: CancellationException) {
             tryDestroy()
             throw cancellation
+        } catch (_: UnsatisfiedLinkError) {
+            // A sideloaded universal APK may reach an ABI without a bundled PJSIP library.
+            // Keep the application process alive and expose the failure through engine.state.
+            mutableState.value = EngineState.Failed(
+                VoipError.Native("PJSIP native library is unavailable for this device"),
+            )
         } catch (_: Exception) {
             tryDestroy()
             mutableState.value = EngineState.Failed(

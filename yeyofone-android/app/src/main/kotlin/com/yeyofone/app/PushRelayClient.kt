@@ -77,8 +77,12 @@ internal object PushRelayClient {
         }
     }
 
-    /** Blocking; call off the main thread. */
+    /**
+     * Blocking; call off the main thread. A credential the relay already rejected (expired,
+     * revoked or out of scope) is not replayed; it stays rejected until a new one is imported.
+     */
     fun register(context: Context, account: SipAccount, fcmToken: String): Status {
+        lastStatus(context, account.id)?.takeIf(::isTerminalRejection)?.let { return it }
         val credential = credential(context, account)
         val endpoint = credential?.let { deviceEndpoint(BuildConfig.PUSH_RELAY_URL, it.device) }
         if (endpoint == null) return Status.NOT_CONFIGURED
@@ -133,6 +137,10 @@ internal object PushRelayClient {
 
     private fun statusKey(accountId: SipAccountId) = "relay_status.${accountId.value}"
 }
+
+/** 401/403 mean the relay refused this credential; only a newly imported one can succeed. */
+internal fun isTerminalRejection(status: PushRelayClient.Status): Boolean =
+    status == PushRelayClient.Status.CREDENTIAL_REJECTED || status == PushRelayClient.Status.SCOPE_REJECTED
 
 /** Maps a relay v2 device-registration response code to a client status. */
 internal fun statusFor(httpCode: Int): PushRelayClient.Status = when (httpCode) {

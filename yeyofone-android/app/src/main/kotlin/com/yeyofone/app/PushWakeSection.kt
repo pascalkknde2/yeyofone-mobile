@@ -58,7 +58,7 @@ internal fun PushWakeRows(account: SipAccount) {
         )
         state.credential?.let {
             Text(
-                stringResource(R.string.push_credential_device, it.device),
+                stringResource(R.string.push_credential_scope, it.tenant, it.device),
                 Modifier.padding(top = 4.dp),
                 fontSize = 13.sp,
                 color = TextSecondary,
