@@ -309,4 +309,17 @@
     <string name="language_auto_translate_subtitle">Translate incoming messages</string>
     <string name="language_voice_accent">Voice Accent</string>
     <string name="language_accent_american">American English</string>
+    <string name="recordings_title">Recordings</string>
+    <string name="recording_storage_title">Storage</string>
+    <string name="recording_storage_used">Storage Used</string>
+    <string name="recording_count">%1$d recordings saved</string>
+    <string name="recording_search_hint">Search recordings…</string>
+    <string name="recording_recent_title">Recent Recordings</string>
+    <string name="recording_empty_title">No recordings yet</string>
+    <string name="recording_empty_subtitle">Saved recordings on this device will appear here.</string>
+    <string name="recording_search_empty_title">No matches</string>
+    <string name="recording_search_empty_subtitle">Try another name.</string>
+    <string name="recording_play">Play recording</string>
+    <string name="recording_pause">Pause recording</string>
+    <string name="recording_playback_failed">This recording could not be played.</string>
 </resources>
