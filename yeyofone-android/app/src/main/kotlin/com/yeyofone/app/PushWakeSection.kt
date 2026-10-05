@@ -29,23 +29,41 @@ import com.yeyofone.app.ui.theme.TextPrimary
 import com.yeyofone.app.ui.theme.TextSecondary
 import com.yeyofone.core.model.SipAccount
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-private data class PushWakeState(val credential: PushCredential?, val status: PushRelayClient.Status?)
+private data class PushWakeState(
+    val credential: PushCredential?,
+    val status: PushRelayClient.Status?,
+    val revoking: Boolean,
+) {
+    /** States the registrar resolves in the background; the section re-reads them briefly. */
+    val transitional: Boolean get() = revoking || (credential != null && status == null)
+}
 
 /** Import, status and removal of the account's operator-issued push-relay device credential. */
 @Composable
 internal fun PushWakeRows(account: SipAccount) {
     val context = LocalContext.current.applicationContext
+    val registrar = (context as YeyoFoneApplication).pushRegistrar
     val scope = rememberCoroutineScope()
     var revision by remember { mutableIntStateOf(0) }
     var importOpen by remember { mutableStateOf(false) }
     var removeOpen by remember { mutableStateOf(false) }
     val relayConfigured = BuildConfig.PUSH_RELAY_URL.startsWith("https://", ignoreCase = true)
-    val state by produceState(PushWakeState(null, null), account, revision) {
-        value = withContext(Dispatchers.IO) {
-            PushWakeState(PushRelayClient.credential(context, account), PushRelayClient.lastStatus(context, account.id))
+    val state by produceState(PushWakeState(null, null, false), account, revision) {
+        repeat(POLL_ATTEMPTS) {
+            value = withContext(Dispatchers.IO) {
+                val revoking = PushRelayClient.isRevocationPending(context, account.id)
+                PushWakeState(
+                    if (revoking) null else PushRelayClient.credential(context, account),
+                    PushRelayClient.lastStatus(context, account.id),
+                    revoking,
+                )
+            }
+            if (!value.transitional) return@produceState
+            delay(POLL_INTERVAL_MS)
         }
     }
 
@@ -64,7 +82,7 @@ internal fun PushWakeRows(account: SipAccount) {
                 color = TextSecondary,
             )
         }
-        if (relayConfigured) {
+        if (relayConfigured && !state.revoking) {
             Row(Modifier.padding(top = 4.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 TextButton(onClick = { importOpen = true }) {
                     Text(stringResource(if (state.credential == null) R.string.push_import else R.string.push_replace))
@@ -85,11 +103,7 @@ internal fun PushWakeRows(account: SipAccount) {
                 scope.launch {
                     val failure = withContext(Dispatchers.IO) {
                         runCatching { PushRelayClient.importCredential(context, account, json) }
-                            .onSuccess {
-                                PushRelayClient.cachedToken(context)?.let { token ->
-                                    PushRelayClient.register(context, account, token)
-                                }
-                            }
+                            .onSuccess { registrar.register(account) }
                             .exceptionOrNull()
                     }
                     if (failure == null) {
@@ -109,10 +123,8 @@ internal fun PushWakeRows(account: SipAccount) {
             confirmButton = {
                 TextButton(onClick = {
                     removeOpen = false
-                    scope.launch {
-                        withContext(Dispatchers.IO) { PushRelayClient.removeCredential(context, account) }
-                        revision++
-                    }
+                    registrar.revoke(account.id, account.username)
+                    revision++
                 }) { Text(stringResource(R.string.push_remove), color = AccentRed) }
             },
             dismissButton = {
@@ -150,8 +162,12 @@ private fun ImportCredentialDialog(onDismiss: () -> Unit, onImport: (String, (St
     )
 }
 
+private const val POLL_ATTEMPTS = 15
+private const val POLL_INTERVAL_MS = 2_000L
+
 private fun pushStatusText(relayConfigured: Boolean, state: PushWakeState): Int = when {
     !relayConfigured -> R.string.push_status_unavailable
+    state.revoking -> R.string.push_status_revoking
     state.credential == null -> R.string.push_status_not_set_up
     else -> when (state.status) {
         PushRelayClient.Status.REGISTERED -> R.string.push_status_active
