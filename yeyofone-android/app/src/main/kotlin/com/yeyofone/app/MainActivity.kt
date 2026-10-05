@@ -90,6 +90,7 @@ import com.yeyofone.app.ui.main.MainScreen
 import com.yeyofone.app.ui.settings.SettingsScreen
 import com.yeyofone.app.ui.settings.AudioSettingsScreen
 import com.yeyofone.app.ui.settings.VideoSettingsScreen
+import com.yeyofone.app.ui.settings.IncomingCallsSettingsScreen
 import com.yeyofone.app.ui.theme.AccentBlue
 import com.yeyofone.app.ui.theme.BackgroundGray
 import com.yeyofone.app.ui.theme.BorderLight
@@ -211,6 +212,7 @@ private fun AccountsApp(
     chatViewModel: ChatViewModel,
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val preferences by viewModel.accountPreferences.collectAsStateWithLifecycle()
     val callHistoryState by callHistoryViewModel.uiState.collectAsStateWithLifecycle()
     val incoming = state.sessions.lastOrNull {
         it.direction == CallDirection.INCOMING && !it.state.isTerminal() && it.id !in state.dismissedIncomingCalls
@@ -346,10 +348,20 @@ private fun AccountsApp(
             onAccountsClick = viewModel::showAccounts,
             onAudioClick = viewModel::showAudioSettings,
             onVideoClick = viewModel::showVideoSettings,
+            onIncomingCallsClick = viewModel::showIncomingCallsSettings,
             onNavigationItemSelected = navigateFromMenu,
         )
         AppScreen.AudioSettings -> AudioSettingsScreen(onBack = viewModel::showSettings)
         AppScreen.VideoSettings -> VideoSettingsScreen(onBack = viewModel::showSettings)
+        AppScreen.IncomingCallsSettings -> {
+            val account = state.accounts.firstOrNull()
+            val accountPreferences = account?.let { preferences[it.id.value] } ?: AccountPreferences()
+            IncomingCallsSettingsScreen(
+                preferences = accountPreferences,
+                onBack = viewModel::showSettings,
+                onToggle = { toggle, enabled -> account?.let { viewModel.setPreference(it.id, toggle, enabled) } },
+            )
+        }
     }
 }
 

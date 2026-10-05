@@ -273,4 +273,25 @@
     <string name="grid_view_subtitle">All participants equal size</string>
     <string name="gallery_view">Gallery view</string>
     <string name="gallery_view_subtitle">Horizontal scrolling</string>
+    <string name="incoming_calls_title">Incoming Calls</string>
+    <string name="general_section">General</string>
+    <string name="call_handling_section">Call Handling</string>
+    <string name="advanced_section">Advanced</string>
+    <string name="allow_incoming_calls">Allow Incoming Calls</string>
+    <string name="allow_incoming_calls_subtitle">Receive calls on this device</string>
+    <string name="ringtone_setting">Ringtone</string>
+    <string name="vibrate_setting">Vibrate</string>
+    <string name="vibrate_subtitle">Vibrate when receiving calls</string>
+    <string name="call_waiting_setting">Call Waiting</string>
+    <string name="call_waiting_subtitle">Notify when another call comes in</string>
+    <string name="call_forwarding_setting">Call Forwarding</string>
+    <string name="call_forwarding_subtitle">Forward calls to another number</string>
+    <string name="do_not_disturb_setting">Do Not Disturb</string>
+    <string name="do_not_disturb_subtitle">Silence incoming calls and messages</string>
+    <string name="flip_to_mute_setting">Flip to Mute</string>
+    <string name="flip_to_mute_subtitle">Mute ringing by flipping device</string>
+    <string name="call_announce_setting">Call Announce</string>
+    <string name="call_announce_subtitle">Speak caller name when ringing</string>
+    <string name="choose_ringtone">Choose ringtone</string>
+    <string name="forward_to_number">Forward to number</string>
 </resources>
