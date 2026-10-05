@@ -39,11 +39,13 @@ import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -59,9 +61,12 @@ import com.yeyofone.app.ui.theme.InactiveGray
 import com.yeyofone.app.ui.theme.PrimaryLight
 import com.yeyofone.app.ui.theme.TextPrimary
 import com.yeyofone.app.ui.theme.TextSecondary
+import com.yeyofone.core.account.PushCredentialStore
 import com.yeyofone.core.model.RegistrationState
 import com.yeyofone.core.model.SipAccount
 import com.yeyofone.core.model.VoipError
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 private val Ink = TextPrimary
 private val Gray = TextSecondary
@@ -79,6 +84,10 @@ fun AccountDetail(account: SipAccount, viewModel: YeyoFoneViewModel) {
     val allPreferences by viewModel.accountPreferences.collectAsStateWithLifecycle()
     val preferences = allPreferences[account.id.value] ?: AccountPreferences()
     var showSignOutDialog by remember { mutableStateOf(false) }
+    val appContext = LocalContext.current.applicationContext
+    val hasPushCredential by produceState(false, account.id, showSignOutDialog) {
+        value = withContext(Dispatchers.IO) { PushCredentialStore.create(appContext).contains(account.id) }
+    }
 
     MaterialTheme(
         colorScheme = lightColorScheme(
@@ -164,7 +173,14 @@ fun AccountDetail(account: SipAccount, viewModel: YeyoFoneViewModel) {
         if (showSignOutDialog) {
             AlertDialog(
                 onDismissRequest = { showSignOutDialog = false },
-                text = { Text(stringResource(R.string.confirm_sign_out, account.displayName)) },
+                text = {
+                    Column {
+                        Text(stringResource(R.string.confirm_sign_out, account.displayName))
+                        if (hasPushCredential) {
+                            Text(stringResource(R.string.push_signout_note), Modifier.padding(top = 8.dp))
+                        }
+                    }
+                },
                 confirmButton = {
                     TextButton(onClick = {
                         showSignOutDialog = false
