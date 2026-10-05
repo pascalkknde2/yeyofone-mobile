@@ -139,6 +139,22 @@ class CallCoordinatorTest {
     }
 
     @Test
+    fun `incoming session keeps the INVITE relay call id`() = runTest {
+        val id = SipAccountId("one")
+        val gateway = FakeGateway()
+        val coordinator = CallCoordinator(FakeAccounts(mapOf(id to account(id))), gateway, backgroundScope)
+        runCurrent()
+
+        gateway.emit(
+            "native-1", id, invState = PJSIP_INV_STATE_INCOMING, lastStatusCode = 0,
+            direction = CallDirection.INCOMING, relayCallId = "relay-123",
+        )
+        runCurrent()
+
+        assertEquals("relay-123", coordinator.sessions.value.single().relayCallId)
+    }
+
+    @Test
     fun `answer delegates to gateway answer`() = runTest {
         val id = SipAccountId("one")
         val gateway = FakeGateway()
@@ -466,9 +482,10 @@ class CallCoordinatorTest {
             lastStatusCode: Int,
             direction: CallDirection = CallDirection.OUTGOING,
             remoteUri: String = "sip:1001@pbx.example.com",
+            relayCallId: String? = null,
         ) {
             mutableCallEvents.emit(
-                NativeCallEvent(callId, accountId, remoteUri, direction, invState, lastStatusCode, null),
+                NativeCallEvent(callId, accountId, remoteUri, direction, invState, lastStatusCode, null, relayCallId),
             )
         }
     }

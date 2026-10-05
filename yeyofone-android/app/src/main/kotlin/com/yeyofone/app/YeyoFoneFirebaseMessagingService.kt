@@ -17,12 +17,10 @@ class YeyoFoneFirebaseMessagingService : FirebaseMessagingService() {
     }
 
     override fun onMessageReceived(message: RemoteMessage) {
-        // A push only means "an INVITE is coming or waiting" - it carries no call details.
-        // Starting the foreground service (idempotent if already running) is what re-establishes
-        // SIP registration via YeyoFoneApplication.onCreate() and readies the app to notify/ring
-        // once the real INVITE arrives.
-        Log.i(TAG, "Push wake received, starting IncomingCallService")
-        IncomingCallService.start(this)
+        // A valid, fresh, non-duplicate wake (re)starts the foreground service, which restores
+        // SIP registration so the real INVITE can arrive; the push itself never creates a call.
+        // Cancels are reconciled against SIP state. See RelayPushHandler.
+        (application as YeyoFoneApplication).relayPushHandler.onMessage(message.data)
     }
 
     private companion object {

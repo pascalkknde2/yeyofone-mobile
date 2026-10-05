@@ -56,6 +56,8 @@ data class NativeCallEvent(
     val invState: Int,
     val lastStatusCode: Int,
     val lastReason: String?,
+    /** Relay call ID from the PBX's `X-Yeyo-Call-ID` INVITE header; correlation only, never trust. */
+    val relayCallId: String? = null,
 )
 
 data class NativeMediaEvent(

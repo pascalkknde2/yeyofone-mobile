@@ -40,6 +40,7 @@ class YeyoFoneApplication : Application() {
     val callManager by lazy { CallCoordinator(accountRepository, engine, applicationScope, callHistory) }
     val audioRouteManager by lazy { AndroidAudioRouteManager(this) }
     internal val pushRegistrar by lazy { PushRegistrar(this, applicationScope) }
+    internal val relayPushHandler by lazy { RelayPushHandler(this, applicationScope, callManager) }
 
     override fun onCreate() {
         super.onCreate()
@@ -48,6 +49,7 @@ class YeyoFoneApplication : Application() {
         // - including a push-triggered cold start - not only when the user opens the UI.
         IncomingCallService.start(this)
         pushRegistrar.resumePendingRevocations()
+        relayPushHandler.start()
         // onNewToken is only guaranteed when Firebase creates or rotates a token. Fetch the
         // existing token too, so accounts added after the initial FCM registration can enroll.
         runCatching { FirebaseMessaging.getInstance().token }

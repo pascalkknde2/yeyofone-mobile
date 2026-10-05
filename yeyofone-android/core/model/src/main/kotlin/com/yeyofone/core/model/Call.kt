@@ -12,6 +12,8 @@ data class CallSession(
     val connectedAt: Instant? = null,
     val endedAt: Instant? = null,
     val transfer: TransferState = TransferState.Idle,
+    /** Push-relay call ID carried on the INVITE, used only to match relay cancellations. */
+    val relayCallId: String? = null,
 )
 
 enum class CallDirection { INCOMING, OUTGOING }
