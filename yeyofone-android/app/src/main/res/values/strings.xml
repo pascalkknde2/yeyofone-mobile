@@ -294,4 +294,19 @@
     <string name="call_announce_subtitle">Speak caller name when ringing</string>
     <string name="choose_ringtone">Choose ringtone</string>
     <string name="forward_to_number">Forward to number</string>
+    <string name="settings_language">Language</string>
+    <string name="settings_language_subtitle">App language and voice preferences</string>
+    <string name="language_title">Language</string>
+    <string name="language_app_section">App Language</string>
+    <string name="language_voice_section">Voice &amp; Translation</string>
+    <string name="language_english_us">English (US)</string>
+    <string name="language_english_uk">English (UK)</string>
+    <string name="language_spanish">Español</string>
+    <string name="language_french">Français</string>
+    <string name="language_german">Deutsch</string>
+    <string name="language_default">Default</string>
+    <string name="language_auto_translate">Auto-Translate</string>
+    <string name="language_auto_translate_subtitle">Translate incoming messages</string>
+    <string name="language_voice_accent">Voice Accent</string>
+    <string name="language_accent_american">American English</string>
 </resources>

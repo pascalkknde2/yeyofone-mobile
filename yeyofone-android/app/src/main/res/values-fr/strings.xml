@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_language">Langue</string>
+    <string name="settings_language_subtitle">Langue de l’application et préférences vocales</string>
+    <string name="language_title">Langue</string>
+    <string name="language_app_section">Langue de l’application</string>
+    <string name="language_voice_section">Voix et traduction</string>
+    <string name="language_english_us">Anglais (États-Unis)</string>
+    <string name="language_english_uk">Anglais (Royaume-Uni)</string>
+    <string name="language_spanish">Espagnol</string>
+    <string name="language_french">Français</string>
+    <string name="language_german">Allemand</string>
+    <string name="language_default">Par défaut</string>
+    <string name="language_auto_translate">Traduction automatique</string>
+    <string name="language_auto_translate_subtitle">Traduire les messages entrants</string>
+    <string name="language_voice_accent">Accent vocal</string>
+    <string name="language_accent_american">Anglais américain</string>
+</resources>

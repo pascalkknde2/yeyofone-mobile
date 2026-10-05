@@ -25,6 +25,7 @@ import androidx.compose.material.icons.filled.Business
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.FiberManualRecord
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.MusicNote
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
@@ -94,6 +95,7 @@ fun SettingsScreen(
     onAudioClick: () -> Unit,
     onVideoClick: () -> Unit,
     onIncomingCallsClick: () -> Unit,
+    onLanguageClick: () -> Unit,
     onNavigationItemSelected: (Int) -> Unit,
 ) {
     val snackbar = remember { SnackbarHostState() }
@@ -130,6 +132,7 @@ fun SettingsScreen(
             SettingEntry(Icons.Default.FiberManualRecord, AccentBlue, stringResource(R.string.settings_recording), stringResource(R.string.settings_recording_subtitle)),
         ),
         stringResource(R.string.settings_section_more) to listOf(
+            SettingEntry(Icons.Default.Language, AccentBlue, stringResource(R.string.settings_language), stringResource(R.string.settings_language_subtitle), action = onLanguageClick),
             SettingEntry(Icons.Default.Settings, AccentBlue, stringResource(R.string.settings_advanced), stringResource(R.string.settings_advanced_subtitle)),
             SettingEntry(Icons.Default.Share, AccentGreen, stringResource(R.string.settings_social), stringResource(R.string.settings_social_subtitle)),
             SettingEntry(Icons.Default.Info, InactiveGray, stringResource(R.string.settings_about), stringResource(R.string.settings_about_subtitle, BuildConfig.VERSION_NAME)),
