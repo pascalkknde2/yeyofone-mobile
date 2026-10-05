@@ -4,6 +4,7 @@ import com.yeyofone.core.account.AccountRepository
 import com.yeyofone.core.account.AccountSecretProvider
 import com.yeyofone.core.model.RegistrationDetails
 import com.yeyofone.core.model.RegistrationState
+import com.yeyofone.core.model.SignalingPolicyException
 import com.yeyofone.core.model.SipAccountId
 import com.yeyofone.core.model.VoipError
 import com.yeyofone.core.voip.NativeRegistrationEvent
@@ -93,7 +94,8 @@ class RegistrationCoordinator(
             }
             val now = clock.instant()
             val error = result.exceptionOrNull()?.toVoipError() ?: event.toVoipError()
-            val recoverable = error !is VoipError.Authentication && error !is VoipError.Tls
+            val recoverable = error !is VoipError.Authentication && error !is VoipError.Tls &&
+                error !is VoipError.InvalidConfiguration
             val wait = if (recoverable) retryDelay(attempt++) else null
             val retryAt = wait?.let(now::plusMillis)
             state(id).value = RegistrationState.Failed(error, retryAt)
@@ -132,7 +134,9 @@ internal fun NativeRegistrationEvent?.toVoipError(): VoipError {
     val code = this?.sipCode
     val reason = this?.safeReason.orEmpty().lowercase()
     return when {
-        // PJSIP reports TLS handshake/certificate failures as transport-level (5xx) results.
+        // PJSIP reports certificate failures as locally generated 503s with a TLS/SSL reason
+        // (PJSIP_TLS_ECERTVERIF). Generic handshake errors carry bare OpenSSL text and stay
+        // retryable, since a network reset mid-handshake looks the same.
         "certificate" in reason || "tls" in reason || "ssl" in reason -> VoipError.Tls("Secure transport failed")
         code == 401 || code == 403 || code == 407 -> VoipError.Authentication("Registration authentication failed")
         code != null && code >= 500 -> VoipError.SipResponse(code, "Registration server error")
@@ -144,6 +148,10 @@ internal fun NativeRegistrationEvent?.toVoipError(): VoipError {
 internal fun Throwable.toVoipError(): VoipError {
     if (this is kotlinx.coroutines.TimeoutCancellationException) return VoipError.Network("Registration timed out")
     if (this is CancellationException) throw this
+    if (this is SignalingPolicyException) {
+        return if (violation.bypassesTls) VoipError.Tls("Secure signaling policy violated")
+        else VoipError.InvalidConfiguration("SIP transport configuration conflict")
+    }
     val safe = message.orEmpty().lowercase()
     return when {
         "credential" in safe -> VoipError.Authentication("Account credential is unavailable")
