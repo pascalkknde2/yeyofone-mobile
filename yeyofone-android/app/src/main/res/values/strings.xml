@@ -45,7 +45,7 @@
     <string name="push_status_renew">Credential expired or revoked. Import a new one.</string>
     <string name="push_status_not_authorized">Credential is not authorized for this device</string>
     <string name="push_status_failed">Registration failed; it will be retried</string>
-    <string name="push_credential_device">Device %1$s</string>
+    <string name="push_credential_scope">Tenant %1$s · device %2$s</string>
     <string name="push_import">Import</string>
     <string name="push_replace">Replace</string>
     <string name="push_remove">Remove</string>

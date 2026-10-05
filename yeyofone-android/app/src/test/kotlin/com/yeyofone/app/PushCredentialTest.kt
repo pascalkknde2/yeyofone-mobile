@@ -55,6 +55,15 @@ class PushCredentialTest {
     }
 
     @Test
+    fun `only relay refusals stop credential replay`() {
+        assertTrue(isTerminalRejection(PushRelayClient.Status.CREDENTIAL_REJECTED))
+        assertTrue(isTerminalRejection(PushRelayClient.Status.SCOPE_REJECTED))
+        assertFalse(isTerminalRejection(PushRelayClient.Status.FAILED))
+        assertFalse(isTerminalRejection(PushRelayClient.Status.REGISTERED))
+        assertFalse(isTerminalRejection(PushRelayClient.Status.NOT_CONFIGURED))
+    }
+
+    @Test
     fun `device endpoint requires HTTPS`() {
         assertEquals(
             "https://relay.example.com/v1/devices/phone-1005",
