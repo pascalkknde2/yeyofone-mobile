@@ -18,11 +18,11 @@ android {
         versionCode = 1
         versionName = "0.1.0"
 
-        // Push-relay wiring (see yeyofone-push-relay, a separate project - this repo stays
-        // client-only per MAIN-IDEA.md). Empty by default so a normal build never depends on
-        // it; set via -PpushRelayUrl=... -PpushRelaySecret=... or gradle.properties.
+        // Push-relay v2 base URL (see yeyofone-push-relay, a separate project - this repo stays
+        // client-only per MAIN-IDEA.md). Must be HTTPS. Empty by default so a normal build never
+        // depends on it; set via -PpushRelayUrl=... or gradle.properties. Not a secret: each
+        // device authenticates with its own operator-issued credential, imported per account.
         buildConfigField("String", "PUSH_RELAY_URL", "\"${project.findProperty("pushRelayUrl") ?: ""}\"")
-        buildConfigField("String", "PUSH_RELAY_SECRET", "\"${project.findProperty("pushRelaySecret") ?: ""}\"")
     }
 
     compileOptions {
@@ -48,6 +48,8 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.2")
     testImplementation(kotlin("test"))
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.10.2")
+    // Real org.json for JVM unit tests; the Android stub returns defaults.
+    testImplementation("org.json:json:20260814")
     // Push-wake skeleton (see YeyoFoneFirebaseMessagingService). Now backed by a real Firebase
     // project (app/google-services.json, project "yeyofone") - FCM can route messages here.
     // The PBX side still needs to trigger a push on an unanswered INVITE; see HANDOFF.md.

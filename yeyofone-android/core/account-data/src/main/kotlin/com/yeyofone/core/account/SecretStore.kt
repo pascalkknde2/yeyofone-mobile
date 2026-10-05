@@ -26,8 +26,12 @@ fun interface AccountSecretProvider {
 }
 
 /** Stores only AES-GCM ciphertext; the non-exportable AES key remains in Android Keystore. */
-internal class AndroidKeystoreSecretStore(context: Context) : SecretStore, AccountSecretProvider {
-    private val preferences = context.getSharedPreferences("yeyofone_account_secrets", Context.MODE_PRIVATE)
+internal class AndroidKeystoreSecretStore(
+    context: Context,
+    preferencesName: String = "yeyofone_account_secrets",
+    private val keyAlias: String = "yeyofone.account.secrets.v1",
+) : SecretStore, AccountSecretProvider {
+    private val preferences = context.getSharedPreferences(preferencesName, Context.MODE_PRIVATE)
 
     override fun put(accountId: SipAccountId, secret: CharArray) {
         val plain = StandardCharsets.UTF_8.encode(CharBuffer.wrap(secret))
@@ -56,11 +60,11 @@ internal class AndroidKeystoreSecretStore(context: Context) : SecretStore, Accou
 
     private fun key(): SecretKey {
         val keyStore = KeyStore.getInstance(KEYSTORE).apply { load(null) }
-        (keyStore.getKey(KEY_ALIAS, null) as? SecretKey)?.let { return it }
+        (keyStore.getKey(keyAlias, null) as? SecretKey)?.let { return it }
         return KeyGenerator.getInstance(KeyProperties.KEY_ALGORITHM_AES, KEYSTORE).run {
             init(
                 KeyGenParameterSpec.Builder(
-                    KEY_ALIAS,
+                    keyAlias,
                     KeyProperties.PURPOSE_ENCRYPT or KeyProperties.PURPOSE_DECRYPT,
                 ).setBlockModes(KeyProperties.BLOCK_MODE_GCM)
                     .setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_NONE)
@@ -102,7 +106,27 @@ internal class AndroidKeystoreSecretStore(context: Context) : SecretStore, Accou
 
     private companion object {
         const val KEYSTORE = "AndroidKeyStore"
-        const val KEY_ALIAS = "yeyofone.account.secrets.v1"
         const val TRANSFORMATION = "AES/GCM/NoPadding"
+    }
+}
+
+/**
+ * Keystore-protected storage for each account's push-relay device credential, kept apart from SIP
+ * passwords under its own key and file. Values are opaque here; the app validates their contents.
+ */
+class PushCredentialStore internal constructor(private val store: SecretStore) {
+    fun save(accountId: SipAccountId, credential: CharArray) = store.put(accountId, credential)
+    fun contains(accountId: SipAccountId): Boolean = store.contains(accountId)
+    fun read(accountId: SipAccountId): CharArray? = store.read(accountId)
+    fun delete(accountId: SipAccountId) = store.delete(accountId)
+
+    companion object {
+        fun create(context: Context): PushCredentialStore = PushCredentialStore(
+            AndroidKeystoreSecretStore(
+                context.applicationContext,
+                preferencesName = "yeyofone_push_credentials",
+                keyAlias = "yeyofone.push.credentials.v1",
+            ),
+        )
     }
 }

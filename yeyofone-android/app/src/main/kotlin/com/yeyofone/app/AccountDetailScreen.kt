@@ -153,6 +153,9 @@ fun AccountDetail(account: SipAccount, viewModel: YeyoFoneViewModel) {
                     }
                 }
                 item {
+                    Section(R.string.section_push_wake) { PushWakeRows(account) }
+                }
+                item {
                     ActionButtons(account, registrationState, viewModel) { showSignOutDialog = true }
                 }
             }
