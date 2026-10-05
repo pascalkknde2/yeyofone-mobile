@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Android 12+ ignores android:allowBackup for device-to-device transfer. SIP passwords and push
+    credentials are sealed with non-exportable Android Keystore keys, so copied ciphertexts would be
+    unreadable on another device, and account rows without them would be broken. Exclude all app
+    data from both cloud backup and device transfer, matching allowBackup="false" on older versions.
+-->
+<data-extraction-rules>
+    <cloud-backup>
+        <exclude domain="root" />
+        <exclude domain="file" />
+        <exclude domain="database" />
+        <exclude domain="sharedpref" />
+        <exclude domain="external" />
+    </cloud-backup>
+    <device-transfer>
+        <exclude domain="root" />
+        <exclude domain="file" />
+        <exclude domain="database" />
+        <exclude domain="sharedpref" />
+        <exclude domain="external" />
+    </device-transfer>
+</data-extraction-rules>

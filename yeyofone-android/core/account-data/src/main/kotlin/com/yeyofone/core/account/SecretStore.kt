@@ -4,10 +4,14 @@ import android.content.Context
 import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyProperties
 import android.util.Base64
+import android.util.Log
 import com.yeyofone.core.model.SipAccountId
+import java.nio.BufferUnderflowException
 import java.nio.ByteBuffer
 import java.nio.CharBuffer
 import java.nio.charset.StandardCharsets
+import java.security.GeneralSecurityException
+import java.security.InvalidKeyException
 import java.security.KeyStore
 import javax.crypto.Cipher
 import javax.crypto.KeyGenerator
@@ -38,7 +42,14 @@ internal class AndroidKeystoreSecretStore(
         val bytes = ByteArray(plain.remaining()).also(plain::get)
         try {
             val cipher = Cipher.getInstance(TRANSFORMATION)
-            cipher.init(Cipher.ENCRYPT_MODE, key())
+            try {
+                cipher.init(Cipher.ENCRYPT_MODE, key())
+            } catch (_: InvalidKeyException) {
+                // Covers KeyPermanentlyInvalidatedException: replace the key once. Secrets sealed
+                // with the old key become unreadable and are discarded by read().
+                deleteKey()
+                cipher.init(Cipher.ENCRYPT_MODE, key())
+            }
             val encrypted = cipher.doFinal(bytes)
             val payload = ByteBuffer.allocate(1 + cipher.iv.size + encrypted.size)
                 .put(cipher.iv.size.toByte()).put(cipher.iv).put(encrypted).array()
@@ -58,9 +69,13 @@ internal class AndroidKeystoreSecretStore(
         }
     }
 
+    private fun existingKey(): SecretKey? =
+        KeyStore.getInstance(KEYSTORE).apply { load(null) }.getKey(keyAlias, null) as? SecretKey
+
+    private fun deleteKey() = KeyStore.getInstance(KEYSTORE).apply { load(null) }.deleteEntry(keyAlias)
+
     private fun key(): SecretKey {
-        val keyStore = KeyStore.getInstance(KEYSTORE).apply { load(null) }
-        (keyStore.getKey(keyAlias, null) as? SecretKey)?.let { return it }
+        existingKey()?.let { return it }
         return KeyGenerator.getInstance(KeyProperties.KEY_ALGORITHM_AES, KEYSTORE).run {
             init(
                 KeyGenParameterSpec.Builder(
@@ -75,14 +90,28 @@ internal class AndroidKeystoreSecretStore(
         }
     }
 
+    /**
+     * Returns null when the secret is absent or can no longer be decrypted: the Keystore key was
+     * removed or invalidated (Keystore reset, data restored or transferred without its key) or the
+     * ciphertext is corrupt. An unreadable entry is erased so callers report the credential as
+     * unavailable (asking for it again) instead of failing and retrying on every attempt.
+     */
     override fun read(accountId: SipAccountId): CharArray? {
         val encoded = preferences.getString(accountId.preferenceKey, null) ?: return null
-        val payload = ByteBuffer.wrap(Base64.decode(encoded, Base64.NO_WRAP))
-        val iv = ByteArray(payload.get().toInt() and 0xff).also(payload::get)
-        val encrypted = ByteArray(payload.remaining()).also(payload::get)
-        val cipher = Cipher.getInstance(TRANSFORMATION)
-        cipher.init(Cipher.DECRYPT_MODE, key(), GCMParameterSpec(128, iv))
-        val plain = cipher.doFinal(encrypted)
+        val plain = try {
+            val payload = ByteBuffer.wrap(Base64.decode(encoded, Base64.NO_WRAP))
+            val iv = ByteArray(payload.get().toInt() and 0xff).also(payload::get)
+            val encrypted = ByteArray(payload.remaining()).also(payload::get)
+            val cipher = Cipher.getInstance(TRANSFORMATION)
+            val key = existingKey() ?: throw InvalidKeyException("Key is missing")
+            cipher.init(Cipher.DECRYPT_MODE, key, GCMParameterSpec(128, iv))
+            cipher.doFinal(encrypted)
+        } catch (e: Exception) {
+            if (e !is GeneralSecurityException && e !is IllegalArgumentException && e !is BufferUnderflowException) throw e
+            Log.w(TAG, "Discarding an unreadable stored secret (${e.javaClass.simpleName})")
+            preferences.edit().remove(accountId.preferenceKey).commit()
+            return null
+        }
         return try {
             StandardCharsets.UTF_8.decode(ByteBuffer.wrap(plain)).let { chars ->
                 CharArray(chars.remaining()).also(chars::get)
@@ -106,6 +135,7 @@ internal class AndroidKeystoreSecretStore(
 
     private companion object {
         const val KEYSTORE = "AndroidKeyStore"
+        const val TAG = "YeyoFoneSecrets"
         const val TRANSFORMATION = "AES/GCM/NoPadding"
     }
 }

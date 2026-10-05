@@ -121,6 +121,42 @@ class AccountValidatorTest {
     }
 
     @Test
+    fun `failed new account save leaves no orphaned secret`() = runTest {
+        val dao = FakeDao().apply { failUpserts = true }
+        val secrets = FakeSecrets()
+        val repository = RoomAccountRepository(dao, secrets)
+
+        assertTrue(repository.save(validDraft()).isFailure)
+        assertEquals(0, secrets.size)
+    }
+
+    @Test
+    fun `failed password change keeps the previous password`() = runTest {
+        val dao = FakeDao()
+        val secrets = FakeSecrets()
+        val repository = RoomAccountRepository(dao, secrets)
+        val id = repository.save(validDraft(password = "original-secret".toCharArray())).getOrThrow()
+
+        dao.failUpserts = true
+        val update = validDraft(password = "new-secret".toCharArray()).withId(id)
+        assertTrue(repository.save(update).isFailure)
+        assertEquals("original-secret", secrets.value(id))
+        assertTrue(update.password!!.all { it == '\u0000' })
+    }
+
+    @Test
+    fun `failed edit without a new password leaves the secret untouched`() = runTest {
+        val dao = FakeDao()
+        val secrets = FakeSecrets()
+        val repository = RoomAccountRepository(dao, secrets)
+        val id = repository.save(validDraft(password = "original-secret".toCharArray())).getOrThrow()
+
+        dao.failUpserts = true
+        assertTrue(repository.save(validDraft(password = null).withId(id)).isFailure)
+        assertEquals("original-secret", secrets.value(id))
+    }
+
+    @Test
     fun `repository recreation exposes public data but never a secret`() = runTest {
         val dao = FakeDao()
         val secrets = FakeSecrets()
@@ -164,15 +200,25 @@ class AccountValidatorTest {
         transport = transport, securityMode = securityMode, nat = nat,
     )
 
+    private fun AccountDraft.withId(id: SipAccountId) = AccountDraft(
+        id = id, displayName = displayName, username = username,
+        authenticationUsername = authenticationUsername, password = password, domain = domain,
+        registrarUri = registrarUri, outboundProxyUri = outboundProxyUri, port = port,
+        transport = transport, securityMode = securityMode, nat = nat,
+    )
+
     private class FakeSecrets : SecretStore {
-        private val ids = mutableSetOf<SipAccountId>()
-        override fun put(accountId: SipAccountId, secret: CharArray) { ids += accountId }
-        override fun contains(accountId: SipAccountId) = accountId in ids
-        override fun delete(accountId: SipAccountId) { ids -= accountId }
-        override fun read(accountId: SipAccountId): CharArray? = null
+        private val values = mutableMapOf<SipAccountId, String>()
+        override fun put(accountId: SipAccountId, secret: CharArray) { values[accountId] = String(secret) }
+        override fun contains(accountId: SipAccountId) = accountId in values
+        override fun delete(accountId: SipAccountId) { values -= accountId }
+        override fun read(accountId: SipAccountId): CharArray? = values[accountId]?.toCharArray()
+        fun value(accountId: SipAccountId) = values[accountId]
+        val size get() = values.size
     }
 
     private class FakeDao : AccountDao {
+        var failUpserts = false
         private val state = MutableStateFlow<List<AccountEntity>>(emptyList())
         override fun observeAll(): Flow<List<AccountEntity>> = state
         override fun observe(id: String): Flow<AccountEntity?> =
@@ -189,6 +235,7 @@ class AccountValidatorTest {
         }
 
         override suspend fun upsert(account: AccountEntity) {
+            if (failUpserts) throw IllegalStateException("disk full")
             state.value = state.value.filterNot { it.id == account.id } + account
         }
 

@@ -36,9 +36,22 @@ class RoomAccountRepository internal constructor(
                     id.value,
                 ) != null
             ) throw AccountValidationException.Duplicate()
-            if (draft.password != null) secrets.put(id, draft.password)
-            check(draft.id != null || secrets.contains(id)) { "A secret is required for a new account" }
-            dao.upsert(draft.toEntity(id))
+            // The secret is written before the row; if the row fails, undo the secret so a new
+            // account leaves no orphaned credential and an edit keeps its previous password.
+            val previous = if (draft.password != null && draft.id != null) secrets.read(id) else null
+            try {
+                if (draft.password != null) secrets.put(id, draft.password)
+                check(draft.id != null || secrets.contains(id)) { "A secret is required for a new account" }
+                dao.upsert(draft.toEntity(id))
+            } catch (failure: Throwable) {
+                if (draft.password != null) {
+                    runCatching { if (previous != null) secrets.put(id, previous) else secrets.delete(id) }
+                        .onFailure(failure::addSuppressed)
+                }
+                throw failure
+            } finally {
+                previous?.fill('\u0000')
+            }
             id
         }
     }.also { draft.clearSecret() }
