@@ -22,7 +22,7 @@ class YeyoFoneApplication : Application() {
     val accountRepository by lazy { RoomAccountRepository.create(this) }
     val callHistory by lazy { RoomCallHistoryRepository.create(this) }
     private val engine by lazy {
-        PjsipEngine.create(PjsipEngineConfiguration(transports = setOf(SipTransport.UDP, SipTransport.TCP)))
+        PjsipEngine.create(PjsipEngineConfiguration(transports = setOf(SipTransport.UDP, SipTransport.TCP, SipTransport.TLS)))
     }
     val registration by lazy {
         RegistrationCoordinator(

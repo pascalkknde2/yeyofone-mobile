@@ -3,6 +3,8 @@ package com.yeyofone.app.ui.callended
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -43,8 +45,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.yeyofone.app.R
 import com.yeyofone.app.data.model.CallSummary
+import com.yeyofone.app.ui.theme.AccentBlue
 import com.yeyofone.app.ui.theme.AccentRed
 import com.yeyofone.app.ui.theme.BackgroundGray
+import com.yeyofone.app.ui.theme.BorderLight
+import com.yeyofone.app.ui.theme.PrimaryLight
 import com.yeyofone.app.ui.theme.TextPrimary
 import com.yeyofone.app.ui.theme.TextSecondary
 import com.yeyofone.core.model.CallDirection
@@ -59,7 +64,8 @@ fun CallEndedScreen(
     BackHandler(onBack = onClose)
     Column(Modifier.fillMaxSize().background(BackgroundGray)) {
         Row(
-            Modifier.fillMaxWidth().background(Color.White).padding(horizontal = 12.dp, vertical = 10.dp),
+            Modifier.fillMaxWidth().background(Color.White).statusBarsPadding()
+                .padding(horizontal = 12.dp, vertical = 10.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
@@ -69,9 +75,9 @@ fun CallEndedScreen(
             Text(stringResource(R.string.call_ended_title), fontSize = 18.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
             Spacer(Modifier.size(48.dp))
         }
-        HorizontalDivider(thickness = 0.5.dp, color = Color(0x0D000000))
+        HorizontalDivider(thickness = 0.5.dp, color = BorderLight)
         Column(
-            Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(24.dp),
+            Modifier.fillMaxSize().verticalScroll(rememberScrollState()).navigationBarsPadding().padding(24.dp),
             verticalArrangement = Arrangement.spacedBy(24.dp),
         ) {
             CallSummaryCard(summary)
@@ -98,7 +104,7 @@ private fun CallSummaryCard(summary: CallSummary) {
             Text(stringResource(R.string.call_ended_badge), fontSize = 12.sp, fontWeight = FontWeight.Bold, color = AccentRed)
         }
         Spacer(Modifier.height(20.dp))
-        Box(Modifier.size(100.dp).clip(CircleShape).background(Color(0xFFE4E8EC)), contentAlignment = Alignment.Center) {
+        Box(Modifier.size(100.dp).clip(CircleShape).background(PrimaryLight), contentAlignment = Alignment.Center) {
             Text(summary.callerName.initials(), fontSize = 32.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
         }
         Spacer(Modifier.height(16.dp))
@@ -110,7 +116,7 @@ private fun CallSummaryCard(summary: CallSummary) {
         }
         Text(callTypeLabel(summary), fontSize = 14.sp, fontWeight = FontWeight.Medium, color = TextSecondary)
         Spacer(Modifier.height(20.dp))
-        HorizontalDivider(thickness = 1.dp, color = Color(0x0F000000))
+        HorizontalDivider(thickness = 1.dp, color = BorderLight)
         Spacer(Modifier.height(20.dp))
         Row(Modifier.fillMaxWidth()) {
             DetailColumn(stringResource(R.string.duration), summary.formattedDuration, Modifier.weight(1f))
@@ -138,7 +144,7 @@ private fun DetailColumn(label: String, value: String, modifier: Modifier) {
 @Composable
 private fun CallEndedActions(onCallAgain: () -> Unit, onSendMessage: () -> Unit, onClose: () -> Unit) {
     Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        EndedAction(Icons.Default.Call, stringResource(R.string.call_again), Color(0xFF1A1A1A), Color.White, 6.dp, onCallAgain)
+        EndedAction(Icons.Default.Call, stringResource(R.string.call_again), AccentBlue, Color.White, 6.dp, onCallAgain)
         EndedAction(Icons.Default.ChatBubble, stringResource(R.string.send_message), Color.White, TextPrimary, 2.dp, onSendMessage)
         EndedAction(Icons.Default.Close, stringResource(R.string.close), AccentRed.copy(alpha = 0.1f), AccentRed, 0.dp, onClose)
     }

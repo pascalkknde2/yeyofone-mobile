@@ -1,16 +1,19 @@
 package com.yeyofone.app.ui.components
 
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Apps
@@ -21,13 +24,13 @@ import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.outlined.Apps
 import androidx.compose.material.icons.outlined.Call
-import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.ChatBubbleOutline
 import androidx.compose.material.icons.outlined.Home
+import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.Icon
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -35,13 +38,13 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.yeyofone.app.R
+import com.yeyofone.app.ui.theme.AccentBlue
+import com.yeyofone.app.ui.theme.BorderLight
 import com.yeyofone.app.ui.theme.InactiveGray
 import com.yeyofone.app.ui.theme.NavBackground
-import com.yeyofone.app.ui.theme.TextPrimary
 
 const val HOME_NAVIGATION = 0
 const val KEYPAD_NAVIGATION = 1
@@ -61,37 +64,34 @@ fun BottomNavigationBar(selectedIndex: Int, onItemSelected: (Int) -> Unit) {
         NavItem(stringResource(R.string.settings_navigation), Icons.Filled.Settings, Icons.Outlined.Settings),
     )
     Row(
-        Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 16.dp)
+        Modifier.fillMaxWidth().navigationBarsPadding().padding(horizontal = 20.dp, vertical = 20.dp)
             .shadow(8.dp, RoundedCornerShape(30.dp)).clip(RoundedCornerShape(30.dp))
-            .background(NavBackground).padding(vertical = 10.dp, horizontal = 4.dp),
+            .background(NavBackground).border(1.dp, BorderLight.copy(alpha = 0.6f), RoundedCornerShape(30.dp))
+            .selectableGroup().padding(vertical = 8.dp, horizontal = 6.dp),
         horizontalArrangement = Arrangement.SpaceAround,
         verticalAlignment = Alignment.CenterVertically,
     ) {
         items.forEachIndexed { index, item ->
             val selected = selectedIndex == index
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                modifier = Modifier.weight(1f).clickable { onItemSelected(index) }.padding(vertical = 4.dp),
+            val background by animateColorAsState(if (selected) AccentBlue else Color.Transparent, label = "tab background")
+            val foreground by animateColorAsState(if (selected) Color.White else InactiveGray, label = "tab icon")
+            Box(
+                contentAlignment = Alignment.Center,
+                modifier = Modifier.weight(1f).height(48.dp)
+                    .clip(CircleShape)
+                    .selectable(selected = selected, role = Role.Tab, onClick = { onItemSelected(index) }),
             ) {
                 Box(
-                    Modifier.clip(RoundedCornerShape(12.dp))
-                        .background(if (selected) Color.Black.copy(alpha = 0.05f) else Color.Transparent)
-                        .padding(horizontal = 10.dp, vertical = 4.dp),
+                    Modifier.size(46.dp).clip(CircleShape).background(background),
+                    contentAlignment = Alignment.Center,
                 ) {
                     Icon(
                         if (selected) item.selectedIcon else item.unselectedIcon,
                         item.label,
-                        tint = if (selected) TextPrimary else InactiveGray,
-                        modifier = Modifier.size(22.dp),
+                        tint = foreground,
+                        modifier = Modifier.size(30.dp),
                     )
                 }
-                Spacer(Modifier.height(4.dp))
-                Text(
-                    item.label,
-                    fontSize = 9.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = if (selected) TextPrimary else InactiveGray,
-                )
             }
         }
     }

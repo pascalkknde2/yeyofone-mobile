@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBackIosNew
 import androidx.compose.material.icons.filled.MoreHoriz
@@ -25,19 +26,19 @@ fun DialPadTopBar(
     onMoreOptions: () -> Unit,
 ) {
     Row(
-        Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
+        Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 16.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
     ) {
         IconButton(onClick = onNavigateBack) {
-            Icon(Icons.Default.ArrowBackIosNew, stringResource(R.string.cd_back), tint = CallTextPrimary)
+            Icon(Icons.Default.ArrowBackIosNew, stringResource(R.string.cd_back), tint = CallTextPrimary, modifier = Modifier.size(22.dp))
         }
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             IconButton(onClick = onAddContact) {
-                Icon(Icons.Outlined.PersonAdd, stringResource(R.string.add_contact), tint = CallTextPrimary)
+                Icon(Icons.Outlined.PersonAdd, stringResource(R.string.add_contact), tint = CallTextPrimary, modifier = Modifier.size(22.dp))
             }
             IconButton(onClick = onMoreOptions) {
-                Icon(Icons.Default.MoreHoriz, stringResource(R.string.more_options), tint = CallTextPrimary)
+                Icon(Icons.Default.MoreHoriz, stringResource(R.string.more_options), tint = CallTextPrimary, modifier = Modifier.size(22.dp))
             }
         }
     }

@@ -4,6 +4,7 @@ import android.util.Log
 import org.pjsip.pjsua2.Endpoint
 import org.pjsip.pjsua2.EpConfig
 import org.pjsip.pjsua2.TransportConfig
+import org.pjsip.pjsua2.pj_ssl_sock_proto
 import org.pjsip.pjsua2.pjsip_transport_type_e
 import com.yeyofone.core.model.CallDirection
 import com.yeyofone.core.model.SipAccount
@@ -23,6 +24,8 @@ import org.pjsip.pjsua2.OnCallStateParam
 import org.pjsip.pjsua2.OnIncomingCallParam
 import org.pjsip.pjsua2.OnCallTransferStatusParam
 import org.pjsip.pjsua2.OnRegStateParam
+import org.pjsip.pjsua2.OnTransportStateParam
+import org.pjsip.pjsua2.pjsip_transport_state
 import org.pjsip.pjsua2.StringVector
 import org.pjsip.pjsua2.pjmedia_srtp_use
 import org.pjsip.pjsua2.pjsua_call_flag
@@ -42,6 +45,7 @@ internal class Pjsua2EndpointBackend : EndpointBackend {
         const val CALL_RECEIVE_GAIN = 1.5f
     }
     private var endpoint: Endpoint? = null
+    private val transportIds = mutableMapOf<SipTransport, Int>()
     private val accounts = mutableMapOf<SipAccountId, NativeAccount>()
     private val calls = mutableMapOf<String, NativeCall>()
     private val locallyHeldCallIds = ConcurrentHashMap.newKeySet<String>()
@@ -64,7 +68,7 @@ internal class Pjsua2EndpointBackend : EndpointBackend {
     override fun create() {
         check(endpoint == null) { "PJSIP endpoint already exists" }
         NativeLibrary.load()
-        endpoint = Endpoint().also { it.libCreate() }
+        endpoint = TransportLoggingEndpoint().also { it.libCreate() }
     }
 
     override fun initialize(configuration: PjsipEngineConfiguration) {
@@ -86,7 +90,23 @@ internal class Pjsua2EndpointBackend : EndpointBackend {
         transports.forEach { transport ->
             val config = TransportConfig()
             try {
-                requireEndpoint().transportCreate(transport.toPjsipTransportType(), config)
+                if (transport == SipTransport.TLS) {
+                    config.tlsConfig.apply {
+                        proto = (pj_ssl_sock_proto.PJ_SSL_SOCK_PROTO_TLS1_2 or
+                            pj_ssl_sock_proto.PJ_SSL_SOCK_PROTO_TLS1_3).toLong()
+                        caBuf = SystemTrustStore.pemBundle()
+                        // Rejects untrusted chains and certificates not naming the SIP host.
+                        verifyServer = true
+                        verifyClient = false
+                        requireClientCert = false
+                    }
+                }
+                transportIds[transport] = requireEndpoint().transportCreate(transport.toPjsipTransportType(), config)
+            } catch (e: Exception) {
+                // A native build without TLS must not take UDP/TCP accounts down with it; TLS
+                // accounts fail explicitly in createOrUpdateAccount instead of downgrading.
+                if (transport != SipTransport.TLS) throw e
+                Log.e(TLS_LOG_TAG, "TLS transport unavailable", e)
             } finally {
                 config.delete()
             }
@@ -98,6 +118,7 @@ internal class Pjsua2EndpointBackend : EndpointBackend {
     override fun destroy() {
         val current = endpoint ?: return
         endpoint = null
+        transportIds.clear()
         calls.values.forEach { runCatching { it.hangup(CallOpParam(true)) }; it.delete() }
         calls.clear()
         locallyHeldCallIds.clear()
@@ -115,7 +136,11 @@ internal class Pjsua2EndpointBackend : EndpointBackend {
         password: CharArray,
         callback: (NativeRegistrationEvent) -> Unit,
     ) {
-        require(account.server.transport != TransportProtocol.TLS) { "TLS is unavailable in this native build" }
+        val tlsTransportId = if (account.server.transport == TransportProtocol.TLS) {
+            checkNotNull(transportIds[SipTransport.TLS]) { "TLS transport is unavailable" }
+        } else {
+            null
+        }
         removeAccount(account.id)
         val config = AccountConfig()
         val credential = AuthCredInfo("digest", "*", account.authenticationUsername, 0, String(password))
@@ -133,6 +158,8 @@ internal class Pjsua2EndpointBackend : EndpointBackend {
                 delayBeforeRefreshSec = 5
             }
             config.sipConfig.authCreds = credentials
+            // Pin TLS accounts to the verified TLS transport so signaling cannot fall back.
+            tlsTransportId?.let { config.sipConfig.transportId = it }
             account.server.outboundProxyUri?.let {
                 proxies.add(it.withTransport(account.server.transport))
                 config.sipConfig.proxies = proxies
@@ -358,6 +385,8 @@ internal class Pjsua2EndpointBackend : EndpointBackend {
         private val callback: (NativeRegistrationEvent) -> Unit,
     ) : org.pjsip.pjsua2.Account() {
         override fun onRegState(prm: OnRegStateParam) {
+            // Status code and reason only: no URIs, usernames or credentials (SEC-08).
+            Log.i(REGISTRATION_LOG_TAG, "account=${id.value} code=${prm.code} reason=${prm.reason?.take(60)}")
             callback(
                 NativeRegistrationEvent(
                     id,
@@ -542,6 +571,24 @@ internal class Pjsua2EndpointBackend : EndpointBackend {
         }.onFailure { Log.w(MEDIA_LOG_TAG, "call=$callId bridge info unavailable", it) }
     }
 
+    /** Surfaces TLS handshake and certificate-verification outcomes without peer identities. */
+    private class TransportLoggingEndpoint : Endpoint() {
+        override fun onTransportState(prm: OnTransportStateParam) {
+            if (!prm.type.startsWith("TLS", ignoreCase = true)) return
+            val tls = prm.tlsInfo
+            val state = when (prm.state) {
+                pjsip_transport_state.PJSIP_TP_STATE_CONNECTED -> "connected"
+                pjsip_transport_state.PJSIP_TP_STATE_DISCONNECTED -> "disconnected"
+                else -> return
+            }
+            Log.i(
+                TLS_LOG_TAG,
+                "state=$state established=${tls.established} cipher=${tls.cipherName} " +
+                    "verifyStatus=0x${tls.verifyStatus.toString(16)} lastError=${prm.lastError}",
+            )
+        }
+    }
+
     private object NativeLibrary {
         init {
             System.loadLibrary("pjsua2")
@@ -563,3 +610,5 @@ private fun String.withTransport(transport: TransportProtocol): String {
 }
 
 private const val MEDIA_LOG_TAG = "YeyoFoneMedia"
+private const val TLS_LOG_TAG = "YeyoFoneTls"
+private const val REGISTRATION_LOG_TAG = "YeyoFoneRegistration"

@@ -1,0 +1,184 @@
+# YeyoFone production TODO plan
+
+Created: 5 October 2026
+
+Source: [Google Play production readiness assessment](GOOGLE-PLAY-PRODUCTION-READINESS.md). This checklist converts that assessment into implementation work; consult its linked official sources for policy details and recheck Play Console before submission.
+
+**Goal:** release a secure, reliable SIP voice-calling v1 through Google Play. Public release remains blocked until the gates below pass. Checked tasks have validation recorded below; earlier debug builds and emulator tests do not complete unrelated production tasks.
+
+## Priorities and workflow
+
+- **P0:** resolve before a public release candidate is approved.
+- **P1:** complete before public launch for reliability, privacy, or operational readiness.
+- **P2:** defer until after the stable voice release.
+- Assign an owner before starting each phase. Record the PR/commit, test report, or Console evidence when checking a task off. Never put credentials in this file.
+
+| Phase | Suggested owner | Depends on | Completion evidence |
+|---|---|---|---|
+| 0. Product decisions | Product / publisher | None | Approved v1 scope and account model |
+| 1. Build foundation | Android / release engineering | 0 | API 36 release build and lint pass |
+| 2. Secure calling | Android / native / backend | 0, 1 | Security and real-call test results |
+| 3. Android call lifecycle | Android | 1; coordinate with 2 | Background/lockscreen call matrix |
+| 4. Product and privacy | Android / product / publisher | 0; finalize after 2–3 | Honest release UI and data disclosures |
+| 5. CI and operations | Release / backend | Start after 0; finalize after 1–4 | Signed artifact and recovery rehearsal |
+| 6. Release qualification | QA / Android | 1–5 | Play-installed candidate passes |
+| 7. Store and beta | Publisher / QA | 4–6 | Console setup and beta exit review |
+| 8. Launch | Release owner | All previous gates | Approved production release |
+
+## Phase 0 — Agree the v1 scope
+
+- [ ] **DEC-01 / P0:** Confirm the permanent application ID, app name, publisher entity, and developer-account type/date.
+- [ ] **DEC-02 / P0:** Choose bring-your-own SIP accounts versus YeyoFone-managed service accounts; document supported PBXs and transport requirements.
+- [ ] **DEC-03 / P0:** Approve voice-only v1 scope: account setup, registration, incoming/outgoing calls, audio routes, mute, DTMF, hold, transfer, and call history where verified.
+- [ ] **DEC-04 / P0:** Decide to hide unfinished chat, video, recording, translation, enterprise, IAX and WebRTC features unless their implementation is independently verified.
+- [ ] **DEC-05 / P0:** Confirm PJSIP and bundled dependency licensing obligations; retain licensing evidence and notices.
+- [ ] **DEC-06 / P1:** Define initial countries, pricing model, support contact, and emergency-calling limitations. Review applicable payments/service obligations if selling features or calling services.
+
+**Gate:** scope and ownership are written down; no advertised feature depends on demo behavior.
+
+## Phase 1 — Repair the production build
+
+Primary files: `yeyofone-android/app/build.gradle.kts`, root/module Gradle files, `MainActivity.kt`, `ui/theme/ScreenSystemBars.kt`, and screen inset handling.
+
+- [x] **BUILD-01 / P0:** Upgrade app compile/target SDK to API 36 or the required level at submission; align Android module compile SDKs. Keep minimum API 26 unless product scope changes. Completed 5 October 2026: app `targetSdk` 36; app and all Android library modules `compileSdk` 36; `minSdk` 26 unchanged. Android 15/16 behavior changes reviewed and the enforced edge-to-edge layout fixed (see BUILD-01 notes). Re-check the required level at submission.
+- [x] **BUILD-02 / P0:** Resolve the Compose lint/Kotlin metadata incompatibility from the audit. Align compatible dependencies/tooling instead of suppressing the failing detector to obtain a green build. Completed 5 October 2026: Compose BOM updated to `2025.10.01`, app `compileSdk` raised to 36, and newly exposed API 26 compatibility errors fixed. Release lint, 24 app unit tests, and release bundle generation pass without detector suppression. Target SDK remains 34; BUILD-01 is still open.
+- [ ] **BUILD-03 / P0:** Pin JDK, SDK/build tools, Gradle, Kotlin and native NDK versions for clean builds. Reconcile the native script's r28c expectation with actual CI provisioning.
+- [ ] **BUILD-04 / P0:** Implement consistent edge-to-edge backgrounds and safe insets for every page, modal and keypad. Replace reliance on legacy system-bar coloring for the newer target.
+- [ ] **BUILD-05 / P0:** Configure a non-debuggable release build with signing supplied externally, incrementing version codes, and a deliberate release version name.
+- [ ] **BUILD-06 / P1:** Configure and test R8/resource shrinking; retain required JNI rules. Investigate native stripping warnings and preserve matching debug symbols separately.
+- [ ] **BUILD-07 / P0:** Inspect the merged release manifest and packaged configuration for debug trust exceptions, unexpected permissions, development URLs, and embedded server secrets.
+- [ ] **BUILD-08 / P0:** Run release compilation, full release lint, and unit tests from a clean checkout; archive results.
+
+**Gate:** reproducible release AAB generation and lint succeed without unresolved blocking findings. Successful compilation alone does not satisfy the gate.
+
+## Phase 2 — Secure SIP, media and push registration
+
+Primary files: `Pjsua2EndpointBackend.kt`, `YeyoFoneApplication.kt`, `tools/build-pjsip-android.sh`, `PushRelayClient.kt`, and the separate push-relay/PBX project.
+
+- [x] **SEC-01 / P0:** Rebuild PJSIP with supported TLS and enable it in the engine configuration; remove the current TLS rejection only once the native implementation works. Completed 5 October 2026: PJSIP 2.17 rebuilt with static OpenSSL 3.5.9 LTS; TLS 1.2/1.3 transport enabled with server verification against the Android system CA store; TLS accounts are pinned to the TLS transport; the rejection was removed after a real TLS registration exchange succeeded (see SEC-01 notes).
+- [ ] **SEC-02 / P0:** Enforce certificate-chain and hostname checks. Verify valid, expired, untrusted and wrong-host certificates; prevent silent downgrade. Partial evidence from SEC-01: valid, wrong-host and self-signed cases behaved correctly on the API 36 emulator; expired, physical-device and production-PBX cases remain.
+- [ ] **SEC-03 / P0:** Define secure signaling/media defaults and supported SRTP modes; verify real encrypted calls and unsupported-PBX error messages. Do not claim end-to-end encryption unless proven.
+- [ ] **SEC-04 / P0:** Remove shared `PUSH_RELAY_SECRET` authentication from the shipped app. Replace it with server-authorized, short-lived, scoped registration credentials.
+- [ ] **SEC-05 / P0:** Bind device registration to authenticated tenant/account ownership. Test attempts to register another tenant's extension and replay expired credentials.
+- [ ] **SEC-06 / P1:** Implement device-token rotation, registration expiry, retry/backoff and unregister/revoke on account removal or disablement. Verify cleanup in both client and backend.
+- [ ] **SEC-07 / P1:** Validate push purpose, expiry and event identity; deduplicate wakes and reconcile cancellations against actual SIP state.
+- [ ] **SEC-08 / P1:** Redact credentials, FCM tokens and unnecessary caller identifiers from logs and diagnostic uploads.
+- [ ] **SEC-09 / P1:** Test existing Keystore storage for deletion, key invalidation, reinstall and failed account updates; preserve encrypted secret storage.
+
+**Gate:** secure real calls succeed, invalid peers/registrations fail safely, and no reusable backend secret is present in the release artifact.
+
+## Phase 3 — Make calling reliable on Android
+
+Primary files: `IncomingCallService.kt` (including receivers), `MainActivity.kt`, `YeyoFoneFirebaseMessagingService.kt`, manifest and audio-route implementation.
+
+- [ ] **CALL-01 / P0:** Replace notification Accept's receiver-to-activity trampoline with a supported direct activity/Telecom flow. Validate the call ID and microphone permission before answering.
+- [ ] **CALL-02 / P0:** Decide and document Core-Telecom integration versus the existing calling architecture. If integrating, establish one call-state/audio-routing owner.
+- [ ] **CALL-03 / P0:** Declare accurate foreground-service types and permissions for the chosen design; meet runtime prerequisites. Do not mechanically replace `specialUse` with `phoneCall`.
+- [ ] **CALL-04 / P1:** Separate active-call service lifetime from idle registration and boot recovery. Avoid unnecessary persistent work when accounts are disabled or absent.
+- [ ] **CALL-05 / P0:** Verify incoming notification and full-screen behavior when access is granted, denied or revoked, including a usable fallback.
+- [ ] **CALL-06 / P1:** Limit show-when-locked behavior to relevant call UI and implement a caller-identity privacy preference for lockscreen notifications.
+- [ ] **CALL-07 / P0:** Test background microphone access, lockscreen answers, headset controls, audio focus and interruptions from cellular calls.
+- [ ] **CALL-08 / P1:** Verify push-to-registration-to-ring with the real relay/PBX, including Doze, process reclamation, delayed push and caller cancellation.
+- [ ] **CALL-09 / P1:** Verify Wi-Fi/mobile handover, registration retry/backoff, failed authentication and connection-loss recovery.
+- [ ] **CALL-10 / P1:** Document unsupported scenarios, including force-stop and PBXs without compatible wake-up support; avoid guaranteed-delivery claims.
+
+**Gate:** no missed/ghost ringing, unsafe notification answer flow, or unexplained one-way audio in the agreed supported test scenarios.
+
+## Phase 4 — Finish the release UI and privacy controls
+
+- [ ] **APP-01 / P0:** Remove demo messages/typing indicators and local-only “sent” behavior from the public experience, or implement and qualify a real messaging service.
+- [ ] **APP-02 / P1:** Hide unsupported settings and actions; ensure every visible v1 control has a working outcome and error state.
+- [ ] **APP-03 / P1:** Add branded adaptive, round and monochrome launcher assets and manifest references.
+- [ ] **APP-04 / P1:** Add functioning About, Support, Privacy and Licenses destinations; show the installed version.
+- [ ] **DATA-01 / P0:** Inventory account data, media, call metadata, tokens, analytics and diagnostics across app, SDKs and backend. Record purposes, destinations, retention and deletion.
+- [ ] **DATA-02 / P0:** Decide whether Analytics/advertising identifiers are needed; remove unnecessary collection and review dependency-added `AD_ID` permissions.
+- [ ] **DATA-03 / P0:** Publish an accessible privacy policy matching actual behavior and add its in-app link; implement necessary disclosure/consent flows for the chosen data use.
+- [ ] **DATA-04 / P0:** Implement local account/history removal and relay cleanup. If service-account creation is supported, provide applicable in-app and web account-deletion paths.
+- [ ] **DATA-05 / P0:** Prepare accurate Data safety answers after the release configuration is finalized; distinguish local data from off-device processing.
+- [ ] **APP-05 / P1:** Test TalkBack labels, focus order, disabled/selected states, large text, cutouts, keyboard insets and navigation modes across all screens.
+
+**Gate:** UI, store claims and privacy disclosures describe the same finished product.
+
+## Phase 5 — Establish CI and production operations
+
+- [ ] **OPS-01 / P0:** Commit/reconcile current changes; use protected branches and reviewed, versioned release tags.
+- [ ] **OPS-02 / P0:** Add clean CI build, test, lint, dependency/license checks and secret scanning.
+- [ ] **OPS-03 / P0:** Create separate development/staging/production configuration and Firebase/backend environments; use separate test application IDs where appropriate.
+- [ ] **OPS-04 / P0:** Provision the upload key securely and enroll in Play App Signing. Store signing material only in protected release infrastructure; test access/recovery procedures.
+- [ ] **OPS-05 / P0:** Restrict the publishing identity to necessary app/track permissions; require a release-owner gate for production promotion.
+- [ ] **OPS-06 / P1:** Archive AAB checksum, commit, version, mapping file, native symbols, dependency inventory and test evidence for every release.
+- [ ] **OPS-07 / P1:** Add privacy-reviewed crash/ANR/native-crash diagnostics and alert ownership; verify symbolication with a controlled test build.
+- [ ] **OPS-08 / P1:** Deploy the relay with redundancy, health checks, rate limits, tenant isolation, durable state, bounded retries and token expiry.
+- [ ] **OPS-09 / P1:** Define SIP/PBX/media failover separately from HTTP API redundancy; load-test expected concurrent calls and component failure.
+- [ ] **OPS-10 / P1:** Add synthetic call/push checks and dashboards for call success, wake-to-ring latency, registration errors and media quality.
+- [ ] **OPS-11 / P1:** Set and rehearse backup recovery objectives, backend rollback and app hotfix procedures. Maintain compatibility with older installed clients.
+
+**Gate:** a signed immutable candidate can be traced to source, installed through Play, monitored, and repaired using a rehearsed process.
+
+## Phase 6 — Qualify the release candidate
+
+- [ ] **QA-01 / P0:** Validate the signed AAB, generated APKs, signing identity, final permissions and release endpoints; test the Play-installed build.
+- [ ] **QA-02 / P0:** Check all bundled and transitive native libraries for 16 KB ELF/ZIP compatibility, including `libdatastore_shared_counter.so`. Run native calls on a verified 16 KB device/emulator.
+- [ ] **QA-03 / P0:** Test fresh install and upgrades preserving account/history data; confirm JNI behavior with release optimization enabled.
+- [ ] **QA-04 / P0:** Execute physical-device testing on Pixel, Samsung and another OEM, plus oldest-supported API 26 and current API 36+ environments.
+- [ ] **QA-05 / P0:** Exercise foreground/background/locked-screen calls, reboot, Doze, battery saver, process death, duplicate/late push and remote cancellation.
+- [ ] **QA-06 / P0:** Test microphone/notification/Bluetooth/full-screen permission grant, denial and revocation without crash or permission loops.
+- [ ] **QA-07 / P0:** Verify two-way audio, speaker/Bluetooth/wired transitions, mute, DTMF, hold/resume, transfer, call waiting and hang-up from both ends.
+- [ ] **QA-08 / P1:** Test network loss/recovery, Wi-Fi/mobile changes, NAT/CGNAT, packet loss, high latency and long-duration calls.
+- [ ] **QA-09 / P1:** Verify tablets, rotation, large text, accessibility and both navigation modes.
+- [ ] **QA-10 / P0:** Define numerical reliability gates and sample sizes; review crash/ANR and missed-call evidence. Do not infer reliability from a few successful calls.
+
+**Gate:** no open release-blocking defect; critical scenarios pass with attached evidence and an agreed beta reliability sample.
+
+## Phase 7 — Complete Play setup and beta
+
+- [ ] **PLAY-01 / P0:** Complete publisher verification and confirm current Console requirements for this account and app.
+- [ ] **PLAY-02 / P0:** Prepare accurate listing text, screenshots, store icon, feature graphic, support details and country availability.
+- [ ] **PLAY-03 / P0:** Complete app access, content rating, target audience, ads, Data safety and applicable foreground-service/full-screen declarations; attach required demonstration evidence.
+- [ ] **PLAY-04 / P0:** Supply stable reviewer SIP credentials and a reachable test destination without paid calls or private-network access requirements.
+- [ ] **PLAY-05 / P0:** Upload the candidate to internal testing and resolve applicable pre-launch report findings.
+- [ ] **PLAY-06 / P0:** Run a meaningful closed beta. If the personal-account testing rule applies, meet the required continuous tester participation before requesting production access.
+- [ ] **PLAY-07 / P0:** Review beta reliability, support feedback, security issues and backend capacity; fix defects and requalify changed candidates.
+- [ ] **PLAY-08 / P0:** Obtain production access/approvals where required and approve the exact artifact/version to promote.
+
+**Gate:** account-specific testing and declarations are complete, and the tested artifact is approved for production promotion.
+
+## Phase 8 — Launch and monitor
+
+- [ ] **REL-01 / P0:** Recheck every prior gate, Console policy status and production configuration; record release-owner approval.
+- [ ] **REL-02 / P0:** Publish the same tested artifact to the selected first-launch markets. Do not plan a percentage staged rollout for the initial publication.
+- [ ] **REL-03 / P1:** Monitor calling, crashes, ANRs, support and backend health during launch; assign an available incident owner.
+- [ ] **REL-04 / P1:** For subsequent updates, use monitored percentage stages with sufficient dwell time/call volume before expansion.
+- [ ] **REL-05 / P1:** Halt update expansion for serious regressions and ship a corrected higher-version-code build. Halting does not downgrade already updated devices.
+- [ ] **REL-06 / P1:** Record launch results and schedule dependency/security maintenance and periodic restore tests.
+
+## P2 — After stable voice launch
+
+- [ ] Implement real messaging with persistence, delivery/error states and revised privacy disclosures.
+- [ ] Evaluate video, recording, translation and enterprise features individually before advertising them.
+- [ ] Add additional PBX/protocol support only with interoperability tests.
+- [ ] Improve automated device coverage, performance baselines and capacity forecasting from production evidence.
+
+## Task completion record
+
+Copy one row for each completed task; keep secrets and reviewer credentials in a secure store.
+
+| Task ID | Owner | PR / commit | Validation evidence | Completed date |
+|---|---|---|---|---|
+| SEC-01 | Claude | Working-tree changes; not committed | Native: `tools/build-pjsip-android.sh` on WSL Ubuntu (NDK r28c 28.2.13676358, JDK 17.0.20.1, SWIG 4.5.1); configure detected OpenSSL for both ABIs; `pj_ssl_sock_create`/`pjsip_tls_transport_start` exported; 16 KB aligned; hashes in `core/voip-pjsip/third_party/pjproject/SOURCE.md`. Gradle (JDK 21): `:app:lintRelease testDebugUnitTest :core:model:test :core:voip-api:test :app:bundleRelease` passed ([log](yeyofone-android/build/sec-01-validation.log)), 0 lint errors, 70 tests passing. API 36 emulator: TLS 1.3 to `sip.linphone.org` verified (`verifyStatus=0x0`), SIP 403 received over TLS for dummy credentials; `wrong.host.badssl.com` rejected (`0x40000000` identity mismatch) and `self-signed.badssl.com` rejected (`0x40000002` untrusted plus identity mismatch), both as `PJSIP_TLS_ECERTVERIF` with a single attempt and no retry; existing UDP account still registered 200 OK. | 2026-10-05 |
+| BUILD-01 | Claude | Working-tree changes; not committed | JDK 21: `:app:lintRelease :app:testDebugUnitTest :app:assembleDebug :app:bundleRelease` passed ([validation log](yeyofone-android/build/build-01-validation.log)); 0 lint errors, 24 app tests passing; APK badging `targetSdkVersion:'36'`. API 36 emulator (gesture nav) smoke test: Home, Accounts, Recents, Chat, Settings, Keypad and account editor render clear of the status and navigation bars; `IncomingCallService` runs as a `specialUse` foreground service. | 2026-10-05 |
+| BUILD-02 | Codex | Working-tree changes; not committed | JDK 17: `:app:lintRelease :app:testDebugUnitTest :app:bundleRelease` passed. [Lint report](yeyofone-android/app/build/reports/lint-results-release.html), [validation log](yeyofone-android/build/build-02-validation.log); 24 app tests, zero failures/errors. | 2026-10-05 |
+
+SEC-01 notes: `Pjsua2EndpointBackend` creates the TLS transport with `verifyServer = true`, TLS 1.2/1.3 only, and a CA bundle exported from `AndroidCAStore` system entries (`SystemTrustStore.kt`; user-installed CAs excluded). If TLS transport creation fails, UDP/TCP still start and TLS accounts fail explicitly with `VoipError.Tls`; there is no downgrade. Registration results whose reason mentions certificate/TLS/SSL now map to `VoipError.Tls` (not retried). New logcat diagnostics (`YeyoFoneTls`, `YeyoFoneRegistration`) record only transport state, cipher, verify flags and SIP status/reason (no URIs or credentials). Caveats for SEC-02/DEC-02: PJSIP follows RFC 5922 and rejects wildcard server certificates, so PBXs presenting `*.domain` certificates will fail; the regenerated Java bindings matched the checked-in sources apart from whitespace, so they were kept; arm64 was validated by build inspection only (the emulator is x86_64); no TLS call was placed and the production PBX was not tested over TLS. OpenSSL's Apache-2.0 notice must join the licensing work in DEC-05. Found during testing (not fixed): the account editor captures only the first typed character into an empty authentication username, and no screen exposes account deletion (`deleteAccount` is unused; relevant to DATA-04). A disabled "TLS test" account remains on the emulator.
+
+BUILD-01 notes: target 35+ forces edge-to-edge and ignores `window.statusBarColor`/`navigationBarColor`. `MainActivity` now calls `enableEdgeToEdge()` on every API level (dark navigation scrim on API 26, which cannot draw dark navigation icons). The legacy `ui/theme/ScreenSystemBars.kt` color helper was removed. Screen headers apply `statusBarsPadding()`, the floating bottom navigation applies `navigationBarsPadding()`, the call-ended actions clear the navigation bar, and the account editor and chat apply IME padding because the window no longer resizes for the keyboard. Other reviewed changes need no code: boot-started `specialUse` FGS is permitted (the Android 15 boot restriction covers dataSync/camera/media/phoneCall/microphone types); the ringtone requests audio focus from a running FGS; there are no `onBackPressed` overrides (Android 16 predictive back) and no orientation/resizability locks (ignored on large screens in Android 16); `CallActionReceiver` has no intent filter (safer-intent matching). Not verified: physical devices, API 26–34 runtime, on-screen keyboard insets (the emulator used a hardware keyboard), boot receiver after reboot, and full-screen incoming call over a real SIP call. Observed during testing (not target-related): debug cold start on the emulator took 14–18 s, and taps injected during that window produced an "Application does not have a focused window" ANR; measure release-build startup under QA. The notification Accept trampoline is still tracked by CALL-01. BUILD-04 should still audit every modal/keypad and verify cutouts/landscape.
+
+BUILD-02 notes: version-gated lockscreen APIs, ringtone looping fallback for API 26–27, and API-qualified navigation-bar styling resolve the errors that the repaired lint detector exposed. Remaining lint warnings still need review. The generated AAB does not establish production signing, physical-device compatibility or Play eligibility. BUILD-05, BUILD-08 and release qualification remain open. Reports/logs are local generated artifacts and may be removed by a clean build.
+
+## Immediate next actions
+
+1. Approve voice-only v1 scope and the SIP service model (Phase 0).
+2. Fix lint/toolchain compatibility and migrate to API 36 with correct insets (Phase 1).
+3. Implement TLS and replace embedded relay authentication (Phase 2).
+4. Repair notification answer/background-call behavior (Phase 3).
+5. Complete privacy/product cleanup, then qualify the signed candidate through Play testing.

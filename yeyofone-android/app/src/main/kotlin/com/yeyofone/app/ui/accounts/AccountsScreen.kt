@@ -2,6 +2,7 @@ package com.yeyofone.app.ui.accounts
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -39,7 +40,10 @@ import com.yeyofone.app.R
 import com.yeyofone.app.ui.components.AccountCard
 import com.yeyofone.app.ui.components.BottomNavigationBar
 import com.yeyofone.app.ui.components.CONTACTS_NAVIGATION
+import com.yeyofone.app.ui.theme.AccentBlue
 import com.yeyofone.app.ui.theme.BackgroundGray
+import com.yeyofone.app.ui.theme.InactiveGray
+import com.yeyofone.app.ui.theme.PrimaryLight
 import com.yeyofone.app.ui.theme.TextPrimary
 import com.yeyofone.app.ui.theme.TextSecondary
 import com.yeyofone.core.model.SipAccount
@@ -64,7 +68,7 @@ fun AccountsScreen(
         bottomBar = { BottomNavigationBar(CONTACTS_NAVIGATION, onNavigationItemSelected) },
     ) { padding ->
         Column(Modifier.fillMaxSize().padding(bottom = padding.calculateBottomPadding())) {
-            Column(Modifier.fillMaxWidth().background(Color.White)) {
+            Column(Modifier.fillMaxWidth().background(Color.White).statusBarsPadding()) {
                 Row(
                     Modifier.fillMaxWidth().padding(start = 24.dp, top = 14.dp, end = 12.dp, bottom = 14.dp),
                     verticalAlignment = Alignment.CenterVertically,
@@ -83,14 +87,14 @@ fun AccountsScreen(
                 }
                 Row(
                     Modifier.fillMaxWidth().padding(start = 24.dp, end = 24.dp, bottom = 16.dp)
-                        .clip(RoundedCornerShape(12.dp)).background(Color(0xFFF0F0F5)).padding(4.dp),
+                        .clip(RoundedCornerShape(12.dp)).background(BackgroundGray).padding(4.dp),
                     horizontalArrangement = Arrangement.spacedBy(4.dp),
                 ) {
                     tabs.forEachIndexed { index, title ->
                         val selected = selectedTab == index
                         Box(
                             Modifier.weight(1f).clip(RoundedCornerShape(8.dp))
-                                .background(if (selected) Color.White else Color.Transparent)
+                                .background(if (selected) PrimaryLight else Color.Transparent)
                                 .clickable { selectedTab = index }.padding(vertical = 9.dp),
                             contentAlignment = Alignment.Center,
                         ) {
@@ -98,7 +102,7 @@ fun AccountsScreen(
                                 title,
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.SemiBold,
-                                color = if (selected) TextPrimary else TextSecondary,
+                                color = if (selected) AccentBlue else TextSecondary,
                                 textAlign = TextAlign.Center,
                             )
                         }
@@ -138,7 +142,7 @@ fun AccountsScreen(
                         if (selectedTab == 0) stringResource(R.string.tap_add_sip_account)
                         else stringResource(R.string.account_type_not_supported),
                         fontSize = 14.sp,
-                        color = Color(0xFFA0A0A5),
+                        color = InactiveGray,
                         textAlign = TextAlign.Center,
                     )
                 }

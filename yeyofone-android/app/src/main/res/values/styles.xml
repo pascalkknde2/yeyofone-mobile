@@ -1,7 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <style name="Theme.YeyoFone" parent="android:style/Theme.Material.Light.NoActionBar">
+    <style name="Theme.YeyoFone.Base" parent="android:style/Theme.Material.Light.NoActionBar">
         <item name="android:fontFamily">sans</item>
-        <item name="android:colorAccent">#1E6655</item>
+        <item name="android:colorAccent">#2563EB</item>
+        <item name="android:windowBackground">#F4F7F9</item>
+        <item name="android:statusBarColor">#FFFFFF</item>
+        <item name="android:navigationBarColor">#0F172A</item>
+        <item name="android:windowLightStatusBar">true</item>
     </style>
+    <style name="Theme.YeyoFone" parent="Theme.YeyoFone.Base" />
 </resources>

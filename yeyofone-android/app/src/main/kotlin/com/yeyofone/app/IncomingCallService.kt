@@ -15,6 +15,7 @@ import android.media.RingtoneManager
 import android.media.ToneGenerator
 import android.net.Uri
 import android.os.IBinder
+import android.os.Build
 import android.util.Log
 import androidx.core.content.ContextCompat
 import com.yeyofone.core.model.CallDirection
@@ -179,6 +180,9 @@ class IncomingCallService : Service() {
     private fun startRinging() {
         if (ringtone?.isPlaying == true || fallbackToneJob?.isActive == true) return
         val started = runCatching {
+            // Ringtone looping was added in API 28. Older devices use the repeating
+            // ToneGenerator below so they remain audible for the entire incoming call.
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.P) return@runCatching false
             val uri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE)
                 ?: RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
             ringtone = uri?.let { RingtoneManager.getRingtone(this, it) }?.apply {

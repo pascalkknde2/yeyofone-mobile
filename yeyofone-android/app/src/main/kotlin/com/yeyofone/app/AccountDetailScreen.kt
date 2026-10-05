@@ -50,18 +50,27 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.yeyofone.app.ui.theme.AccentGreen
+import com.yeyofone.app.ui.theme.AccentOrange
+import com.yeyofone.app.ui.theme.AccentRed
+import com.yeyofone.app.ui.theme.BackgroundGray
+import com.yeyofone.app.ui.theme.BorderLight
+import com.yeyofone.app.ui.theme.InactiveGray
+import com.yeyofone.app.ui.theme.PrimaryLight
+import com.yeyofone.app.ui.theme.TextPrimary
+import com.yeyofone.app.ui.theme.TextSecondary
 import com.yeyofone.core.model.RegistrationState
 import com.yeyofone.core.model.SipAccount
 
-private val Ink = Color(0xFF1A1A1A)
-private val Gray = Color(0xFF6E6E73)
-private val GrayMid = Color(0xFF8E8E93)
-private val PageBackground = Color(0xFFF8F9FA)
-private val Success = Color(0xFF34C759)
-private val Warning = Color(0xFFFF9500)
-private val Danger = Color(0xFFFF3B30)
-private val SwitchTrackOff = Color(0xFFE5E5EA)
-private val Hairline = Color(0x0A000000)
+private val Ink = TextPrimary
+private val Gray = TextSecondary
+private val GrayMid = InactiveGray
+private val PageBackground = BackgroundGray
+private val Success = AccentGreen
+private val Warning = AccentOrange
+private val Danger = AccentRed
+private val SwitchTrackOff = BorderLight
+private val Hairline = BorderLight
 
 @Composable
 fun AccountDetail(account: SipAccount, viewModel: YeyoFoneViewModel) {
@@ -177,7 +186,7 @@ private fun ProfileHeader(account: SipAccount, registrationState: RegistrationSt
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Box(
-            Modifier.size(96.dp).background(Color(0xFFE8EEFF), CircleShape),
+            Modifier.size(96.dp).background(PrimaryLight, CircleShape),
             contentAlignment = Alignment.Center,
         ) {
             Box(

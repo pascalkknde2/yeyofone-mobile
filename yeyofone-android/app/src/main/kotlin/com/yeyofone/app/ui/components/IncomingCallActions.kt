@@ -18,6 +18,7 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -35,7 +36,7 @@ fun PrimaryCallActionButton(
 ) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = modifier.alpha(if (enabled) 1f else 0.45f).clickable(enabled = enabled, onClick = onClick),
+        modifier = modifier.alpha(if (enabled) 1f else 0.45f).clickable(enabled = enabled, role = Role.Button, onClick = onClick),
     ) {
         Box(
             Modifier.size(72.dp)
@@ -44,10 +45,10 @@ fun PrimaryCallActionButton(
                 .background(backgroundColor),
             contentAlignment = Alignment.Center,
         ) {
-            Icon(icon, label, tint = Color.White, modifier = Modifier.size(32.dp))
+            Icon(icon, null, tint = Color.White, modifier = Modifier.size(32.dp))
         }
-        Spacer(Modifier.height(10.dp))
-        Text(label, fontSize = 12.sp, fontWeight = FontWeight.Medium, color = CallTextSecondary)
+        Spacer(Modifier.height(16.dp))
+        Text(label.uppercase(), fontSize = 14.sp, fontWeight = FontWeight.SemiBold, letterSpacing = 0.5.sp, color = CallTextSecondary)
     }
 }
 

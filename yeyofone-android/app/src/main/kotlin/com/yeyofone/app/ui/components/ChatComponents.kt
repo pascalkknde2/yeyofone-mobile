@@ -10,6 +10,7 @@ import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -62,20 +63,23 @@ import com.yeyofone.app.data.model.MessageStatus
 import com.yeyofone.app.data.model.MessageType
 import com.yeyofone.app.ui.theme.AccentBlue
 import com.yeyofone.app.ui.theme.AccentGreen
+import com.yeyofone.app.ui.theme.BackgroundGray
+import com.yeyofone.app.ui.theme.InactiveGray
+import com.yeyofone.app.ui.theme.PrimaryLight
 import com.yeyofone.app.ui.theme.TextPrimary
 import com.yeyofone.app.ui.theme.TextSecondary
 
 @Composable
 fun ChatHeader(contact: ChatContact, onBack: () -> Unit, onVoiceCall: () -> Unit, onVideoCall: () -> Unit) {
     Row(
-        Modifier.fillMaxWidth().background(Color.White).padding(horizontal = 8.dp, vertical = 10.dp),
+        Modifier.fillMaxWidth().background(Color.White).statusBarsPadding().padding(horizontal = 8.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         IconButton(onClick = onBack) {
             Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.cd_back), tint = TextPrimary)
         }
         Box {
-            Box(Modifier.size(40.dp).clip(CircleShape).background(Color(0xFFE0EAFF)), contentAlignment = Alignment.Center) {
+            Box(Modifier.size(40.dp).clip(CircleShape).background(PrimaryLight), contentAlignment = Alignment.Center) {
                 Text(contact.name.initials(), fontWeight = FontWeight.Bold, color = TextPrimary)
             }
             if (contact.isOnline) {
@@ -100,7 +104,7 @@ fun MessageBubble(message: ChatMessage, onPlayVoice: () -> Unit) {
     val outgoing = message.isOutgoing
     val bubble = if (outgoing) AccentBlue else Color.White
     val foreground = if (outgoing) Color.White else TextPrimary
-    val meta = if (outgoing) Color.White.copy(alpha = 0.78f) else Color(0xFF8E8E93)
+    val meta = if (outgoing) Color.White.copy(alpha = 0.78f) else InactiveGray
     val shape = if (outgoing) RoundedCornerShape(18.dp, 18.dp, 4.dp, 18.dp)
         else RoundedCornerShape(18.dp, 18.dp, 18.dp, 4.dp)
     Row(
@@ -187,7 +191,7 @@ private fun TypingDot(delay: Int) {
         ),
         label = "typing-dot",
     )
-    Box(Modifier.offset(y = offset.dp).size(7.dp).clip(CircleShape).background(Color(0xFFC7C7CC)))
+    Box(Modifier.offset(y = offset.dp).size(7.dp).clip(CircleShape).background(InactiveGray))
 }
 
 @Composable
@@ -199,13 +203,13 @@ fun ChatInputBar(text: String, onTextChange: (String) -> Unit, onSend: () -> Uni
     ) {
         IconButton(
             onClick = onAttach,
-            modifier = Modifier.size(40.dp).clip(CircleShape).background(Color(0xFFF0F0F5)),
+            modifier = Modifier.size(40.dp).clip(CircleShape).background(BackgroundGray),
         ) { Icon(Icons.Default.AttachFile, stringResource(R.string.attach_file), tint = TextSecondary) }
         Box(
-            Modifier.weight(1f).clip(RoundedCornerShape(22.dp)).background(Color(0xFFF0F0F5))
+            Modifier.weight(1f).clip(RoundedCornerShape(22.dp)).background(BackgroundGray)
                 .padding(horizontal = 16.dp, vertical = 10.dp),
         ) {
-            if (text.isEmpty()) Text(stringResource(R.string.type_message), color = Color(0xFF8E8E93), fontSize = 15.sp)
+            if (text.isEmpty()) Text(stringResource(R.string.type_message), color = InactiveGray, fontSize = 15.sp)
             BasicTextField(
                 value = text,
                 onValueChange = onTextChange,
@@ -221,7 +225,7 @@ fun ChatInputBar(text: String, onTextChange: (String) -> Unit, onSend: () -> Uni
             onClick = onSend,
             enabled = text.isNotBlank(),
             modifier = Modifier.size(40.dp).clip(CircleShape)
-                .background(if (text.isNotBlank()) AccentBlue else Color(0xFFC7C7CC)),
+                .background(if (text.isNotBlank()) AccentBlue else InactiveGray),
         ) { Icon(Icons.AutoMirrored.Filled.Send, stringResource(R.string.send_message), tint = Color.White) }
     }
 }
