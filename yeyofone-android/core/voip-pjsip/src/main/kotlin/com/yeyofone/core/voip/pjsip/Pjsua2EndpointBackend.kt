@@ -430,6 +430,7 @@ internal class Pjsua2EndpointBackend : EndpointBackend {
             }
             val callId = UUID.randomUUID().toString()
             val call = NativeCall(callId, id, "", CallDirection.INCOMING, this, prm.callId, listener)
+            call.relayCallId = runCatching { relayCallIdFromInvite(prm.rdata.wholeMsg) }.getOrNull()
             calls[callId] = call
             runCatching { call.getInfo().remoteUri }.getOrNull()?.let { call.remoteUri = it }
             val ringing = CallOpParam(true).apply { statusCode = 180 }
@@ -454,6 +455,7 @@ internal class Pjsua2EndpointBackend : EndpointBackend {
         private val callback: (NativeCallEvent) -> Unit,
     ) : org.pjsip.pjsua2.Call(account, nativeCallId) {
         var muted: Boolean = false
+        var relayCallId: String? = null
 
         fun reportState() {
             val info = runCatching { getInfo() }.getOrNull()
@@ -467,6 +469,7 @@ internal class Pjsua2EndpointBackend : EndpointBackend {
                     invState,
                     info?.lastStatusCode ?: 0,
                     info?.lastReason?.replace(Regex("[\\r\\n]"), " ")?.take(120),
+                    relayCallId,
                 ),
             )
             if (invState == pjsip_inv_state.PJSIP_INV_STATE_DISCONNECTED) {
@@ -614,6 +617,23 @@ internal class Pjsua2EndpointBackend : EndpointBackend {
         fun load() = Unit
     }
 }
+
+/**
+ * Reads the PBX adapter's `X-Yeyo-Call-ID` header from a raw INVITE. Only the header section is
+ * searched; a missing, repeated or malformed header yields null. The value only correlates relay
+ * pushes with this call and is never treated as authentication.
+ */
+internal fun relayCallIdFromInvite(message: String): String? {
+    val headerSection = message.replace("\r\n", "\n").substringBefore("\n\n")
+    val values = headerSection.lineSequence().drop(1).mapNotNull { line ->
+        val name = line.substringBefore(':', "").trim()
+        if (name.equals(RELAY_CALL_ID_HEADER, ignoreCase = true)) line.substringAfter(':').trim() else null
+    }.toList()
+    return values.singleOrNull()?.takeIf { RELAY_ID_PATTERN.matches(it) }
+}
+
+private const val RELAY_CALL_ID_HEADER = "X-Yeyo-Call-ID"
+private val RELAY_ID_PATTERN = Regex("^[A-Za-z0-9_.@+-]{1,128}$")
 
 internal fun SipTransport.toPjsipTransportType(): Int = when (this) {
     SipTransport.UDP -> pjsip_transport_type_e.PJSIP_TRANSPORT_UDP

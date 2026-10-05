@@ -256,6 +256,7 @@ class CallCoordinator(
                     createdAt = now,
                     connectedAt = now.takeIf { state == CallState.Connected },
                     endedAt = now.takeIf { state is CallState.Disconnected || state is CallState.Failed },
+                    relayCallId = event.relayCallId,
                 )
             } else {
                 sessions.map { session ->
