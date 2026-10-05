@@ -108,6 +108,9 @@ class RegistrationCoordinatorTest {
         assertIs<VoipError.Dns>(IllegalStateException("DNS resolve failed for redacted host").toVoipError())
         assertIs<VoipError.Transport>(IllegalStateException("transport unavailable").toVoipError())
         assertIs<VoipError.Tls>(IllegalStateException("TLS certificate failure").toVoipError())
+        assertIs<VoipError.Tls>(NativeRegistrationEvent(id, 503, "Certificate verification error", 0).toVoipError())
+        assertIs<VoipError.Tls>(NativeRegistrationEvent(id, null, "SSL handshake failed", 0).toVoipError())
+        assertIs<VoipError.Tls>(IllegalStateException("TLS transport is unavailable").toVoipError())
     }
 
     private fun kotlinx.coroutines.test.TestScope.manager(

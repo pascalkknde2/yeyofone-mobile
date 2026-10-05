@@ -130,7 +130,10 @@ class RegistrationCoordinator(
 
 internal fun NativeRegistrationEvent?.toVoipError(): VoipError {
     val code = this?.sipCode
+    val reason = this?.safeReason.orEmpty().lowercase()
     return when {
+        // PJSIP reports TLS handshake/certificate failures as transport-level (5xx) results.
+        "certificate" in reason || "tls" in reason || "ssl" in reason -> VoipError.Tls("Secure transport failed")
         code == 401 || code == 403 || code == 407 -> VoipError.Authentication("Registration authentication failed")
         code != null && code >= 500 -> VoipError.SipResponse(code, "Registration server error")
         code != null -> VoipError.SipResponse(code, "Registration rejected")
