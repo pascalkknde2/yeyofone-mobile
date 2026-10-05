@@ -1,6 +1,7 @@
 package com.yeyofone.core.account
 
 import com.yeyofone.core.model.NatConfiguration
+import com.yeyofone.core.model.SecurityMode
 import com.yeyofone.core.model.SipAccountId
 import com.yeyofone.core.model.TransportProtocol
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -55,6 +56,27 @@ class AccountValidatorTest {
         assertFailsWith<AccountValidationException.InvalidField> {
             AccountValidator.validate(validDraft(port = 70_000))
         }
+    }
+
+    @Test
+    fun `TLS accounts cannot be saved with URIs that bypass TLS`() {
+        AccountValidator.validate(validDraft(transport = TransportProtocol.TLS, registrar = "sips:pbx.example.com"))
+        val registrar = assertFailsWith<AccountValidationException.InvalidField> {
+            AccountValidator.validate(
+                validDraft(transport = TransportProtocol.TLS, registrar = "sip:pbx.example.com;transport=udp"),
+            )
+        }
+        assertEquals("registrarUri", registrar.field)
+        val proxy = assertFailsWith<AccountValidationException.InvalidField> {
+            AccountValidator.validate(
+                validDraft(transport = TransportProtocol.TLS, proxy = "sip:edge.example.com;transport=tcp"),
+            )
+        }
+        assertEquals("outboundProxyUri", proxy.field)
+        val secureMode = assertFailsWith<AccountValidationException.InvalidField> {
+            AccountValidator.validate(validDraft(securityMode = SecurityMode.REQUIRE_SECURE))
+        }
+        assertEquals("transport", secureMode.field)
     }
 
     @Test
@@ -121,10 +143,14 @@ class AccountValidatorTest {
         registrar: String = "sip:pbx.example.com",
         port: Int = 5060,
         nat: NatConfiguration = NatConfiguration(),
+        transport: TransportProtocol = TransportProtocol.UDP,
+        securityMode: SecurityMode =
+            if (transport == TransportProtocol.TLS) SecurityMode.REQUIRE_SECURE else SecurityMode.ALLOW_INSECURE,
+        proxy: String? = null,
     ) = AccountDraft(
         displayName = "Alice", username = "alice", authenticationUsername = "alice-auth",
-        password = password, domain = domain, registrarUri = registrar, port = port,
-        transport = TransportProtocol.UDP, nat = nat,
+        password = password, domain = domain, registrarUri = registrar, outboundProxyUri = proxy, port = port,
+        transport = transport, securityMode = securityMode, nat = nat,
     )
 
     private class FakeSecrets : SecretStore {

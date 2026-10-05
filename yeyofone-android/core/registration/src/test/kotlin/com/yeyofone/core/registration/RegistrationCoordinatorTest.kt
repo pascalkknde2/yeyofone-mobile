@@ -6,6 +6,8 @@ import com.yeyofone.core.account.AccountSecretProvider
 import com.yeyofone.core.model.NatConfiguration
 import com.yeyofone.core.model.RegistrationState
 import com.yeyofone.core.model.SecurityMode
+import com.yeyofone.core.model.SignalingPolicyException
+import com.yeyofone.core.model.SignalingPolicyViolation
 import com.yeyofone.core.model.SipAccount
 import com.yeyofone.core.model.SipAccountId
 import com.yeyofone.core.model.SipServerConfiguration
@@ -62,6 +64,25 @@ class RegistrationCoordinatorTest {
     }
 
     @Test
+    fun `certificate failure is a TLS error and does not retry`() = runTest {
+        val id = SipAccountId("tls")
+        val gateway = FakeGateway {
+            NativeRegistrationEvent(id, 503, "SSL certificate verification error (PJSIP_TLS_ECERTVERIF)", 0)
+        }
+        val delays = mutableListOf<Long>()
+        val manager = manager(mapOf(id to account(id)), gateway) { delays += it }
+
+        manager.register(id)
+        runCurrent()
+
+        val state = assertIs<RegistrationState.Failed>(manager.observe(id).value)
+        assertIs<VoipError.Tls>(state.error)
+        assertEquals(null, state.retryAt)
+        assertEquals(1, gateway.registrationRequests[id])
+        assertTrue(delays.isEmpty())
+    }
+
+    @Test
     fun `server failures back off independently per account`() = runTest {
         val one = SipAccountId("one")
         val two = SipAccountId("two")
@@ -111,6 +132,12 @@ class RegistrationCoordinatorTest {
         assertIs<VoipError.Tls>(NativeRegistrationEvent(id, 503, "Certificate verification error", 0).toVoipError())
         assertIs<VoipError.Tls>(NativeRegistrationEvent(id, null, "SSL handshake failed", 0).toVoipError())
         assertIs<VoipError.Tls>(IllegalStateException("TLS transport is unavailable").toVoipError())
+        assertIs<VoipError.Tls>(
+            SignalingPolicyException(SignalingPolicyViolation("registrarUri", "sets transport=udp", true)).toVoipError(),
+        )
+        assertIs<VoipError.InvalidConfiguration>(
+            SignalingPolicyException(SignalingPolicyViolation("registrarUri", "uses sips:", false)).toVoipError(),
+        )
     }
 
     private fun kotlinx.coroutines.test.TestScope.manager(

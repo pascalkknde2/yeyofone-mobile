@@ -9,7 +9,9 @@ import org.pjsip.pjsua2.pjsip_transport_type_e
 import com.yeyofone.core.model.CallDirection
 import com.yeyofone.core.model.SipAccount
 import com.yeyofone.core.model.SipAccountId
+import com.yeyofone.core.model.SignalingPolicyException
 import com.yeyofone.core.model.TransportProtocol
+import com.yeyofone.core.model.signalingPolicyViolation
 import com.yeyofone.core.voip.NativeCallEvent
 import com.yeyofone.core.voip.NativeMediaEvent
 import com.yeyofone.core.voip.NativeRegistrationEvent
@@ -136,6 +138,8 @@ internal class Pjsua2EndpointBackend : EndpointBackend {
         password: CharArray,
         callback: (NativeRegistrationEvent) -> Unit,
     ) {
+        // Stored accounts predate validation changes; refuse anything that would bypass TLS.
+        account.server.signalingPolicyViolation()?.let { throw SignalingPolicyException(it) }
         val tlsTransportId = if (account.server.transport == TransportProtocol.TLS) {
             checkNotNull(transportIds[SipTransport.TLS]) { "TLS transport is unavailable" }
         } else {

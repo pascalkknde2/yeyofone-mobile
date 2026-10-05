@@ -61,6 +61,7 @@ import com.yeyofone.app.ui.theme.TextPrimary
 import com.yeyofone.app.ui.theme.TextSecondary
 import com.yeyofone.core.model.RegistrationState
 import com.yeyofone.core.model.SipAccount
+import com.yeyofone.core.model.VoipError
 
 private val Ink = TextPrimary
 private val Gray = TextSecondary
@@ -377,6 +378,8 @@ private fun status(account: SipAccount, registrationState: RegistrationState): P
     registrationState is RegistrationState.Registered || registrationState is RegistrationState.Refreshing ->
         stringResource(R.string.status_registered) to Success
     registrationState is RegistrationState.Registering -> stringResource(R.string.status_registering) to Warning
+    registrationState is RegistrationState.Failed && registrationState.error is VoipError.Tls ->
+        stringResource(R.string.status_secure_connection_failed) to Danger
     registrationState is RegistrationState.Failed -> stringResource(R.string.status_registration_failed) to Danger
     registrationState is RegistrationState.Unregistering -> stringResource(R.string.status_unregistering) to GrayMid
     else -> stringResource(R.string.status_not_registered) to GrayMid

@@ -1,5 +1,7 @@
 package com.yeyofone.core.account
 
+import com.yeyofone.core.model.SipServerConfiguration
+import com.yeyofone.core.model.signalingPolicyViolation
 import java.net.IDN
 import java.net.URI
 
@@ -17,6 +19,9 @@ object AccountValidator {
             validateSipUri("outboundProxyUri", it)
         }
         if (draft.port !in 1..65535) invalid("port", "must be between 1 and 65535")
+        SipServerConfiguration(
+            draft.domain, draft.registrarUri, draft.outboundProxyUri, draft.port, draft.transport, draft.securityMode,
+        ).signalingPolicyViolation()?.let { invalid(it.field, it.reason) }
         if (draft.registrationExpirySeconds !in 60..86_400) {
             invalid("registrationExpirySeconds", "must be between 60 and 86400")
         }
