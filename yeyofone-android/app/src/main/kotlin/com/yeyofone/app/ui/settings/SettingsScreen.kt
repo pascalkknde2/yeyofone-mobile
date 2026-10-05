@@ -96,6 +96,7 @@ fun SettingsScreen(
     onVideoClick: () -> Unit,
     onIncomingCallsClick: () -> Unit,
     onLanguageClick: () -> Unit,
+    onRecordingsClick: () -> Unit,
     onNavigationItemSelected: (Int) -> Unit,
 ) {
     val snackbar = remember { SnackbarHostState() }
@@ -129,7 +130,7 @@ fun SettingsScreen(
         ),
         stringResource(R.string.settings_section_calls) to listOf(
             SettingEntry(Icons.AutoMirrored.Filled.PhoneCallback, AccentGreen, stringResource(R.string.settings_incoming), stringResource(R.string.settings_incoming_subtitle), action = onIncomingCallsClick),
-            SettingEntry(Icons.Default.FiberManualRecord, AccentBlue, stringResource(R.string.settings_recording), stringResource(R.string.settings_recording_subtitle)),
+            SettingEntry(Icons.Default.FiberManualRecord, AccentBlue, stringResource(R.string.settings_recording), stringResource(R.string.settings_recording_subtitle), action = onRecordingsClick),
         ),
         stringResource(R.string.settings_section_more) to listOf(
             SettingEntry(Icons.Default.Language, AccentBlue, stringResource(R.string.settings_language), stringResource(R.string.settings_language_subtitle), action = onLanguageClick),

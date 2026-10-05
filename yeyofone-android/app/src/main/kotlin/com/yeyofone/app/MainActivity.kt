@@ -90,6 +90,7 @@ import com.yeyofone.app.ui.main.MainScreen
 import com.yeyofone.app.ui.settings.SettingsScreen
 import com.yeyofone.app.ui.settings.AudioSettingsScreen
 import com.yeyofone.app.ui.settings.LanguageSettingsScreen
+import com.yeyofone.app.ui.settings.RecordingsScreen
 import com.yeyofone.app.ui.settings.IncomingCallsSettingsScreen
 import com.yeyofone.app.ui.settings.VideoSettingsScreen
 import com.yeyofone.app.ui.theme.AccentBlue
@@ -356,6 +357,7 @@ private fun AccountsApp(
             onVideoClick = viewModel::showVideoSettings,
             onIncomingCallsClick = viewModel::showIncomingCallsSettings,
             onLanguageClick = viewModel::showLanguageSettings,
+            onRecordingsClick = viewModel::showRecordings,
             onNavigationItemSelected = navigateFromMenu,
         )
         AppScreen.AudioSettings -> AudioSettingsScreen(onBack = viewModel::showSettings)
@@ -370,6 +372,7 @@ private fun AccountsApp(
             )
         }
         AppScreen.LanguageSettings -> LanguageSettingsScreen(onBack = viewModel::showSettings)
+        AppScreen.Recordings -> RecordingsScreen(onBack = viewModel::showSettings)
     }
 }
 

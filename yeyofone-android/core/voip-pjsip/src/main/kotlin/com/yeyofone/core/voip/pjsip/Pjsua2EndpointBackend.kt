@@ -50,6 +50,7 @@ internal class Pjsua2EndpointBackend : EndpointBackend {
         const val CALL_RECEIVE_GAIN = 1.5f
     }
     private var endpoint: Endpoint? = null
+    private var verboseDiagnostics = false
     private val transportIds = mutableMapOf<SipTransport, Int>()
     private val accounts = mutableMapOf<SipAccountId, NativeAccount>()
     private val calls = mutableMapOf<String, NativeCall>()
@@ -77,6 +78,7 @@ internal class Pjsua2EndpointBackend : EndpointBackend {
     }
 
     override fun initialize(configuration: PjsipEngineConfiguration) {
+        verboseDiagnostics = configuration.verboseDiagnostics
         val config = EpConfig()
         try {
             config.uaConfig.userAgent = configuration.userAgent
@@ -560,9 +562,16 @@ internal class Pjsua2EndpointBackend : EndpointBackend {
                 try {
                     Log.i(
                         MEDIA_LOG_TAG,
-                        "call=$id localRtp=${transport.localRtpName} remoteRtp=${stream.remoteRtpAddress} " +
-                            "sourceRtp=${transport.srcRtpName} codec=${stream.codecName}/${stream.codecClockRate} " +
-                            "srtp=${stream.proto and pjmedia_tp_proto.PJMEDIA_TP_PROFILE_SRTP != 0}",
+                        mediaTransportLogLine(
+                            id,
+                            "${stream.codecName}/${stream.codecClockRate}",
+                            stream.proto and pjmedia_tp_proto.PJMEDIA_TP_PROFILE_SRTP != 0,
+                            if (verboseDiagnostics) {
+                                MediaAddresses(transport.localRtpName, stream.remoteRtpAddress, transport.srcRtpName)
+                            } else {
+                                null
+                            },
+                        ),
                     )
                 } finally {
                     transport.delete()
@@ -647,6 +656,20 @@ private fun String.withTransport(transport: TransportProtocol): String {
 }
 
 private const val MEDIA_LOG_TAG = "YeyoFoneMedia"
+
+/** RTP endpoints of a call; network identifiers, logged only with verbose diagnostics. */
+internal data class MediaAddresses(val localRtp: String, val remoteRtp: String, val sourceRtp: String)
+
+/** Media summary for logs (SEC-08): addresses are included only when explicitly provided. */
+internal fun mediaTransportLogLine(callId: String, codec: String, srtp: Boolean, addresses: MediaAddresses?): String =
+    buildString {
+        append("call=").append(callId).append(" codec=").append(codec).append(" srtp=").append(srtp)
+        if (addresses != null) {
+            append(" localRtp=").append(addresses.localRtp)
+            append(" remoteRtp=").append(addresses.remoteRtp)
+            append(" sourceRtp=").append(addresses.sourceRtp)
+        }
+    }
 private const val TLS_LOG_TAG = "YeyoFoneTls"
 // pjsua_acc_config.srtp_secure_signaling: 1 = require TLS on the first hop (2 would demand sips:).
 private const val SRTP_SECURE_SIGNALING_TLS_HOP = 1

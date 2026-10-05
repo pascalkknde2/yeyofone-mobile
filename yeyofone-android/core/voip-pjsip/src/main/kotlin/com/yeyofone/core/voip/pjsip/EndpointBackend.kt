@@ -44,8 +44,14 @@ enum class SipTransport { UDP, TCP, TLS }
 
 data class PjsipEngineConfiguration(
     val userAgent: String = "YeyoFone Android",
-    val logLevel: Int = 3,
+    /** PJSIP's own log level. Level 3+ includes account and registrar URIs; keep 1 in release. */
+    val logLevel: Int = 1,
     val transports: Set<SipTransport> = setOf(SipTransport.UDP),
+    /**
+     * Debug builds only: adds network identifiers (local/remote RTP addresses) to media logs.
+     * Release logs carry call IDs, codec and SRTP state, never addresses or caller identities.
+     */
+    val verboseDiagnostics: Boolean = false,
 ) {
     init {
         require(userAgent.isNotBlank()) { "User agent must not be blank" }
