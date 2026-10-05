@@ -45,9 +45,9 @@ import java.util.UUID
 /** Owns all generated PJSUA2 objects. Calls are serialized by [PjsipEngine]. */
 internal class Pjsua2EndpointBackend : EndpointBackend {
     private companion object {
-        // A modest receive boost compensates for quiet remote streams while avoiding the
-        // clipping produced by the much larger gains some handset vendors require.
-        const val CALL_RECEIVE_GAIN = 1.5f
+        // Preserve decoded sample levels: boosting loud remote speech clips PCM audio.
+        // Listening volume belongs to Android's voice-call volume control.
+        const val CALL_RECEIVE_GAIN = 1f
     }
     private var endpoint: Endpoint? = null
     private var verboseDiagnostics = false
@@ -356,7 +356,9 @@ internal class Pjsua2EndpointBackend : EndpointBackend {
                 try {
                     Log.i(
                         MEDIA_LOG_TAG,
-                        "call=$callId reattached port=${audio.portId} rtpTx=${stat.rtcp.txStat.pkt} rtpRx=${stat.rtcp.rxStat.pkt}",
+                        "call=$callId reattached port=${audio.portId} rtpTx=${stat.rtcp.txStat.pkt} rtpRx=${stat.rtcp.rxStat.pkt}" +
+                            " rxLost=${stat.rtcp.rxStat.loss} rxDiscard=${stat.rtcp.rxStat.discard}" +
+                            " jitterBufferLost=${stat.jbuf.lost} jitterBufferEmpty=${stat.jbuf.empty}",
                     )
                 } finally {
                     stat.delete()
