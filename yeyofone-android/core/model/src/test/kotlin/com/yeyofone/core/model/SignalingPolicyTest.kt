@@ -43,6 +43,15 @@ class SignalingPolicyTest {
     }
 
     @Test
+    fun `SRTP is allowed only over TLS`() {
+        val srtp = NatConfiguration(srtpEnabled = true)
+        assertNull(srtpPolicyViolation(TransportProtocol.TLS, srtp))
+        assertNull(srtpPolicyViolation(TransportProtocol.UDP, NatConfiguration()))
+        assertEquals("srtpEnabled", srtpPolicyViolation(TransportProtocol.UDP, srtp)!!.field)
+        assertEquals("srtpEnabled", srtpPolicyViolation(TransportProtocol.TCP, srtp)!!.field)
+    }
+
+    @Test
     fun `user part parameters are not mistaken for URI parameters`() {
         assertNull(server(TransportProtocol.TLS, "sip:100;transport=udp@pbx.example.com").signalingPolicyViolation())
     }

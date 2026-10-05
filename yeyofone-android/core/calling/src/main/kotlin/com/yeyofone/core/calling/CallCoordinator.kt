@@ -320,7 +320,7 @@ private fun CallSession.toHistoryEntry() = CallHistoryEntry(
     endedAt = endedAt,
     endReason = when (val current = state) {
         is CallState.Disconnected -> current.reason
-        is CallState.Failed -> CallEndReason.UNKNOWN
+        is CallState.Failed -> if (current.error is VoipError.Media) CallEndReason.MEDIA_FAILURE else CallEndReason.UNKNOWN
         else -> null
     },
 )
@@ -342,6 +342,9 @@ private fun disconnectedState(statusCode: Int): CallState = when (statusCode) {
     408 -> CallState.Disconnected(CallEndReason.TIMEOUT)
     in 200..299 -> CallState.Disconnected(CallEndReason.REMOTE_HANGUP)
     0 -> CallState.Disconnected(CallEndReason.NETWORK_FAILURE)
+    // 488 Not Acceptable Here / 606 Not Acceptable: the peer refused the SDP offer, e.g. a PBX
+    // without SRTP support when SRTP is required, or no common codec.
+    488, 606 -> CallState.Failed(VoipError.Media("Media offer not accepted"))
     else -> CallState.Failed(VoipError.SipResponse(statusCode, "Call failed"))
 }
 

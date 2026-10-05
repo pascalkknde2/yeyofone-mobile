@@ -29,7 +29,10 @@ import org.pjsip.pjsua2.OnRegStateParam
 import org.pjsip.pjsua2.OnTransportStateParam
 import org.pjsip.pjsua2.pjsip_transport_state
 import org.pjsip.pjsua2.StringVector
+import org.pjsip.pjsua2.IntVector
+import org.pjsip.pjsua2.pjmedia_srtp_keying_method
 import org.pjsip.pjsua2.pjmedia_srtp_use
+import org.pjsip.pjsua2.pjmedia_tp_proto
 import org.pjsip.pjsua2.pjsua_call_flag
 import org.pjsip.pjsua2.pjsua_call_media_status
 import org.pjsip.pjsua2.pjsua_dtmf_method
@@ -150,6 +153,7 @@ internal class Pjsua2EndpointBackend : EndpointBackend {
         val credential = AuthCredInfo("digest", "*", account.authenticationUsername, 0, String(password))
         val credentials = AuthCredInfoVector().apply { add(credential) }
         val proxies = StringVector()
+        val srtpKeyings = IntVector().apply { add(pjmedia_srtp_keying_method.PJMEDIA_SRTP_KEYING_SDES) }
         try {
             config.idUri = "sip:${account.username}@${account.server.domain}"
             config.regConfig.apply {
@@ -191,10 +195,17 @@ internal class Pjsua2EndpointBackend : EndpointBackend {
                 account.nat.turnServer?.let { turnServer = it }
                 account.nat.turnUsername?.let { turnUserName = it }
             }
-            config.mediaConfig.srtpUse = if (account.nat.srtpEnabled) {
-                pjmedia_srtp_use.PJMEDIA_SRTP_MANDATORY
-            } else {
-                pjmedia_srtp_use.PJMEDIA_SRTP_DISABLED
+            config.mediaConfig.apply {
+                // Mandatory, never optional: a "require SRTP" account must not fall back to RTP.
+                srtpUse = if (account.nat.srtpEnabled) {
+                    pjmedia_srtp_use.PJMEDIA_SRTP_MANDATORY
+                } else {
+                    pjmedia_srtp_use.PJMEDIA_SRTP_DISABLED
+                }
+                // SDES only (the supported mode), and only when the first signaling hop is TLS,
+                // because SDES keys travel in the SDP.
+                srtpSecureSignaling = SRTP_SECURE_SIGNALING_TLS_HOP
+                srtpOpt.keyings = srtpKeyings
             }
             NativeAccount(account.id, callback).also { native ->
                 native.create(config)
@@ -202,6 +213,7 @@ internal class Pjsua2EndpointBackend : EndpointBackend {
             }
         } finally {
             proxies.delete()
+            srtpKeyings.delete()
             credentials.delete()
             credential.delete()
             config.delete()
@@ -546,7 +558,8 @@ internal class Pjsua2EndpointBackend : EndpointBackend {
                     Log.i(
                         MEDIA_LOG_TAG,
                         "call=$id localRtp=${transport.localRtpName} remoteRtp=${stream.remoteRtpAddress} " +
-                            "sourceRtp=${transport.srcRtpName} codec=${stream.codecName}/${stream.codecClockRate}",
+                            "sourceRtp=${transport.srcRtpName} codec=${stream.codecName}/${stream.codecClockRate} " +
+                            "srtp=${stream.proto and pjmedia_tp_proto.PJMEDIA_TP_PROFILE_SRTP != 0}",
                     )
                 } finally {
                     transport.delete()
@@ -615,4 +628,6 @@ private fun String.withTransport(transport: TransportProtocol): String {
 
 private const val MEDIA_LOG_TAG = "YeyoFoneMedia"
 private const val TLS_LOG_TAG = "YeyoFoneTls"
+// pjsua_acc_config.srtp_secure_signaling: 1 = require TLS on the first hop (2 would demand sips:).
+private const val SRTP_SECURE_SIGNALING_TLS_HOP = 1
 private const val REGISTRATION_LOG_TAG = "YeyoFoneRegistration"

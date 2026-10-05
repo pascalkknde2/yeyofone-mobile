@@ -80,6 +80,17 @@ class AccountValidatorTest {
     }
 
     @Test
+    fun `SRTP requires TLS signaling`() {
+        AccountValidator.validate(
+            validDraft(transport = TransportProtocol.TLS, nat = NatConfiguration(srtpEnabled = true)),
+        )
+        val failure = assertFailsWith<AccountValidationException.InvalidField> {
+            AccountValidator.validate(validDraft(nat = NatConfiguration(srtpEnabled = true)))
+        }
+        assertEquals("srtpEnabled", failure.field)
+    }
+
+    @Test
     fun `TURN server requires a username`() {
         assertFailsWith<AccountValidationException.InvalidField> {
             AccountValidator.validate(validDraft(nat = NatConfiguration(turnServer = "turn.example.com")))

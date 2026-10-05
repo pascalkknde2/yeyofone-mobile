@@ -849,7 +849,12 @@ private fun AccountEditor(existing: SipAccount?, viewModel: YeyoFoneViewModel, o
                         TransportProtocol.entries.forEach { choice ->
                             FilterChip(
                                 selected = transport == choice,
-                                onClick = { transport = choice },
+                                onClick = {
+                                    // SRTP needs TLS signaling; new TLS accounts default to it.
+                                    if (choice != TransportProtocol.TLS) srtp = false
+                                    else if (existing == null && transport != choice) srtp = true
+                                    transport = choice
+                                },
                                 label = { Text(choice.name) },
                                 modifier = Modifier.weight(1f),
                             )
@@ -865,7 +870,11 @@ private fun AccountEditor(existing: SipAccount?, viewModel: YeyoFoneViewModel, o
                     Field(stringResource(R.string.turn_server_optional), turn) { turn = it }
                     Field(stringResource(R.string.turn_username_optional), turnUsername) { turnUsername = it }
                     CheckRow(stringResource(R.string.enable_ice), ice) { ice = it }
-                    CheckRow(stringResource(R.string.require_srtp), srtp) { srtp = it }
+                    CheckRow(
+                        stringResource(R.string.require_srtp),
+                        srtp,
+                        enabled = transport == TransportProtocol.TLS,
+                    ) { srtp = it }
                 }
             }
             item { EditorSectionLabel(stringResource(R.string.account_optional_section)) }
@@ -929,13 +938,18 @@ private fun Field(label: String, value: String, onValueChange: (String) -> Unit)
 }
 
 @Composable
-private fun CheckRow(label: String, checked: Boolean, onCheckedChange: (Boolean) -> Unit) {
+private fun CheckRow(
+    label: String,
+    checked: Boolean,
+    enabled: Boolean = true,
+    onCheckedChange: (Boolean) -> Unit,
+) {
     Row(
-        Modifier.fillMaxWidth().clickable { onCheckedChange(!checked) }.padding(vertical = 2.dp),
+        Modifier.fillMaxWidth().clickable(enabled = enabled) { onCheckedChange(!checked) }.padding(vertical = 2.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Checkbox(checked, onCheckedChange)
-        Text(label, color = TextPrimary, fontWeight = FontWeight.Medium)
+        Checkbox(checked, onCheckedChange, enabled = enabled)
+        Text(label, color = if (enabled) TextPrimary else TextSecondary, fontWeight = FontWeight.Medium)
     }
 }
 

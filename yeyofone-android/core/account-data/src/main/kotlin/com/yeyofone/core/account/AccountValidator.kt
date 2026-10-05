@@ -2,6 +2,7 @@ package com.yeyofone.core.account
 
 import com.yeyofone.core.model.SipServerConfiguration
 import com.yeyofone.core.model.signalingPolicyViolation
+import com.yeyofone.core.model.srtpPolicyViolation
 import java.net.IDN
 import java.net.URI
 
@@ -22,6 +23,7 @@ object AccountValidator {
         SipServerConfiguration(
             draft.domain, draft.registrarUri, draft.outboundProxyUri, draft.port, draft.transport, draft.securityMode,
         ).signalingPolicyViolation()?.let { invalid(it.field, it.reason) }
+        srtpPolicyViolation(draft.transport, draft.nat)?.let { invalid(it.field, it.reason) }
         if (draft.registrationExpirySeconds !in 60..86_400) {
             invalid("registrationExpirySeconds", "must be between 60 and 86400")
         }

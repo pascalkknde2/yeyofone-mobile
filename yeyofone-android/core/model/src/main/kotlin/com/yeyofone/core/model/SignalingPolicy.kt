@@ -38,3 +38,15 @@ fun sipUriTransportViolation(field: String, uri: String, transport: TransportPro
     if (parameter == transport.name.lowercase()) return null
     return SignalingPolicyViolation(field, "sets transport=$parameter, which conflicts with ${transport.name}", tls)
 }
+
+/**
+ * SRTP is supported only with SDES keying over TLS signaling. SDES carries the media keys in the
+ * SDP, so over UDP/TCP anyone on the path could read them. The encryption is hop-by-hop between
+ * the device and the PBX (which can decrypt the media); it is not end-to-end.
+ */
+fun srtpPolicyViolation(transport: TransportProtocol, nat: NatConfiguration): SignalingPolicyViolation? =
+    if (nat.srtpEnabled && transport != TransportProtocol.TLS) {
+        SignalingPolicyViolation("srtpEnabled", "requires TLS transport, because SRTP keys are sent in the SIP message", false)
+    } else {
+        null
+    }

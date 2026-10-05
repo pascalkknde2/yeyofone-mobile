@@ -13,6 +13,7 @@ import com.yeyofone.core.model.SipAccount
 import com.yeyofone.core.model.SipAccountId
 import com.yeyofone.core.model.SipServerConfiguration
 import com.yeyofone.core.model.TransportProtocol
+import com.yeyofone.core.model.VoipError
 import com.yeyofone.core.model.TransferState
 import com.yeyofone.core.voip.NativeCallEvent
 import com.yeyofone.core.voip.CallHistoryRepository
@@ -66,6 +67,22 @@ class CallCoordinatorTest {
 
         val session = coordinator.sessions.value.single()
         assertIs<CallState.Disconnected>(session.state)
+    }
+
+    @Test
+    fun `488 or 606 maps to a media failure`() = runTest {
+        val id = SipAccountId("one")
+        val gateway = FakeGateway()
+        val coordinator = CallCoordinator(FakeAccounts(mapOf(id to account(id))), gateway, backgroundScope)
+        runCurrent()
+
+        listOf(488, 606).forEach { code ->
+            val callId = coordinator.call(id, "1001")
+            gateway.emit(callId.value, id, invState = PJSIP_INV_STATE_DISCONNECTED, lastStatusCode = code)
+            runCurrent()
+            val state = assertIs<CallState.Failed>(coordinator.sessions.value.single { it.id == callId }.state)
+            assertIs<VoipError.Media>(state.error)
+        }
     }
 
     @Test
