@@ -89,6 +89,9 @@ import com.yeyofone.app.ui.incomingcall.IncomingCallScreen as IncomingCallConten
 import com.yeyofone.app.ui.main.MainScreen
 import com.yeyofone.app.ui.settings.SettingsScreen
 import com.yeyofone.app.ui.settings.AudioSettingsScreen
+import com.yeyofone.app.ui.settings.LanguageSettingsScreen
+import com.yeyofone.app.ui.settings.RecordingsScreen
+import com.yeyofone.app.ui.settings.IncomingCallsSettingsScreen
 import com.yeyofone.app.ui.settings.VideoSettingsScreen
 import com.yeyofone.app.ui.theme.AccentBlue
 import com.yeyofone.app.ui.theme.BackgroundGray
@@ -97,6 +100,7 @@ import com.yeyofone.app.ui.theme.PrimaryLight
 import com.yeyofone.app.ui.theme.TextPrimary
 import com.yeyofone.app.ui.theme.TextSecondary
 import com.yeyofone.app.ui.theme.YeyoFoneTheme
+import com.yeyofone.app.ui.settings.LanguagePreferences
 import com.yeyofone.core.account.AccountDraft
 import com.yeyofone.core.account.normalizeRegistrarUri
 import com.yeyofone.core.model.AudioRoute
@@ -112,6 +116,10 @@ import com.yeyofone.core.model.TransferState
 import com.yeyofone.core.model.TransportProtocol
 
 class MainActivity : ComponentActivity() {
+    override fun attachBaseContext(newBase: android.content.Context) {
+        super.attachBaseContext(LanguagePreferences.wrap(newBase))
+    }
+
     override fun onStart() {
         super.onStart()
         AppVisibility.isForeground = true
@@ -211,6 +219,7 @@ private fun AccountsApp(
     chatViewModel: ChatViewModel,
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val preferences by viewModel.accountPreferences.collectAsStateWithLifecycle()
     val callHistoryState by callHistoryViewModel.uiState.collectAsStateWithLifecycle()
     val incoming = state.sessions.lastOrNull {
         it.direction == CallDirection.INCOMING && !it.state.isTerminal() && it.id !in state.dismissedIncomingCalls
@@ -346,10 +355,24 @@ private fun AccountsApp(
             onAccountsClick = viewModel::showAccounts,
             onAudioClick = viewModel::showAudioSettings,
             onVideoClick = viewModel::showVideoSettings,
+            onIncomingCallsClick = viewModel::showIncomingCallsSettings,
+            onLanguageClick = viewModel::showLanguageSettings,
+            onRecordingsClick = viewModel::showRecordings,
             onNavigationItemSelected = navigateFromMenu,
         )
         AppScreen.AudioSettings -> AudioSettingsScreen(onBack = viewModel::showSettings)
         AppScreen.VideoSettings -> VideoSettingsScreen(onBack = viewModel::showSettings)
+        AppScreen.IncomingCallsSettings -> {
+            val account = state.accounts.firstOrNull()
+            val accountPreferences = account?.let { preferences[it.id.value] } ?: AccountPreferences()
+            IncomingCallsSettingsScreen(
+                preferences = accountPreferences,
+                onBack = viewModel::showSettings,
+                onToggle = { toggle, enabled -> account?.let { viewModel.setPreference(it.id, toggle, enabled) } },
+            )
+        }
+        AppScreen.LanguageSettings -> LanguageSettingsScreen(onBack = viewModel::showSettings)
+        AppScreen.Recordings -> RecordingsScreen(onBack = viewModel::showSettings)
     }
 }
 

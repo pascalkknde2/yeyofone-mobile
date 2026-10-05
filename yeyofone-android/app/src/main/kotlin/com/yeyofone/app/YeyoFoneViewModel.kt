@@ -32,18 +32,25 @@ sealed interface AppScreen {
     data object Settings : AppScreen
     data object AudioSettings : AppScreen
     data object VideoSettings : AppScreen
+    data object IncomingCallsSettings : AppScreen
+    data object LanguageSettings : AppScreen
+    data object Recordings : AppScreen
     data class Detail(val accountId: SipAccountId) : AppScreen
     data class Edit(val accountId: SipAccountId?) : AppScreen
     data class Dial(val accountId: SipAccountId, val destination: String = "") : AppScreen
 }
 
-enum class PreferenceToggle { AutoAnswer, CallWaiting, Voicemail, DoNotDisturb }
+enum class PreferenceToggle { AutoAnswer, CallWaiting, Voicemail, DoNotDisturb, AllowIncoming, Vibrate, FlipToMute, AnnounceCaller }
 
 data class AccountPreferences(
     val autoAnswer: Boolean = true,
     val callWaiting: Boolean = true,
     val voicemail: Boolean = false,
     val doNotDisturb: Boolean = false,
+    val allowIncoming: Boolean = true,
+    val vibrate: Boolean = true,
+    val flipToMute: Boolean = true,
+    val announceCaller: Boolean = false,
 )
 
 data class YeyoFoneUiState(
@@ -113,6 +120,9 @@ class YeyoFoneViewModel(
     fun showSettings() { screen.value = AppScreen.Settings }
     fun showAudioSettings() { screen.value = AppScreen.AudioSettings }
     fun showVideoSettings() { screen.value = AppScreen.VideoSettings }
+    fun showIncomingCallsSettings() { screen.value = AppScreen.IncomingCallsSettings }
+    fun showLanguageSettings() { screen.value = AppScreen.LanguageSettings }
+    fun showRecordings() { screen.value = AppScreen.Recordings }
     fun showAccount(accountId: SipAccountId) { screen.value = AppScreen.Detail(accountId) }
     fun editAccount(accountId: SipAccountId?) { screen.value = AppScreen.Edit(accountId) }
     fun dial(accountId: SipAccountId, destination: String = "") {
@@ -148,6 +158,10 @@ class YeyoFoneViewModel(
                             PreferenceToggle.CallWaiting -> current.copy(callWaiting = enabled)
                             PreferenceToggle.Voicemail -> current.copy(voicemail = enabled)
                             PreferenceToggle.DoNotDisturb -> current.copy(doNotDisturb = enabled)
+                            PreferenceToggle.AllowIncoming -> current.copy(allowIncoming = enabled)
+                            PreferenceToggle.Vibrate -> current.copy(vibrate = enabled)
+                            PreferenceToggle.FlipToMute -> current.copy(flipToMute = enabled)
+                            PreferenceToggle.AnnounceCaller -> current.copy(announceCaller = enabled)
                         }
                     })
     }

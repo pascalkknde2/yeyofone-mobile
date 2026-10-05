@@ -26,7 +26,14 @@ class YeyoFoneApplication : Application() {
     val accountRepository by lazy { RoomAccountRepository.create(this) }
     val callHistory by lazy { RoomCallHistoryRepository.create(this) }
     private val engine by lazy {
-        PjsipEngine.create(PjsipEngineConfiguration(transports = setOf(SipTransport.UDP, SipTransport.TCP, SipTransport.TLS)))
+        PjsipEngine.create(
+            PjsipEngineConfiguration(
+                transports = setOf(SipTransport.UDP, SipTransport.TCP, SipTransport.TLS),
+                // Release: PJSIP errors only and no network identifiers in media logs (SEC-08).
+                logLevel = if (BuildConfig.DEBUG) 3 else 1,
+                verboseDiagnostics = BuildConfig.DEBUG,
+            ),
+        )
     }
     val registration by lazy {
         RegistrationCoordinator(

@@ -1,123 +1,34 @@
-# Killed-Process Incoming Calls: Firebase and PBX Setup
+# Push wake-up setup
 
-The Android push-wake skeleton is present in the app, but a fully killed-process incoming call requires Firebase configuration and PBX integration.
+The Android client now obtains and caches its Firebase Cloud Messaging (FCM) token, registers it with the push relay for each enabled SIP account, retries temporary relay failures, and starts the incoming-call service when a data push arrives. The account detail screen lets the user import or remove the device credential issued by the service operator.
 
-## 1. Create the Firebase Android app
+Push wake-up works end to end only after the relay and PBX are configured. This repository contains the Android client; the relay and PBX push sender are separate services.
 
-In the [Firebase Console](https://console.firebase.google.com/):
+## Configure the Android build
 
-1. Create or select a Firebase project.
-2. Add an Android app with package name `com.yeyofone.app`.
-3. Download `google-services.json`.
-4. Place it at `yeyofone-android/app/google-services.json`.
-
-Do not commit Firebase credentials or private service-account keys.
-
-Firebase requires the Google Services Gradle plugin for the JSON configuration. Follow the [official Android setup guide](https://firebase.google.com/docs/android/setup).
-
-## 2. Enable the Google Services Gradle plugin
-
-In `yeyofone-android/build.gradle.kts`, add the current plugin version from the Firebase setup instructions:
-
-```kotlin
-plugins {
-    id("com.google.gms.google-services") version "<current-version>" apply false
-}
-```
-
-In `yeyofone-android/app/build.gradle.kts`, apply it:
-
-```kotlin
-plugins {
-    id("com.google.gms.google-services")
-}
-```
-
-Verify the build:
+The Firebase Android app configuration is `app/google-services.json`; keep Firebase service-account keys out of the mobile app and repository. Configure the relay base URL when building:
 
 ```shell
-cd yeyofone-android
-./gradlew test :app:assembleDebug
+./gradlew :app:assembleRelease -PpushRelayUrl=https://<your-push-relay-host>
 ```
 
-## 3. Verify FCM token delivery
+The URL must use HTTPS. Without it, the account screen reports that push wake-up is unavailable and the app does not send credentials or tokens to a relay. For local relay development, the debug manifest permits cleartext traffic, but release builds do not.
 
-`YeyoFoneFirebaseMessagingService` already handles token refreshes. Check the emulator log:
+## Configure the relay and PBX
 
-```shell
-ADB=/Users/pascalkanyamakankonde/Library/Android/sdk/platform-tools/adb
-$ADB -s emulator-5554 logcat -d | grep YeyoFonePush
-```
+Deploy the compatible `yeyofone-push-relay` service and configure its FCM sender credentials on the server. The app authenticates relay requests with an operator-issued, per-device credential, entered in the account's **Push wake-up** section. The relay associates that device credential with the app's FCM token.
 
-The app must send every new token to the PBX because FCM tokens can rotate. See [FCM Android client setup](https://firebase.google.com/docs/cloud-messaging/android/get-started).
+When an incoming SIP INVITE has no reachable registration, the PBX must ask the relay to send an FCM **high-priority data message** to the registered device. The data event should be `sip_invite_wake`. FCM wakes the app process; the client restarts SIP registration and the PBX must retry or fork the INVITE to the newly registered contact. Push delivery does not itself create a SIP call.
 
-## 4. Add PBX token registration
+Keep FCM service-account credentials on the relay/PBX server. Never place those credentials or a shared relay secret in the Android app.
 
-The PBX needs an authenticated endpoint similar to:
+## Verify end to end
 
-```http
-POST https://sysinfos.co.uk/api/mobile-push-tokens
-Authorization: Bearer <user-session-token>
-Content-Type: application/json
-```
+1. Build with the deployed HTTPS relay URL and install on a physical Android device with Google Play services.
+2. Add and enable a SIP account, then import its device credential in **Push wake-up**.
+3. Confirm the status changes to **Active** and that the relay has the current FCM token.
+4. Let Android reclaim the app process; then call the extension from another SIP endpoint.
+5. Confirm the PBX sends the wake message, the app re-registers, the retried INVITE rings, and answering works from the notification or call screen.
+6. Repeat with temporary relay outages and token rotation. Confirm the status and retry behavior recover.
 
-```json
-{
-  "platform": "android",
-  "packageName": "com.yeyofone.app",
-  "extension": "1005",
-  "fcmToken": "<device-token>",
-  "deviceId": "<stable-installation-id>"
-}
-```
-
-The Android client should call this endpoint from `onNewToken()` and after account registration succeeds. Firebase service-account credentials must remain on the server.
-
-## 5. Add SIP-to-push behavior in the PBX
-
-When the PBX receives an INVITE for a mobile extension:
-
-1. Check whether the extension has an active SIP registration.
-2. If it is unreachable, send an FCM data message to the stored device token.
-3. Wait briefly for the app to restart and re-register SIP.
-4. Retry or fork the INVITE to the new SIP contact.
-5. Continue normal ringing.
-
-The FCM message wakes the process; it does not itself create a SIP call object. SIP registration and the INVITE must establish the call.
-
-Use FCM HTTP v1:
-
-```http
-POST https://fcm.googleapis.com/v1/projects/<firebase-project-id>/messages:send
-```
-
-Example high-priority data payload:
-
-```json
-{
-  "message": {
-    "token": "<fcm-token>",
-    "android": { "priority": "high" },
-    "data": {
-      "event": "sip_invite_wake",
-      "extension": "1005"
-    }
-  }
-}
-```
-
-See [FCM HTTP v1 sending](https://firebase.google.com/docs/cloud-messaging/send/v1-api).
-
-## 6. End-to-end verification
-
-1. Open YeyoFone and confirm SIP registration.
-2. Confirm the PBX stored the FCM token.
-3. Let Android reclaim the app process, or test an explicit force-stop separately.
-4. Call extension `1005` from `1004`.
-5. Confirm the PBX sends the FCM wake message.
-6. Confirm `IncomingCallService` starts and SIP re-registers.
-7. Confirm the retried INVITE rings.
-8. Answer from the notification or lock screen.
-9. Confirm exactly one call screen and two-way audio.
-
-Android generally does not deliver FCM to an app explicitly force-stopped by the user until the app is opened again. Therefore, test OS-reclaimed and force-stopped processes as separate cases.
+Android generally does not deliver FCM to an app explicitly force-stopped by the user until the user opens it again. Test force-stop separately from normal process reclamation. Emulators may not accurately model background delivery or call audio; use a physical device for release acceptance.
