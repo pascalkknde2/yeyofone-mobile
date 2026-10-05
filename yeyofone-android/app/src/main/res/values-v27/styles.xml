@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.YeyoFone" parent="Theme.YeyoFone.Base">
+        <item name="android:navigationBarColor">#F4F7F9</item>
+        <item name="android:windowLightNavigationBar">true</item>
+    </style>
+</resources>

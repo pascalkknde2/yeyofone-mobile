@@ -14,17 +14,17 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -35,9 +35,9 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
@@ -50,57 +50,60 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.yeyofone.core.account.AccountDraft
-import com.yeyofone.core.account.normalizeRegistrarUri
-import com.yeyofone.core.model.CallDirection
-import com.yeyofone.core.model.CallId
-import com.yeyofone.core.model.CallSession
-import com.yeyofone.core.model.CallState
-import com.yeyofone.core.model.AudioRoute
-import com.yeyofone.core.model.NatConfiguration
-import com.yeyofone.core.model.RegistrationState
-import com.yeyofone.core.model.SecurityMode
-import com.yeyofone.core.model.SipAccount
-import com.yeyofone.core.model.TransportProtocol
-import com.yeyofone.core.model.TransferState
-import com.yeyofone.app.data.repository.CallRepository
-import com.yeyofone.app.ui.callhistory.CallHistoryScreen
-import com.yeyofone.app.ui.callhistory.CallHistoryViewModel
-import com.yeyofone.app.ui.accounts.AccountsScreen
-import com.yeyofone.app.ui.chat.ChatScreen
-import com.yeyofone.app.ui.chat.ChatViewModel
-import com.yeyofone.app.ui.callended.CallEndedScreen
 import com.yeyofone.app.data.model.toCallSummary
 import com.yeyofone.app.data.model.toSipIdentity
+import com.yeyofone.app.data.repository.CallRepository
+import com.yeyofone.app.ui.accounts.AccountsScreen
 import com.yeyofone.app.ui.call.OutgoingCallScreen
+import com.yeyofone.app.ui.callended.CallEndedScreen
+import com.yeyofone.app.ui.callhistory.CallHistoryScreen
+import com.yeyofone.app.ui.callhistory.CallHistoryViewModel
+import com.yeyofone.app.ui.chat.ChatScreen
+import com.yeyofone.app.ui.chat.ChatViewModel
 import com.yeyofone.app.ui.components.BottomNavigationBar
 import com.yeyofone.app.ui.components.CALLS_NAVIGATION
 import com.yeyofone.app.ui.components.CHAT_NAVIGATION
 import com.yeyofone.app.ui.components.CONTACTS_NAVIGATION
+import com.yeyofone.app.ui.components.HOME_NAVIGATION
 import com.yeyofone.app.ui.components.KEYPAD_NAVIGATION
 import com.yeyofone.app.ui.components.SETTINGS_NAVIGATION
-import com.yeyofone.app.ui.components.HOME_NAVIGATION
 import com.yeyofone.app.ui.dialpad.DialPadScreen
 import com.yeyofone.app.ui.dialpad.DialPadViewModel
 import com.yeyofone.app.ui.incomingcall.IncomingCallScreen as IncomingCallContent
-import com.yeyofone.app.ui.settings.SettingsScreen
 import com.yeyofone.app.ui.main.MainScreen
-import com.yeyofone.app.ui.theme.YeyoFoneTheme
+import com.yeyofone.app.ui.settings.SettingsScreen
+import com.yeyofone.app.ui.theme.AccentBlue
 import com.yeyofone.app.ui.theme.BackgroundGray
+import com.yeyofone.app.ui.theme.BorderLight
+import com.yeyofone.app.ui.theme.PrimaryLight
 import com.yeyofone.app.ui.theme.TextPrimary
 import com.yeyofone.app.ui.theme.TextSecondary
+import com.yeyofone.app.ui.theme.YeyoFoneTheme
+import com.yeyofone.core.account.AccountDraft
+import com.yeyofone.core.account.normalizeRegistrarUri
+import com.yeyofone.core.model.AudioRoute
+import com.yeyofone.core.model.CallDirection
+import com.yeyofone.core.model.CallId
+import com.yeyofone.core.model.CallSession
+import com.yeyofone.core.model.CallState
+import com.yeyofone.core.model.NatConfiguration
+import com.yeyofone.core.model.RegistrationState
+import com.yeyofone.core.model.SecurityMode
+import com.yeyofone.core.model.SipAccount
+import com.yeyofone.core.model.TransferState
+import com.yeyofone.core.model.TransportProtocol
 
 class MainActivity : ComponentActivity() {
     override fun onStart() {
@@ -115,8 +118,16 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setShowWhenLocked(true)
-        setTurnScreenOn(true)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
+            setShowWhenLocked(true)
+            setTurnScreenOn(true)
+        } else {
+            @Suppress("DEPRECATION")
+            window.addFlags(
+                android.view.WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED or
+                    android.view.WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON,
+            )
+        }
         IncomingCallService.start(this)
         val app = application as YeyoFoneApplication
         setContent {
@@ -240,6 +251,7 @@ private fun AccountsApp(
                 onContacts = viewModel::showAccounts,
                 onHistory = viewModel::showHistory,
                 onAccountClick = { viewModel.showAccount(it.id) },
+                onAddAccount = { viewModel.editAccount(null) },
                 onCallBack = { viewModel.dial(it.accountId, it.dialDestination) },
                 onNavigationItemSelected = navigateFromMenu,
             )
@@ -850,7 +862,7 @@ private fun AccountEditor(existing: SipAccount?, viewModel: YeyoFoneViewModel, o
                     enabled = !saving,
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(16.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = TextPrimary, contentColor = Color.White),
+                    colors = ButtonDefaults.buttonColors(containerColor = AccentBlue, contentColor = Color.White),
                     contentPadding = PaddingValues(vertical = 16.dp),
                     onClick = {
                         saving = true
@@ -932,7 +944,7 @@ private fun EditorSectionLabel(label: String) {
 @Composable
 private fun editorFieldColors() = OutlinedTextFieldDefaults.colors(
     focusedBorderColor = MaterialTheme.colorScheme.primary,
-    unfocusedBorderColor = Color(0xFFE2E5E9),
-    focusedContainerColor = Color(0xFFFBFBFC),
-    unfocusedContainerColor = Color(0xFFFBFBFC),
+    unfocusedBorderColor = BorderLight,
+    focusedContainerColor = BackgroundGray,
+    unfocusedContainerColor = BackgroundGray,
 )

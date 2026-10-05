@@ -42,8 +42,10 @@ import com.yeyofone.app.data.model.CallLog
 import com.yeyofone.app.ui.components.BottomNavigationBar
 import com.yeyofone.app.ui.components.CALLS_NAVIGATION
 import com.yeyofone.app.ui.components.CallHistoryItem
+import com.yeyofone.app.ui.theme.AccentBlue
 import com.yeyofone.app.ui.theme.BackgroundGray
 import com.yeyofone.app.ui.theme.CardWhite
+import com.yeyofone.app.ui.theme.PrimaryLight
 import com.yeyofone.app.ui.theme.TextPrimary
 import com.yeyofone.app.ui.theme.TextSecondary
 import com.yeyofone.core.model.SipAccountId
@@ -150,14 +152,14 @@ private fun CallHistoryHeader(
         val tabs = listOf(R.string.filter_all, R.string.filter_missed, R.string.filter_voicemail)
         Row(
             Modifier.fillMaxWidth().padding(horizontal = 24.dp).clip(RoundedCornerShape(12.dp))
-                .background(Color(0xFFF0F0F5)).padding(4.dp),
+                .background(BackgroundGray).padding(4.dp),
             horizontalArrangement = Arrangement.spacedBy(4.dp),
         ) {
             tabs.forEachIndexed { index, title ->
                 val selected = selectedTab == index
                 Box(
                     Modifier.weight(1f).clip(RoundedCornerShape(8.dp))
-                        .background(if (selected) CardWhite else Color.Transparent)
+                        .background(if (selected) PrimaryLight else Color.Transparent)
                         .clickable { onTabSelected(index) }.padding(vertical = 8.dp),
                     contentAlignment = Alignment.Center,
                 ) {
@@ -165,7 +167,7 @@ private fun CallHistoryHeader(
                         stringResource(title),
                         fontSize = 14.sp,
                         fontWeight = FontWeight.SemiBold,
-                        color = if (selected) TextPrimary else TextSecondary,
+                        color = if (selected) AccentBlue else TextSecondary,
                     )
                 }
             }

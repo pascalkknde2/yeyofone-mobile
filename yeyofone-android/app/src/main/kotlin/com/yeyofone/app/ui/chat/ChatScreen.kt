@@ -39,6 +39,7 @@ import com.yeyofone.app.ui.components.ChatInputBar
 import com.yeyofone.app.ui.components.MessageBubble
 import com.yeyofone.app.ui.components.TypingIndicator
 import com.yeyofone.app.ui.theme.BackgroundGray
+import com.yeyofone.app.ui.theme.BorderLight
 import com.yeyofone.app.ui.theme.TextSecondary
 import kotlinx.coroutines.launch
 
@@ -68,7 +69,7 @@ fun ChatScreen(
     ) { padding ->
         Column(Modifier.fillMaxSize().padding(bottom = padding.calculateBottomPadding())) {
             ChatHeader(state.contact, onBack, onVoiceCall, unavailable)
-            HorizontalDivider(thickness = 0.5.dp, color = Color(0x0D000000))
+            HorizontalDivider(thickness = 0.5.dp, color = BorderLight)
             LazyColumn(
                 state = listState,
                 modifier = Modifier.weight(1f).fillMaxWidth().background(BackgroundGray),
@@ -79,7 +80,7 @@ fun ChatScreen(
                     Box(Modifier.fillMaxWidth().padding(vertical = 8.dp), contentAlignment = Alignment.Center) {
                         Text(
                             stringResource(R.string.today).uppercase(),
-                            Modifier.clip(RoundedCornerShape(12.dp)).background(Color(0x0F000000))
+                            Modifier.clip(RoundedCornerShape(12.dp)).background(BorderLight)
                                 .padding(horizontal = 12.dp, vertical = 4.dp),
                             fontSize = 11.sp,
                             fontWeight = FontWeight.SemiBold,
@@ -92,7 +93,7 @@ fun ChatScreen(
                 }
                 if (state.isContactTyping) item { TypingIndicator() }
             }
-            HorizontalDivider(thickness = 0.5.dp, color = Color(0x0D000000))
+            HorizontalDivider(thickness = 0.5.dp, color = BorderLight)
             ChatInputBar(state.inputText, viewModel::onInputChanged, viewModel::sendMessage, unavailable)
         }
     }

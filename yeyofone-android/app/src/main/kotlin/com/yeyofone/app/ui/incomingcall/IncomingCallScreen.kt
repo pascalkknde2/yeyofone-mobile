@@ -47,9 +47,11 @@ import com.yeyofone.app.ui.components.PrimaryCallActionButton
 import com.yeyofone.app.ui.components.SecondaryCallActionButton
 import com.yeyofone.app.ui.theme.AccentGreen
 import com.yeyofone.app.ui.theme.AccentRed
-import com.yeyofone.app.ui.theme.CallBackground
+import com.yeyofone.app.ui.theme.KeypadBackground
+import com.yeyofone.app.ui.theme.SuccessLight
 import com.yeyofone.app.ui.theme.CallTextPrimary
 import com.yeyofone.app.ui.theme.CallTextSecondary
+import com.yeyofone.app.ui.theme.PrimaryLight
 
 @Composable
 fun IncomingCallScreen(
@@ -63,42 +65,52 @@ fun IncomingCallScreen(
 ) {
     val caller = remoteUri.toSipIdentity()
     Column(
-        Modifier.fillMaxSize().background(CallBackground).systemBarsPadding(),
+        Modifier.fillMaxSize().background(Color.White).systemBarsPadding(),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Column(
-            Modifier.fillMaxWidth().padding(start = 24.dp, top = 48.dp, end = 24.dp),
+            Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 16.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Row(
-                Modifier.clip(RoundedCornerShape(20.dp)).background(AccentGreen.copy(alpha = 0.1f))
-                    .padding(horizontal = 12.dp, vertical = 6.dp),
+                Modifier.shadow(2.dp, RoundedCornerShape(20.dp))
+                    .clip(RoundedCornerShape(20.dp)).background(SuccessLight)
+                    .border(1.dp, AccentGreen.copy(alpha = 0.2f), RoundedCornerShape(20.dp))
+                    .padding(horizontal = 20.dp, vertical = 8.dp),
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                Icon(Icons.Default.Call, null, tint = AccentGreen, modifier = Modifier.size(14.dp))
+                Icon(Icons.Default.Call, null, tint = AccentGreen, modifier = Modifier.size(16.dp))
                 Text(
                     stringResource(R.string.incoming_call_badge),
-                    fontSize = 12.sp,
+                    fontSize = 13.sp,
                     fontWeight = FontWeight.Bold,
                     color = AccentGreen,
-                    letterSpacing = 0.5.sp,
+                    letterSpacing = 1.sp,
                 )
             }
-            Spacer(Modifier.height(24.dp))
+        }
+        Column(
+            Modifier.fillMaxWidth().weight(1f).background(KeypadBackground).padding(horizontal = 24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center,
+        ) {
             Box(contentAlignment = Alignment.Center) {
                 PulsingRings()
                 Box(
-                    Modifier.size(140.dp).shadow(12.dp, CircleShape).clip(CircleShape).background(Color(0xFFE4E8EC)),
+                    Modifier.size(156.dp).background(PrimaryLight, CircleShape).padding(8.dp)
+                        .clip(CircleShape).background(Color.White)
+                        .border(1.dp, Color(0xFF2563EB).copy(alpha = 0.1f), CircleShape),
                     contentAlignment = Alignment.Center,
                 ) {
-                    Text(callerInitials(caller.displayName), fontSize = 40.sp, fontWeight = FontWeight.Bold, color = CallTextPrimary)
+                    Text(callerInitials(caller.displayName), fontSize = 56.sp, fontWeight = FontWeight.Bold, color = CallTextPrimary)
                 }
             }
-            Spacer(Modifier.height(26.dp))
+            Spacer(Modifier.height(32.dp))
             Text(
                 caller.displayName,
-                fontSize = 30.sp,
+                fontSize = 36.sp,
+                letterSpacing = (-0.5).sp,
                 fontWeight = FontWeight.Bold,
                 color = CallTextPrimary,
                 textAlign = TextAlign.Center,
@@ -106,7 +118,8 @@ fun IncomingCallScreen(
             Spacer(Modifier.height(8.dp))
             Text(
                 stringResource(R.string.extension_value, caller.extension),
-                fontSize = 16.sp,
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Medium,
                 color = CallTextSecondary,
                 textAlign = TextAlign.Center,
             )
@@ -121,12 +134,14 @@ fun IncomingCallScreen(
             }
         }
 
-        Spacer(Modifier.weight(1f))
         Column(
-            Modifier.fillMaxWidth().padding(bottom = 48.dp),
+            Modifier.fillMaxWidth().background(KeypadBackground)
+                .shadow(4.dp, RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp))
+                .background(Color.White, RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp))
+                .padding(start = 24.dp, top = 32.dp, end = 24.dp, bottom = 48.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            Row(horizontalArrangement = Arrangement.spacedBy(60.dp), verticalAlignment = Alignment.CenterVertically) {
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly, verticalAlignment = Alignment.CenterVertically) {
                 PrimaryCallActionButton(
                     Icons.Default.CallEnd,
                     stringResource(R.string.decline),
@@ -161,28 +176,17 @@ fun IncomingCallScreen(
 private fun PulsingRings() {
     val transition = rememberInfiniteTransition(label = "incoming-call-pulse")
     val firstScale by transition.animateFloat(
-        0.92f, 1.28f,
+        1f, 1.15f,
         infiniteRepeatable(tween(2_000, easing = LinearEasing), RepeatMode.Restart),
         label = "first-ring-scale",
     )
     val firstAlpha by transition.animateFloat(
-        0.7f, 0f,
+        0.2f, 0f,
         infiniteRepeatable(tween(2_000, easing = LinearEasing), RepeatMode.Restart),
         label = "first-ring-alpha",
     )
-    val secondScale by transition.animateFloat(
-        0.92f, 1.28f,
-        infiniteRepeatable(tween(2_000, delayMillis = 650, easing = LinearEasing), RepeatMode.Restart),
-        label = "second-ring-scale",
-    )
-    val secondAlpha by transition.animateFloat(
-        0.7f, 0f,
-        infiniteRepeatable(tween(2_000, delayMillis = 650, easing = LinearEasing), RepeatMode.Restart),
-        label = "second-ring-alpha",
-    )
     Box(contentAlignment = Alignment.Center) {
-        Box(Modifier.size(140.dp).scale(firstScale).border(2.dp, AccentGreen.copy(alpha = firstAlpha), CircleShape))
-        Box(Modifier.size(140.dp).scale(secondScale).border(2.dp, AccentGreen.copy(alpha = secondAlpha), CircleShape))
+        Box(Modifier.size(172.dp).scale(firstScale).background(AccentGreen.copy(alpha = firstAlpha), CircleShape))
     }
 }
 

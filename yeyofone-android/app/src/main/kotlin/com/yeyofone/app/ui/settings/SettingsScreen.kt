@@ -62,7 +62,17 @@ import com.yeyofone.app.BuildConfig
 import com.yeyofone.app.R
 import com.yeyofone.app.ui.components.BottomNavigationBar
 import com.yeyofone.app.ui.components.SETTINGS_NAVIGATION
+import com.yeyofone.app.ui.theme.AccentBlue
+import com.yeyofone.app.ui.theme.AccentGreen
+import com.yeyofone.app.ui.theme.AccentOrange
+import com.yeyofone.app.ui.theme.AccentRed
 import com.yeyofone.app.ui.theme.BackgroundGray
+import com.yeyofone.app.ui.theme.BorderLight
+import com.yeyofone.app.ui.theme.CardGradientEnd
+import com.yeyofone.app.ui.theme.CardGradientStart
+import com.yeyofone.app.ui.theme.InactiveGray
+import com.yeyofone.app.ui.theme.PrimaryLight
+import com.yeyofone.app.ui.theme.SuccessLight
 import com.yeyofone.app.ui.theme.TextPrimary
 import com.yeyofone.app.ui.theme.TextSecondary
 import kotlinx.coroutines.launch
@@ -93,32 +103,32 @@ fun SettingsScreen(
         stringResource(R.string.settings_section_account) to listOf(
             SettingEntry(
                 Icons.Default.AccountCircle,
-                Color(0xFF007AFF),
+                AccentBlue,
                 stringResource(R.string.settings_accounts),
                 stringResource(R.string.settings_accounts_connected, accountCount),
                 action = onAccountsClick,
             ),
             SettingEntry(
                 Icons.Default.Business,
-                Color(0xFF1A1A1A),
+                TextPrimary,
                 stringResource(R.string.settings_enterprise),
                 stringResource(R.string.settings_enterprise_subtitle),
                 stringResource(R.string.new_badge),
             ),
         ),
         stringResource(R.string.settings_section_audio_video) to listOf(
-            SettingEntry(Icons.Default.MusicNote, Color(0xFFFF9500), stringResource(R.string.settings_audio), stringResource(R.string.settings_audio_subtitle)),
-            SettingEntry(Icons.Default.Videocam, Color(0xFFFF2D55), stringResource(R.string.settings_video), stringResource(R.string.settings_video_subtitle)),
-            SettingEntry(Icons.Default.Translate, Color(0xFFFF6482), stringResource(R.string.settings_translate), stringResource(R.string.settings_translate_subtitle)),
+            SettingEntry(Icons.Default.MusicNote, AccentOrange, stringResource(R.string.settings_audio), stringResource(R.string.settings_audio_subtitle)),
+            SettingEntry(Icons.Default.Videocam, AccentRed, stringResource(R.string.settings_video), stringResource(R.string.settings_video_subtitle)),
+            SettingEntry(Icons.Default.Translate, AccentRed, stringResource(R.string.settings_translate), stringResource(R.string.settings_translate_subtitle)),
         ),
         stringResource(R.string.settings_section_calls) to listOf(
-            SettingEntry(Icons.AutoMirrored.Filled.PhoneCallback, Color(0xFF34C759), stringResource(R.string.settings_incoming), stringResource(R.string.settings_incoming_subtitle)),
-            SettingEntry(Icons.Default.FiberManualRecord, Color(0xFFAF52DE), stringResource(R.string.settings_recording), stringResource(R.string.settings_recording_subtitle)),
+            SettingEntry(Icons.AutoMirrored.Filled.PhoneCallback, AccentGreen, stringResource(R.string.settings_incoming), stringResource(R.string.settings_incoming_subtitle)),
+            SettingEntry(Icons.Default.FiberManualRecord, AccentBlue, stringResource(R.string.settings_recording), stringResource(R.string.settings_recording_subtitle)),
         ),
         stringResource(R.string.settings_section_more) to listOf(
-            SettingEntry(Icons.Default.Settings, Color(0xFF5856D6), stringResource(R.string.settings_advanced), stringResource(R.string.settings_advanced_subtitle)),
-            SettingEntry(Icons.Default.Share, Color(0xFF00C7BE), stringResource(R.string.settings_social), stringResource(R.string.settings_social_subtitle)),
-            SettingEntry(Icons.Default.Info, Color(0xFF8E8E93), stringResource(R.string.settings_about), stringResource(R.string.settings_about_subtitle, BuildConfig.VERSION_NAME)),
+            SettingEntry(Icons.Default.Settings, AccentBlue, stringResource(R.string.settings_advanced), stringResource(R.string.settings_advanced_subtitle)),
+            SettingEntry(Icons.Default.Share, AccentGreen, stringResource(R.string.settings_social), stringResource(R.string.settings_social_subtitle)),
+            SettingEntry(Icons.Default.Info, InactiveGray, stringResource(R.string.settings_about), stringResource(R.string.settings_about_subtitle, BuildConfig.VERSION_NAME)),
         ),
     )
     val visibleSections = sections.mapNotNull { (title, entries) ->
@@ -169,7 +179,7 @@ fun SettingsScreen(
                         stringResource(R.string.settings_version_footer, BuildConfig.VERSION_NAME),
                         Modifier.fillMaxWidth().padding(vertical = 10.dp),
                         fontSize = 12.sp,
-                        color = Color(0xFFA0A0A5),
+                        color = InactiveGray,
                         textAlign = TextAlign.Center,
                     )
                 }
@@ -226,9 +236,9 @@ private fun SettingsHeader(
 @Composable
 private fun PremiumBanner(onClick: () -> Unit) {
     Row(
-        Modifier.fillMaxWidth().shadow(8.dp, RoundedCornerShape(20.dp), ambientColor = Color(0x40FFA500))
+        Modifier.fillMaxWidth().shadow(8.dp, RoundedCornerShape(20.dp), ambientColor = AccentBlue.copy(alpha = 0.2f))
             .clip(RoundedCornerShape(20.dp))
-            .background(Brush.linearGradient(listOf(Color(0xFFFFD700), Color(0xFFFFA500))))
+            .background(Brush.linearGradient(listOf(CardGradientStart, CardGradientEnd)))
             .clickable(onClick = onClick).padding(18.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(14.dp),
@@ -258,7 +268,7 @@ private fun SettingsSection(title: String, entries: List<SettingEntry>, unavaila
             entries.forEachIndexed { index, entry ->
                 SettingRow(entry, entry.action ?: unavailable)
                 if (index < entries.lastIndex) {
-                    HorizontalDivider(Modifier.padding(start = 66.dp), thickness = 0.5.dp, color = Color(0x0A000000))
+                    HorizontalDivider(Modifier.padding(start = 66.dp), thickness = 0.5.dp, color = BorderLight)
                 }
             }
         }
@@ -273,10 +283,10 @@ private fun SettingRow(entry: SettingEntry, onClick: () -> Unit) {
         horizontalArrangement = Arrangement.spacedBy(14.dp),
     ) {
         Box(
-            Modifier.size(36.dp).clip(RoundedCornerShape(10.dp)).background(entry.iconColor),
+            Modifier.size(36.dp).clip(RoundedCornerShape(10.dp)).background(entry.iconColor.copy(alpha = 0.08f)),
             contentAlignment = Alignment.Center,
         ) {
-            Icon(entry.icon, null, tint = Color.White, modifier = Modifier.size(20.dp))
+            Icon(entry.icon, null, tint = entry.iconColor, modifier = Modifier.size(20.dp))
         }
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
             Text(entry.title, fontSize = 15.sp, fontWeight = FontWeight.Medium, color = TextPrimary)
@@ -285,12 +295,12 @@ private fun SettingRow(entry: SettingEntry, onClick: () -> Unit) {
         entry.badge?.let {
             Text(
                 it.uppercase(),
-                Modifier.clip(RoundedCornerShape(8.dp)).background(Color(0x1A34C759)).padding(horizontal = 8.dp, vertical = 3.dp),
-                color = Color(0xFF34C759),
+                Modifier.clip(RoundedCornerShape(8.dp)).background(SuccessLight).padding(horizontal = 8.dp, vertical = 3.dp),
+                color = AccentGreen,
                 fontSize = 10.sp,
                 fontWeight = FontWeight.Bold,
             )
         }
-        Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null, tint = Color(0xFFC7C7CC), modifier = Modifier.size(18.dp))
+        Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null, tint = InactiveGray, modifier = Modifier.size(18.dp))
     }
 }

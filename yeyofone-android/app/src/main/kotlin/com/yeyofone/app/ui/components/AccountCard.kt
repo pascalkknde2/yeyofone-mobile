@@ -26,6 +26,10 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.yeyofone.app.ui.theme.AccentGreen
+import com.yeyofone.app.ui.theme.BackgroundGray
+import com.yeyofone.app.ui.theme.BorderLight
+import com.yeyofone.app.ui.theme.InactiveGray
+import com.yeyofone.app.ui.theme.PrimaryLight
 import com.yeyofone.app.ui.theme.TextPrimary
 import com.yeyofone.app.ui.theme.TextSecondary
 import com.yeyofone.core.model.SipAccount
@@ -45,14 +49,14 @@ fun AccountCard(
     ) {
         Box(
             Modifier.size(48.dp).clip(CircleShape)
-                .background(if (account.enabled) Color(0xFFE0EAFF) else Color(0xFFF0F0F5)),
+                .background(if (account.enabled) PrimaryLight else BackgroundGray),
             contentAlignment = Alignment.Center,
         ) {
             Text(
                 account.displayName.initials(),
                 fontSize = 16.sp,
                 fontWeight = FontWeight.Bold,
-                color = if (account.enabled) TextPrimary else Color(0xFFA0A0A5),
+                color = if (account.enabled) TextPrimary else InactiveGray,
             )
         }
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -60,7 +64,7 @@ fun AccountCard(
                 account.displayName,
                 fontSize = 16.sp,
                 fontWeight = FontWeight.SemiBold,
-                color = if (account.enabled) TextPrimary else Color(0xFFA0A0A5),
+                color = if (account.enabled) TextPrimary else InactiveGray,
                 textDecoration = if (account.enabled) TextDecoration.None else TextDecoration.LineThrough,
             )
             Text(
@@ -78,7 +82,7 @@ fun AccountCard(
                 checkedThumbColor = Color.White,
                 checkedTrackColor = AccentGreen,
                 uncheckedThumbColor = Color.White,
-                uncheckedTrackColor = Color(0xFFE5E5EA),
+                uncheckedTrackColor = BorderLight,
                 uncheckedBorderColor = Color.Transparent,
             ),
         )

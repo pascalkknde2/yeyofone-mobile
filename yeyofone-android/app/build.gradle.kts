@@ -9,7 +9,7 @@ plugins {
 
 android {
     namespace = "com.yeyofone.app"
-    compileSdk = 34
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.yeyofone.app"
@@ -54,7 +54,8 @@ dependencies {
     implementation(platform("com.google.firebase:firebase-bom:34.19.0"))
     implementation("com.google.firebase:firebase-messaging")
     implementation("com.google.firebase:firebase-analytics")
-    implementation(platform("androidx.compose:compose-bom:2024.06.00"))
+    // Keep Compose's bundled lint checks compatible with the Kotlin 2.2 toolchain.
+    implementation(platform("androidx.compose:compose-bom:2025.10.01"))
     implementation("androidx.compose.foundation:foundation")
     implementation("androidx.compose.material3:material3")
     implementation("androidx.compose.material:material-icons-extended")
