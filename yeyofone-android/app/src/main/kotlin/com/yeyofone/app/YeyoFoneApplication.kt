@@ -56,7 +56,7 @@ class YeyoFoneApplication : Application() {
                         // or was enabled - onNewToken only fires again on a token rotation, not on
                         // every app start, so it wouldn't otherwise register this extension.
                         PushRelayClient.cachedToken(this@YeyoFoneApplication)?.let { token ->
-                            launch(Dispatchers.IO) { PushRelayClient.register(this@YeyoFoneApplication, account.username, token) }
+                            launch(Dispatchers.IO) { PushRelayClient.register(this@YeyoFoneApplication, account, token) }
                         }
                     }
                     if (!account.enabled && previous[account.id] != account) registration.unregister(account.id)

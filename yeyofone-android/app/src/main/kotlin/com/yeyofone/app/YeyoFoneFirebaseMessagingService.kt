@@ -24,10 +24,9 @@ class YeyoFoneFirebaseMessagingService : FirebaseMessagingService() {
 
         val app = application as YeyoFoneApplication
         scope.launch {
-            val extensions = app.accountRepository.observeAccounts().first()
+            app.accountRepository.observeAccounts().first()
                 .filter { it.enabled }
-                .map { it.username }
-            extensions.forEach { extension -> PushRelayClient.register(this@YeyoFoneFirebaseMessagingService, extension, token) }
+                .forEach { account -> PushRelayClient.register(this@YeyoFoneFirebaseMessagingService, account, token) }
         }
     }
 
