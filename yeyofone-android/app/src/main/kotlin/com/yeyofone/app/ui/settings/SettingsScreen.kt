@@ -91,6 +91,8 @@ private data class SettingEntry(
 fun SettingsScreen(
     accountCount: Int,
     onAccountsClick: () -> Unit,
+    onAudioClick: () -> Unit,
+    onVideoClick: () -> Unit,
     onNavigationItemSelected: (Int) -> Unit,
 ) {
     val snackbar = remember { SnackbarHostState() }
@@ -118,8 +120,8 @@ fun SettingsScreen(
             ),
         ),
         stringResource(R.string.settings_section_audio_video) to listOf(
-            SettingEntry(Icons.Default.MusicNote, AccentOrange, stringResource(R.string.settings_audio), stringResource(R.string.settings_audio_subtitle)),
-            SettingEntry(Icons.Default.Videocam, AccentRed, stringResource(R.string.settings_video), stringResource(R.string.settings_video_subtitle)),
+            SettingEntry(Icons.Default.MusicNote, AccentOrange, stringResource(R.string.settings_audio), stringResource(R.string.settings_audio_subtitle), action = onAudioClick),
+            SettingEntry(Icons.Default.Videocam, AccentRed, stringResource(R.string.settings_video), stringResource(R.string.settings_video_subtitle), action = onVideoClick),
             SettingEntry(Icons.Default.Translate, AccentRed, stringResource(R.string.settings_translate), stringResource(R.string.settings_translate_subtitle)),
         ),
         stringResource(R.string.settings_section_calls) to listOf(

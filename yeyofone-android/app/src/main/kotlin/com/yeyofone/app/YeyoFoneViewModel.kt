@@ -30,6 +30,8 @@ sealed interface AppScreen {
     data object History : AppScreen
     data object Chat : AppScreen
     data object Settings : AppScreen
+    data object AudioSettings : AppScreen
+    data object VideoSettings : AppScreen
     data class Detail(val accountId: SipAccountId) : AppScreen
     data class Edit(val accountId: SipAccountId?) : AppScreen
     data class Dial(val accountId: SipAccountId, val destination: String = "") : AppScreen
@@ -109,6 +111,8 @@ class YeyoFoneViewModel(
     fun showHistory() { screen.value = AppScreen.History }
     fun showChat() { screen.value = AppScreen.Chat }
     fun showSettings() { screen.value = AppScreen.Settings }
+    fun showAudioSettings() { screen.value = AppScreen.AudioSettings }
+    fun showVideoSettings() { screen.value = AppScreen.VideoSettings }
     fun showAccount(accountId: SipAccountId) { screen.value = AppScreen.Detail(accountId) }
     fun editAccount(accountId: SipAccountId?) { screen.value = AppScreen.Edit(accountId) }
     fun dial(accountId: SipAccountId, destination: String = "") {

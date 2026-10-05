@@ -82,14 +82,16 @@ fun BottomNavigationBar(selectedIndex: Int, onItemSelected: (Int) -> Unit) {
                     .selectable(selected = selected, role = Role.Tab, onClick = { onItemSelected(index) }),
             ) {
                 Box(
-                    Modifier.size(46.dp).clip(CircleShape).background(background),
+                    Modifier.size(44.dp)
+                        .shadow(if (selected) 4.dp else 0.dp, CircleShape)
+                        .clip(CircleShape).background(background),
                     contentAlignment = Alignment.Center,
                 ) {
                     Icon(
                         if (selected) item.selectedIcon else item.unselectedIcon,
                         item.label,
                         tint = foreground,
-                        modifier = Modifier.size(30.dp),
+                        modifier = Modifier.size(22.dp),
                     )
                 }
             }
