@@ -29,6 +29,13 @@
             </intent-filter>
         </activity>
 
+        <!-- Notification Accept target. Not exported: only this app's PendingIntent can start it,
+             so other apps cannot answer a call by sending MainActivity a crafted intent. -->
+        <activity-alias
+            android:name=".AcceptCallActivity"
+            android:exported="false"
+            android:targetActivity=".MainActivity" />
+
         <service
             android:name=".IncomingCallService"
             android:exported="false"

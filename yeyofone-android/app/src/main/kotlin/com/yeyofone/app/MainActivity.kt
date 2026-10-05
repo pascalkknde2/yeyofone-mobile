@@ -5,6 +5,8 @@ package com.yeyofone.app
 import android.Manifest
 import android.app.NotificationManager
 import android.content.Intent
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.delay
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
@@ -116,8 +118,17 @@ import com.yeyofone.core.model.TransferState
 import com.yeyofone.core.model.TransportProtocol
 
 class MainActivity : ComponentActivity() {
+    /** A pending notification Accept request; validated against live call state before answering. */
+    private val acceptRequest = MutableStateFlow<CallId?>(null)
+
     override fun attachBaseContext(newBase: android.content.Context) {
         super.attachBaseContext(LanguagePreferences.wrap(newBase))
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        NotificationAccept.callIdFrom(intent)?.let { acceptRequest.value = it }
     }
 
     override fun onStart() {
@@ -155,6 +166,7 @@ class MainActivity : ComponentActivity() {
             )
         }
         IncomingCallService.start(this)
+        NotificationAccept.callIdFrom(intent)?.let { acceptRequest.value = it }
         val app = application as YeyoFoneApplication
         setContent {
             RequestBackgroundCallPermissions()
@@ -165,7 +177,12 @@ class MainActivity : ComponentActivity() {
                 )
                 val dialPadViewModel: DialPadViewModel = viewModel()
                 val chatViewModel: ChatViewModel = viewModel()
-                AccountsApp(viewModel, callHistoryViewModel, dialPadViewModel, chatViewModel)
+                val pendingAccept by acceptRequest.collectAsStateWithLifecycle()
+                AccountsApp(
+                    viewModel, callHistoryViewModel, dialPadViewModel, chatViewModel,
+                    pendingAccept = pendingAccept,
+                    onAcceptHandled = { acceptRequest.value = null },
+                )
             }
         }
     }
@@ -217,8 +234,23 @@ private fun AccountsApp(
     callHistoryViewModel: CallHistoryViewModel,
     dialPadViewModel: DialPadViewModel,
     chatViewModel: ChatViewModel,
+    pendingAccept: CallId?,
+    onAcceptHandled: () -> Unit,
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    if (pendingAccept != null) {
+        val context = LocalContext.current
+        // Drop requests for calls that ended, were answered or never matched a live session.
+        LaunchedEffect(pendingAccept, state.sessions) {
+            if (acceptAction(pendingAccept, state.sessions, context.hasMicrophone()) == AcceptAction.DISCARD) {
+                onAcceptHandled()
+            }
+        }
+        LaunchedEffect(pendingAccept) {
+            delay(ACCEPT_REQUEST_TIMEOUT_MS)
+            onAcceptHandled()
+        }
+    }
     val preferences by viewModel.accountPreferences.collectAsStateWithLifecycle()
     val callHistoryState by callHistoryViewModel.uiState.collectAsStateWithLifecycle()
     val incoming = state.sessions.lastOrNull {
@@ -226,7 +258,11 @@ private fun AccountsApp(
     }
 
     if (incoming != null) {
-        IncomingCallScreen(incoming, state, viewModel)
+        IncomingCallScreen(
+            incoming, state, viewModel,
+            pendingAccept = pendingAccept?.takeIf { it == incoming.id },
+            onAcceptHandled = onAcceptHandled,
+        )
         return
     }
 
@@ -516,6 +552,8 @@ private fun IncomingCallScreen(
     session: CallSession,
     state: YeyoFoneUiState,
     viewModel: YeyoFoneViewModel,
+    pendingAccept: CallId? = null,
+    onAcceptHandled: () -> Unit = {},
 ) {
     var permissionDenied by remember { mutableStateOf(false) }
     var actionPending by remember(currentCallKey(session)) { mutableStateOf(false) }
@@ -555,23 +593,30 @@ private fun IncomingCallScreen(
     }
 
     if (current.state == CallState.Incoming || current.state == CallState.Ringing) {
+        // Same path for the in-app button and the notification's Accept action: answer only with
+        // microphone access, otherwise request it and answer on grant.
+        val accept = {
+            if (!actionPending) {
+                if (context.hasMicrophone()) {
+                    permissionDenied = false
+                    actionPending = true
+                    viewModel.answer(current.id)
+                } else {
+                    permissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
+                }
+            }
+        }
+        LaunchedEffect(pendingAccept) {
+            if (pendingAccept == current.id) {
+                onAcceptHandled()
+                accept()
+            }
+        }
         IncomingCallContent(
             remoteUri = current.remoteUri,
             permissionDenied = permissionDenied,
             actionsEnabled = !actionPending,
-            onAccept = {
-                if (!actionPending) {
-                    val granted = ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) ==
-                        PackageManager.PERMISSION_GRANTED
-                    if (granted) {
-                        permissionDenied = false
-                        actionPending = true
-                        viewModel.answer(current.id)
-                    } else {
-                        permissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
-                    }
-                }
-            },
+            onAccept = accept,
             onDecline = {
                 if (!actionPending) {
                     actionPending = true
@@ -778,6 +823,12 @@ private fun InCallControls(
 }
 
 private const val DTMF_KEYS = "123456789*0#"
+
+/** How long a notification Accept waits for its call to appear in the session list. */
+private const val ACCEPT_REQUEST_TIMEOUT_MS = 5_000L
+
+private fun android.content.Context.hasMicrophone() =
+    ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED
 
 // Matches the legacy theme navigation bar so white API 26 navigation icons stay legible.
 private const val NAVIGATION_SCRIM_API_26 = 0xFF0F172A.toInt()

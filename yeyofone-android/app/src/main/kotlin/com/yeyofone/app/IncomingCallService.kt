@@ -146,7 +146,7 @@ class IncomingCallService : Service() {
                     Notification.Action.Builder(
                         null,
                         getString(R.string.accept),
-                        actionIntent(ACTION_ACCEPT, active.id),
+                        acceptIntent(active.id),
                     ).build(),
                 )
         } else {
@@ -235,6 +235,14 @@ class IncomingCallService : Service() {
         PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
     )
 
+    /** Opens the app straight to the call (no receiver trampoline); see NotificationAccept. */
+    private fun acceptIntent(callId: CallId): PendingIntent = PendingIntent.getActivity(
+        this,
+        ACCEPT_REQUEST_CODE,
+        NotificationAccept.intent(this, callId),
+        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+    )
+
     private fun actionIntent(action: String, callId: CallId): PendingIntent = PendingIntent.getBroadcast(
         this,
         action.hashCode(),
@@ -247,10 +255,10 @@ class IncomingCallService : Service() {
     )
 
     companion object {
-        const val ACTION_ACCEPT = "com.yeyofone.app.action.ACCEPT"
         const val ACTION_DECLINE = "com.yeyofone.app.action.DECLINE"
         const val ACTION_HANG_UP = "com.yeyofone.app.action.HANG_UP"
         const val EXTRA_CALL_ID = "call_id"
+        private const val ACCEPT_REQUEST_CODE = 1
 
         private const val TAG = "IncomingCallService"
         private const val SERVICE_CHANNEL_ID = "yeyofone_service"
@@ -296,18 +304,9 @@ class CallActionReceiver : BroadcastReceiver() {
         val manager = (context.applicationContext as YeyoFoneApplication).callManager
         CoroutineScope(SupervisorJob() + Dispatchers.Default).launch {
             try {
+                // Accept is not handled here: starting an activity from a notification's
+                // broadcast receiver is blocked on Android 12+. It opens MainActivity instead.
                 when (intent.action) {
-                    IncomingCallService.ACTION_ACCEPT -> {
-                        manager.answer(callId)
-                        context.startActivity(
-                            Intent(context, MainActivity::class.java).apply {
-                                flags = Intent.FLAG_ACTIVITY_NEW_TASK or
-                                    Intent.FLAG_ACTIVITY_SINGLE_TOP or
-                                    Intent.FLAG_ACTIVITY_CLEAR_TOP
-                                putExtra(IncomingCallService.EXTRA_CALL_ID, callId.value)
-                            },
-                        )
-                    }
                     IncomingCallService.ACTION_DECLINE -> manager.reject(callId)
                     IncomingCallService.ACTION_HANG_UP -> manager.end(callId)
                 }
