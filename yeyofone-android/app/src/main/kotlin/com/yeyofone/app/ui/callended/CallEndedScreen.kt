@@ -3,6 +3,8 @@ package com.yeyofone.app.ui.callended
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -62,7 +64,8 @@ fun CallEndedScreen(
     BackHandler(onBack = onClose)
     Column(Modifier.fillMaxSize().background(BackgroundGray)) {
         Row(
-            Modifier.fillMaxWidth().background(Color.White).padding(horizontal = 12.dp, vertical = 10.dp),
+            Modifier.fillMaxWidth().background(Color.White).statusBarsPadding()
+                .padding(horizontal = 12.dp, vertical = 10.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
@@ -74,7 +77,7 @@ fun CallEndedScreen(
         }
         HorizontalDivider(thickness = 0.5.dp, color = BorderLight)
         Column(
-            Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(24.dp),
+            Modifier.fillMaxSize().verticalScroll(rememberScrollState()).navigationBarsPadding().padding(24.dp),
             verticalArrangement = Arrangement.spacedBy(24.dp),
         ) {
             CallSummaryCard(summary)

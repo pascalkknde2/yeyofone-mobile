@@ -2,6 +2,7 @@ package com.yeyofone.app.ui.callhistory
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -132,7 +133,7 @@ private fun CallHistoryHeader(
     onTabSelected: (Int) -> Unit,
     onEdit: () -> Unit,
 ) {
-    Column(Modifier.fillMaxWidth().background(CardWhite).padding(top = 32.dp, bottom = 16.dp)) {
+    Column(Modifier.fillMaxWidth().background(CardWhite).statusBarsPadding().padding(top = 32.dp, bottom = 16.dp)) {
         Row(
             Modifier.fillMaxWidth().padding(horizontal = 24.dp),
             horizontalArrangement = Arrangement.SpaceBetween,

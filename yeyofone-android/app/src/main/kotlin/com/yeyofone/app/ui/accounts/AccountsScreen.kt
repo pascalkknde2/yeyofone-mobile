@@ -2,6 +2,7 @@ package com.yeyofone.app.ui.accounts
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -67,7 +68,7 @@ fun AccountsScreen(
         bottomBar = { BottomNavigationBar(CONTACTS_NAVIGATION, onNavigationItemSelected) },
     ) { padding ->
         Column(Modifier.fillMaxSize().padding(bottom = padding.calculateBottomPadding())) {
-            Column(Modifier.fillMaxWidth().background(Color.White)) {
+            Column(Modifier.fillMaxWidth().background(Color.White).statusBarsPadding()) {
                 Row(
                     Modifier.fillMaxWidth().padding(start = 24.dp, top = 14.dp, end = 12.dp, bottom = 14.dp),
                     verticalAlignment = Alignment.CenterVertically,

@@ -8,7 +8,7 @@ plugins {
 
 android {
     namespace = "com.yeyofone.core.account"
-    compileSdk = 34
+    compileSdk = 36
 
     defaultConfig {
         minSdk = 26

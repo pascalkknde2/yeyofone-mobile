@@ -76,7 +76,6 @@ fun DialPadScreen(
         if (granted) viewModel.numberToCall()?.let(onCall)
     }
 
-    com.yeyofone.app.ui.theme.ScreenSystemBars(KeypadBackground)
     BoxWithConstraints(Modifier.fillMaxSize().background(KeypadBackground).systemBarsPadding()) {
         val contentHeight = maxOf(maxHeight, 680.dp)
         Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {

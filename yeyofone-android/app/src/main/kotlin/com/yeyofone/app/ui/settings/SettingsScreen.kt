@@ -2,6 +2,7 @@ package com.yeyofone.app.ui.settings
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -196,7 +197,8 @@ private fun SettingsHeader(
     onSearchToggle: () -> Unit,
 ) {
     Row(
-        Modifier.fillMaxWidth().background(Color.White).padding(start = 24.dp, top = 14.dp, end = 12.dp, bottom = 14.dp),
+        Modifier.fillMaxWidth().background(Color.White).statusBarsPadding()
+            .padding(start = 24.dp, top = 14.dp, end = 12.dp, bottom = 14.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         if (searching) {

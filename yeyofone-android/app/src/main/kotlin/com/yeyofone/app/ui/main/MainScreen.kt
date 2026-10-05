@@ -93,7 +93,7 @@ fun MainScreen(
         bottomBar = { BottomNavigationBar(HOME_NAVIGATION, onNavigationItemSelected) },
     ) { padding ->
         LazyColumn(
-            Modifier.fillMaxSize().padding(bottom = padding.calculateBottomPadding()),
+            Modifier.fillMaxSize().padding(top = padding.calculateTopPadding(), bottom = padding.calculateBottomPadding()),
             contentPadding = PaddingValues(bottom = 32.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {

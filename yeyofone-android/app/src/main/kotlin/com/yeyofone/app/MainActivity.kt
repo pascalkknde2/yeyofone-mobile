@@ -11,6 +11,8 @@ import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
 import androidx.activity.ComponentActivity
+import androidx.activity.SystemBarStyle
+import androidx.activity.enableEdgeToEdge
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
@@ -22,6 +24,8 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.consumeWindowInsets
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -117,6 +121,18 @@ class MainActivity : ComponentActivity() {
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        // API 35+ enforces edge-to-edge for this target; opt in everywhere so every API level
+        // lays out the same way and screens own their insets. The light palette needs dark
+        // icons; API 26 cannot draw dark navigation icons, so it keeps a dark scrim.
+        val transparent = android.graphics.Color.TRANSPARENT
+        enableEdgeToEdge(
+            statusBarStyle = SystemBarStyle.light(transparent, transparent),
+            navigationBarStyle = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
+                SystemBarStyle.light(transparent, transparent)
+            } else {
+                SystemBarStyle.dark(NAVIGATION_SCRIM_API_26)
+            },
+        )
         super.onCreate(savedInstanceState)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
             setShowWhenLocked(true)
@@ -734,6 +750,9 @@ private fun InCallControls(
 
 private const val DTMF_KEYS = "123456789*0#"
 
+// Matches the legacy theme navigation bar so white API 26 navigation icons stay legible.
+private const val NAVIGATION_SCRIM_API_26 = 0xFF0F172A.toInt()
+
 @Composable
 private fun AudioRoute.label(): String = when (this) {
     AudioRoute.Earpiece -> stringResource(R.string.earpiece)
@@ -798,7 +817,7 @@ private fun AccountEditor(existing: SipAccount?, viewModel: YeyoFoneViewModel, o
         },
     ) { padding ->
         LazyColumn(
-            Modifier.fillMaxSize().padding(padding),
+            Modifier.fillMaxSize().padding(padding).consumeWindowInsets(padding).imePadding(),
             contentPadding = PaddingValues(horizontal = 20.dp, vertical = 20.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {

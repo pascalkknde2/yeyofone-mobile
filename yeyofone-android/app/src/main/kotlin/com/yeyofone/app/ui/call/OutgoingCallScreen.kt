@@ -90,7 +90,6 @@ fun OutgoingCallScreen(
     onTransfer: (String) -> Unit,
     onEndCall: () -> Unit,
 ) {
-    com.yeyofone.app.ui.theme.ScreenSystemBars(CallBackground)
     var keypadOpen by remember(session.id) { mutableStateOf(false) }
     var transferOpen by remember(session.id) { mutableStateOf(false) }
     var transferDestination by remember(session.id) { mutableStateOf("") }

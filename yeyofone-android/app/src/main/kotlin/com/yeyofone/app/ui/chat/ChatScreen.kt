@@ -1,6 +1,8 @@
 package com.yeyofone.app.ui.chat
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -67,7 +69,11 @@ fun ChatScreen(
         snackbarHost = { SnackbarHost(snackbar) },
         bottomBar = { BottomNavigationBar(CHAT_NAVIGATION, onNavigationItemSelected) },
     ) { padding ->
-        Column(Modifier.fillMaxSize().padding(bottom = padding.calculateBottomPadding())) {
+        // Only the bottom padding is applied here; the header owns the status-bar inset.
+        val bottomPadding = PaddingValues(bottom = padding.calculateBottomPadding())
+        Column(
+            Modifier.fillMaxSize().padding(bottomPadding).consumeWindowInsets(bottomPadding).imePadding(),
+        ) {
             ChatHeader(state.contact, onBack, onVoiceCall, unavailable)
             HorizontalDivider(thickness = 0.5.dp, color = BorderLight)
             LazyColumn(

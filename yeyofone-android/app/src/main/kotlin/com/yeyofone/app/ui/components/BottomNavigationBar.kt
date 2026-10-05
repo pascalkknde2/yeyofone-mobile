@@ -3,6 +3,7 @@ package com.yeyofone.app.ui.components
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -63,7 +64,7 @@ fun BottomNavigationBar(selectedIndex: Int, onItemSelected: (Int) -> Unit) {
         NavItem(stringResource(R.string.settings_navigation), Icons.Filled.Settings, Icons.Outlined.Settings),
     )
     Row(
-        Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 20.dp)
+        Modifier.fillMaxWidth().navigationBarsPadding().padding(horizontal = 20.dp, vertical = 20.dp)
             .shadow(8.dp, RoundedCornerShape(30.dp)).clip(RoundedCornerShape(30.dp))
             .background(NavBackground).border(1.dp, BorderLight.copy(alpha = 0.6f), RoundedCornerShape(30.dp))
             .selectableGroup().padding(vertical = 8.dp, horizontal = 6.dp),
