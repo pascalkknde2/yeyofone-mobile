@@ -35,7 +35,8 @@
     <string name="turn_server_optional">TURN server (optional)</string>
     <string name="turn_username_optional">TURN username (optional)</string>
     <string name="enable_ice">Enable ICE</string>
-    <string name="require_srtp">Require SRTP media</string>
+    <string name="require_srtp">Require SRTP media (TLS only)</string>
+    <string name="call_failed_media">The server did not accept the media settings for this call, such as SRTP encryption or codecs.</string>
     <string name="registration_expiry">Registration expiry seconds</string>
     <string name="voicemail_optional">Voicemail number (optional)</string>
     <string name="caller_id_optional">Caller ID (optional)</string>

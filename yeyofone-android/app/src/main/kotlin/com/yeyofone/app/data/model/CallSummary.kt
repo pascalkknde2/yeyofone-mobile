@@ -2,6 +2,8 @@ package com.yeyofone.app.data.model
 
 import com.yeyofone.core.model.CallDirection
 import com.yeyofone.core.model.CallSession
+import com.yeyofone.core.model.CallState
+import com.yeyofone.core.model.VoipError
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import kotlin.math.max
@@ -14,6 +16,7 @@ data class CallSummary(
     val durationSeconds: Long,
     val timestamp: String,
     val wasAnswered: Boolean,
+    val mediaRejected: Boolean = false,
 ) {
     val formattedDuration: String get() = formatCallDuration(durationSeconds)
 }
@@ -30,6 +33,7 @@ fun CallSession.toCallSummary(): CallSummary {
         durationSeconds = duration,
         timestamp = finishedAt.atZone(ZoneId.systemDefault()).format(DateTimeFormatter.ofPattern("HH:mm")),
         wasAnswered = connectedAt != null,
+        mediaRejected = (state as? CallState.Failed)?.error is VoipError.Media,
     )
 }
 

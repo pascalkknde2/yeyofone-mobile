@@ -115,6 +115,15 @@ private fun CallSummaryCard(summary: CallSummary) {
             Spacer(Modifier.height(4.dp))
         }
         Text(callTypeLabel(summary), fontSize = 14.sp, fontWeight = FontWeight.Medium, color = TextSecondary)
+        if (summary.mediaRejected) {
+            Spacer(Modifier.height(12.dp))
+            Text(
+                stringResource(R.string.call_failed_media),
+                fontSize = 13.sp,
+                color = AccentRed,
+                textAlign = TextAlign.Center,
+            )
+        }
         Spacer(Modifier.height(20.dp))
         HorizontalDivider(thickness = 1.dp, color = BorderLight)
         Spacer(Modifier.height(20.dp))
