@@ -125,12 +125,15 @@ fun SettingsScreen(
         ),
         stringResource(R.string.settings_section_audio_video) to listOf(
             SettingEntry(Icons.Default.MusicNote, AccentOrange, stringResource(R.string.settings_audio), stringResource(R.string.settings_audio_subtitle), action = onAudioClick),
-            SettingEntry(Icons.Default.Videocam, AccentRed, stringResource(R.string.settings_video), stringResource(R.string.settings_video_subtitle), action = onVideoClick),
+            // VIDEO-02/CHAT-02/REC-02: video, chat and recording aren't implemented (CALL-FEATURES-AUDIT.md
+            // Phase E) - gated behind BuildConfig.DEBUG like Translate/Enterprise below so a release
+            // build never advertises a capability it doesn't have.
+            SettingEntry(Icons.Default.Videocam, AccentRed, stringResource(R.string.settings_video), stringResource(R.string.settings_video_subtitle), action = onVideoClick.takeIf { BuildConfig.DEBUG }),
             SettingEntry(Icons.Default.Translate, AccentRed, stringResource(R.string.settings_translate), stringResource(R.string.settings_translate_subtitle)),
         ),
         stringResource(R.string.settings_section_calls) to listOf(
             SettingEntry(Icons.AutoMirrored.Filled.PhoneCallback, AccentGreen, stringResource(R.string.settings_incoming), stringResource(R.string.settings_incoming_subtitle), action = onIncomingCallsClick),
-            SettingEntry(Icons.Default.FiberManualRecord, AccentBlue, stringResource(R.string.settings_recording), stringResource(R.string.settings_recording_subtitle), action = onRecordingsClick),
+            SettingEntry(Icons.Default.FiberManualRecord, AccentBlue, stringResource(R.string.settings_recording), stringResource(R.string.settings_recording_subtitle), action = onRecordingsClick.takeIf { BuildConfig.DEBUG }),
         ),
         stringResource(R.string.settings_section_more) to listOf(
             SettingEntry(Icons.Default.Language, AccentBlue, stringResource(R.string.settings_language), stringResource(R.string.settings_language_subtitle), action = onLanguageClick),

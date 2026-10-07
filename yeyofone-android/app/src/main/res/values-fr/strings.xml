@@ -248,12 +248,8 @@
     <string name="audio_video_title">Audio et vidéo</string>
     <string name="audio_section">Audio</string>
     <string name="output_volume">Volume de sortie</string>
-    <string name="microphone_level">Niveau du micro</string>
     <string name="ringtone_section">Sonnerie</string>
-    <string name="ringtone_classic">Classique</string>
     <string name="ringtone_chime">Carillon</string>
-    <string name="ringtone_digital">Numérique</string>
-    <string name="preview_ringtone">Écouter la sonnerie</string>
     <string name="video_section">Aperçu vidéo</string>
     <string name="flip_camera">Changer de caméra</string>
     <string name="front_camera">Caméra avant</string>
@@ -267,14 +263,9 @@
     <string name="audio_title">Audio</string>
     <string name="video_title">Vidéo</string>
     <string name="output_section">Sortie</string>
-    <string name="input_section">Entrée</string>
     <string name="speaker_volume">Volume du haut-parleur</string>
     <string name="output_device">Périphérique de sortie</string>
     <string name="device_speaker">Haut-parleur</string>
-    <string name="device_earpiece">Écouteur</string>
-    <string name="device_headphones">Casque</string>
-    <string name="mute_microphone">Couper le micro</string>
-    <string name="mute_microphone_subtitle">Désactiver temporairement l’entrée</string>
     <string name="ringtones_section">Sonneries</string>
     <string name="ringtone_default">Par défaut</string>
     <string name="ringtone_silent">Silencieux</string>
@@ -310,7 +301,6 @@
     <string name="flip_to_mute_subtitle">Couper la sonnerie en retournant l’appareil</string>
     <string name="call_announce_setting">Annonce de l’appelant</string>
     <string name="call_announce_subtitle">Prononcer le nom de l’appelant pendant la sonnerie</string>
-    <string name="choose_ringtone">Choisir une sonnerie</string>
     <string name="forward_to_number">Renvoyer vers le numéro</string>
     <string name="recordings_title">Enregistrements</string>
     <string name="recording_storage_title">Stockage</string>

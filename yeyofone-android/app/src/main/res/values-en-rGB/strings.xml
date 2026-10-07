@@ -248,12 +248,8 @@
     <string name="audio_video_title">Audio &amp; Video</string>
     <string name="audio_section">Audio</string>
     <string name="output_volume">Output volume</string>
-    <string name="microphone_level">Microphone level</string>
     <string name="ringtone_section">Ringtone</string>
-    <string name="ringtone_classic">Classic</string>
     <string name="ringtone_chime">Chime</string>
-    <string name="ringtone_digital">Digital</string>
-    <string name="preview_ringtone">Preview ringtone</string>
     <string name="video_section">Video preview</string>
     <string name="flip_camera">Flip camera</string>
     <string name="front_camera">Front camera</string>
@@ -267,14 +263,9 @@
     <string name="audio_title">Audio</string>
     <string name="video_title">Video</string>
     <string name="output_section">Output</string>
-    <string name="input_section">Input</string>
     <string name="speaker_volume">Speaker volume</string>
     <string name="output_device">Output device</string>
     <string name="device_speaker">Speaker</string>
-    <string name="device_earpiece">Earpiece</string>
-    <string name="device_headphones">Headphones</string>
-    <string name="mute_microphone">Mute microphone</string>
-    <string name="mute_microphone_subtitle">Temporarily disable input</string>
     <string name="ringtones_section">Ringtones</string>
     <string name="ringtone_default">Default</string>
     <string name="ringtone_silent">Silent</string>
@@ -310,7 +301,6 @@
     <string name="flip_to_mute_subtitle">Mute ringing by flipping device</string>
     <string name="call_announce_setting">Call Announce</string>
     <string name="call_announce_subtitle">Speak caller name when ringing</string>
-    <string name="choose_ringtone">Choose ringtone</string>
     <string name="forward_to_number">Forward to number</string>
     <string name="recordings_title">Recordings</string>
     <string name="recording_storage_title">Storage</string>

@@ -58,7 +58,7 @@ import com.yeyofone.core.model.CallDirection
 fun CallEndedScreen(
     summary: CallSummary,
     onCallAgain: () -> Unit,
-    onSendMessage: () -> Unit,
+    onSendMessage: (() -> Unit)?,
     onClose: () -> Unit,
 ) {
     BackHandler(onBack = onClose)
@@ -151,10 +151,12 @@ private fun DetailColumn(label: String, value: String, modifier: Modifier) {
 }
 
 @Composable
-private fun CallEndedActions(onCallAgain: () -> Unit, onSendMessage: () -> Unit, onClose: () -> Unit) {
+private fun CallEndedActions(onCallAgain: () -> Unit, onSendMessage: (() -> Unit)?, onClose: () -> Unit) {
     Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         EndedAction(Icons.Default.Call, stringResource(R.string.call_again), AccentBlue, Color.White, 6.dp, onCallAgain)
-        EndedAction(Icons.Default.ChatBubble, stringResource(R.string.send_message), Color.White, TextPrimary, 2.dp, onSendMessage)
+        if (onSendMessage != null) {
+            EndedAction(Icons.Default.ChatBubble, stringResource(R.string.send_message), Color.White, TextPrimary, 2.dp, onSendMessage)
+        }
         EndedAction(Icons.Default.Close, stringResource(R.string.close), AccentRed.copy(alpha = 0.1f), AccentRed, 0.dp, onClose)
     }
 }

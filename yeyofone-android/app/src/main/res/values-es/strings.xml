@@ -248,12 +248,8 @@
     <string name="audio_video_title">Audio y vídeo</string>
     <string name="audio_section">Audio</string>
     <string name="output_volume">Volumen de salida</string>
-    <string name="microphone_level">Nivel del micrófono</string>
     <string name="ringtone_section">Tono de llamada</string>
-    <string name="ringtone_classic">Clásico</string>
     <string name="ringtone_chime">Campanilla</string>
-    <string name="ringtone_digital">Digital</string>
-    <string name="preview_ringtone">Escuchar tono</string>
     <string name="video_section">Vista previa de vídeo</string>
     <string name="flip_camera">Cambiar cámara</string>
     <string name="front_camera">Cámara frontal</string>
@@ -267,14 +263,9 @@
     <string name="audio_title">Audio</string>
     <string name="video_title">Vídeo</string>
     <string name="output_section">Salida</string>
-    <string name="input_section">Entrada</string>
     <string name="speaker_volume">Volumen del altavoz</string>
     <string name="output_device">Dispositivo de salida</string>
     <string name="device_speaker">Altavoz</string>
-    <string name="device_earpiece">Auricular</string>
-    <string name="device_headphones">Auriculares</string>
-    <string name="mute_microphone">Silenciar micrófono</string>
-    <string name="mute_microphone_subtitle">Desactivar la entrada temporalmente</string>
     <string name="ringtones_section">Tonos de llamada</string>
     <string name="ringtone_default">Predeterminado</string>
     <string name="ringtone_silent">Silencio</string>
@@ -310,7 +301,6 @@
     <string name="flip_to_mute_subtitle">Silenciar el tono girando el dispositivo</string>
     <string name="call_announce_setting">Anunciar llamadas</string>
     <string name="call_announce_subtitle">Decir el nombre del llamante mientras suena</string>
-    <string name="choose_ringtone">Elegir tono</string>
     <string name="forward_to_number">Desviar al número</string>
     <string name="recordings_title">Grabaciones</string>
     <string name="recording_storage_title">Almacenamiento</string>
