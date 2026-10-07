@@ -295,6 +295,11 @@
     <string name="on_hold_label">On hold</string>
     <string name="call_forwarding_setting">Call Forwarding</string>
     <string name="call_forwarding_subtitle">Forward calls to another number</string>
+    <string name="call_forwarding_active">Forwarding to %1$s</string>
+    <string name="call_forwarding_enable">Enable call forwarding</string>
+    <string name="call_forwarding_invalid_number">Enter a valid phone number or extension</string>
+    <string name="call_forwarding_save_failed">Couldn\'t save call forwarding. Try again.</string>
+    <string name="call_forwarding_banner">Calls to %1$s are being forwarded to %2$s</string>
     <string name="do_not_disturb_setting">Do Not Disturb</string>
     <string name="do_not_disturb_subtitle">Silence incoming calls and messages</string>
     <string name="flip_to_mute_setting">Flip to Mute</string>
@@ -315,4 +320,20 @@
     <string name="recording_play">Play recording</string>
     <string name="recording_pause">Pause recording</string>
     <string name="recording_playback_failed">This recording could not be played.</string>
+    <string name="contacts_title">Contacts</string>
+    <string name="edit_contact_title">Edit Contact</string>
+    <string name="add_contact_title">Add Contact</string>
+    <string name="contact_name_label">Name</string>
+    <string name="contact_number_label">Number</string>
+    <string name="contact_favorite_label">Favourite</string>
+    <string name="contacts_search_hint">Search contacts</string>
+    <string name="contacts_empty_title">No contacts yet</string>
+    <string name="contacts_empty_subtitle">Tap + to add your first contact</string>
+    <string name="contacts_search_empty_title">No matches</string>
+    <string name="cd_call_contact">Call</string>
+    <string name="cd_favorite_contact">Favourite</string>
+    <string name="cd_edit_contact">Edit contact</string>
+    <string name="confirm_delete_contact">Delete this contact?</string>
+    <string name="dashboard_no_favorites">No favourites yet</string>
+    <string name="contact_fields_required">Name and number are required</string>
 </resources>

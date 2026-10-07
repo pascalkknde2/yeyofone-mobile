@@ -295,6 +295,11 @@
     <string name="on_hold_label">En espera</string>
     <string name="call_forwarding_setting">Desvío de llamadas</string>
     <string name="call_forwarding_subtitle">Desviar las llamadas a otro número</string>
+    <string name="call_forwarding_active">Desviando a %1$s</string>
+    <string name="call_forwarding_enable">Activar desvío de llamadas</string>
+    <string name="call_forwarding_invalid_number">Introduce un número de teléfono o extensión válidos</string>
+    <string name="call_forwarding_save_failed">No se pudo guardar el desvío de llamadas. Inténtalo de nuevo.</string>
+    <string name="call_forwarding_banner">Las llamadas a %1$s se están desviando a %2$s</string>
     <string name="do_not_disturb_setting">No molestar</string>
     <string name="do_not_disturb_subtitle">Silenciar llamadas y mensajes entrantes</string>
     <string name="flip_to_mute_setting">Girar para silenciar</string>
@@ -315,4 +320,20 @@
     <string name="recording_play">Reproducir grabación</string>
     <string name="recording_pause">Pausar grabación</string>
     <string name="recording_playback_failed">No se pudo reproducir esta grabación.</string>
+    <string name="contacts_title">Contactos</string>
+    <string name="edit_contact_title">Editar contacto</string>
+    <string name="add_contact_title">Añadir contacto</string>
+    <string name="contact_name_label">Nombre</string>
+    <string name="contact_number_label">Número</string>
+    <string name="contact_favorite_label">Favorito</string>
+    <string name="contacts_search_hint">Buscar contactos</string>
+    <string name="contacts_empty_title">Aún no hay contactos</string>
+    <string name="contacts_empty_subtitle">Toca + para añadir tu primer contacto</string>
+    <string name="contacts_search_empty_title">Sin resultados</string>
+    <string name="cd_call_contact">Llamar</string>
+    <string name="cd_favorite_contact">Favorito</string>
+    <string name="cd_edit_contact">Editar contacto</string>
+    <string name="confirm_delete_contact">¿Eliminar este contacto?</string>
+    <string name="dashboard_no_favorites">Aún no hay favoritos</string>
+    <string name="contact_fields_required">El nombre y el número son obligatorios</string>
 </resources>
