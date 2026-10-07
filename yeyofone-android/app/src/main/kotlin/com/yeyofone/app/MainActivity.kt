@@ -83,6 +83,7 @@ import com.yeyofone.app.ui.callhistory.CallHistoryScreen
 import com.yeyofone.app.ui.callhistory.CallHistoryViewModel
 import com.yeyofone.app.ui.chat.ChatScreen
 import com.yeyofone.app.ui.chat.ChatViewModel
+import com.yeyofone.app.ui.contacts.ContactsScreen
 import com.yeyofone.app.ui.components.BottomNavigationBar
 import com.yeyofone.app.ui.components.CALLS_NAVIGATION
 import com.yeyofone.app.ui.components.CHAT_NAVIGATION
@@ -109,6 +110,7 @@ import com.yeyofone.app.ui.theme.TextSecondary
 import com.yeyofone.app.ui.theme.YeyoFoneTheme
 import com.yeyofone.app.ui.settings.LanguagePreferences
 import com.yeyofone.core.account.AccountDraft
+import com.yeyofone.core.account.ContactDraft
 import com.yeyofone.core.account.normalizeRegistrarUri
 import com.yeyofone.core.model.AccountPreferences
 import com.yeyofone.core.model.AudioRoute
@@ -116,6 +118,8 @@ import com.yeyofone.core.model.CallDirection
 import com.yeyofone.core.model.CallId
 import com.yeyofone.core.model.CallSession
 import com.yeyofone.core.model.CallState
+import com.yeyofone.core.model.Contact
+import com.yeyofone.core.model.ForwardingState
 import com.yeyofone.core.model.NatConfiguration
 import com.yeyofone.core.model.RegistrationState
 import com.yeyofone.core.model.SecurityMode
@@ -258,6 +262,8 @@ private fun AccountsApp(
         }
     }
     val preferences by viewModel.accountPreferences.collectAsStateWithLifecycle()
+    val forwarding by viewModel.forwardingState.collectAsStateWithLifecycle()
+    val contacts by viewModel.contacts.collectAsStateWithLifecycle()
     val callHistoryState by callHistoryViewModel.uiState.collectAsStateWithLifecycle()
 
     // Call waiting: at most one call is ever "in the foreground" (full-screen ring, or the
@@ -322,7 +328,7 @@ private fun AccountsApp(
         when (destination) {
             HOME_NAVIGATION -> viewModel.showHome()
             CALLS_NAVIGATION -> viewModel.showHistory()
-            CONTACTS_NAVIGATION -> viewModel.showAccounts()
+            CONTACTS_NAVIGATION -> viewModel.showContacts()
             KEYPAD_NAVIGATION -> state.accounts.firstOrNull()?.let { viewModel.dial(it.id) }
             CHAT_NAVIGATION -> viewModel.showChat()
             SETTINGS_NAVIGATION -> viewModel.showSettings()
@@ -333,18 +339,23 @@ private fun AccountsApp(
         AppScreen.Home -> {
             val primary = state.accounts.firstOrNull()
             val registration = primary?.let { viewModel.observeRegistration(it.id).collectAsStateWithLifecycle().value }
+            val primaryForwarding = primary?.let { forwarding[it.id.value] } ?: ForwardingState()
+            LaunchedEffect(primary?.id) { primary?.let { viewModel.refreshForwarding(it) } }
             MainScreen(
                 primaryAccount = primary,
                 isRegistered = registration is RegistrationState.Registered || registration is RegistrationState.Refreshing,
-                accounts = state.accounts,
+                favoriteContacts = contacts.filter { it.favorite },
                 recentCalls = callHistoryState.calls,
                 onKeypad = { primary?.let { viewModel.dial(it.id) } },
-                onContacts = viewModel::showAccounts,
+                onContacts = viewModel::showContacts,
                 onHistory = viewModel::showHistory,
                 onAccountClick = { viewModel.showAccount(it.id) },
                 onAddAccount = { viewModel.editAccount(null) },
+                onCallContact = { contact -> primary?.let { viewModel.dial(it.id, contact.number) } },
+                onAddContact = viewModel::showContacts,
                 onCallBack = { viewModel.dial(it.accountId, it.dialDestination) },
                 onNavigationItemSelected = navigateFromMenu,
+                forwardingDestination = primaryForwarding.destination.takeIf { primaryForwarding.enabled },
             )
         }
         AppScreen.Accounts -> AccountsScreen(
@@ -352,6 +363,14 @@ private fun AccountsApp(
             onAdd = { viewModel.editAccount(null) },
             onOpen = { viewModel.showAccount(it.id) },
             onEnabledChange = { account, enabled -> viewModel.setAccountEnabled(account.id, enabled) },
+            onNavigationItemSelected = navigateFromMenu,
+        )
+        AppScreen.Contacts -> ContactsScreen(
+            contacts = contacts,
+            onCall = { contact -> state.accounts.firstOrNull()?.let { viewModel.dial(it.id, contact.number) } },
+            onSave = { draft -> viewModel.saveContact(draft) },
+            onSetFavorite = { id, favorite -> viewModel.setContactFavorite(id, favorite) },
+            onDelete = { id -> viewModel.deleteContact(id) },
             onNavigationItemSelected = navigateFromMenu,
         )
         is AppScreen.Detail -> state.accounts.firstOrNull { it.id == current.accountId }?.let { account ->
@@ -377,6 +396,7 @@ private fun AccountsApp(
                         viewModel.startCall(account.id, destination)
                         dialPadViewModel.clearNumber()
                     },
+                    onAddContact = viewModel::showContacts,
                 )
             } else {
                 val media by viewModel.observeMedia(activeSession.id).collectAsStateWithLifecycle()
@@ -429,10 +449,16 @@ private fun AccountsApp(
         AppScreen.IncomingCallsSettings -> {
             val account = state.accounts.firstOrNull()
             val accountPreferences = account?.let { preferences[it.id.value] } ?: AccountPreferences()
+            val accountForwarding = account?.let { forwarding[it.id.value] } ?: ForwardingState()
+            LaunchedEffect(account?.id) { account?.let { viewModel.refreshForwarding(it) } }
             IncomingCallsSettingsScreen(
                 preferences = accountPreferences,
+                forwarding = accountForwarding,
                 onBack = viewModel::showSettings,
                 onToggle = { toggle, enabled -> account?.let { viewModel.setPreference(it.id, toggle, enabled) } },
+                onSaveForwarding = { newState, onResult ->
+                    account?.let { viewModel.setForwarding(it, newState, onResult) } ?: onResult(ForwardingClient.Result.NotConfigured)
+                },
             )
         }
         AppScreen.LanguageSettings -> LanguageSettingsScreen(onBack = viewModel::showSettings)
@@ -599,6 +625,7 @@ private fun IncomingCallScreen(
     var actionPending by remember(currentCallKey(session)) { mutableStateOf(false) }
     val current = state.sessions.firstOrNull { it.id == session.id } ?: session
     val context = LocalContext.current
+    val contacts by viewModel.contacts.collectAsStateWithLifecycle()
 
     if (current.state != CallState.Incoming && current.state != CallState.Ringing && !current.state.isTerminal()) {
         val media by viewModel.observeMedia(current.id).collectAsStateWithLifecycle()
@@ -652,8 +679,10 @@ private fun IncomingCallScreen(
                 accept()
             }
         }
+        val matchedContactName = contacts.firstOrNull { it.number == current.remoteUri.toSipIdentity().extension }?.displayName
         IncomingCallContent(
             remoteUri = current.remoteUri,
+            contactName = matchedContactName,
             permissionDenied = permissionDenied,
             actionsEnabled = !actionPending,
             onAccept = accept,

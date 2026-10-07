@@ -45,7 +45,7 @@ internal object PushRelayClient {
     }
 
     /** A relay response: [code] is null when no response arrived. */
-    data class Response(val code: Int?, val retryAfterSeconds: Long? = null)
+    data class Response(val code: Int?, val retryAfterSeconds: Long? = null, val body: String? = null)
 
     fun saveToken(context: Context, token: String) {
         prefs(context).edit { putString(KEY_TOKEN, token) }
@@ -146,7 +146,7 @@ internal object PushRelayClient {
         return outcome
     }
 
-    private fun request(endpoint: URL, method: String, bearer: String, body: String?): Response {
+    internal fun request(endpoint: URL, method: String, bearer: String, body: String?): Response {
         val connection = runCatching { endpoint.openConnection() as HttpURLConnection }
             .getOrElse { return Response(null) }
         return try {
@@ -160,7 +160,10 @@ internal object PushRelayClient {
                 connection.setRequestProperty("Content-Type", "application/json")
                 OutputStreamWriter(connection.outputStream, Charsets.UTF_8).use { it.write(body) }
             }
-            Response(connection.responseCode, parseRetryAfter(connection.getHeaderField("Retry-After")))
+            val code = connection.responseCode
+            val responseBody = (if (code in 200..299) connection.inputStream else connection.errorStream)
+                ?.bufferedReader(Charsets.UTF_8)?.use { it.readText() }?.takeIf { it.isNotBlank() }
+            Response(code, parseRetryAfter(connection.getHeaderField("Retry-After")), responseBody)
         } catch (e: Exception) {
             Log.w(TAG, "relay $method failed: ${e.javaClass.simpleName}")
             Response(null)

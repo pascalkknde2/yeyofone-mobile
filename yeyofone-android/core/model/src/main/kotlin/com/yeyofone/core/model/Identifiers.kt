@@ -14,3 +14,8 @@ value class CallId(val value: String) {
 value class CallHistoryId(val value: String) {
     init { require(value.isNotBlank()) { "Call history ID must not be blank" } }
 }
+
+@JvmInline
+value class ContactId(val value: String) {
+    init { require(value.isNotBlank()) { "Contact ID must not be blank" } }
+}

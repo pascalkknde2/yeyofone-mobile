@@ -47,6 +47,9 @@ object AccountValidator {
         }
     }
 
+    /** True for destinations in the same character set accepted for voicemailNumber/callerId. */
+    fun isValidPhoneDestination(value: String): Boolean = value.isNotBlank() && phonePattern.matches(value)
+
     private fun validateUser(field: String, value: String) {
         requireText(field, value, 1, 128)
         if (!userPattern.matches(value)) invalid(field, "contains invalid SIP username characters")

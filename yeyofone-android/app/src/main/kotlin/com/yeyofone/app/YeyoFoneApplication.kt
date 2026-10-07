@@ -6,6 +6,8 @@ import com.google.firebase.messaging.FirebaseMessaging
 import com.yeyofone.core.account.RoomAccountPreferencesRepository
 import com.yeyofone.core.account.RoomAccountRepository
 import com.yeyofone.core.account.RoomCallHistoryRepository
+import com.yeyofone.core.account.RoomContactRepository
+import com.yeyofone.core.account.RoomForwardingStateRepository
 import com.yeyofone.core.calling.CallCoordinator
 import com.yeyofone.core.model.SipAccount
 import com.yeyofone.core.model.SipAccountId
@@ -27,6 +29,9 @@ class YeyoFoneApplication : Application() {
     val accountRepository by lazy { RoomAccountRepository.create(this) }
     val callHistory by lazy { RoomCallHistoryRepository.create(this) }
     val accountPreferences by lazy { RoomAccountPreferencesRepository.create(this) }
+    val forwardingState by lazy { RoomForwardingStateRepository.create(this) }
+    internal val forwardingCoordinator by lazy { AndroidForwardingCoordinator(this, forwardingState) }
+    val contacts by lazy { RoomContactRepository.create(this) }
     private val engine by lazy {
         PjsipEngine.create(
             PjsipEngineConfiguration(

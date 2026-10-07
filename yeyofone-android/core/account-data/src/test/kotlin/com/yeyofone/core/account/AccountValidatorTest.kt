@@ -38,6 +38,19 @@ class AccountValidatorTest {
     }
 
     @Test
+    fun `isValidPhoneDestination accepts digits, plus, star and hash`() {
+        assertTrue(AccountValidator.isValidPhoneDestination("1000"))
+        assertTrue(AccountValidator.isValidPhoneDestination("+1*2#3"))
+    }
+
+    @Test
+    fun `isValidPhoneDestination rejects blank, whitespace and oversized input`() {
+        assertFalse(AccountValidator.isValidPhoneDestination(""))
+        assertFalse(AccountValidator.isValidPhoneDestination("100 5"))
+        assertFalse(AccountValidator.isValidPhoneDestination("1".repeat(33)))
+    }
+
+    @Test
     fun `new account requires a password`() {
         val failure = assertFailsWith<AccountValidationException.InvalidField> {
             AccountValidator.validate(validDraft(password = null))

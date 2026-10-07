@@ -62,6 +62,26 @@ internal interface AccountPreferencesDao {
     suspend fun delete(accountId: String): Int
 }
 
+/** A local cache of the relay's last-confirmed call-forwarding state - see [[com.yeyofone.core.model.ForwardingState]]. */
+@Entity(tableName = "forwarding_state")
+internal data class ForwardingStateEntity(
+    @PrimaryKey val accountId: String,
+    val enabled: Boolean,
+    val destination: String?,
+)
+
+@Dao
+internal interface ForwardingStateDao {
+    @Query("SELECT * FROM forwarding_state WHERE accountId = :accountId")
+    fun observe(accountId: String): Flow<ForwardingStateEntity?>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsert(state: ForwardingStateEntity)
+
+    @Query("DELETE FROM forwarding_state WHERE accountId = :accountId")
+    suspend fun delete(accountId: String): Int
+}
+
 @Dao
 internal interface AccountDao {
     @Query("SELECT * FROM sip_accounts ORDER BY displayName COLLATE NOCASE, id")
@@ -83,10 +103,15 @@ internal interface AccountDao {
     suspend fun delete(id: String): Int
 }
 
-@Database(entities = [AccountEntity::class, AccountPreferencesEntity::class], version = 3, exportSchema = true)
+@Database(
+    entities = [AccountEntity::class, AccountPreferencesEntity::class, ForwardingStateEntity::class],
+    version = 4,
+    exportSchema = true,
+)
 internal abstract class AccountDatabase : RoomDatabase() {
     abstract fun accounts(): AccountDao
     abstract fun accountPreferences(): AccountPreferencesDao
+    abstract fun forwardingState(): ForwardingStateDao
 
     companion object {
         val MIGRATION_1_2 = object : Migration(1, 2) {
@@ -119,6 +144,20 @@ internal abstract class AccountDatabase : RoomDatabase() {
             }
         }
 
+        val MIGRATION_3_4 = object : Migration(3, 4) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS `forwarding_state` (
+                        `accountId` TEXT NOT NULL PRIMARY KEY,
+                        `enabled` INTEGER NOT NULL,
+                        `destination` TEXT
+                    )
+                    """.trimIndent(),
+                )
+            }
+        }
+
         @Volatile private var instance: AccountDatabase? = null
 
         // AccountRepository and AccountPreferencesRepository each open this database
@@ -126,7 +165,7 @@ internal abstract class AccountDatabase : RoomDatabase() {
         // invalidation notifications between them, so this is memoized per process.
         fun open(context: Context): AccountDatabase = instance ?: synchronized(this) {
             instance ?: Room.databaseBuilder(context.applicationContext, AccountDatabase::class.java, "yeyofone-accounts.db")
-                .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
+                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
                 .build()
                 .also { instance = it }
         }
