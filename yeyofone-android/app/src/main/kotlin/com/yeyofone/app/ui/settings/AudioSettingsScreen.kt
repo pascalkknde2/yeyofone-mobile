@@ -1,49 +1,67 @@
 package com.yeyofone.app.ui.settings
 
+import android.app.Activity
+import android.content.Intent
+import android.media.AudioManager
+import android.media.RingtoneManager
+import android.net.Uri
+import android.os.Build
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.automirrored.filled.VolumeDown
 import androidx.compose.material.icons.automirrored.filled.VolumeUp
-import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.MusicNote
-import androidx.compose.material.icons.filled.Pause
-import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.yeyofone.app.R
+import com.yeyofone.app.RingtonePreference
+import com.yeyofone.app.label
 import com.yeyofone.app.ui.theme.*
-
-private val AudioPink = Color(0xFFDB2777)
-private val AudioPinkLight = Color(0xFFFDF2F8)
+import com.yeyofone.core.model.AudioRoute
 
 @Composable
-fun AudioSettingsScreen(onBack: () -> Unit) {
+fun AudioSettingsScreen(
+    availableRoutes: List<AudioRoute>,
+    selectedRoute: AudioRoute?,
+    onSelectRoute: (AudioRoute) -> Unit,
+    onBack: () -> Unit,
+) {
     BackHandler(onBack = onBack)
-    var outputVolume by remember { mutableFloatStateOf(.70f) }
-    var microphoneLevel by remember { mutableFloatStateOf(.85f) }
-    var muted by remember { mutableStateOf(false) }
-    var selectedRingtone by remember { mutableIntStateOf(0) }
-    var playing by remember { mutableIntStateOf(-1) }
+    val context = LocalContext.current
+    val audioManager = remember { context.getSystemService(AudioManager::class.java) }
+    val maxVolume = remember { audioManager.getStreamMaxVolume(AudioManager.STREAM_VOICE_CALL).coerceAtLeast(1) }
+    var outputVolume by remember {
+        mutableFloatStateOf(audioManager.getStreamVolume(AudioManager.STREAM_VOICE_CALL) / maxVolume.toFloat())
+    }
+    var ringtoneTitle by remember { mutableStateOf(RingtonePreference.title(context)) }
     var showDevices by remember { mutableStateOf(false) }
-    var outputDevice by remember { mutableIntStateOf(0) }
-    val devices = listOf(R.string.device_speaker, R.string.device_earpiece, R.string.device_headphones)
+
+    val ringtonePicker = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            val uri = result.data?.ringtoneExtra()
+            RingtonePreference.set(context, uri)
+            ringtoneTitle = RingtonePreference.title(context)
+        }
+    }
 
     Scaffold(containerColor = BackgroundGray) { insets ->
         Column(Modifier.fillMaxSize().padding(bottom = insets.calculateBottomPadding())) {
@@ -54,59 +72,85 @@ fun AudioSettingsScreen(onBack: () -> Unit) {
             ) {
                 item {
                     AudioGroup(stringResource(R.string.output_section)) {
-                        AudioSliderRow(stringResource(R.string.speaker_volume), Icons.AutoMirrored.Filled.VolumeUp, outputVolume, { outputVolume = it }, AccentBlue)
-                        HorizontalDivider(Modifier.padding(start = 76.dp), color = BorderLight.copy(alpha = .55f))
-                        AudioOptionRow(stringResource(R.string.output_device), stringResource(devices[outputDevice]), Icons.Default.MusicNote, AccentBlue) { showDevices = true }
-                    }
-                }
-                item {
-                    AudioGroup(stringResource(R.string.input_section)) {
-                        AudioSliderRow(stringResource(R.string.microphone_level), Icons.Default.Mic, microphoneLevel, { microphoneLevel = it }, AudioPink)
-                        HorizontalDivider(Modifier.padding(start = 76.dp), color = BorderLight.copy(alpha = .55f))
-                        Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 14.dp), verticalAlignment = Alignment.CenterVertically) {
-                            AudioIcon(Icons.Default.Mic, AudioPink, AudioPinkLight)
-                            Column(Modifier.weight(1f).padding(start = 16.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                                Text(stringResource(R.string.mute_microphone), fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = TextPrimary)
-                                Text(stringResource(R.string.mute_microphone_subtitle), fontSize = 13.sp, color = TextSecondary)
-                            }
-                            Switch(checked = muted, onCheckedChange = { muted = it })
+                        AudioSliderRow(
+                            stringResource(R.string.speaker_volume),
+                            Icons.AutoMirrored.Filled.VolumeUp,
+                            outputVolume,
+                            { value ->
+                                outputVolume = value
+                                audioManager.setStreamVolume(
+                                    AudioManager.STREAM_VOICE_CALL,
+                                    (value * maxVolume).toInt().coerceIn(0, maxVolume),
+                                    0,
+                                )
+                            },
+                            AccentBlue,
+                        )
+                        if (availableRoutes.size > 1) {
+                            HorizontalDivider(Modifier.padding(start = 76.dp), color = BorderLight.copy(alpha = .55f))
+                            AudioOptionRow(
+                                stringResource(R.string.output_device),
+                                selectedRoute?.label() ?: stringResource(R.string.device_speaker),
+                                Icons.Default.MusicNote,
+                                AccentBlue,
+                            ) { showDevices = true }
                         }
                     }
                 }
                 item {
                     AudioGroup(stringResource(R.string.ringtones_section)) {
-                        listOf(R.string.ringtone_default, R.string.ringtone_classic, R.string.ringtone_digital, R.string.ringtone_silent).forEachIndexed { index, title ->
-                            if (index > 0) HorizontalDivider(Modifier.padding(start = 20.dp), color = BorderLight.copy(alpha = .55f))
-                            Row(Modifier.fillMaxWidth().clickable { selectedRingtone = index }.padding(horizontal = 20.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
-                                Box(Modifier.size(20.dp), contentAlignment = Alignment.Center) {
-                                    androidx.compose.foundation.Canvas(Modifier.fillMaxSize()) {
-                                        drawCircle(if (selectedRingtone == index) AccentBlue else BorderLight, style = Stroke(2.dp.toPx()))
-                                        if (selectedRingtone == index) drawCircle(AccentBlue, radius = size.minDimension / 2)
-                                    }
-                                    if (selectedRingtone == index) Box(Modifier.size(8.dp).clip(CircleShape).background(CardWhite))
-                                }
-                                Text(stringResource(title), Modifier.weight(1f).padding(start = 12.dp), fontSize = 15.sp, fontWeight = FontWeight.Medium, color = TextPrimary)
-                                IconButton(onClick = { playing = if (playing == index) -1 else index }) {
-                                    Icon(if (playing == index) Icons.Default.Pause else Icons.Default.PlayArrow, stringResource(R.string.preview_ringtone), tint = AccentBlue)
-                                }
+                        Row(
+                            Modifier.fillMaxWidth().clickable {
+                                ringtonePicker.launch(
+                                    Intent(RingtoneManager.ACTION_RINGTONE_PICKER).apply {
+                                        putExtra(RingtoneManager.EXTRA_RINGTONE_TYPE, RingtoneManager.TYPE_RINGTONE)
+                                        putExtra(RingtoneManager.EXTRA_RINGTONE_SHOW_DEFAULT, true)
+                                        putExtra(RingtoneManager.EXTRA_RINGTONE_SHOW_SILENT, true)
+                                        putExtra(RingtoneManager.EXTRA_RINGTONE_EXISTING_URI, RingtonePreference.get(context))
+                                    },
+                                )
+                            }.padding(horizontal = 16.dp, vertical = 14.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            AudioIcon(Icons.Default.MusicNote, AccentBlue, PrimaryLight)
+                            Column(Modifier.weight(1f).padding(start = 16.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                                Text(stringResource(R.string.ringtone_setting), fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = TextPrimary)
+                                Text(ringtoneTitle, fontSize = 13.sp, color = TextSecondary)
                             }
+                            Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null, tint = InactiveGray)
                         }
                     }
                 }
             }
         }
     }
-    if (showDevices) AlertDialog(
-        onDismissRequest = { showDevices = false },
-        title = { Text(stringResource(R.string.output_device)) },
-        text = { Column { devices.forEachIndexed { index, device ->
-            Row(Modifier.fillMaxWidth().clickable { outputDevice = index; showDevices = false }.padding(vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
-                RadioButton(selected = outputDevice == index, onClick = { outputDevice = index; showDevices = false })
-                Text(stringResource(device), color = TextPrimary)
-            }
-        } } },
-        confirmButton = { TextButton(onClick = { showDevices = false }) { Text(stringResource(R.string.cancel)) } },
-    )
+    if (showDevices) {
+        AlertDialog(
+            onDismissRequest = { showDevices = false },
+            title = { Text(stringResource(R.string.output_device)) },
+            text = {
+                Column {
+                    availableRoutes.forEach { route ->
+                        Row(
+                            Modifier.fillMaxWidth().clickable { onSelectRoute(route); showDevices = false }.padding(vertical = 10.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            RadioButton(selected = route == selectedRoute, onClick = { onSelectRoute(route); showDevices = false })
+                            Text(route.label(), color = TextPrimary)
+                        }
+                    }
+                }
+            },
+            confirmButton = { TextButton(onClick = { showDevices = false }) { Text(stringResource(R.string.cancel)) } },
+        )
+    }
+}
+
+@Suppress("DEPRECATION")
+private fun Intent.ringtoneExtra(): Uri? = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+    getParcelableExtra(RingtoneManager.EXTRA_RINGTONE_PICKED_URI, Uri::class.java)
+} else {
+    getParcelableExtra(RingtoneManager.EXTRA_RINGTONE_PICKED_URI)
 }
 
 @Composable
@@ -136,14 +180,14 @@ private fun AudioGroup(title: String, content: @Composable () -> Unit) {
 }
 
 @Composable
-private fun AudioIcon(icon: androidx.compose.ui.graphics.vector.ImageVector, color: Color, background: Color) {
+private fun AudioIcon(icon: ImageVector, color: Color, background: Color) {
     Box(Modifier.size(40.dp).clip(RoundedCornerShape(12.dp)).background(background), contentAlignment = Alignment.Center) { Icon(icon, null, tint = color, modifier = Modifier.size(20.dp)) }
 }
 
 @Composable
-private fun AudioSliderRow(title: String, icon: androidx.compose.ui.graphics.vector.ImageVector, value: Float, change: (Float) -> Unit, tint: Color) {
+private fun AudioSliderRow(title: String, icon: ImageVector, value: Float, change: (Float) -> Unit, tint: Color) {
     Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
-        AudioIcon(icon, tint, if (tint == AudioPink) AudioPinkLight else PrimaryLight)
+        AudioIcon(icon, tint, PrimaryLight)
         Column(Modifier.weight(1f).padding(start = 16.dp)) {
             Text(title, Modifier.padding(bottom = 4.dp), fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = TextPrimary)
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -156,7 +200,7 @@ private fun AudioSliderRow(title: String, icon: androidx.compose.ui.graphics.vec
 }
 
 @Composable
-private fun AudioOptionRow(title: String, subtitle: String, icon: androidx.compose.ui.graphics.vector.ImageVector, tint: Color, onClick: () -> Unit) {
+private fun AudioOptionRow(title: String, subtitle: String, icon: ImageVector, tint: Color, onClick: () -> Unit) {
     Row(Modifier.fillMaxWidth().clickable(onClick = onClick).padding(horizontal = 16.dp, vertical = 14.dp), verticalAlignment = Alignment.CenterVertically) {
         AudioIcon(icon, tint, PrimaryLight)
         Column(Modifier.weight(1f).padding(start = 16.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {

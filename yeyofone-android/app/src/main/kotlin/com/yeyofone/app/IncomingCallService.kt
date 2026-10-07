@@ -193,12 +193,17 @@ class IncomingCallService : Service() {
 
     private fun startRinging() {
         if (ringtone?.isPlaying == true || fallbackToneJob?.isActive == true) return
+        val selection = RingtonePreference.selection(this)
+        if (selection is RingtonePreference.Selection.Silent) return
         val started = runCatching {
             // Ringtone looping was added in API 28. Older devices use the repeating
             // ToneGenerator below so they remain audible for the entire incoming call.
             if (Build.VERSION.SDK_INT < Build.VERSION_CODES.P) return@runCatching false
-            val uri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE)
-                ?: RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
+            val uri = when (selection) {
+                is RingtonePreference.Selection.Custom -> selection.uri
+                else -> RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE)
+                    ?: RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
+            }
             ringtone = uri?.let { RingtoneManager.getRingtone(this, it) }?.apply {
                 audioAttributes = AudioAttributes.Builder()
                     .setUsage(AudioAttributes.USAGE_NOTIFICATION_RINGTONE)
