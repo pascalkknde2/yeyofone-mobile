@@ -117,6 +117,7 @@
     <string name="dtmf_digits_value">DTMF: %1$s</string>
     <string name="dtmf_unavailable_on_hold">Resume the call to send keypad tones</string>
     <string name="transfer">Transfer</string>
+    <string name="transfer_call_subtitle">Transferring call with %1$s</string>
     <string name="transfer_destination">Transfer destination</string>
     <string name="transfer_now">Transfer now</string>
     <string name="transferring_status">Transferring…</string>

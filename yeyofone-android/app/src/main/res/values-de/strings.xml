@@ -132,6 +132,7 @@
     <string name="dtmf_digits_value">DTMF: %1$s</string>
     <string name="dtmf_unavailable_on_hold">Setzen Sie den Anruf fort, um Tastentöne zu senden</string>
     <string name="transfer">Weiterleiten</string>
+    <string name="transfer_call_subtitle">Anruf mit %1$s wird weitergeleitet</string>
     <string name="transfer_destination">Weiterleitungsziel</string>
     <string name="transfer_now">Jetzt weiterleiten</string>
     <string name="transferring_status">Wird weitergeleitet …</string>
