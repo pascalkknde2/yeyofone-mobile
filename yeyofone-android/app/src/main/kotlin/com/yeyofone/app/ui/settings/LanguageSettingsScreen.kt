@@ -16,6 +16,9 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.ChevronRight
@@ -27,6 +30,7 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -41,14 +45,14 @@ import com.yeyofone.app.R
 import com.yeyofone.app.ui.theme.*
 import java.util.Locale
 
-private data class AppLanguage(val tag: String, val label: Int)
+private data class AppLanguage(val tag: String, val label: Int, val flag: String)
 
 private val appLanguages = listOf(
-    AppLanguage("en-US", R.string.language_english_us),
-    AppLanguage("en-GB", R.string.language_english_uk),
-    AppLanguage("es", R.string.language_spanish),
-    AppLanguage("fr", R.string.language_french),
-    AppLanguage("de", R.string.language_german),
+    AppLanguage("en-US", R.string.language_english_us, "🇺🇸"),
+    AppLanguage("en-GB", R.string.language_english_uk, "🇬🇧"),
+    AppLanguage("es", R.string.language_spanish, "🇪🇸"),
+    AppLanguage("fr", R.string.language_french, "🇫🇷"),
+    AppLanguage("de", R.string.language_german, "🇩🇪"),
 )
 
 @Composable
@@ -80,19 +84,15 @@ fun LanguageSettingsScreen(onBack: () -> Unit) {
             ) {
                 item {
                     LanguageSection(stringResource(R.string.language_app_section)) {
-                        appLanguages.forEachIndexed { index, language ->
-                            if (index > 0) LanguageDivider()
-                            LanguageChoice(
-                                label = stringResource(language.label),
-                                selected = selectedLanguage.equals(language.tag, ignoreCase = true),
-                                meta = if (language.tag == "en-US") stringResource(R.string.language_default) else null,
-                                onClick = {
-                                    selectedLanguage = language.tag
-                                    LanguagePreferences.setLanguage(context, language.tag)
-                                    (context as? Activity)?.recreate()
-                                },
-                            )
-                        }
+                        LanguageDropdown(
+                            languages = appLanguages,
+                            selectedTag = selectedLanguage,
+                            onSelect = { language ->
+                                selectedLanguage = language.tag
+                                LanguagePreferences.setLanguage(context, language.tag)
+                                (context as? Activity)?.recreate()
+                            },
+                        )
                     }
                 }
                 item {
@@ -176,6 +176,60 @@ private fun LanguageSection(title: String, content: @Composable ColumnScope.() -
                 .border(1.dp, BorderLight.copy(alpha = .55f), RoundedCornerShape(20.dp)),
             content = content,
         )
+    }
+}
+
+@Composable
+private fun LanguageDropdown(languages: List<AppLanguage>, selectedTag: String, onSelect: (AppLanguage) -> Unit) {
+    var expanded by rememberSaveable { mutableStateOf(false) }
+    val selected = languages.firstOrNull { it.tag.equals(selectedTag, ignoreCase = true) } ?: languages.first()
+
+    Column {
+        Row(
+            Modifier.fillMaxWidth().clickable { expanded = !expanded }.padding(horizontal = 20.dp, vertical = 16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(selected.flag, fontSize = 20.sp)
+            Text(
+                stringResource(selected.label),
+                Modifier.weight(1f).padding(start = 12.dp),
+                fontSize = 15.sp,
+                fontWeight = FontWeight.Medium,
+                color = TextPrimary,
+            )
+            Icon(
+                if (expanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
+                contentDescription = null,
+                tint = InactiveGray,
+            )
+        }
+        if (expanded) {
+            LanguageDivider()
+            languages.forEachIndexed { index, language ->
+                if (index > 0) LanguageDivider()
+                LanguageOptionRow(
+                    flag = language.flag,
+                    label = stringResource(language.label),
+                    selected = language.tag.equals(selectedTag, ignoreCase = true),
+                    onClick = {
+                        onSelect(language)
+                        expanded = false
+                    },
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun LanguageOptionRow(flag: String, label: String, selected: Boolean, onClick: () -> Unit) {
+    Row(
+        Modifier.fillMaxWidth().clickable(onClick = onClick).padding(horizontal = 20.dp, vertical = 14.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(flag, fontSize = 20.sp)
+        Text(label, Modifier.weight(1f).padding(start = 12.dp), fontSize = 15.sp, fontWeight = FontWeight.Medium, color = TextPrimary)
+        if (selected) Icon(Icons.Default.Check, contentDescription = null, tint = Color(0xFF22C55E), modifier = Modifier.size(20.dp))
     }
 }
 
