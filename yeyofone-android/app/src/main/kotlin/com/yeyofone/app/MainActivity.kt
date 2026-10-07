@@ -311,10 +311,14 @@ private fun AccountsApp(
                 viewModel.dismissCallSummary(endedCall.id)
                 viewModel.dial(endedCall.accountId, endedCall.remoteUri.toSipIdentity().extension)
             },
-            onSendMessage = {
-                viewModel.dismissCallSummary(endedCall.id)
-                chatViewModel.openConversation(endedCall.remoteUri)
-                viewModel.showChat()
+            onSendMessage = if (BuildConfig.DEBUG) {
+                {
+                    viewModel.dismissCallSummary(endedCall.id)
+                    chatViewModel.openConversation(endedCall.remoteUri)
+                    viewModel.showChat()
+                }
+            } else {
+                null
             },
             onClose = {
                 viewModel.dismissCallSummary(endedCall.id)

@@ -40,6 +40,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
+import com.yeyofone.app.BuildConfig
 import com.yeyofone.app.R
 import com.yeyofone.app.ui.theme.AccentBlue
 import com.yeyofone.app.ui.theme.BorderLight
@@ -55,14 +56,18 @@ const val SETTINGS_NAVIGATION = 5
 
 @Composable
 fun BottomNavigationBar(selectedIndex: Int, onItemSelected: (Int) -> Unit) {
-    val items = listOf(
-        NavItem(stringResource(R.string.home_navigation), Icons.Filled.Home, Icons.Outlined.Home),
-        NavItem(stringResource(R.string.keypad), Icons.Filled.Apps, Icons.Outlined.Apps),
-        NavItem(stringResource(R.string.contacts_navigation), Icons.Filled.Person, Icons.Outlined.Person),
-        NavItem(stringResource(R.string.calls_navigation), Icons.Filled.Call, Icons.Outlined.Call),
-        NavItem(stringResource(R.string.chat_navigation), Icons.Filled.ChatBubble, Icons.Outlined.ChatBubbleOutline),
-        NavItem(stringResource(R.string.settings_navigation), Icons.Filled.Settings, Icons.Outlined.Settings),
-    )
+    val items = buildList {
+        add(NavItem(HOME_NAVIGATION, stringResource(R.string.home_navigation), Icons.Filled.Home, Icons.Outlined.Home))
+        add(NavItem(KEYPAD_NAVIGATION, stringResource(R.string.keypad), Icons.Filled.Apps, Icons.Outlined.Apps))
+        add(NavItem(CONTACTS_NAVIGATION, stringResource(R.string.contacts_navigation), Icons.Filled.Person, Icons.Outlined.Person))
+        add(NavItem(CALLS_NAVIGATION, stringResource(R.string.calls_navigation), Icons.Filled.Call, Icons.Outlined.Call))
+        // CHAT-02 (CALL-FEATURES-AUDIT.md Phase E): chat isn't implemented, so this tab is left
+        // out of release builds entirely rather than advertising a capability that doesn't exist.
+        if (BuildConfig.DEBUG) {
+            add(NavItem(CHAT_NAVIGATION, stringResource(R.string.chat_navigation), Icons.Filled.ChatBubble, Icons.Outlined.ChatBubbleOutline))
+        }
+        add(NavItem(SETTINGS_NAVIGATION, stringResource(R.string.settings_navigation), Icons.Filled.Settings, Icons.Outlined.Settings))
+    }
     Row(
         Modifier.fillMaxWidth().navigationBarsPadding().padding(horizontal = 20.dp, vertical = 20.dp)
             .shadow(8.dp, RoundedCornerShape(30.dp)).clip(RoundedCornerShape(30.dp))
@@ -71,15 +76,15 @@ fun BottomNavigationBar(selectedIndex: Int, onItemSelected: (Int) -> Unit) {
         horizontalArrangement = Arrangement.SpaceAround,
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        items.forEachIndexed { index, item ->
-            val selected = selectedIndex == index
+        items.forEach { item ->
+            val selected = selectedIndex == item.navIndex
             val background by animateColorAsState(if (selected) AccentBlue else Color.Transparent, label = "tab background")
             val foreground by animateColorAsState(if (selected) Color.White else InactiveGray, label = "tab icon")
             Box(
                 contentAlignment = Alignment.Center,
                 modifier = Modifier.weight(1f).height(48.dp)
                     .clip(CircleShape)
-                    .selectable(selected = selected, role = Role.Tab, onClick = { onItemSelected(index) }),
+                    .selectable(selected = selected, role = Role.Tab, onClick = { onItemSelected(item.navIndex) }),
             ) {
                 Box(
                     Modifier.size(44.dp)
@@ -99,4 +104,4 @@ fun BottomNavigationBar(selectedIndex: Int, onItemSelected: (Int) -> Unit) {
     }
 }
 
-data class NavItem(val label: String, val selectedIcon: ImageVector, val unselectedIcon: ImageVector)
+data class NavItem(val navIndex: Int, val label: String, val selectedIcon: ImageVector, val unselectedIcon: ImageVector)

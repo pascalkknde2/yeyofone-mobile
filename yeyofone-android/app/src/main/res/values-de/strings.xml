@@ -248,12 +248,8 @@
     <string name="audio_video_title">Audio &amp; Video</string>
     <string name="audio_section">Audio</string>
     <string name="output_volume">Ausgabelautstärke</string>
-    <string name="microphone_level">Mikrofonpegel</string>
     <string name="ringtone_section">Klingelton</string>
-    <string name="ringtone_classic">Klassisch</string>
     <string name="ringtone_chime">Glockenspiel</string>
-    <string name="ringtone_digital">Digital</string>
-    <string name="preview_ringtone">Klingelton anhören</string>
     <string name="video_section">Videovorschau</string>
     <string name="flip_camera">Kamera wechseln</string>
     <string name="front_camera">Frontkamera</string>
@@ -267,14 +263,9 @@
     <string name="audio_title">Audio</string>
     <string name="video_title">Video</string>
     <string name="output_section">Ausgabe</string>
-    <string name="input_section">Eingabe</string>
     <string name="speaker_volume">Lautsprecherlautstärke</string>
     <string name="output_device">Ausgabegerät</string>
     <string name="device_speaker">Lautsprecher</string>
-    <string name="device_earpiece">Hörer</string>
-    <string name="device_headphones">Kopfhörer</string>
-    <string name="mute_microphone">Mikrofon stummschalten</string>
-    <string name="mute_microphone_subtitle">Eingabe vorübergehend deaktivieren</string>
     <string name="ringtones_section">Klingeltöne</string>
     <string name="ringtone_default">Standard</string>
     <string name="ringtone_silent">Lautlos</string>
@@ -310,7 +301,6 @@
     <string name="flip_to_mute_subtitle">Klingeln durch Umdrehen des Geräts stummschalten</string>
     <string name="call_announce_setting">Anrufer ansagen</string>
     <string name="call_announce_subtitle">Namen des Anrufers beim Klingeln ansagen</string>
-    <string name="choose_ringtone">Klingelton auswählen</string>
     <string name="forward_to_number">Umleiten an Nummer</string>
     <string name="recordings_title">Aufnahmen</string>
     <string name="recording_storage_title">Speicher</string>
