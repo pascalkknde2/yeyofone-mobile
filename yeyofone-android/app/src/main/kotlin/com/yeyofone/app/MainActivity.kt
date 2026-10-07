@@ -31,11 +31,15 @@ import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Call
+import androidx.compose.material.icons.filled.CallEnd
+import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Checkbox
@@ -58,6 +62,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -254,23 +259,45 @@ private fun AccountsApp(
     }
     val preferences by viewModel.accountPreferences.collectAsStateWithLifecycle()
     val callHistoryState by callHistoryViewModel.uiState.collectAsStateWithLifecycle()
-    val incoming = state.sessions.lastOrNull {
-        it.direction == CallDirection.INCOMING && !it.state.isTerminal() && it.id !in state.dismissedIncomingCalls
-    }
 
-    if (incoming != null) {
+    // Call waiting: at most one call is ever "in the foreground" (full-screen ring, or the
+    // in-progress screen once answered/dialed), tracked via state.activeCallId for both
+    // directions. A second non-terminal call never hijacks that screen - it surfaces as a small
+    // banner instead (see CallWaitingBanner below), the same way attended transfer already keeps
+    // the original caller visible while consulting. CallCoordinator caps concurrent calls at two,
+    // so at most one "waiting" call can exist at a time.
+    val nonTerminal = state.sessions.filter { !it.state.isTerminal() && it.id !in state.dismissedIncomingCalls }
+    val activeCall = nonTerminal.firstOrNull { it.id == state.activeCallId }
+    // Nothing has been answered/dialed yet: the sole (or first-arriving) ringing call takes the
+    // full incoming-call screen, exactly as before this feature existed.
+    val primaryRinging = if (activeCall == null) {
+        nonTerminal.firstOrNull {
+            it.direction == CallDirection.INCOMING && (it.state == CallState.Incoming || it.state == CallState.Ringing)
+        }
+    } else null
+    val waitingCall = nonTerminal.firstOrNull { it.id != activeCall?.id && it.id != primaryRinging?.id }
+    // Outgoing calls keep using AppScreen.Dial's own OutgoingCallScreen rendering below; only an
+    // incoming call (ringing, or already answered) uses the IncomingCallScreen wrapper.
+    val showIncomingWrapper = primaryRinging ?: activeCall?.takeIf { it.direction == CallDirection.INCOMING }
+
+    Box(Modifier.fillMaxSize()) {
+    if (showIncomingWrapper != null) {
         IncomingCallScreen(
-            incoming, state, viewModel,
-            pendingAccept = pendingAccept?.takeIf { it == incoming.id },
+            showIncomingWrapper, state, viewModel,
+            pendingAccept = pendingAccept?.takeIf { it == showIncomingWrapper.id },
             onAcceptHandled = onAcceptHandled,
         )
-        return
-    }
+    } else {
 
-    val endedCall = state.sessions.lastOrNull { session ->
-        session.state.isTerminal() && session.id !in state.dismissedIncomingCalls &&
-            (session.id == state.activeCallId || session.direction == CallDirection.INCOMING)
-    }
+    // Same rule as the ring/waiting split above: a second call's own ended-call summary must
+    // never take over the screen while a different call (activeCall) is still in progress - a
+    // missed-call notification (posted separately by IncomingCallService) is enough for that case.
+    val endedCall = if (activeCall == null) {
+        state.sessions.lastOrNull { session ->
+            session.state.isTerminal() && session.id !in state.dismissedIncomingCalls &&
+                (session.id == state.activeCallId || session.direction == CallDirection.INCOMING)
+        }
+    } else null
     if (endedCall != null) {
         CallEndedScreen(
             summary = endedCall.toCallSummary(),
@@ -410,6 +437,18 @@ private fun AccountsApp(
         }
         AppScreen.LanguageSettings -> LanguageSettingsScreen(onBack = viewModel::showSettings)
         AppScreen.Recordings -> RecordingsScreen(onBack = viewModel::showSettings)
+    }
+    }
+    if (waitingCall != null) {
+        CallWaitingBanner(
+            session = waitingCall,
+            isRinging = waitingCall.state == CallState.Incoming || waitingCall.state == CallState.Ringing,
+            modifier = Modifier.align(Alignment.TopCenter),
+            onAccept = { viewModel.answerWaitingCall(waitingCall.id, activeCall?.id) },
+            onDecline = { viewModel.reject(waitingCall.id) },
+            onSwap = { activeCall?.let { viewModel.swapActiveCall(it.id, waitingCall.id) } },
+        )
+    }
     }
 }
 
@@ -673,6 +712,66 @@ private fun IncomingCallScreen(
 }
 
 private fun currentCallKey(session: CallSession): String = session.id.value
+
+/**
+ * The second concurrent call (see [AccountsApp]'s call-waiting computation): a compact overlay,
+ * never a full-screen takeover, so the primary call stays visible and in control underneath it.
+ * [isRinging] picks the action set: Accept/Decline for a call that hasn't been answered yet, or a
+ * single Switch action once it's the one on hold in the background (e.g. after a previous Accept).
+ */
+@Composable
+private fun CallWaitingBanner(
+    session: CallSession,
+    isRinging: Boolean,
+    onAccept: () -> Unit,
+    onDecline: () -> Unit,
+    onSwap: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val identity = session.remoteUri.toSipIdentity()
+    Row(
+        modifier
+            .fillMaxWidth()
+            .systemBarsPadding()
+            .padding(12.dp)
+            .shadow(4.dp, RoundedCornerShape(16.dp))
+            .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(16.dp))
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween,
+    ) {
+        Column(Modifier.weight(1f)) {
+            Text(
+                stringResource(R.string.call_waiting_banner_title),
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.primary,
+            )
+            Text(identity.displayName, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+            Text(
+                if (isRinging) {
+                    stringResource(R.string.extension_value, identity.extension)
+                } else {
+                    stringResource(R.string.on_hold_label)
+                },
+                style = MaterialTheme.typography.bodySmall,
+            )
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+            if (isRinging) {
+                IconButton(onClick = onDecline) {
+                    Icon(Icons.Default.CallEnd, stringResource(R.string.decline), tint = MaterialTheme.colorScheme.error)
+                }
+                IconButton(onClick = onAccept) {
+                    Icon(Icons.Default.Call, stringResource(R.string.accept), tint = MaterialTheme.colorScheme.primary)
+                }
+            } else {
+                IconButton(onClick = onSwap) {
+                    Icon(Icons.Default.SwapHoriz, stringResource(R.string.switch_calls))
+                }
+            }
+        }
+    }
+}
 
 @Composable
 private fun InCallControls(

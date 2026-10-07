@@ -287,18 +287,31 @@ class CallCoordinator(
     }
 
     /**
-     * Allow Incoming / Do Not Disturb / Auto-Answer, enforced the instant a new incoming call
-     * exists - before IncomingCallService's own [sessions] collector has a realistic chance to
-     * post a notification or start ringing, since both subscribe to the same hot [sessions] flow
-     * and this runs synchronously in the same event-processing coroutine. Reuses [reject]/[answer]
-     * rather than calling the gateway directly so blocked/auto-answered calls go through the same
-     * guarded state transitions and history recording as a manual decline/accept.
+     * Capacity / Allow Incoming / Do Not Disturb / Auto-Answer, enforced the instant a new
+     * incoming call exists - before IncomingCallService's own [sessions] collector has a
+     * realistic chance to post a notification or start ringing, since both subscribe to the same
+     * hot [sessions] flow and this runs synchronously in the same event-processing coroutine.
+     * Reuses [reject]/[answer] rather than calling the gateway directly so blocked/auto-answered
+     * calls go through the same guarded state transitions and history recording as a manual
+     * decline/accept.
+     *
+     * The app's call UI supports at most one foreground call plus one waiting/held call (the same
+     * shape attended transfer already uses); a third concurrent call has nowhere to go, so it's
+     * rejected as busy before preferences are even considered.
      */
     private suspend fun applyIncomingPreferences(id: CallId, accountId: SipAccountId) {
+        val concurrentCalls = sessions.value.count { it.id != id && !it.state.isTerminal() }
+        if (concurrentCalls >= MAX_CONCURRENT_CALLS) {
+            reject(id)
+            return
+        }
         val prefs = preferences?.observe(accountId)?.first() ?: return
         when {
             !prefs.allowIncoming || prefs.doNotDisturb -> reject(id)
-            prefs.autoAnswer -> answer(id)
+            // Only when nothing else is in progress: auto-answering a second call would connect
+            // it without ever holding the first, and nothing else in the media pipeline expects
+            // two simultaneously-unheld calls.
+            prefs.autoAnswer && concurrentCalls == 0 -> answer(id)
         }
     }
 
@@ -384,3 +397,6 @@ private const val PJSIP_INV_STATE_CONNECTING = PJSIP_INV_STATE_EARLY + 1
 private const val PJSIP_INV_STATE_CONFIRMED = PJSIP_INV_STATE_CONNECTING + 1
 private const val PJSIP_INV_STATE_DISCONNECTED = PJSIP_INV_STATE_CONFIRMED + 1
 private const val DTMF_DIGITS = "0123456789*#"
+
+/** One foreground call plus one waiting/held call - see [CallCoordinator.applyIncomingPreferences]. */
+private const val MAX_CONCURRENT_CALLS = 2

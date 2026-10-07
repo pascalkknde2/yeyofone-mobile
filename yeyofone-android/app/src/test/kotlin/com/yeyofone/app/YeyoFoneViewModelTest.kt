@@ -106,6 +106,48 @@ class YeyoFoneViewModelTest {
     }
 
     @Test
+    fun `answerWaitingCall holds the current call before answering the waiting one`() = runTest {
+        val calls = FakeCalls()
+        val media = FakeMedia()
+        val viewModel = YeyoFoneViewModel(FakeAccounts(), calls, media, FakeRoutes(), FakeRegistration(), FakePreferences())
+        val current = CallId("current")
+        val waiting = CallId("waiting")
+
+        viewModel.answerWaitingCall(waiting, current)
+        runCurrent()
+
+        assertEquals(listOf(current to true), media.heldCalls)
+        assertEquals(listOf(waiting), calls.answered)
+    }
+
+    @Test
+    fun `answerWaitingCall with no current call just answers`() = runTest {
+        val calls = FakeCalls()
+        val media = FakeMedia()
+        val viewModel = YeyoFoneViewModel(FakeAccounts(), calls, media, FakeRoutes(), FakeRegistration(), FakePreferences())
+        val waiting = CallId("waiting")
+
+        viewModel.answerWaitingCall(waiting, null)
+        runCurrent()
+
+        assertEquals(emptyList(), media.heldCalls)
+        assertEquals(listOf(waiting), calls.answered)
+    }
+
+    @Test
+    fun `swapActiveCall holds the current call and resumes the other`() = runTest {
+        val media = FakeMedia()
+        val viewModel = YeyoFoneViewModel(FakeAccounts(), FakeCalls(), media, FakeRoutes(), FakeRegistration(), FakePreferences())
+        val current = CallId("current")
+        val other = CallId("other")
+
+        viewModel.swapActiveCall(current, other)
+        runCurrent()
+
+        assertEquals(listOf(current to true, other to false), media.heldCalls)
+    }
+
+    @Test
     fun `observeRegistration returns the same flow instance the manager returns`() {
         val registration = FakeRegistration()
         val viewModel = viewModel(registration)
@@ -161,9 +203,10 @@ class YeyoFoneViewModelTest {
     }
 
     private class FakeCalls : CallManager {
+        val answered = mutableListOf<CallId>()
         override val sessions: StateFlow<List<CallSession>> = MutableStateFlow(emptyList())
         override suspend fun call(accountId: SipAccountId, destination: String): CallId = error("not used")
-        override suspend fun answer(callId: CallId) = Unit
+        override suspend fun answer(callId: CallId) { answered += callId }
         override suspend fun reject(callId: CallId) = Unit
         override suspend fun end(callId: CallId) = Unit
         override suspend fun sendDtmf(callId: CallId, digit: Char) = Unit
@@ -172,9 +215,10 @@ class YeyoFoneViewModelTest {
     }
 
     private class FakeMedia : MediaManager {
+        val heldCalls = mutableListOf<Pair<CallId, Boolean>>()
         override fun observe(callId: CallId): StateFlow<MediaState> = error("not used")
         override suspend fun setMuted(callId: CallId, muted: Boolean) = Unit
-        override suspend fun setHeld(callId: CallId, held: Boolean) = Unit
+        override suspend fun setHeld(callId: CallId, held: Boolean) { heldCalls += callId to held }
     }
 
     private class FakeRoutes : AudioRouteManager {

@@ -42,6 +42,8 @@ class IncomingCallService : Service() {
     private var ringtone: Ringtone? = null
     private var fallbackToneJob: Job? = null
     private val notifiedMissedCalls = mutableSetOf<CallId>()
+    // Calls that have survived RING_SETTLE_DELAY_MS as a genuine ring - see updateCallNotification.
+    private val confirmedRingingCalls = mutableSetOf<CallId>()
 
     override fun onCreate() {
         super.onCreate()
@@ -104,7 +106,7 @@ class IncomingCallService : Service() {
         .setCategory(Notification.CATEGORY_SERVICE)
         .build()
 
-    private fun updateCallNotification(sessions: List<CallSession>) {
+    private suspend fun updateCallNotification(sessions: List<CallSession>) {
         sessions.filter { it.isMissedCall() && notifiedMissedCalls.add(it.id) }.forEach(::notifyMissedCall)
         val active = sessions.lastOrNull { !it.state.isTerminal() }
         if (active == null) {
@@ -115,6 +117,18 @@ class IncomingCallService : Service() {
 
         val incoming = active.direction == CallDirection.INCOMING &&
             (active.state == CallState.Incoming || active.state == CallState.Ringing)
+        if (incoming && active.id !in confirmedRingingCalls) {
+            // CallCoordinator can auto-reject (Allow Incoming, Do Not Disturb, call-capacity) or
+            // auto-answer a call within ~30ms of it arriving. Committing to a full-screen intent
+            // immediately would fire for calls that are about to vanish again - and a full-screen
+            // intent is an implicit new-task launch, which (MainActivity has no special launch
+            // mode) spawns a *second* Activity instance with its own fresh ViewModel, discarding
+            // any call already in progress. Give the coordinator's own decision a moment to land;
+            // collectLatest cancels and restarts this whole call on the next sessions emission, so
+            // a call that changes state during the wait never reaches the code below at all.
+            delay(RING_SETTLE_DELAY_MS)
+            confirmedRingingCalls += active.id
+        }
         if (incoming) startRinging() else stopRinging()
         if (AppVisibility.isForeground) {
             notifications.cancel(CALL_NOTIFICATION_ID)
@@ -267,6 +281,9 @@ class IncomingCallService : Service() {
         private const val SERVICE_NOTIFICATION_ID = 1001
         private const val CALL_NOTIFICATION_ID = 1002
         private const val MISSED_NOTIFICATION_BASE = 2000
+        // Longer than CallCoordinator's auto-reject/auto-answer enforcement (~30ms observed live
+        // against sysinfos.co.uk/FreeSWITCH) but short enough a real ring never feels delayed.
+        private const val RING_SETTLE_DELAY_MS = 200L
 
         fun start(context: Context) {
             // Android 12+ can refuse a foreground-service start from a non-exempt background

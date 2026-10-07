@@ -235,6 +235,51 @@ class CallCoordinatorTest {
     }
 
     @Test
+    fun `a third concurrent call is rejected as busy regardless of preferences`() = runTest {
+        val id = SipAccountId("one")
+        val gateway = FakeGateway()
+        val coordinator = CallCoordinator(
+            FakeAccounts(mapOf(id to account(id))), gateway, backgroundScope, preferences = FakePreferences(),
+        )
+        runCurrent()
+
+        // Two calls already in progress: one answered, one still ringing.
+        val outgoing = coordinator.call(id, "1001")
+        gateway.emit(outgoing.value, id, invState = PJSIP_INV_STATE_CONFIRMED, lastStatusCode = 200)
+        gateway.emit("incoming-1", id, PJSIP_INV_STATE_INCOMING, 0, direction = CallDirection.INCOMING)
+        runCurrent()
+
+        gateway.emit("incoming-2", id, PJSIP_INV_STATE_INCOMING, 0, direction = CallDirection.INCOMING)
+        runCurrent()
+
+        assertTrue(gateway.hungUp.contains("incoming-2"))
+        assertEquals(CallState.Disconnecting, coordinator.sessions.value.single { it.id.value == "incoming-2" }.state)
+        // The two calls already in progress are untouched.
+        assertEquals(CallState.Connected, coordinator.sessions.value.single { it.id == outgoing }.state)
+        assertEquals(CallState.Incoming, coordinator.sessions.value.single { it.id.value == "incoming-1" }.state)
+    }
+
+    @Test
+    fun `auto-answer does not fire for a second call while one is already in progress`() = runTest {
+        val id = SipAccountId("one")
+        val gateway = FakeGateway()
+        val prefs = FakePreferences(id to AccountPreferences(autoAnswer = true))
+        val coordinator = CallCoordinator(FakeAccounts(mapOf(id to account(id))), gateway, backgroundScope, preferences = prefs)
+        runCurrent()
+
+        val outgoing = coordinator.call(id, "1001")
+        gateway.emit(outgoing.value, id, invState = PJSIP_INV_STATE_CONFIRMED, lastStatusCode = 200)
+        runCurrent()
+
+        gateway.emit("incoming-1", id, PJSIP_INV_STATE_INCOMING, 0, direction = CallDirection.INCOMING)
+        runCurrent()
+
+        assertTrue(gateway.answered.isEmpty())
+        assertTrue(gateway.hungUp.isEmpty())
+        assertEquals(CallState.Incoming, coordinator.sessions.value.single { it.id.value == "incoming-1" }.state)
+    }
+
+    @Test
     fun `missing preferences repository leaves incoming calls unaffected`() = runTest {
         val id = SipAccountId("one")
         val gateway = FakeGateway()

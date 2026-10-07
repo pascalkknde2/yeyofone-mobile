@@ -188,10 +188,30 @@ class YeyoFoneViewModel(
 
     fun answer(callId: CallId) = launch {
         audioRoutes.prepareForCall()
+        activeCallId.value = callId
         calls.answer(callId)
     }
     fun reject(callId: CallId) = launch { calls.reject(callId) }
     fun end(callId: CallId) = launch { calls.end(callId) }
+
+    /**
+     * Call waiting: a second incoming call is answered while [currentCallId] (if any) is already
+     * in the foreground. Holds the current call first, same order attended transfer already uses
+     * before consulting, so the new call never joins audio with an unheld first call.
+     */
+    fun answerWaitingCall(waitingCallId: CallId, currentCallId: CallId?) = launch {
+        if (currentCallId != null) media.setHeld(currentCallId, true)
+        audioRoutes.prepareForCall()
+        activeCallId.value = waitingCallId
+        calls.answer(waitingCallId)
+    }
+
+    /** Switches which of two concurrent calls is in the foreground; the other goes on hold. */
+    fun swapActiveCall(currentId: CallId, otherId: CallId) = launch {
+        media.setHeld(currentId, true)
+        media.setHeld(otherId, false)
+        activeCallId.value = otherId
+    }
     fun sendDtmf(callId: CallId, digit: Char) = launch { calls.sendDtmf(callId, digit) }
     fun transfer(callId: CallId, destination: String) = launch { calls.transfer(callId, destination) }
     fun completeTransfer(callId: CallId, consultationId: CallId) = launch {

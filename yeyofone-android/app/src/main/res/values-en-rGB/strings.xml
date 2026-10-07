@@ -299,6 +299,9 @@
     <string name="vibrate_subtitle">Vibrate when receiving calls</string>
     <string name="call_waiting_setting">Call Waiting</string>
     <string name="call_waiting_subtitle">Notify when another call comes in</string>
+    <string name="call_waiting_banner_title">Call waiting</string>
+    <string name="switch_calls">Switch</string>
+    <string name="on_hold_label">On hold</string>
     <string name="call_forwarding_setting">Call Forwarding</string>
     <string name="call_forwarding_subtitle">Forward calls to another number</string>
     <string name="do_not_disturb_setting">Do Not Disturb</string>
