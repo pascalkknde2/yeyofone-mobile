@@ -3,6 +3,7 @@ package com.yeyofone.app
 import android.app.Application
 import android.util.Log
 import com.google.firebase.messaging.FirebaseMessaging
+import com.yeyofone.core.account.RoomAccountPreferencesRepository
 import com.yeyofone.core.account.RoomAccountRepository
 import com.yeyofone.core.account.RoomCallHistoryRepository
 import com.yeyofone.core.calling.CallCoordinator
@@ -25,6 +26,7 @@ class YeyoFoneApplication : Application() {
     private val applicationScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     val accountRepository by lazy { RoomAccountRepository.create(this) }
     val callHistory by lazy { RoomCallHistoryRepository.create(this) }
+    val accountPreferences by lazy { RoomAccountPreferencesRepository.create(this) }
     private val engine by lazy {
         PjsipEngine.create(
             PjsipEngineConfiguration(
@@ -44,7 +46,7 @@ class YeyoFoneApplication : Application() {
             applicationScope,
         )
     }
-    val callManager by lazy { CallCoordinator(accountRepository, engine, applicationScope, callHistory) }
+    val callManager by lazy { CallCoordinator(accountRepository, engine, applicationScope, callHistory, accountPreferences) }
     val audioRouteManager by lazy { AndroidAudioRouteManager(this) }
     internal val pushRegistrar by lazy { PushRegistrar(this, applicationScope) }
     internal val relayPushHandler by lazy { RelayPushHandler(this, applicationScope, callManager) }

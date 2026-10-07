@@ -1,0 +1,199 @@
+{
+  "formatVersion": 1,
+  "database": {
+    "version": 3,
+    "identityHash": "cef799e895b43e98427638154df689b1",
+    "entities": [
+      {
+        "tableName": "sip_accounts",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `displayName` TEXT NOT NULL, `username` TEXT NOT NULL, `authenticationUsername` TEXT NOT NULL, `domain` TEXT NOT NULL, `registrarUri` TEXT NOT NULL, `outboundProxyUri` TEXT, `port` INTEGER NOT NULL, `transport` TEXT NOT NULL, `securityMode` TEXT NOT NULL, `stunServer` TEXT, `turnServer` TEXT, `turnUsername` TEXT, `iceEnabled` INTEGER NOT NULL, `srtpEnabled` INTEGER NOT NULL, `registrationExpirySeconds` INTEGER NOT NULL, `voicemailNumber` TEXT, `callerId` TEXT, `enabled` INTEGER NOT NULL, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "displayName",
+            "columnName": "displayName",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "username",
+            "columnName": "username",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "authenticationUsername",
+            "columnName": "authenticationUsername",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "domain",
+            "columnName": "domain",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "registrarUri",
+            "columnName": "registrarUri",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "outboundProxyUri",
+            "columnName": "outboundProxyUri",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "port",
+            "columnName": "port",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "transport",
+            "columnName": "transport",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "securityMode",
+            "columnName": "securityMode",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "stunServer",
+            "columnName": "stunServer",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "turnServer",
+            "columnName": "turnServer",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "turnUsername",
+            "columnName": "turnUsername",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "iceEnabled",
+            "columnName": "iceEnabled",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "srtpEnabled",
+            "columnName": "srtpEnabled",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "registrationExpirySeconds",
+            "columnName": "registrationExpirySeconds",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "voicemailNumber",
+            "columnName": "voicemailNumber",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "callerId",
+            "columnName": "callerId",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "enabled",
+            "columnName": "enabled",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        }
+      },
+      {
+        "tableName": "account_preferences",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`accountId` TEXT NOT NULL, `autoAnswer` INTEGER NOT NULL, `callWaiting` INTEGER NOT NULL, `voicemail` INTEGER NOT NULL, `doNotDisturb` INTEGER NOT NULL, `allowIncoming` INTEGER NOT NULL, `vibrate` INTEGER NOT NULL, `flipToMute` INTEGER NOT NULL, `announceCaller` INTEGER NOT NULL, PRIMARY KEY(`accountId`))",
+        "fields": [
+          {
+            "fieldPath": "accountId",
+            "columnName": "accountId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "autoAnswer",
+            "columnName": "autoAnswer",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "callWaiting",
+            "columnName": "callWaiting",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "voicemail",
+            "columnName": "voicemail",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "doNotDisturb",
+            "columnName": "doNotDisturb",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "allowIncoming",
+            "columnName": "allowIncoming",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "vibrate",
+            "columnName": "vibrate",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "flipToMute",
+            "columnName": "flipToMute",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "announceCaller",
+            "columnName": "announceCaller",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "accountId"
+          ]
+        }
+      }
+    ],
+    "setupQueries": [
+      "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'cef799e895b43e98427638154df689b1')"
+    ]
+  }
+}

@@ -25,8 +25,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.yeyofone.app.AccountPreferences
-import com.yeyofone.app.PreferenceToggle
+import com.yeyofone.core.model.AccountPreferences
+import com.yeyofone.core.model.PreferenceToggle
 import com.yeyofone.app.R
 import com.yeyofone.app.ui.theme.*
 

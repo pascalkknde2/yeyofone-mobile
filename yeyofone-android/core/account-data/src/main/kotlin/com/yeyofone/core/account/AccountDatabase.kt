@@ -37,6 +37,31 @@ internal data class AccountEntity(
     val enabled: Boolean,
 )
 
+@Entity(tableName = "account_preferences")
+internal data class AccountPreferencesEntity(
+    @PrimaryKey val accountId: String,
+    val autoAnswer: Boolean,
+    val callWaiting: Boolean,
+    val voicemail: Boolean,
+    val doNotDisturb: Boolean,
+    val allowIncoming: Boolean,
+    val vibrate: Boolean,
+    val flipToMute: Boolean,
+    val announceCaller: Boolean,
+)
+
+@Dao
+internal interface AccountPreferencesDao {
+    @Query("SELECT * FROM account_preferences WHERE accountId = :accountId")
+    fun observe(accountId: String): Flow<AccountPreferencesEntity?>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsert(preferences: AccountPreferencesEntity)
+
+    @Query("DELETE FROM account_preferences WHERE accountId = :accountId")
+    suspend fun delete(accountId: String): Int
+}
+
 @Dao
 internal interface AccountDao {
     @Query("SELECT * FROM sip_accounts ORDER BY displayName COLLATE NOCASE, id")
@@ -58,9 +83,10 @@ internal interface AccountDao {
     suspend fun delete(id: String): Int
 }
 
-@Database(entities = [AccountEntity::class], version = 2, exportSchema = true)
+@Database(entities = [AccountEntity::class, AccountPreferencesEntity::class], version = 3, exportSchema = true)
 internal abstract class AccountDatabase : RoomDatabase() {
     abstract fun accounts(): AccountDao
+    abstract fun accountPreferences(): AccountPreferencesDao
 
     companion object {
         val MIGRATION_1_2 = object : Migration(1, 2) {
@@ -73,9 +99,36 @@ internal abstract class AccountDatabase : RoomDatabase() {
             }
         }
 
-        fun open(context: Context): AccountDatabase =
-            Room.databaseBuilder(context, AccountDatabase::class.java, "yeyofone-accounts.db")
-                .addMigrations(MIGRATION_1_2)
+        val MIGRATION_2_3 = object : Migration(2, 3) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS `account_preferences` (
+                        `accountId` TEXT NOT NULL PRIMARY KEY,
+                        `autoAnswer` INTEGER NOT NULL,
+                        `callWaiting` INTEGER NOT NULL,
+                        `voicemail` INTEGER NOT NULL,
+                        `doNotDisturb` INTEGER NOT NULL,
+                        `allowIncoming` INTEGER NOT NULL,
+                        `vibrate` INTEGER NOT NULL,
+                        `flipToMute` INTEGER NOT NULL,
+                        `announceCaller` INTEGER NOT NULL
+                    )
+                    """.trimIndent(),
+                )
+            }
+        }
+
+        @Volatile private var instance: AccountDatabase? = null
+
+        // AccountRepository and AccountPreferencesRepository each open this database
+        // independently; two live Room instances against the same file risk missed
+        // invalidation notifications between them, so this is memoized per process.
+        fun open(context: Context): AccountDatabase = instance ?: synchronized(this) {
+            instance ?: Room.databaseBuilder(context.applicationContext, AccountDatabase::class.java, "yeyofone-accounts.db")
+                .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
                 .build()
+                .also { instance = it }
+        }
     }
 }

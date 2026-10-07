@@ -1,5 +1,6 @@
 package com.yeyofone.core.calling
 
+import com.yeyofone.core.account.AccountPreferencesRepository
 import com.yeyofone.core.account.AccountRepository
 import com.yeyofone.core.model.CallDirection
 import com.yeyofone.core.model.CallEndReason
@@ -35,6 +36,7 @@ class CallCoordinator(
     private val gateway: SipCallGateway,
     scope: CoroutineScope,
     private val history: CallHistoryRepository? = null,
+    private val preferences: AccountPreferencesRepository? = null,
 ) : CallManager, MediaManager {
     private val mutableSessions = MutableStateFlow<List<CallSession>>(emptyList())
     override val sessions: StateFlow<List<CallSession>> = mutableSessions.asStateFlow()
@@ -244,6 +246,12 @@ class CallCoordinator(
         } else {
             nativeState
         }
+        // A fresh incoming call is exactly the session that doesn't exist in mutableSessions yet;
+        // later events for the same callId (180, 200, BYE, ...) go through the update branch
+        // below instead, so this only ever fires once per call.
+        val isNewIncomingCall = event.direction == CallDirection.INCOMING &&
+            sessions.value.none { it.id == id } &&
+            (state == CallState.Incoming || state == CallState.Ringing)
         val now = Instant.now()
         mutableSessions.update { sessions ->
             if (sessions.none { it.id == id }) {
@@ -275,6 +283,23 @@ class CallCoordinator(
             }
         }
         mutableSessions.value.firstOrNull { it.id == id }?.let { history?.upsert(it.toHistoryEntry()) }
+        if (isNewIncomingCall) applyIncomingPreferences(id, event.accountId)
+    }
+
+    /**
+     * Allow Incoming / Do Not Disturb / Auto-Answer, enforced the instant a new incoming call
+     * exists - before IncomingCallService's own [sessions] collector has a realistic chance to
+     * post a notification or start ringing, since both subscribe to the same hot [sessions] flow
+     * and this runs synchronously in the same event-processing coroutine. Reuses [reject]/[answer]
+     * rather than calling the gateway directly so blocked/auto-answered calls go through the same
+     * guarded state transitions and history recording as a manual decline/accept.
+     */
+    private suspend fun applyIncomingPreferences(id: CallId, accountId: SipAccountId) {
+        val prefs = preferences?.observe(accountId)?.first() ?: return
+        when {
+            !prefs.allowIncoming || prefs.doNotDisturb -> reject(id)
+            prefs.autoAnswer -> answer(id)
+        }
     }
 
     private fun onTransferEvent(event: NativeTransferEvent) {

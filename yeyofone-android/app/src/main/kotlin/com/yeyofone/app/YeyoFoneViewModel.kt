@@ -4,11 +4,14 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.yeyofone.core.account.AccountDraft
+import com.yeyofone.core.account.AccountPreferencesRepository
 import com.yeyofone.core.account.AccountRepository
+import com.yeyofone.core.model.AccountPreferences
 import com.yeyofone.core.model.AudioRoute
 import com.yeyofone.core.model.CallId
 import com.yeyofone.core.model.CallSession
 import com.yeyofone.core.model.MediaState
+import com.yeyofone.core.model.PreferenceToggle
 import com.yeyofone.core.model.RegistrationState
 import com.yeyofone.core.model.SipAccount
 import com.yeyofone.core.model.SipAccountId
@@ -16,11 +19,15 @@ import com.yeyofone.core.voip.AudioRouteManager
 import com.yeyofone.core.voip.CallManager
 import com.yeyofone.core.voip.MediaManager
 import com.yeyofone.core.voip.RegistrationManager
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
@@ -39,19 +46,6 @@ sealed interface AppScreen {
     data class Edit(val accountId: SipAccountId?) : AppScreen
     data class Dial(val accountId: SipAccountId, val destination: String = "") : AppScreen
 }
-
-enum class PreferenceToggle { AutoAnswer, CallWaiting, Voicemail, DoNotDisturb, AllowIncoming, Vibrate, FlipToMute, AnnounceCaller }
-
-data class AccountPreferences(
-    val autoAnswer: Boolean = true,
-    val callWaiting: Boolean = true,
-    val voicemail: Boolean = false,
-    val doNotDisturb: Boolean = false,
-    val allowIncoming: Boolean = true,
-    val vibrate: Boolean = true,
-    val flipToMute: Boolean = true,
-    val announceCaller: Boolean = false,
-)
 
 data class YeyoFoneUiState(
     val screen: AppScreen = AppScreen.Home,
@@ -77,14 +71,28 @@ class YeyoFoneViewModel(
     private val media: MediaManager,
     private val audioRoutes: AudioRouteManager,
     private val registration: RegistrationManager,
+    private val preferencesRepo: AccountPreferencesRepository,
 ) : ViewModel() {
     private val screen = MutableStateFlow<AppScreen>(AppScreen.Home)
     private val activeCallId = MutableStateFlow<CallId?>(null)
     private val consultationCallId = MutableStateFlow<CallId?>(null)
     private val dismissedIncomingCalls = MutableStateFlow<Set<CallId>>(emptySet())
 
-    // Session-level UI state until product defines persistence semantics.
-    private val preferences = MutableStateFlow<Map<String, AccountPreferences>>(emptyMap())
+    // Re-subscribes to each account's preferences whenever the account list itself changes;
+    // CallCoordinator reads the same repository to enforce Allow Incoming/DND/Auto-Answer, so
+    // this is just the UI's read-side view of that persisted state (see CALL-FEATURES-AUDIT.md
+    // Phase B).
+    @OptIn(ExperimentalCoroutinesApi::class)
+    private val preferencesByAccount: Flow<Map<String, AccountPreferences>> =
+        accounts.observeAccounts().flatMapLatest { accountList ->
+            if (accountList.isEmpty()) {
+                flowOf(emptyMap())
+            } else {
+                combine(
+                    accountList.map { account -> preferencesRepo.observe(account.id).map { account.id.value to it } },
+                ) { pairs -> pairs.toMap() }
+            }
+        }
 
     private val coreUiState = combine(
         screen,
@@ -148,22 +156,25 @@ class YeyoFoneViewModel(
     fun observeRegistration(accountId: SipAccountId): StateFlow<RegistrationState> = registration.observe(accountId)
     fun reregister(accountId: SipAccountId) = launch { registration.register(accountId) }
 
-    val accountPreferences: StateFlow<Map<String, AccountPreferences>> = preferences.asStateFlow()
+    // Eager, unlike uiState's WhileSubscribed: a toggle write should be readable from .value
+    // immediately afterward (settings screens and tests alike) without requiring something to
+    // already be collecting this flow for it to be live.
+    val accountPreferences: StateFlow<Map<String, AccountPreferences>> =
+        preferencesByAccount.stateIn(viewModelScope, SharingStarted.Eagerly, emptyMap())
 
-    fun setPreference(accountId: SipAccountId, toggle: PreferenceToggle, enabled: Boolean) {
-        preferences.value += (accountId.value to
-                    (preferences.value[accountId.value] ?: AccountPreferences()).let { current ->
-                        when (toggle) {
-                            PreferenceToggle.AutoAnswer -> current.copy(autoAnswer = enabled)
-                            PreferenceToggle.CallWaiting -> current.copy(callWaiting = enabled)
-                            PreferenceToggle.Voicemail -> current.copy(voicemail = enabled)
-                            PreferenceToggle.DoNotDisturb -> current.copy(doNotDisturb = enabled)
-                            PreferenceToggle.AllowIncoming -> current.copy(allowIncoming = enabled)
-                            PreferenceToggle.Vibrate -> current.copy(vibrate = enabled)
-                            PreferenceToggle.FlipToMute -> current.copy(flipToMute = enabled)
-                            PreferenceToggle.AnnounceCaller -> current.copy(announceCaller = enabled)
-                        }
-                    })
+    fun setPreference(accountId: SipAccountId, toggle: PreferenceToggle, enabled: Boolean) = launch {
+        preferencesRepo.update(accountId) { current ->
+            when (toggle) {
+                PreferenceToggle.AutoAnswer -> current.copy(autoAnswer = enabled)
+                PreferenceToggle.CallWaiting -> current.copy(callWaiting = enabled)
+                PreferenceToggle.Voicemail -> current.copy(voicemail = enabled)
+                PreferenceToggle.DoNotDisturb -> current.copy(doNotDisturb = enabled)
+                PreferenceToggle.AllowIncoming -> current.copy(allowIncoming = enabled)
+                PreferenceToggle.Vibrate -> current.copy(vibrate = enabled)
+                PreferenceToggle.FlipToMute -> current.copy(flipToMute = enabled)
+                PreferenceToggle.AnnounceCaller -> current.copy(announceCaller = enabled)
+            }
+        }
     }
 
     fun saveAccount(draft: AccountDraft, onResult: (Result<SipAccountId>) -> Unit) = launch {
@@ -215,6 +226,7 @@ class YeyoFoneViewModel(
                 app.callManager,
                 app.audioRouteManager,
                 app.registration,
+                app.accountPreferences,
             ) as T
         }
     }
