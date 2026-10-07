@@ -35,6 +35,17 @@ android {
 
     buildFeatures { compose = true; buildConfig = true }
 
+    // BUILD-06: R8 code/resource shrinking for release. JNI-callback classes (PJSUA2) and
+    // anything else with reflection/JNI needs are preserved via consumer-rules.pro in their own
+    // modules plus app/proguard-rules.pro for this module's own code.
+    buildTypes {
+        release {
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+        }
+    }
+
 }
 
 kotlin { compilerOptions { jvmTarget.set(JvmTarget.JVM_17) } }
