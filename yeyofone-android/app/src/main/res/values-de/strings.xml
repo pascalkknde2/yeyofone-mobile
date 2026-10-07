@@ -299,6 +299,9 @@
     <string name="vibrate_subtitle">Bei eingehenden Anrufen vibrieren</string>
     <string name="call_waiting_setting">Anklopfen</string>
     <string name="call_waiting_subtitle">Benachrichtigen, wenn ein weiterer Anruf eingeht</string>
+    <string name="call_waiting_banner_title">Anklopfen</string>
+    <string name="switch_calls">Wechseln</string>
+    <string name="on_hold_label">Gehalten</string>
     <string name="call_forwarding_setting">Rufumleitung</string>
     <string name="call_forwarding_subtitle">Anrufe an eine andere Nummer umleiten</string>
     <string name="do_not_disturb_setting">Nicht stören</string>
