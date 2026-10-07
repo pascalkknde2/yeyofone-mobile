@@ -23,6 +23,7 @@ import org.pjsip.pjsua2.CallOpParam
 import org.pjsip.pjsua2.CallSendDtmfParam
 import org.pjsip.pjsua2.OnCallMediaStateParam
 import org.pjsip.pjsua2.OnCallStateParam
+import org.pjsip.pjsua2.OnCallTsxStateParam
 import org.pjsip.pjsua2.OnIncomingCallParam
 import org.pjsip.pjsua2.OnCallTransferStatusParam
 import org.pjsip.pjsua2.OnRegStateParam
@@ -39,6 +40,7 @@ import org.pjsip.pjsua2.pjsua_dtmf_method
 import org.pjsip.pjsua2.pjsua_stun_use
 import org.pjsip.pjsua2.pjmedia_type
 import org.pjsip.pjsua2.pjsip_inv_state
+import org.pjsip.pjsua2.pjsip_event_id_e
 import java.util.concurrent.ConcurrentHashMap
 import java.util.UUID
 
@@ -51,6 +53,8 @@ internal class Pjsua2EndpointBackend : EndpointBackend {
     }
     private var endpoint: Endpoint? = null
     private var verboseDiagnostics = false
+    // Endpoint owns the native writer; keep its Java director alive until libDestroy().
+    private var sipLogWriter: org.pjsip.pjsua2.LogWriter? = null
     private val transportIds = mutableMapOf<SipTransport, Int>()
     private val accounts = mutableMapOf<SipAccountId, NativeAccount>()
     private val calls = mutableMapOf<String, NativeCall>()
@@ -83,13 +87,56 @@ internal class Pjsua2EndpointBackend : EndpointBackend {
         try {
             config.uaConfig.userAgent = configuration.userAgent
             config.logConfig.apply {
-                level = configuration.logLevel.toLong()
-                consoleLevel = configuration.logLevel.toLong()
-                msgLogging = 0
+                if (verboseDiagnostics) {
+                    level = maxOf(configuration.logLevel, 4).toLong()
+                    // PJSUA gates the custom writer with consoleLevel as well as level.
+                    // The writer emits only the sanitized summary, never the raw packet.
+                    consoleLevel = level
+                    msgLogging = 1
+                    sipLogWriter = object : org.pjsip.pjsua2.LogWriter() {
+                        override fun write(entry: org.pjsip.pjsua2.LogEntry) {
+                            sipWireSummary(entry.msg)?.let { Log.i(SIP_LOG_TAG, it) }
+                            // Opt-in only (adb shell setprop log.tag.YeyoFoneSipTrace DEBUG): the
+                            // full packet, minus digest credentials, for PBX interop debugging.
+                            if (Log.isLoggable(SIP_TRACE_LOG_TAG, Log.DEBUG)) {
+                                sipWireTrace(entry.msg)?.let { Log.d(SIP_TRACE_LOG_TAG, it) }
+                            }
+                        }
+                    }
+                    writer = sipLogWriter
+                } else {
+                    level = configuration.logLevel.toLong()
+                    consoleLevel = configuration.logLevel.toLong()
+                    msgLogging = 0
+                }
             }
             requireEndpoint().libInit(config)
+            configureVoiceCodecs()
         } finally {
             config.delete()
+        }
+    }
+
+    /** Prefer wideband codecs while retaining narrowband fallbacks for older SIP peers. */
+    private fun configureVoiceCodecs() {
+        val ep = requireEndpoint()
+        val codecs = ep.codecEnum2()
+        try {
+            codecs.forEach { codec ->
+                val priority = when {
+                    codec.codecId.startsWith("opus/", ignoreCase = true) -> 255
+                    codec.codecId.startsWith("G722/", ignoreCase = true) -> 220
+                    codec.codecId.startsWith("PCMU/", ignoreCase = true) -> 100
+                    codec.codecId.startsWith("PCMA/", ignoreCase = true) -> 90
+                    else -> null
+                }
+                priority?.let {
+                    ep.codecSetPriority(codec.codecId, it.toShort())
+                    Log.i(MEDIA_LOG_TAG, "codec=${codec.codecId} priority=$it")
+                }
+            }
+        } finally {
+            codecs.delete()
         }
     }
 
@@ -126,7 +173,7 @@ internal class Pjsua2EndpointBackend : EndpointBackend {
         val current = endpoint ?: return
         endpoint = null
         transportIds.clear()
-        calls.values.forEach { runCatching { it.hangup(CallOpParam(true)) }; it.delete() }
+        calls.values.forEach { runCatching { it.hangup(voiceCallOpParam()) }; it.delete() }
         calls.clear()
         locallyHeldCallIds.clear()
         accounts.values.forEach { it.shutdown(); it.delete() }
@@ -135,6 +182,7 @@ internal class Pjsua2EndpointBackend : EndpointBackend {
             current.libDestroy()
         } finally {
             current.delete()
+            sipLogWriter = null
         }
     }
 
@@ -193,6 +241,22 @@ internal class Pjsua2EndpointBackend : EndpointBackend {
                 // whatever another account most recently registered with natUpdateStunServers.
                 sipStunUse = if (stunServer != null) pjsua_stun_use.PJSUA_STUN_USE_DEFAULT else pjsua_stun_use.PJSUA_STUN_USE_DISABLED
                 mediaStunUse = if (stunServer != null) pjsua_stun_use.PJSUA_STUN_USE_DEFAULT else pjsua_stun_use.PJSUA_STUN_USE_DISABLED
+                // Without STUN/ICE, advertise the address learned from REGISTER's Via
+                // instead of a private device address that an external PBX cannot reach.
+                // STUN/ICE keep control of their own media address selection.
+                sdpNatRewriteUse = if (stunServer == null && !account.nat.iceEnabled) 1 else 0
+                // RFC 5626 "SIP outbound" is PJSIP's default (and documented as a no-op
+                // over UDP transports), but it still tags every Contact header with ";ob".
+                // Live-verified against sysinfos.co.uk/FreeSWITCH: with ";ob" present,
+                // FreeSWITCH answers every inbound call (clean INVITE/200/ACK) but never
+                // transmits a single inbound RTP packet in either direction, confirmed via
+                // its own RTCP (Receiver Reports only, never a Sender Report) - most likely
+                // mod_sofia applying RFC 5626 flow-based NAT/routing logic to a UDP
+                // registration that never asked for it. Disabling it (plain Contact, no
+                // ";ob") immediately produced clean bidirectional RTP on two consecutive
+                // inbound calls. This was never a problem on outgoing calls, which don't
+                // carry the Contact from REGISTER.
+                sipOutboundUse = 0
                 turnEnabled = !account.nat.turnServer.isNullOrBlank()
                 account.nat.turnServer?.let { turnServer = it }
                 account.nat.turnUsername?.let { turnUserName = it }
@@ -230,6 +294,13 @@ internal class Pjsua2EndpointBackend : EndpointBackend {
         accounts.remove(accountId)?.let { it.shutdown(); it.delete() }
     }
 
+    /** PJSIP 2.17 defaults include RTT; this app implements voice calls only. */
+    private fun voiceCallOpParam(): CallOpParam = CallOpParam(true).apply {
+        opt.audioCount = 1
+        opt.videoCount = 0
+        opt.textCount = 0
+    }
+
     override fun makeCall(
         accountId: SipAccountId,
         destination: String,
@@ -239,7 +310,7 @@ internal class Pjsua2EndpointBackend : EndpointBackend {
         val id = UUID.randomUUID().toString()
         val call = NativeCall(id, accountId, destination, CallDirection.OUTGOING, account, -1, callback)
         calls[id] = call
-        val prm = CallOpParam(true)
+        val prm = voiceCallOpParam()
         try {
             call.makeCall(destination, prm)
         } catch (e: Exception) {
@@ -264,7 +335,9 @@ internal class Pjsua2EndpointBackend : EndpointBackend {
 
     override fun hangupCall(callId: String) {
         val call = calls[callId] ?: return
-        val prm = CallOpParam(true)
+        Log.i("YeyoFoneCall", "call=$callId localHangupRequested=true")
+        if (verboseDiagnostics) call.logFinalMediaStats()
+        val prm = voiceCallOpParam()
         try {
             call.hangup(prm)
         } catch (_: Exception) {
@@ -276,7 +349,7 @@ internal class Pjsua2EndpointBackend : EndpointBackend {
 
     override fun answerCall(callId: String) {
         val call = calls[callId] ?: return
-        val prm = CallOpParam(true).apply { statusCode = 200 }
+        val prm = voiceCallOpParam().apply { statusCode = 200 }
         try {
             call.answer(prm)
         } catch (_: Exception) {
@@ -301,7 +374,7 @@ internal class Pjsua2EndpointBackend : EndpointBackend {
 
     override fun transferCall(callId: String, destination: String) {
         val call = checkNotNull(calls[callId]) { "Native call does not exist" }
-        val prm = CallOpParam(true)
+        val prm = voiceCallOpParam()
         try {
             call.xfer(destination, prm)
         } finally {
@@ -313,7 +386,7 @@ internal class Pjsua2EndpointBackend : EndpointBackend {
         require(callId != destinationCallId) { "Attended transfer requires two different calls" }
         val call = checkNotNull(calls[callId]) { "Native source call does not exist" }
         val destinationCall = checkNotNull(calls[destinationCallId]) { "Native destination call does not exist" }
-        val prm = CallOpParam(true)
+        val prm = voiceCallOpParam()
         try {
             call.xferReplaces(destinationCall, prm)
         } finally {
@@ -386,7 +459,7 @@ internal class Pjsua2EndpointBackend : EndpointBackend {
                 }.onFailure { Log.w(MEDIA_LOG_TAG, "call=$callId pre-hold detach skipped", it) }
             }
         }
-        val prm = CallOpParam(true)
+        val prm = voiceCallOpParam()
         try {
             if (held) {
                 call.setHold(prm)
@@ -421,7 +494,7 @@ internal class Pjsua2EndpointBackend : EndpointBackend {
             val listener = callEventCallback
             if (listener == null) {
                 val call = org.pjsip.pjsua2.Call(this, prm.callId)
-                val op = CallOpParam(true).apply { statusCode = 486 }
+                val op = voiceCallOpParam().apply { statusCode = 486 }
                 try {
                     call.hangup(op)
                 } catch (_: Exception) {
@@ -437,7 +510,7 @@ internal class Pjsua2EndpointBackend : EndpointBackend {
             call.relayCallId = runCatching { relayCallIdFromInvite(prm.rdata.wholeMsg) }.getOrNull()
             calls[callId] = call
             runCatching { call.getInfo().remoteUri }.getOrNull()?.let { call.remoteUri = it }
-            val ringing = CallOpParam(true).apply { statusCode = 180 }
+            val ringing = voiceCallOpParam().apply { statusCode = 180 }
             try {
                 call.answer(ringing)
             } catch (_: Exception) {
@@ -464,6 +537,8 @@ internal class Pjsua2EndpointBackend : EndpointBackend {
         fun reportState() {
             val info = runCatching { getInfo() }.getOrNull()
             val invState = info?.state ?: pjsip_inv_state.PJSIP_INV_STATE_DISCONNECTED
+            // Numeric signaling details only: never log peer URIs or SIP message bodies.
+            Log.i("YeyoFoneCall", "call=$id direction=$direction state=$invState code=${info?.lastStatusCode ?: 0}")
             callback(
                 NativeCallEvent(
                     id,
@@ -484,6 +559,23 @@ internal class Pjsua2EndpointBackend : EndpointBackend {
         }
 
         override fun onCallState(prm: OnCallStateParam) = reportState()
+
+        override fun onCallTsxState(prm: OnCallTsxStateParam) {
+            if (!verboseDiagnostics) return
+            val event = prm.e.body.tsxState
+            val transaction = event.tsx
+            Log.i(
+                "YeyoFoneCall",
+                "call=$id method=${transaction.method} role=${transaction.role} " +
+                    "state=${transaction.state} code=${transaction.statusCode} event=${event.type}",
+            )
+            if (transaction.method == "BYE" && event.type == pjsip_event_id_e.PJSIP_EVENT_RX_MSG) {
+                val causes = sipReasonCauses(event.src.rdata.wholeMsg)
+                Log.i("YeyoFoneCall", "call=$id remoteHangup=true causes=${causes.ifEmpty { "unspecified" }}")
+                // Still inside the dialog, so the media session is alive and its counters readable.
+                logFinalMediaStats()
+            }
+        }
 
         override fun onCallTransferStatus(prm: OnCallTransferStatusParam) {
             transferEventCallback?.invoke(
@@ -557,6 +649,29 @@ internal class Pjsua2EndpointBackend : EndpointBackend {
             mediaEventCallback?.invoke(NativeMediaEvent(id, muted, localHold))
         }
 
+        /**
+         * One line of hard RTP evidence per call, emitted as the call tears down: whether packets
+         * actually left and arrived, and which source they arrived from. Without it a silent call
+         * cannot be told apart from a call whose media never reached the network.
+         */
+        fun logFinalMediaStats() {
+            runCatching {
+                val stat = getStreamStat(0)
+                val transport = getMedTransportInfo(0)
+                try {
+                    Log.i(
+                        MEDIA_LOG_TAG,
+                        "call=$id direction=$direction rtpTx=${stat.rtcp.txStat.pkt} rtpRx=${stat.rtcp.rxStat.pkt} " +
+                            "rxLoss=${stat.rtcp.rxStat.loss} rxDiscard=${stat.rtcp.rxStat.discard} " +
+                            "jbufEmpty=${stat.jbuf.avgBurst} sourceRtp=${transport.srcRtpName}",
+                    )
+                } finally {
+                    transport.delete()
+                    stat.delete()
+                }
+            }.onFailure { Log.w(MEDIA_LOG_TAG, "call=$id final media stats unavailable", it) }
+        }
+
         fun logAudioTransport() {
             runCatching {
                 val stream = getStreamInfo(0)
@@ -593,7 +708,9 @@ internal class Pjsua2EndpointBackend : EndpointBackend {
                 Log.i(
                     MEDIA_LOG_TAG,
                     "call=$callId sndActive=$active callPort=${callPort.portId}->${callPort.listeners.joinToString()} " +
-                        "capturePort=${capturePort.portId}->${capturePort.listeners.joinToString()}",
+                        "capturePort=${capturePort.portId}->${capturePort.listeners.joinToString()} " +
+                        "callRxLevel=${audio.rxLevel} callTxLevel=${audio.txLevel} " +
+                        "captureRxLevel=${capture.rxLevel} captureTxLevel=${capture.txLevel}",
                 )
             } finally {
                 callPort.delete()
@@ -646,6 +763,17 @@ internal fun relayCallIdFromInvite(message: String): String? {
 private const val RELAY_CALL_ID_HEADER = "X-Yeyo-Call-ID"
 private val RELAY_ID_PATTERN = Regex("^[A-Za-z0-9_.@+-]{1,128}$")
 
+/** Only standardized numeric causes are safe to log; reason text can contain peer identities. */
+internal fun sipReasonCauses(message: String): String =
+    message.replace("\r\n", "\n").substringBefore("\n\n")
+        .lineSequence().drop(1)
+        .filter { it.substringBefore(':').trim().equals("Reason", ignoreCase = true) }
+        .flatMap { it.substringAfter(':').split(',').asSequence() }
+        .mapNotNull { reason ->
+            Regex("^\\s*(SIP|Q\\.850)\\s*;\\s*cause\\s*=\\s*(\\d{1,3})(?=\\s*(?:;|$))", RegexOption.IGNORE_CASE)
+                .find(reason)?.let { "${it.groupValues[1].uppercase()}:${it.groupValues[2].toInt()}" }
+        }.joinToString(",")
+
 internal fun SipTransport.toPjsipTransportType(): Int = when (this) {
     SipTransport.UDP -> pjsip_transport_type_e.PJSIP_TRANSPORT_UDP
     SipTransport.TCP -> pjsip_transport_type_e.PJSIP_TRANSPORT_TCP
@@ -676,3 +804,5 @@ private const val TLS_LOG_TAG = "YeyoFoneTls"
 // pjsua_acc_config.srtp_secure_signaling: 1 = require TLS on the first hop (2 would demand sips:).
 private const val SRTP_SECURE_SIGNALING_TLS_HOP = 1
 private const val REGISTRATION_LOG_TAG = "YeyoFoneRegistration"
+private const val SIP_LOG_TAG = "YeyoFoneSip"
+private const val SIP_TRACE_LOG_TAG = "YeyoFoneSipTrace"
