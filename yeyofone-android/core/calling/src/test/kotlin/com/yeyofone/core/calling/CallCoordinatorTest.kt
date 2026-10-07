@@ -1,7 +1,9 @@
 package com.yeyofone.core.calling
 
 import com.yeyofone.core.account.AccountDraft
+import com.yeyofone.core.account.AccountPreferencesRepository
 import com.yeyofone.core.account.AccountRepository
+import com.yeyofone.core.model.AccountPreferences
 import com.yeyofone.core.model.CallDirection
 import com.yeyofone.core.model.CallHistoryEntry
 import com.yeyofone.core.model.CallHistoryId
@@ -152,6 +154,114 @@ class CallCoordinatorTest {
         runCurrent()
 
         assertEquals("relay-123", coordinator.sessions.value.single().relayCallId)
+    }
+
+    @Test
+    fun `allow incoming disabled rejects a new incoming call without ever ringing it`() = runTest {
+        val id = SipAccountId("one")
+        val gateway = FakeGateway()
+        val prefs = FakePreferences(id to AccountPreferences(allowIncoming = false))
+        val coordinator = CallCoordinator(FakeAccounts(mapOf(id to account(id))), gateway, backgroundScope, preferences = prefs)
+        runCurrent()
+
+        gateway.emit("incoming-1", id, PJSIP_INV_STATE_INCOMING, 0, direction = CallDirection.INCOMING)
+        runCurrent()
+
+        assertTrue(gateway.hungUp.contains("incoming-1"))
+        assertTrue(gateway.answered.isEmpty())
+        assertEquals(CallState.Disconnecting, coordinator.sessions.value.single().state)
+    }
+
+    @Test
+    fun `do not disturb rejects a new incoming call`() = runTest {
+        val id = SipAccountId("one")
+        val gateway = FakeGateway()
+        val prefs = FakePreferences(id to AccountPreferences(doNotDisturb = true))
+        val coordinator = CallCoordinator(FakeAccounts(mapOf(id to account(id))), gateway, backgroundScope, preferences = prefs)
+        runCurrent()
+
+        gateway.emit("incoming-1", id, PJSIP_INV_STATE_INCOMING, 0, direction = CallDirection.INCOMING)
+        runCurrent()
+
+        assertTrue(gateway.hungUp.contains("incoming-1"))
+        assertTrue(gateway.answered.isEmpty())
+    }
+
+    @Test
+    fun `do not disturb still records the call in history as declined`() = runTest {
+        val id = SipAccountId("one")
+        val gateway = FakeGateway()
+        val history = FakeHistory()
+        val prefs = FakePreferences(id to AccountPreferences(doNotDisturb = true))
+        val coordinator = CallCoordinator(FakeAccounts(mapOf(id to account(id))), gateway, backgroundScope, history, prefs)
+        runCurrent()
+
+        gateway.emit("incoming-1", id, PJSIP_INV_STATE_INCOMING, 0, direction = CallDirection.INCOMING)
+        runCurrent()
+
+        assertTrue(history.entries.isNotEmpty())
+    }
+
+    @Test
+    fun `auto-answer answers a new incoming call without user interaction`() = runTest {
+        val id = SipAccountId("one")
+        val gateway = FakeGateway()
+        val prefs = FakePreferences(id to AccountPreferences(autoAnswer = true))
+        val coordinator = CallCoordinator(FakeAccounts(mapOf(id to account(id))), gateway, backgroundScope, preferences = prefs)
+        runCurrent()
+
+        gateway.emit("incoming-1", id, PJSIP_INV_STATE_INCOMING, 0, direction = CallDirection.INCOMING)
+        runCurrent()
+
+        assertTrue(gateway.answered.contains("incoming-1"))
+        assertEquals(CallState.Answering, coordinator.sessions.value.single().state)
+    }
+
+    @Test
+    fun `default preferences neither block nor auto-answer an incoming call`() = runTest {
+        val id = SipAccountId("one")
+        val gateway = FakeGateway()
+        val coordinator = CallCoordinator(
+            FakeAccounts(mapOf(id to account(id))), gateway, backgroundScope, preferences = FakePreferences(),
+        )
+        runCurrent()
+
+        gateway.emit("incoming-1", id, PJSIP_INV_STATE_INCOMING, 0, direction = CallDirection.INCOMING)
+        runCurrent()
+
+        assertTrue(gateway.hungUp.isEmpty())
+        assertTrue(gateway.answered.isEmpty())
+        assertEquals(CallState.Incoming, coordinator.sessions.value.single().state)
+    }
+
+    @Test
+    fun `missing preferences repository leaves incoming calls unaffected`() = runTest {
+        val id = SipAccountId("one")
+        val gateway = FakeGateway()
+        val coordinator = CallCoordinator(FakeAccounts(mapOf(id to account(id))), gateway, backgroundScope)
+        runCurrent()
+
+        gateway.emit("incoming-1", id, PJSIP_INV_STATE_INCOMING, 0, direction = CallDirection.INCOMING)
+        runCurrent()
+
+        assertTrue(gateway.hungUp.isEmpty())
+        assertTrue(gateway.answered.isEmpty())
+    }
+
+    @Test
+    fun `do not disturb does not affect an outgoing call`() = runTest {
+        val id = SipAccountId("one")
+        val gateway = FakeGateway()
+        val prefs = FakePreferences(id to AccountPreferences(doNotDisturb = true))
+        val coordinator = CallCoordinator(FakeAccounts(mapOf(id to account(id))), gateway, backgroundScope, preferences = prefs)
+        runCurrent()
+
+        val callId = coordinator.call(id, "1001")
+        gateway.emit(callId.value, id, invState = PJSIP_INV_STATE_CONFIRMED, lastStatusCode = 200)
+        runCurrent()
+
+        assertEquals(CallState.Connected, coordinator.sessions.value.single().state)
+        assertTrue(gateway.hungUp.isEmpty())
     }
 
     @Test
@@ -487,6 +597,18 @@ class CallCoordinatorTest {
             mutableCallEvents.emit(
                 NativeCallEvent(callId, accountId, remoteUri, direction, invState, lastStatusCode, null, relayCallId),
             )
+        }
+    }
+
+    private class FakePreferences(vararg initial: Pair<SipAccountId, AccountPreferences>) : AccountPreferencesRepository {
+        private val state = mutableMapOf(*initial)
+        override fun observe(accountId: SipAccountId): Flow<AccountPreferences> =
+            MutableStateFlow(state[accountId] ?: AccountPreferences())
+        override suspend fun update(accountId: SipAccountId, transform: (AccountPreferences) -> AccountPreferences) {
+            state[accountId] = transform(state[accountId] ?: AccountPreferences())
+        }
+        override suspend fun delete(accountId: SipAccountId) {
+            state.remove(accountId)
         }
     }
 

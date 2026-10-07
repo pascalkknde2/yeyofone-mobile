@@ -1,15 +1,22 @@
 package com.yeyofone.app
 
 import com.yeyofone.core.account.AccountDraft
+import com.yeyofone.core.account.AccountPreferencesRepository
 import com.yeyofone.core.account.AccountRepository
+import com.yeyofone.core.model.AccountPreferences
 import com.yeyofone.core.model.AudioRoute
 import com.yeyofone.core.model.CallId
 import com.yeyofone.core.model.CallSession
 import com.yeyofone.core.model.MediaState
+import com.yeyofone.core.model.NatConfiguration
+import com.yeyofone.core.model.PreferenceToggle
 import com.yeyofone.core.model.RegistrationDetails
 import com.yeyofone.core.model.RegistrationState
+import com.yeyofone.core.model.SecurityMode
 import com.yeyofone.core.model.SipAccount
 import com.yeyofone.core.model.SipAccountId
+import com.yeyofone.core.model.SipServerConfiguration
+import com.yeyofone.core.model.TransportProtocol
 import com.yeyofone.core.voip.AudioRouteManager
 import com.yeyofone.core.voip.CallManager
 import com.yeyofone.core.voip.MediaManager
@@ -19,6 +26,7 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runCurrent
@@ -45,28 +53,30 @@ class YeyoFoneViewModelTest {
     }
 
     @Test
-    fun `setPreference creates an entry defaulting other toggles`() {
-        val viewModel = viewModel()
+    fun `setPreference creates an entry defaulting other toggles`() = runTest {
         val id = SipAccountId("one")
+        val viewModel = viewModel(accounts = FakeAccounts(mapOf(id to account(id))))
 
-        viewModel.setPreference(id, PreferenceToggle.AutoAnswer, false)
+        viewModel.setPreference(id, PreferenceToggle.AutoAnswer, true)
+        runCurrent()
 
         assertEquals(
-            AccountPreferences(autoAnswer = false, callWaiting = true, voicemail = false, doNotDisturb = false),
+            AccountPreferences(autoAnswer = true, callWaiting = true, voicemail = false, doNotDisturb = false),
             viewModel.accountPreferences.value[id.value],
         )
     }
 
     @Test
-    fun `setPreference updates only the targeted toggle and preserves others`() {
-        val viewModel = viewModel()
+    fun `setPreference updates only the targeted toggle and preserves others`() = runTest {
         val id = SipAccountId("one")
+        val viewModel = viewModel(accounts = FakeAccounts(mapOf(id to account(id))))
 
-        viewModel.setPreference(id, PreferenceToggle.AutoAnswer, false)
+        viewModel.setPreference(id, PreferenceToggle.AutoAnswer, true)
         viewModel.setPreference(id, PreferenceToggle.Voicemail, true)
+        runCurrent()
 
         assertEquals(
-            AccountPreferences(autoAnswer = false, callWaiting = true, voicemail = true, doNotDisturb = false),
+            AccountPreferences(autoAnswer = true, callWaiting = true, voicemail = true, doNotDisturb = false),
             viewModel.accountPreferences.value[id.value],
         )
     }
@@ -86,7 +96,7 @@ class YeyoFoneViewModelTest {
     @Test
     fun `setAccountEnabled delegates to AccountRepository setEnabled`() = runTest {
         val accounts = FakeAccounts()
-        val viewModel = YeyoFoneViewModel(accounts, FakeCalls(), FakeMedia(), FakeRoutes(), FakeRegistration())
+        val viewModel = YeyoFoneViewModel(accounts, FakeCalls(), FakeMedia(), FakeRoutes(), FakeRegistration(), FakePreferences())
         val id = SipAccountId("one")
 
         viewModel.setAccountEnabled(id, false)
@@ -106,18 +116,48 @@ class YeyoFoneViewModelTest {
         assertSame(flow, viewModel.observeRegistration(id))
     }
 
-    private fun viewModel(registration: FakeRegistration = FakeRegistration()) =
-        YeyoFoneViewModel(FakeAccounts(), FakeCalls(), FakeMedia(), FakeRoutes(), registration)
+    private fun viewModel(
+        registration: FakeRegistration = FakeRegistration(),
+        accounts: FakeAccounts = FakeAccounts(),
+        preferences: FakePreferences = FakePreferences(),
+    ) = YeyoFoneViewModel(accounts, FakeCalls(), FakeMedia(), FakeRoutes(), registration, preferences)
 
-    private class FakeAccounts : AccountRepository {
+    private fun account(id: SipAccountId) = SipAccount(
+        id = id,
+        displayName = "Test",
+        username = "1000",
+        server = SipServerConfiguration(
+            domain = "pbx.example.com",
+            registrarUri = "sip:pbx.example.com",
+            port = 5060,
+            transport = TransportProtocol.UDP,
+            securityMode = SecurityMode.ALLOW_INSECURE,
+        ),
+        nat = NatConfiguration(),
+    )
+
+    private class FakeAccounts(private val accounts: Map<SipAccountId, SipAccount> = emptyMap()) : AccountRepository {
         val setEnabledCalls = mutableListOf<Pair<SipAccountId, Boolean>>()
-        override fun observeAccounts(): Flow<List<SipAccount>> = MutableStateFlow(emptyList())
-        override fun observeAccount(id: SipAccountId): Flow<SipAccount?> = MutableStateFlow(null)
+        override fun observeAccounts(): Flow<List<SipAccount>> = MutableStateFlow(accounts.values.toList())
+        override fun observeAccount(id: SipAccountId): Flow<SipAccount?> = MutableStateFlow(accounts[id])
         override suspend fun save(draft: AccountDraft) = error("not used")
         override suspend fun setEnabled(id: SipAccountId, enabled: Boolean) {
             setEnabledCalls += id to enabled
         }
         override suspend fun delete(id: SipAccountId) = Unit
+    }
+
+    private class FakePreferences : AccountPreferencesRepository {
+        private val state = MutableStateFlow<Map<String, AccountPreferences>>(emptyMap())
+        override fun observe(accountId: SipAccountId): Flow<AccountPreferences> =
+            state.map { it[accountId.value] ?: AccountPreferences() }
+        override suspend fun update(accountId: SipAccountId, transform: (AccountPreferences) -> AccountPreferences) {
+            val current = state.value[accountId.value] ?: AccountPreferences()
+            state.value = state.value + (accountId.value to transform(current))
+        }
+        override suspend fun delete(accountId: SipAccountId) {
+            state.value = state.value - accountId.value
+        }
     }
 
     private class FakeCalls : CallManager {

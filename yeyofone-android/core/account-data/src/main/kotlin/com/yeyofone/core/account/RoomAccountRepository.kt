@@ -16,6 +16,7 @@ import kotlinx.coroutines.sync.withLock
 class RoomAccountRepository internal constructor(
     private val dao: AccountDao,
     private val secrets: SecretStore,
+    private val preferencesDao: AccountPreferencesDao? = null,
 ) : AccountRepository {
     private val writes = Mutex()
 
@@ -63,15 +64,18 @@ class RoomAccountRepository internal constructor(
     override suspend fun delete(id: SipAccountId) = writes.withLock {
         secrets.delete(id)
         dao.delete(id.value)
+        preferencesDao?.delete(id.value)
         Unit
     }
 
     companion object {
         fun create(context: Context): RoomAccountRepository {
             val applicationContext = context.applicationContext
+            val database = AccountDatabase.open(applicationContext)
             return RoomAccountRepository(
-                AccountDatabase.open(applicationContext).accounts(),
+                database.accounts(),
                 AndroidKeystoreSecretStore(applicationContext),
+                database.accountPreferences(),
             )
         }
 
