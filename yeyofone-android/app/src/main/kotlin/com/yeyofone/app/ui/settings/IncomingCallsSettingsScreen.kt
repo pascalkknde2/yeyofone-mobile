@@ -21,6 +21,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -31,6 +32,7 @@ import com.yeyofone.core.model.ForwardingState
 import com.yeyofone.core.model.PreferenceToggle
 import com.yeyofone.app.ForwardingClient
 import com.yeyofone.app.R
+import com.yeyofone.app.RingtonePreference
 import com.yeyofone.app.ui.theme.*
 
 private val Purple = Color(0xFF8B5CF6)
@@ -47,10 +49,9 @@ fun IncomingCallsSettingsScreen(
     onBack: () -> Unit,
     onToggle: (PreferenceToggle, Boolean) -> Unit,
     onSaveForwarding: (ForwardingState, (ForwardingClient.Result) -> Unit) -> Unit,
+    onOpenAudioSettings: () -> Unit,
 ) {
-    var ringtone by remember { mutableStateOf("Default") }
-    var playing by remember { mutableStateOf(false) }
-    var showRingtones by remember { mutableStateOf(false) }
+    val context = LocalContext.current
     var showForwarding by remember { mutableStateOf(false) }
     var forwardingEnabled by remember { mutableStateOf(false) }
     var forwardingNumber by remember { mutableStateOf("") }
@@ -71,14 +72,11 @@ fun IncomingCallsSettingsScreen(
                     IncomingGroup(stringResource(R.string.general_section)) {
                         IncomingToggleRow(Icons.Default.Notifications, AccentBlue, PrimaryLight, R.string.allow_incoming_calls, R.string.allow_incoming_calls_subtitle, preferences.allowIncoming) { onToggle(PreferenceToggle.AllowIncoming, it) }
                         IncomingDivider()
-                        Row(Modifier.fillMaxWidth().clickable { showRingtones = true }.padding(horizontal = 16.dp, vertical = 14.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Row(Modifier.fillMaxWidth().clickable(onClick = onOpenAudioSettings).padding(horizontal = 16.dp, vertical = 14.dp), verticalAlignment = Alignment.CenterVertically) {
                             IncomingIcon(Icons.Default.MusicNote, RingtoneOrange, RingtoneOrangeLight)
                             Column(Modifier.weight(1f).padding(start = 16.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                                 Text(stringResource(R.string.ringtone_setting), fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = TextPrimary)
-                                Text(ringtone, fontSize = 13.sp, color = TextSecondary)
-                            }
-                            IconButton(onClick = { playing = !playing }) {
-                                Icon(if (playing) Icons.Default.Notifications else Icons.Default.MusicNote, stringResource(R.string.preview_ringtone), tint = AccentBlue)
+                                Text(RingtonePreference.title(context), fontSize = 13.sp, color = TextSecondary)
                             }
                             Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null, tint = InactiveGray)
                         }
@@ -130,20 +128,6 @@ fun IncomingCallsSettingsScreen(
         }
     }
 
-    if (showRingtones) {
-        val choices = listOf("Default", "Classic", "Digital", "Silent")
-        AlertDialog(
-            onDismissRequest = { showRingtones = false },
-            title = { Text(stringResource(R.string.choose_ringtone)) },
-            text = { Column { choices.forEach { choice ->
-                Row(Modifier.fillMaxWidth().clickable { ringtone = choice; showRingtones = false }.padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-                    RadioButton(selected = ringtone == choice, onClick = { ringtone = choice; showRingtones = false })
-                    Text(choice, color = TextPrimary)
-                }
-            } } },
-            confirmButton = { TextButton(onClick = { showRingtones = false }) { Text(stringResource(R.string.cancel)) } },
-        )
-    }
     if (showForwarding) {
         val invalidNumberMessage = stringResource(R.string.call_forwarding_invalid_number)
         val saveFailedMessage = stringResource(R.string.call_forwarding_save_failed)

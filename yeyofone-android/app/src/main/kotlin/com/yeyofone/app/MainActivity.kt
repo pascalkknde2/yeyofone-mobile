@@ -444,7 +444,12 @@ private fun AccountsApp(
             onRecordingsClick = viewModel::showRecordings,
             onNavigationItemSelected = navigateFromMenu,
         )
-        AppScreen.AudioSettings -> AudioSettingsScreen(onBack = viewModel::showSettings)
+        AppScreen.AudioSettings -> AudioSettingsScreen(
+            availableRoutes = state.availableRoutes,
+            selectedRoute = state.selectedRoute,
+            onSelectRoute = viewModel::selectAudioRoute,
+            onBack = viewModel::showSettings,
+        )
         AppScreen.VideoSettings -> VideoSettingsScreen(onBack = viewModel::showSettings)
         AppScreen.IncomingCallsSettings -> {
             val account = state.accounts.firstOrNull()
@@ -459,6 +464,7 @@ private fun AccountsApp(
                 onSaveForwarding = { newState, onResult ->
                     account?.let { viewModel.setForwarding(it, newState, onResult) } ?: onResult(ForwardingClient.Result.NotConfigured)
                 },
+                onOpenAudioSettings = viewModel::showAudioSettings,
             )
         }
         AppScreen.LanguageSettings -> LanguageSettingsScreen(onBack = viewModel::showSettings)
@@ -963,7 +969,7 @@ private fun android.content.Context.hasMicrophone() =
 private const val NAVIGATION_SCRIM_API_26 = 0xFF0F172A.toInt()
 
 @Composable
-private fun AudioRoute.label(): String = when (this) {
+internal fun AudioRoute.label(): String = when (this) {
     AudioRoute.Earpiece -> stringResource(R.string.earpiece)
     AudioRoute.Speaker -> stringResource(R.string.speaker)
     is AudioRoute.WiredHeadset -> name ?: stringResource(R.string.headset)
