@@ -62,8 +62,11 @@ fun IncomingCallScreen(
     actionsEnabled: Boolean = true,
     onMessage: (() -> Unit)? = null,
     onRemind: (() -> Unit)? = null,
+    contactName: String? = null,
 ) {
-    val caller = remoteUri.toSipIdentity()
+    // Falls back to the bare SIP display name/extension when no contact matches this caller's
+    // number (see CALL-FEATURES-AUDIT.md CONT-05).
+    val caller = remoteUri.toSipIdentity().let { it.copy(displayName = contactName ?: it.displayName) }
     Column(
         Modifier.fillMaxSize().background(Color.White).systemBarsPadding(),
         horizontalAlignment = Alignment.CenterHorizontally,

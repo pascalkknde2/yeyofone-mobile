@@ -6,10 +6,16 @@ import androidx.lifecycle.viewModelScope
 import com.yeyofone.core.account.AccountDraft
 import com.yeyofone.core.account.AccountPreferencesRepository
 import com.yeyofone.core.account.AccountRepository
+import com.yeyofone.core.account.ContactDraft
+import com.yeyofone.core.account.ContactRepository
+import com.yeyofone.core.account.ForwardingStateRepository
 import com.yeyofone.core.model.AccountPreferences
 import com.yeyofone.core.model.AudioRoute
 import com.yeyofone.core.model.CallId
 import com.yeyofone.core.model.CallSession
+import com.yeyofone.core.model.Contact
+import com.yeyofone.core.model.ContactId
+import com.yeyofone.core.model.ForwardingState
 import com.yeyofone.core.model.MediaState
 import com.yeyofone.core.model.PreferenceToggle
 import com.yeyofone.core.model.RegistrationState
@@ -34,6 +40,7 @@ import kotlinx.coroutines.launch
 sealed interface AppScreen {
     data object Home : AppScreen
     data object Accounts : AppScreen
+    data object Contacts : AppScreen
     data object History : AppScreen
     data object Chat : AppScreen
     data object Settings : AppScreen
@@ -72,6 +79,9 @@ class YeyoFoneViewModel(
     private val audioRoutes: AudioRouteManager,
     private val registration: RegistrationManager,
     private val preferencesRepo: AccountPreferencesRepository,
+    private val forwardingStateRepo: ForwardingStateRepository,
+    private val forwarding: ForwardingCoordinator,
+    private val contactsRepo: ContactRepository,
 ) : ViewModel() {
     private val screen = MutableStateFlow<AppScreen>(AppScreen.Home)
     private val activeCallId = MutableStateFlow<CallId?>(null)
@@ -123,6 +133,7 @@ class YeyoFoneViewModel(
 
     fun showHome() { screen.value = AppScreen.Home }
     fun showAccounts() { screen.value = AppScreen.Accounts }
+    fun showContacts() { screen.value = AppScreen.Contacts }
     fun showHistory() { screen.value = AppScreen.History }
     fun showChat() { screen.value = AppScreen.Chat }
     fun showSettings() { screen.value = AppScreen.Settings }
@@ -177,9 +188,39 @@ class YeyoFoneViewModel(
         }
     }
 
+    // Eager for the same reason as accountPreferences: a save should be readable from .value
+    // immediately, without requiring an active collector.
+    @OptIn(ExperimentalCoroutinesApi::class)
+    val forwardingState: StateFlow<Map<String, ForwardingState>> = accounts.observeAccounts().flatMapLatest { accountList ->
+        if (accountList.isEmpty()) {
+            flowOf(emptyMap())
+        } else {
+            combine(
+                accountList.map { account -> forwardingStateRepo.observe(account.id).map { account.id.value to it } },
+            ) { pairs -> pairs.toMap() }
+        }
+    }.stateIn(viewModelScope, SharingStarted.Eagerly, emptyMap())
+
+    /** Pulls the relay's current forwarding state into the local cache; silent on failure. */
+    fun refreshForwarding(account: SipAccount) = launch { forwarding.refresh(account) }
+
+    /** Pushes a forwarding change to the relay; the cache only updates once the relay confirms it. */
+    fun setForwarding(account: SipAccount, state: ForwardingState, onResult: (ForwardingClient.Result) -> Unit) =
+        launch { onResult(forwarding.update(account, state)) }
+
     fun saveAccount(draft: AccountDraft, onResult: (Result<SipAccountId>) -> Unit) = launch {
         onResult(accounts.save(draft))
     }
+
+    // Eager, same reasoning as accountPreferences/forwardingState.
+    val contacts: StateFlow<List<Contact>> = contactsRepo.observeAll().stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
+
+    fun saveContact(draft: ContactDraft, onResult: (Result<ContactId>) -> Unit = {}) = launch {
+        onResult(runCatching { contactsRepo.save(draft) })
+    }
+
+    fun setContactFavorite(id: ContactId, favorite: Boolean) = launch { contactsRepo.setFavorite(id, favorite) }
+    fun deleteContact(id: ContactId) = launch { contactsRepo.delete(id) }
 
     fun startCall(accountId: SipAccountId, destination: String) = launch {
         audioRoutes.prepareForCall()
@@ -247,6 +288,9 @@ class YeyoFoneViewModel(
                 app.audioRouteManager,
                 app.registration,
                 app.accountPreferences,
+                app.forwardingState,
+                app.forwardingCoordinator,
+                app.contacts,
             ) as T
         }
     }

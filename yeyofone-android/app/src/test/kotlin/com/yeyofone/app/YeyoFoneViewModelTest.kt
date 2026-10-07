@@ -3,10 +3,16 @@ package com.yeyofone.app
 import com.yeyofone.core.account.AccountDraft
 import com.yeyofone.core.account.AccountPreferencesRepository
 import com.yeyofone.core.account.AccountRepository
+import com.yeyofone.core.account.ContactDraft
+import com.yeyofone.core.account.ContactRepository
+import com.yeyofone.core.account.ForwardingStateRepository
 import com.yeyofone.core.model.AccountPreferences
 import com.yeyofone.core.model.AudioRoute
 import com.yeyofone.core.model.CallId
 import com.yeyofone.core.model.CallSession
+import com.yeyofone.core.model.Contact
+import com.yeyofone.core.model.ContactId
+import com.yeyofone.core.model.ForwardingState
 import com.yeyofone.core.model.MediaState
 import com.yeyofone.core.model.NatConfiguration
 import com.yeyofone.core.model.PreferenceToggle
@@ -82,6 +88,89 @@ class YeyoFoneViewModelTest {
     }
 
     @Test
+    fun `refreshForwarding delegates to the coordinator`() = runTest {
+        val forwarding = FakeForwarding()
+        val id = SipAccountId("one")
+        val viewModel = YeyoFoneViewModel(
+            FakeAccounts(mapOf(id to account(id))), FakeCalls(), FakeMedia(), FakeRoutes(), FakeRegistration(),
+            FakePreferences(), FakeForwardingState(), forwarding, FakeContacts(),
+        )
+
+        viewModel.refreshForwarding(account(id))
+        runCurrent()
+
+        assertEquals(listOf(id), forwarding.refreshed)
+    }
+
+    @Test
+    fun `setForwarding delegates to the coordinator and reports the result`() = runTest {
+        val forwarding = FakeForwarding()
+        val id = SipAccountId("one")
+        val target = account(id)
+        val state = ForwardingState(enabled = true, destination = "1000")
+        forwarding.result = ForwardingClient.Result.Success(state)
+        val viewModel = YeyoFoneViewModel(
+            FakeAccounts(mapOf(id to target)), FakeCalls(), FakeMedia(), FakeRoutes(), FakeRegistration(),
+            FakePreferences(), FakeForwardingState(), forwarding, FakeContacts(),
+        )
+        var result: ForwardingClient.Result? = null
+
+        viewModel.setForwarding(target, state) { result = it }
+        runCurrent()
+
+        assertEquals(listOf(id to state), forwarding.updated)
+        assertEquals(ForwardingClient.Result.Success(state), result)
+    }
+
+    @Test
+    fun `saveContact adds a new contact and reports its id`() = runTest {
+        val contactsRepo = FakeContacts()
+        val viewModel = YeyoFoneViewModel(
+            FakeAccounts(), FakeCalls(), FakeMedia(), FakeRoutes(), FakeRegistration(), FakePreferences(),
+            FakeForwardingState(), FakeForwarding(), contactsRepo,
+        )
+        var result: Result<ContactId>? = null
+
+        viewModel.saveContact(ContactDraft(displayName = "Sarah Ndion", number = "1005")) { result = it }
+        runCurrent()
+
+        assertEquals(listOf("Sarah Ndion"), viewModel.contacts.value.map { it.displayName })
+        assertEquals(true, result?.isSuccess)
+    }
+
+    @Test
+    fun `setContactFavorite toggles favorite without touching other contacts`() = runTest {
+        val a = Contact(ContactId("a"), "Alice", "1001", favorite = false)
+        val b = Contact(ContactId("b"), "Bob", "1002", favorite = false)
+        val contactsRepo = FakeContacts(listOf(a, b))
+        val viewModel = YeyoFoneViewModel(
+            FakeAccounts(), FakeCalls(), FakeMedia(), FakeRoutes(), FakeRegistration(), FakePreferences(),
+            FakeForwardingState(), FakeForwarding(), contactsRepo,
+        )
+
+        viewModel.setContactFavorite(ContactId("a"), true)
+        runCurrent()
+
+        assertEquals(true, viewModel.contacts.value.first { it.id == ContactId("a") }.favorite)
+        assertEquals(false, viewModel.contacts.value.first { it.id == ContactId("b") }.favorite)
+    }
+
+    @Test
+    fun `deleteContact removes the contact`() = runTest {
+        val a = Contact(ContactId("a"), "Alice", "1001")
+        val contactsRepo = FakeContacts(listOf(a))
+        val viewModel = YeyoFoneViewModel(
+            FakeAccounts(), FakeCalls(), FakeMedia(), FakeRoutes(), FakeRegistration(), FakePreferences(),
+            FakeForwardingState(), FakeForwarding(), contactsRepo,
+        )
+
+        viewModel.deleteContact(ContactId("a"))
+        runCurrent()
+
+        assertEquals(emptyList(), viewModel.contacts.value)
+    }
+
+    @Test
     fun `reregister delegates to RegistrationManager register`() = runTest {
         val registration = FakeRegistration()
         val viewModel = viewModel(registration)
@@ -96,7 +185,10 @@ class YeyoFoneViewModelTest {
     @Test
     fun `setAccountEnabled delegates to AccountRepository setEnabled`() = runTest {
         val accounts = FakeAccounts()
-        val viewModel = YeyoFoneViewModel(accounts, FakeCalls(), FakeMedia(), FakeRoutes(), FakeRegistration(), FakePreferences())
+        val viewModel = YeyoFoneViewModel(
+            accounts, FakeCalls(), FakeMedia(), FakeRoutes(), FakeRegistration(), FakePreferences(), FakeForwardingState(), FakeForwarding(),
+            FakeContacts(),
+        )
         val id = SipAccountId("one")
 
         viewModel.setAccountEnabled(id, false)
@@ -109,7 +201,10 @@ class YeyoFoneViewModelTest {
     fun `answerWaitingCall holds the current call before answering the waiting one`() = runTest {
         val calls = FakeCalls()
         val media = FakeMedia()
-        val viewModel = YeyoFoneViewModel(FakeAccounts(), calls, media, FakeRoutes(), FakeRegistration(), FakePreferences())
+        val viewModel = YeyoFoneViewModel(
+            FakeAccounts(), calls, media, FakeRoutes(), FakeRegistration(), FakePreferences(), FakeForwardingState(), FakeForwarding(),
+            FakeContacts(),
+        )
         val current = CallId("current")
         val waiting = CallId("waiting")
 
@@ -124,7 +219,10 @@ class YeyoFoneViewModelTest {
     fun `answerWaitingCall with no current call just answers`() = runTest {
         val calls = FakeCalls()
         val media = FakeMedia()
-        val viewModel = YeyoFoneViewModel(FakeAccounts(), calls, media, FakeRoutes(), FakeRegistration(), FakePreferences())
+        val viewModel = YeyoFoneViewModel(
+            FakeAccounts(), calls, media, FakeRoutes(), FakeRegistration(), FakePreferences(), FakeForwardingState(), FakeForwarding(),
+            FakeContacts(),
+        )
         val waiting = CallId("waiting")
 
         viewModel.answerWaitingCall(waiting, null)
@@ -137,7 +235,10 @@ class YeyoFoneViewModelTest {
     @Test
     fun `swapActiveCall holds the current call and resumes the other`() = runTest {
         val media = FakeMedia()
-        val viewModel = YeyoFoneViewModel(FakeAccounts(), FakeCalls(), media, FakeRoutes(), FakeRegistration(), FakePreferences())
+        val viewModel = YeyoFoneViewModel(
+            FakeAccounts(), FakeCalls(), media, FakeRoutes(), FakeRegistration(), FakePreferences(), FakeForwardingState(), FakeForwarding(),
+            FakeContacts(),
+        )
         val current = CallId("current")
         val other = CallId("other")
 
@@ -162,7 +263,10 @@ class YeyoFoneViewModelTest {
         registration: FakeRegistration = FakeRegistration(),
         accounts: FakeAccounts = FakeAccounts(),
         preferences: FakePreferences = FakePreferences(),
-    ) = YeyoFoneViewModel(accounts, FakeCalls(), FakeMedia(), FakeRoutes(), registration, preferences)
+    ) = YeyoFoneViewModel(
+        accounts, FakeCalls(), FakeMedia(), FakeRoutes(), registration, preferences, FakeForwardingState(), FakeForwarding(),
+        FakeContacts(),
+    )
 
     private fun account(id: SipAccountId) = SipAccount(
         id = id,
@@ -199,6 +303,51 @@ class YeyoFoneViewModelTest {
         }
         override suspend fun delete(accountId: SipAccountId) {
             state.value = state.value - accountId.value
+        }
+    }
+
+    private class FakeForwardingState : ForwardingStateRepository {
+        private val state = MutableStateFlow<Map<String, ForwardingState>>(emptyMap())
+        override fun observe(accountId: SipAccountId): Flow<ForwardingState> =
+            state.map { it[accountId.value] ?: ForwardingState() }
+        override suspend fun save(accountId: SipAccountId, state: ForwardingState) {
+            this.state.value = this.state.value + (accountId.value to state)
+        }
+        override suspend fun delete(accountId: SipAccountId) {
+            state.value = state.value - accountId.value
+        }
+    }
+
+    private class FakeForwarding : ForwardingCoordinator {
+        val refreshed = mutableListOf<SipAccountId>()
+        val updated = mutableListOf<Pair<SipAccountId, ForwardingState>>()
+        var result: ForwardingClient.Result = ForwardingClient.Result.NotConfigured
+        override suspend fun refresh(account: SipAccount) { refreshed += account.id }
+        override suspend fun update(account: SipAccount, state: ForwardingState): ForwardingClient.Result {
+            updated += account.id to state
+            return result
+        }
+    }
+
+    private class FakeContacts(seed: List<Contact> = emptyList()) : ContactRepository {
+        private val state = MutableStateFlow(seed)
+        var nextId = 0
+
+        override fun observeAll(): Flow<List<Contact>> = state
+
+        override suspend fun save(draft: ContactDraft): ContactId {
+            val id = draft.id ?: ContactId("generated-${nextId++}")
+            val contact = Contact(id, draft.displayName, draft.number, draft.favorite)
+            state.value = state.value.filterNot { it.id == id } + contact
+            return id
+        }
+
+        override suspend fun setFavorite(id: ContactId, favorite: Boolean) {
+            state.value = state.value.map { if (it.id == id) it.copy(favorite = favorite) else it }
+        }
+
+        override suspend fun delete(id: ContactId) {
+            state.value = state.value.filterNot { it.id == id }
         }
     }
 

@@ -39,7 +39,7 @@ import androidx.compose.ui.unit.sp
 import com.yeyofone.app.R
 import com.yeyofone.app.ui.components.AccountCard
 import com.yeyofone.app.ui.components.BottomNavigationBar
-import com.yeyofone.app.ui.components.CONTACTS_NAVIGATION
+import com.yeyofone.app.ui.components.SETTINGS_NAVIGATION
 import com.yeyofone.app.ui.theme.AccentBlue
 import com.yeyofone.app.ui.theme.BackgroundGray
 import com.yeyofone.app.ui.theme.InactiveGray
@@ -65,7 +65,7 @@ fun AccountsScreen(
 
     Scaffold(
         containerColor = BackgroundGray,
-        bottomBar = { BottomNavigationBar(CONTACTS_NAVIGATION, onNavigationItemSelected) },
+        bottomBar = { BottomNavigationBar(SETTINGS_NAVIGATION, onNavigationItemSelected) },
     ) { padding ->
         Column(Modifier.fillMaxSize().padding(bottom = padding.calculateBottomPadding())) {
             Column(Modifier.fillMaxWidth().background(Color.White).statusBarsPadding()) {

@@ -29,6 +29,7 @@ import androidx.compose.material.icons.filled.Call
 import androidx.compose.material.icons.automirrored.filled.CallMissed
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.PhoneForwarded
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
@@ -70,6 +71,7 @@ import com.yeyofone.app.ui.theme.PrimaryLight
 import com.yeyofone.app.ui.theme.SuccessLight
 import com.yeyofone.app.ui.theme.TextPrimary
 import com.yeyofone.app.ui.theme.TextSecondary
+import com.yeyofone.core.model.Contact
 import com.yeyofone.core.model.SipAccount
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -78,15 +80,18 @@ import java.time.format.DateTimeFormatter
 fun MainScreen(
     primaryAccount: SipAccount?,
     isRegistered: Boolean,
-    accounts: List<SipAccount>,
+    favoriteContacts: List<Contact>,
     recentCalls: List<CallLog>,
     onKeypad: () -> Unit,
     onContacts: () -> Unit,
     onHistory: () -> Unit,
     onAccountClick: (SipAccount) -> Unit,
     onAddAccount: () -> Unit,
+    onCallContact: (Contact) -> Unit,
+    onAddContact: () -> Unit,
     onCallBack: (CallLog) -> Unit,
     onNavigationItemSelected: (Int) -> Unit,
+    forwardingDestination: String? = null,
 ) {
     Scaffold(
         containerColor = CardWhite,
@@ -98,6 +103,17 @@ fun MainScreen(
             verticalArrangement = Arrangement.spacedBy(24.dp),
         ) {
             item { MainHeader(primaryAccount?.displayName ?: stringResource(R.string.app_name), isRegistered) }
+            // FWD-04: a persistent reminder on the main screen, not only in Settings, so a user
+            // doesn't forget calls are being redirected elsewhere.
+            if (forwardingDestination != null) {
+                item {
+                    ForwardingBanner(
+                        accountNumber = primaryAccount?.username,
+                        destination = forwardingDestination,
+                        modifier = Modifier.padding(horizontal = 20.dp),
+                    )
+                }
+            }
             item {
                 Box(Modifier.padding(horizontal = 20.dp)) {
                     AccountStatusCard(primaryAccount) {
@@ -116,7 +132,7 @@ fun MainScreen(
             item {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     SectionHeader(stringResource(R.string.dashboard_accounts), stringResource(R.string.dashboard_edit), onContacts)
-                    AccountStrip(accounts, onAccountClick, onAddAccount)
+                    ContactStrip(favoriteContacts, onCallContact, onAddContact)
                 }
             }
             item { SectionHeader(stringResource(R.string.recent_calls), stringResource(R.string.see_all), onHistory) }
@@ -160,6 +176,28 @@ private fun MainHeader(name: String, online: Boolean) {
                     .background(if (online) AccentGreen else InactiveGray).border(2.dp, CardWhite, CircleShape),
             )
         }
+    }
+}
+
+@Composable
+private fun ForwardingBanner(accountNumber: String?, destination: String, modifier: Modifier = Modifier) {
+    Row(
+        modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(PrimaryLight)
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(Icons.Filled.PhoneForwarded, null, tint = AccentBlue, modifier = Modifier.size(18.dp))
+        Text(
+            if (accountNumber != null) {
+                stringResource(R.string.call_forwarding_banner, accountNumber, destination)
+            } else {
+                stringResource(R.string.call_forwarding_active, destination)
+            },
+            Modifier.padding(start = 10.dp),
+            color = AccentBlue,
+            fontSize = 13.sp,
+            fontWeight = FontWeight.Medium,
+        )
     }
 }
 
@@ -247,19 +285,19 @@ private fun SectionHeader(title: String, action: String, onAction: () -> Unit) {
 }
 
 @Composable
-private fun AccountStrip(accounts: List<SipAccount>, onClick: (SipAccount) -> Unit, onAdd: () -> Unit) {
+private fun ContactStrip(contacts: List<Contact>, onClick: (Contact) -> Unit, onAdd: () -> Unit) {
     LazyRow(contentPadding = PaddingValues(horizontal = 20.dp), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-        items(accounts, key = { it.id.value }) { account ->
+        items(contacts, key = { it.id.value }) { contact ->
             Column(
-                Modifier.width(72.dp).clip(RoundedCornerShape(12.dp)).clickable { onClick(account) },
+                Modifier.width(72.dp).clip(RoundedCornerShape(12.dp)).clickable { onClick(contact) },
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(7.dp),
             ) {
                 Box(
-                    Modifier.size(56.dp).clip(CircleShape).background(if (account.enabled) PrimaryLight else BackgroundGray),
+                    Modifier.size(56.dp).clip(CircleShape).background(PrimaryLight),
                     contentAlignment = Alignment.Center,
-                ) { Text(account.displayName.initials(), fontSize = 20.sp, fontWeight = FontWeight.SemiBold, color = AccentBlue) }
-                Text(account.displayName, fontSize = 12.sp, fontWeight = FontWeight.Medium, color = TextSecondary, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                ) { Text(contact.displayName.initials(), fontSize = 20.sp, fontWeight = FontWeight.SemiBold, color = AccentBlue) }
+                Text(contact.displayName, fontSize = 12.sp, fontWeight = FontWeight.Medium, color = TextSecondary, maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
         }
         item {

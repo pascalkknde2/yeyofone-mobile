@@ -25,8 +25,11 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.yeyofone.core.account.AccountValidator
 import com.yeyofone.core.model.AccountPreferences
+import com.yeyofone.core.model.ForwardingState
 import com.yeyofone.core.model.PreferenceToggle
+import com.yeyofone.app.ForwardingClient
 import com.yeyofone.app.R
 import com.yeyofone.app.ui.theme.*
 
@@ -40,15 +43,19 @@ private val SettingPinkLight = Color(0xFFFDF2F8)
 @Composable
 fun IncomingCallsSettingsScreen(
     preferences: AccountPreferences,
+    forwarding: ForwardingState,
     onBack: () -> Unit,
     onToggle: (PreferenceToggle, Boolean) -> Unit,
+    onSaveForwarding: (ForwardingState, (ForwardingClient.Result) -> Unit) -> Unit,
 ) {
     var ringtone by remember { mutableStateOf("Default") }
     var playing by remember { mutableStateOf(false) }
     var showRingtones by remember { mutableStateOf(false) }
     var showForwarding by remember { mutableStateOf(false) }
+    var forwardingEnabled by remember { mutableStateOf(false) }
     var forwardingNumber by remember { mutableStateOf("") }
-    var savedForwardingNumber by remember { mutableStateOf("") }
+    var forwardingError by remember { mutableStateOf<String?>(null) }
+    var forwardingSaving by remember { mutableStateOf(false) }
 
     Scaffold(containerColor = BackgroundGray) { insets ->
         Column(Modifier.fillMaxSize().padding(bottom = insets.calculateBottomPadding())) {
@@ -83,11 +90,28 @@ fun IncomingCallsSettingsScreen(
                     IncomingGroup(stringResource(R.string.call_handling_section)) {
                         IncomingToggleRow(Icons.Default.PhoneInTalk, AccentBlue, PrimaryLight, R.string.call_waiting_setting, R.string.call_waiting_subtitle, preferences.callWaiting) { onToggle(PreferenceToggle.CallWaiting, it) }
                         IncomingDivider()
-                        Row(Modifier.fillMaxWidth().clickable { forwardingNumber = savedForwardingNumber; showForwarding = true }.padding(horizontal = 16.dp, vertical = 14.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Row(
+                            Modifier.fillMaxWidth().clickable {
+                                forwardingEnabled = forwarding.enabled
+                                forwardingNumber = forwarding.destination.orEmpty()
+                                forwardingError = null
+                                showForwarding = true
+                            }.padding(horizontal = 16.dp, vertical = 14.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
                             IncomingIcon(Icons.Default.PhoneForwarded, AccentBlue, PrimaryLight)
                             Column(Modifier.weight(1f).padding(start = 16.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                                 Text(stringResource(R.string.call_forwarding_setting), fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = TextPrimary)
-                                Text(savedForwardingNumber.ifBlank { stringResource(R.string.call_forwarding_subtitle) }, fontSize = 13.sp, color = TextSecondary)
+                                val destination = forwarding.destination
+                                Text(
+                                    if (forwarding.enabled && !destination.isNullOrBlank()) {
+                                        stringResource(R.string.call_forwarding_active, destination)
+                                    } else {
+                                        stringResource(R.string.call_forwarding_subtitle)
+                                    },
+                                    fontSize = 13.sp,
+                                    color = TextSecondary,
+                                )
                             }
                             Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null, tint = InactiveGray)
                         }
@@ -121,12 +145,57 @@ fun IncomingCallsSettingsScreen(
         )
     }
     if (showForwarding) {
+        val invalidNumberMessage = stringResource(R.string.call_forwarding_invalid_number)
+        val saveFailedMessage = stringResource(R.string.call_forwarding_save_failed)
         AlertDialog(
-            onDismissRequest = { showForwarding = false },
+            onDismissRequest = { if (!forwardingSaving) showForwarding = false },
             title = { Text(stringResource(R.string.call_forwarding_setting)) },
-            text = { OutlinedTextField(value = forwardingNumber, onValueChange = { forwardingNumber = it }, label = { Text(stringResource(R.string.forward_to_number)) }, singleLine = true) },
-            confirmButton = { TextButton(onClick = { savedForwardingNumber = forwardingNumber.trim(); showForwarding = false }) { Text(stringResource(R.string.save)) } },
-            dismissButton = { TextButton(onClick = { showForwarding = false }) { Text(stringResource(R.string.cancel)) } },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                        Text(stringResource(R.string.call_forwarding_enable), Modifier.weight(1f), color = TextPrimary)
+                        Switch(
+                            checked = forwardingEnabled,
+                            onCheckedChange = { forwardingEnabled = it; forwardingError = null },
+                            enabled = !forwardingSaving,
+                        )
+                    }
+                    OutlinedTextField(
+                        value = forwardingNumber,
+                        onValueChange = { forwardingNumber = it; forwardingError = null },
+                        label = { Text(stringResource(R.string.forward_to_number)) },
+                        singleLine = true,
+                        enabled = forwardingEnabled && !forwardingSaving,
+                        isError = forwardingError != null,
+                    )
+                    forwardingError?.let { Text(it, color = MaterialTheme.colorScheme.error, fontSize = 13.sp) }
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    enabled = !forwardingSaving,
+                    onClick = {
+                        val trimmed = forwardingNumber.trim()
+                        if (forwardingEnabled && !AccountValidator.isValidPhoneDestination(trimmed)) {
+                            forwardingError = invalidNumberMessage
+                            return@TextButton
+                        }
+                        forwardingSaving = true
+                        val newState = ForwardingState(forwardingEnabled, trimmed.takeIf { forwardingEnabled })
+                        onSaveForwarding(newState) { result ->
+                            forwardingSaving = false
+                            if (result is ForwardingClient.Result.Success) {
+                                showForwarding = false
+                            } else {
+                                forwardingError = if (result is ForwardingClient.Result.Invalid) invalidNumberMessage else saveFailedMessage
+                            }
+                        }
+                    },
+                ) { Text(stringResource(R.string.save)) }
+            },
+            dismissButton = {
+                TextButton(onClick = { showForwarding = false }, enabled = !forwardingSaving) { Text(stringResource(R.string.cancel)) }
+            },
         )
     }
 }
