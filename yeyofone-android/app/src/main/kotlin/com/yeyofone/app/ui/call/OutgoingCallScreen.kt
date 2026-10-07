@@ -37,7 +37,6 @@ import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -87,12 +86,10 @@ fun OutgoingCallScreen(
     onMuteChange: (Boolean) -> Unit,
     onHoldChange: (Boolean) -> Unit,
     onDtmf: (Char) -> Unit,
-    onTransfer: (String) -> Unit,
+    onOpenTransfer: () -> Unit,
     onEndCall: () -> Unit,
 ) {
     var keypadOpen by remember(session.id) { mutableStateOf(false) }
-    var transferOpen by remember(session.id) { mutableStateOf(false) }
-    var transferDestination by remember(session.id) { mutableStateOf("") }
     var elapsedSeconds by remember(session.id) { mutableLongStateOf(callElapsedSeconds(session)) }
 
     LaunchedEffect(session.connectedAt, session.state) {
@@ -129,35 +126,7 @@ fun OutgoingCallScreen(
                 status = if (media.held) callStatus(CallState.Held) else if (session.connectedAt == null) callStatus(session.state) else formatDuration(elapsedSeconds),
             )
 
-            if (transferOpen) {
-                Text(
-                    text = transferDestination.ifEmpty { stringResource(R.string.transfer_destination) },
-                    color = if (transferDestination.isEmpty()) CallTextSecondary else CallTextPrimary,
-                    fontSize = if (transferDestination.isEmpty()) 16.sp else 32.sp,
-                    fontWeight = if (transferDestination.isEmpty()) FontWeight.Normal else FontWeight.Light,
-                    letterSpacing = if (transferDestination.isEmpty()) 0.sp else 2.sp,
-                    textAlign = TextAlign.Center,
-                )
-                DialPad(
-                    onNumberClick = { transferDestination += it },
-                    modifier = Modifier.padding(horizontal = 56.dp),
-                )
-                Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                    TextButton(onClick = {
-                        transferDestination = ""
-                        transferOpen = false
-                    }) { Text(stringResource(R.string.cancel)) }
-                    TextButton(
-                        enabled = transferDestination.isNotBlank(),
-                        onClick = {
-                            onTransfer(transferDestination)
-                            transferDestination = ""
-                            transferOpen = false
-                        },
-                    ) { Text(stringResource(R.string.transfer_now)) }
-                }
-                Spacer(Modifier.height(18.dp))
-            } else if (keypadOpen) {
+            if (keypadOpen) {
                 DialPad(
                     onNumberClick = { if (!media.held) onDtmf(it.first()) },
                     modifier = Modifier.padding(horizontal = 56.dp),
@@ -180,7 +149,6 @@ fun OutgoingCallScreen(
                 }
                 CallActionButton(Icons.Default.Dialpad, stringResource(R.string.keypad), keypadOpen) {
                     keypadOpen = !keypadOpen
-                    transferOpen = false
                 }
                 CallActionButton(if (media.muted) Icons.Default.MicOff else Icons.Default.Mic, stringResource(R.string.mute), media.muted, enabled = !media.held) {
                     onMuteChange(!media.muted)
@@ -192,8 +160,7 @@ fun OutgoingCallScreen(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 CallActionButton(Icons.Default.SwapHoriz, stringResource(R.string.transfer), enabled = !media.held) {
-                    transferOpen = true
-                    keypadOpen = false
+                    onOpenTransfer()
                 }
                 CallActionButton(Icons.Default.CallEnd, stringResource(R.string.hang_up), destructive = true) {
                     onEndCall()

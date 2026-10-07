@@ -132,6 +132,7 @@
     <string name="dtmf_digits_value">DTMF : %1$s</string>
     <string name="dtmf_unavailable_on_hold">Reprenez l’appel pour envoyer des tonalités</string>
     <string name="transfer">Transférer</string>
+    <string name="transfer_call_subtitle">Transfert de l’appel avec %1$s</string>
     <string name="transfer_destination">Destination du transfert</string>
     <string name="transfer_now">Transférer maintenant</string>
     <string name="transferring_status">Transfert…</string>

@@ -78,6 +78,7 @@ import com.yeyofone.app.data.model.toSipIdentity
 import com.yeyofone.app.data.repository.CallRepository
 import com.yeyofone.app.ui.accounts.AccountsScreen
 import com.yeyofone.app.ui.call.OutgoingCallScreen
+import com.yeyofone.app.ui.call.TransferCallScreen
 import com.yeyofone.app.ui.callended.CallEndedScreen
 import com.yeyofone.app.ui.callhistory.CallHistoryScreen
 import com.yeyofone.app.ui.callhistory.CallHistoryViewModel
@@ -120,6 +121,7 @@ import com.yeyofone.core.model.CallSession
 import com.yeyofone.core.model.CallState
 import com.yeyofone.core.model.Contact
 import com.yeyofone.core.model.ForwardingState
+import com.yeyofone.core.model.MediaState
 import com.yeyofone.core.model.NatConfiguration
 import com.yeyofone.core.model.RegistrationState
 import com.yeyofone.core.model.SecurityMode
@@ -404,7 +406,7 @@ private fun AccountsApp(
                 )
             } else {
                 val media by viewModel.observeMedia(activeSession.id).collectAsStateWithLifecycle()
-                OutgoingCallScreen(
+                OutgoingCallHost(
                     session = activeSession,
                     media = media,
                     speakerOn = state.selectedRoute == AudioRoute.Speaker,
@@ -639,7 +641,7 @@ private fun IncomingCallScreen(
 
     if (current.state != CallState.Incoming && current.state != CallState.Ringing && !current.state.isTerminal()) {
         val media by viewModel.observeMedia(current.id).collectAsStateWithLifecycle()
-        OutgoingCallScreen(
+        OutgoingCallHost(
             session = current,
             media = media,
             speakerOn = state.selectedRoute == AudioRoute.Speaker,
@@ -747,6 +749,50 @@ private fun IncomingCallScreen(
                 }
             }
         }
+    }
+}
+
+/**
+ * Hosts the active call screen and, when the user taps Transfer, swaps it for a dedicated
+ * [TransferCallScreen] instead of overlaying the dial pad on top of the call UI in place (the
+ * previous inline approach caused the transfer dial pad and the call content to overlap).
+ */
+@Composable
+private fun OutgoingCallHost(
+    session: CallSession,
+    media: MediaState,
+    speakerOn: Boolean,
+    onNavigateBack: () -> Unit,
+    onSpeakerChange: (Boolean) -> Unit,
+    onMuteChange: (Boolean) -> Unit,
+    onHoldChange: (Boolean) -> Unit,
+    onDtmf: (Char) -> Unit,
+    onTransfer: (String) -> Unit,
+    onEndCall: () -> Unit,
+) {
+    var transferOpen by remember(session.id) { mutableStateOf(false) }
+    if (transferOpen) {
+        TransferCallScreen(
+            currentCallerName = session.remoteUri.toSipIdentity().displayName,
+            onCancel = { transferOpen = false },
+            onTransfer = {
+                onTransfer(it)
+                transferOpen = false
+            },
+        )
+    } else {
+        OutgoingCallScreen(
+            session = session,
+            media = media,
+            speakerOn = speakerOn,
+            onNavigateBack = onNavigateBack,
+            onSpeakerChange = onSpeakerChange,
+            onMuteChange = onMuteChange,
+            onHoldChange = onHoldChange,
+            onDtmf = onDtmf,
+            onOpenTransfer = { transferOpen = true },
+            onEndCall = onEndCall,
+        )
     }
 }
 
