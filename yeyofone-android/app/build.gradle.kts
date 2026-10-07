@@ -10,6 +10,9 @@ plugins {
 android {
     namespace = "com.yeyofone.app"
     compileSdk = 36
+    // BUILD-03: pinned so CI and every dev machine resolve the identical build-tools release
+    // instead of whatever AGP picks from what's locally installed.
+    buildToolsVersion = "35.0.0"
 
     defaultConfig {
         applicationId = "com.yeyofone.app"
@@ -55,7 +58,6 @@ dependencies {
     // The PBX side still needs to trigger a push on an unanswered INVITE; see HANDOFF.md.
     implementation(platform("com.google.firebase:firebase-bom:34.19.0"))
     implementation("com.google.firebase:firebase-messaging")
-    implementation("com.google.firebase:firebase-analytics")
     // Keep Compose's bundled lint checks compatible with the Kotlin 2.2 toolchain.
     implementation(platform("androidx.compose:compose-bom:2025.10.01"))
     implementation("androidx.compose.foundation:foundation")

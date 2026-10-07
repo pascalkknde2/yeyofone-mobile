@@ -295,6 +295,11 @@
     <string name="on_hold_label">Gehalten</string>
     <string name="call_forwarding_setting">Rufumleitung</string>
     <string name="call_forwarding_subtitle">Anrufe an eine andere Nummer umleiten</string>
+    <string name="call_forwarding_active">Umleitung an %1$s</string>
+    <string name="call_forwarding_enable">Rufumleitung aktivieren</string>
+    <string name="call_forwarding_invalid_number">Gib eine gültige Telefonnummer oder Durchwahl ein</string>
+    <string name="call_forwarding_save_failed">Rufumleitung konnte nicht gespeichert werden. Versuch es erneut.</string>
+    <string name="call_forwarding_banner">Anrufe an %1$s werden an %2$s umgeleitet</string>
     <string name="do_not_disturb_setting">Nicht stören</string>
     <string name="do_not_disturb_subtitle">Eingehende Anrufe und Nachrichten stummschalten</string>
     <string name="flip_to_mute_setting">Umdrehen zum Stummschalten</string>
@@ -315,4 +320,20 @@
     <string name="recording_play">Aufnahme abspielen</string>
     <string name="recording_pause">Aufnahme pausieren</string>
     <string name="recording_playback_failed">Diese Aufnahme konnte nicht abgespielt werden.</string>
+    <string name="contacts_title">Kontakte</string>
+    <string name="edit_contact_title">Kontakt bearbeiten</string>
+    <string name="add_contact_title">Kontakt hinzufügen</string>
+    <string name="contact_name_label">Name</string>
+    <string name="contact_number_label">Nummer</string>
+    <string name="contact_favorite_label">Favorit</string>
+    <string name="contacts_search_hint">Kontakte suchen</string>
+    <string name="contacts_empty_title">Noch keine Kontakte</string>
+    <string name="contacts_empty_subtitle">Tippe auf +, um deinen ersten Kontakt hinzuzufügen</string>
+    <string name="contacts_search_empty_title">Keine Treffer</string>
+    <string name="cd_call_contact">Anrufen</string>
+    <string name="cd_favorite_contact">Favorit</string>
+    <string name="cd_edit_contact">Kontakt bearbeiten</string>
+    <string name="confirm_delete_contact">Diesen Kontakt löschen?</string>
+    <string name="dashboard_no_favorites">Noch keine Favoriten</string>
+    <string name="contact_fields_required">Name und Nummer sind erforderlich</string>
 </resources>

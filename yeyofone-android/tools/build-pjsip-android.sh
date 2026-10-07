@@ -15,6 +15,17 @@ fi
 : "${ANDROID_NDK_ROOT:?ANDROID_NDK_ROOT must point to Android NDK r28c}"
 : "${JAVA_HOME:?JAVA_HOME must point to JDK 17 or newer}"
 
+# BUILD-03: a different NDK major version can silently change codegen/ABI behavior between
+# machines, so verify what's actually provisioned instead of trusting the env var's name alone.
+ndk_props="$ANDROID_NDK_ROOT/source.properties"
+[ -f "$ndk_props" ] || { echo "ANDROID_NDK_ROOT ($ANDROID_NDK_ROOT) has no source.properties - does not look like an NDK install" >&2; exit 2; }
+ndk_revision=$(awk -F' = ' '/^Pkg.Revision/{print $2}' "$ndk_props")
+case "$ndk_revision" in
+    28.*) ;;
+    *) echo "ANDROID_NDK_ROOT is NDK $ndk_revision, expected the r28 family (r28c); a different major version is not verified to produce identical output" >&2; exit 2 ;;
+esac
+echo "Using Android NDK $ndk_revision from $ANDROID_NDK_ROOT (expected r28c)" >&2
+
 output_dir=$1
 case "$output_dir" in
     ""|/|.) echo "Refusing unsafe output directory: $output_dir" >&2; exit 2 ;;
