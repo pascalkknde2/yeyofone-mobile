@@ -140,6 +140,9 @@
     <string name="transfer_succeeded">Transfert accepté par %1$s</string>
     <string name="transfer_failed">Échec du transfert (%1$s) %2$s</string>
     <string name="consult_transfer">Transfert avec consultation</string>
+    <string name="call_options_hold_subtitle">Mettre cet appel en attente</string>
+    <string name="call_options_resume_subtitle">Reprendre l’appel en attente</string>
+    <string name="call_options_consult_subtitle">Appelez quelqu’un d’autre en privé, puis terminez ou revenez</string>
     <string name="consultation_destination">Destination de la consultation</string>
     <string name="start_consultation">Démarrer la consultation</string>
     <string name="consultation_call">Consultation : %1$s</string>
@@ -236,6 +239,7 @@
     <string name="enter_number">Saisir un numéro</string>
     <string name="backspace">Retour arrière</string>
     <string name="add_contact">Ajouter un contact</string>
+    <string name="more">Plus</string>
     <string name="more_options">Plus d’options</string>
     <string name="message">Message</string>
     <string name="remind_me">Me le rappeler</string>

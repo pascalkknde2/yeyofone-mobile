@@ -77,6 +77,7 @@ import com.yeyofone.app.data.model.toCallSummary
 import com.yeyofone.app.data.model.toSipIdentity
 import com.yeyofone.app.data.repository.CallRepository
 import com.yeyofone.app.ui.accounts.AccountsScreen
+import com.yeyofone.app.ui.call.CallOptionsScreen
 import com.yeyofone.app.ui.call.OutgoingCallScreen
 import com.yeyofone.app.ui.call.TransferCallScreen
 import com.yeyofone.app.ui.callended.CallEndedScreen
@@ -406,10 +407,14 @@ private fun AccountsApp(
                 )
             } else {
                 val media by viewModel.observeMedia(activeSession.id).collectAsStateWithLifecycle()
+                val consultationSession = state.sessions.firstOrNull { it.id == state.consultationCallId }
                 OutgoingCallHost(
                     session = activeSession,
                     media = media,
                     speakerOn = state.selectedRoute == AudioRoute.Speaker,
+                    availableRoutes = state.availableRoutes,
+                    selectedRoute = state.selectedRoute,
+                    consultationSession = consultationSession,
                     onNavigateBack = { viewModel.showAccount(account.id) },
                     onSpeakerChange = { enabled ->
                         val route = if (enabled) AudioRoute.Speaker else
@@ -418,8 +423,16 @@ private fun AccountsApp(
                     },
                     onMuteChange = { viewModel.setMuted(activeSession.id, it) },
                     onHoldChange = { viewModel.setHeld(activeSession.id, it) },
+                    onSelectRoute = viewModel::selectAudioRoute,
                     onDtmf = { viewModel.sendDtmf(activeSession.id, it) },
                     onTransfer = { viewModel.transfer(activeSession.id, it) },
+                    onStartConsultation = { viewModel.startConsultation(activeSession.accountId, it) },
+                    onCompleteTransfer = {
+                        consultationSession?.let { viewModel.completeTransfer(activeSession.id, it.id) }
+                    },
+                    onReturnToCaller = {
+                        consultationSession?.let { viewModel.returnToCaller(activeSession.id, it) }
+                    },
                     onEndCall = { viewModel.end(activeSession.id) },
                 )
             }
@@ -641,10 +654,14 @@ private fun IncomingCallScreen(
 
     if (current.state != CallState.Incoming && current.state != CallState.Ringing && !current.state.isTerminal()) {
         val media by viewModel.observeMedia(current.id).collectAsStateWithLifecycle()
+        val consultationSession = state.sessions.firstOrNull { it.id == state.consultationCallId }
         OutgoingCallHost(
             session = current,
             media = media,
             speakerOn = state.selectedRoute == AudioRoute.Speaker,
+            availableRoutes = state.availableRoutes,
+            selectedRoute = state.selectedRoute,
+            consultationSession = consultationSession,
             onNavigateBack = viewModel::showAccounts,
             onSpeakerChange = { enabled ->
                 val route = if (enabled) AudioRoute.Speaker else
@@ -653,8 +670,16 @@ private fun IncomingCallScreen(
             },
             onMuteChange = { viewModel.setMuted(current.id, it) },
             onHoldChange = { viewModel.setHeld(current.id, it) },
+            onSelectRoute = viewModel::selectAudioRoute,
             onDtmf = { viewModel.sendDtmf(current.id, it) },
             onTransfer = { viewModel.transfer(current.id, it) },
+            onStartConsultation = { viewModel.startConsultation(current.accountId, it) },
+            onCompleteTransfer = {
+                consultationSession?.let { viewModel.completeTransfer(current.id, it.id) }
+            },
+            onReturnToCaller = {
+                consultationSession?.let { viewModel.returnToCaller(current.id, it) }
+            },
             onEndCall = { viewModel.end(current.id) },
         )
         return
@@ -753,26 +778,35 @@ private fun IncomingCallScreen(
 }
 
 /**
- * Hosts the active call screen and, when the user taps Transfer, swaps it for a dedicated
- * [TransferCallScreen] instead of overlaying the dial pad on top of the call UI in place (the
- * previous inline approach caused the transfer dial pad and the call content to overlap).
+ * Hosts the active call screen and, when the user taps Transfer or More, swaps it for a
+ * dedicated [TransferCallScreen] or [CallOptionsScreen] instead of overlaying a dial pad or
+ * option list on top of the call UI in place (the previous inline approach caused the transfer
+ * dial pad and the call content to overlap).
  */
 @Composable
 private fun OutgoingCallHost(
     session: CallSession,
     media: MediaState,
     speakerOn: Boolean,
+    availableRoutes: List<AudioRoute>,
+    selectedRoute: AudioRoute?,
+    consultationSession: CallSession?,
     onNavigateBack: () -> Unit,
     onSpeakerChange: (Boolean) -> Unit,
     onMuteChange: (Boolean) -> Unit,
     onHoldChange: (Boolean) -> Unit,
+    onSelectRoute: (AudioRoute) -> Unit,
     onDtmf: (Char) -> Unit,
     onTransfer: (String) -> Unit,
+    onStartConsultation: (String) -> Unit,
+    onCompleteTransfer: () -> Unit,
+    onReturnToCaller: () -> Unit,
     onEndCall: () -> Unit,
 ) {
     var transferOpen by remember(session.id) { mutableStateOf(false) }
-    if (transferOpen) {
-        TransferCallScreen(
+    var moreOpen by remember(session.id) { mutableStateOf(false) }
+    when {
+        transferOpen -> TransferCallScreen(
             currentCallerName = session.remoteUri.toSipIdentity().displayName,
             onCancel = { transferOpen = false },
             onTransfer = {
@@ -780,8 +814,19 @@ private fun OutgoingCallHost(
                 transferOpen = false
             },
         )
-    } else {
-        OutgoingCallScreen(
+        moreOpen -> CallOptionsScreen(
+            held = media.held,
+            onHoldChange = onHoldChange,
+            availableRoutes = availableRoutes,
+            selectedRoute = selectedRoute,
+            onSelectRoute = onSelectRoute,
+            consultationSession = consultationSession,
+            onStartConsultation = onStartConsultation,
+            onCompleteTransfer = onCompleteTransfer,
+            onReturnToCaller = onReturnToCaller,
+            onCancel = { moreOpen = false },
+        )
+        else -> OutgoingCallScreen(
             session = session,
             media = media,
             speakerOn = speakerOn,
@@ -791,6 +836,7 @@ private fun OutgoingCallHost(
             onHoldChange = onHoldChange,
             onDtmf = onDtmf,
             onOpenTransfer = { transferOpen = true },
+            onOpenMore = { moreOpen = true },
             onEndCall = onEndCall,
         )
     }
@@ -1026,7 +1072,7 @@ internal fun AudioRoute.label(): String = when (this) {
     is AudioRoute.Bluetooth -> name
 }
 
-private fun CallState.statusLabel(): Int = when (this) {
+internal fun CallState.statusLabel(): Int = when (this) {
     CallState.Preparing, CallState.Calling -> R.string.calling_status
     CallState.EarlyMedia, CallState.Ringing, CallState.Incoming -> R.string.ringing_status
     CallState.Answering, CallState.Connecting -> R.string.connecting_status
