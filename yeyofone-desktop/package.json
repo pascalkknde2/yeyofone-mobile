@@ -1,0 +1,8 @@
+{
+  "name": "yeyofone-desktop",
+  "private": true,
+  "packageManager": "bun@1.4.2",
+  "scripts": {
+    "tauri": "bun run --cwd frontend tauri"
+  }
+}

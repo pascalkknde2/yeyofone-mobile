@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "phase": 6,
+  "platform": "macOS",
+  "architecture": "x86_64",
+  "nativeBuildInputs": {
+    "native/bridge.cpp": "55bbaa5e31c46d769bb6b71bc6fe45b22f01ad5666d8332df3074c744706017e",
+    "native/bridge.h": "b4155acfe15891ea6f03e37d9c3aee11df6936b462e066fc672e40a20ddcf2b6",
+    "native/CMakeLists.txt": "2bed73fee03de0c6dff0bb7bd81e01a51e64e5fd1d8367c1d04a97fb9c1e8e0d"
+  },
+  "nativeTests": {
+    "passed": 2
+  },
+  "rustTests": {
+    "passed": 38,
+    "ignoredVaultTest": 1
+  },
+  "frontendTests": {
+    "passed": 4
+  },
+  "provider": {
+    "host": "sysinfos.co.uk",
+    "extension": "1005",
+    "transport": "udp",
+    "port": 5060,
+    "registerSipCode": 200,
+    "expiresSeconds": 300,
+    "refreshSipCode": 200,
+    "unregisterSipCode": 200,
+    "unregisterExpiresSeconds": 0,
+    "reregisterSipCode": 200
+  },
+  "negativeFixtures": {
+    "dns": {
+      "failure": "dns",
+      "nativeCode": 70018,
+      "sipCode": 502
+    },
+    "selfSignedTls": {
+      "failure": "tls",
+      "nativeCode": 171173,
+      "sipCode": 503,
+      "automaticRetry": false
+    }
+  },
+  "unverified": [
+    "Windows",
+    "Linux",
+    "ARM",
+    "positive provider TLS/TCP",
+    "IPv6",
+    "physical network interruption",
+    "visual UI interaction",
+    "live audio/video"
+  ],
+  "appLaunch": {
+    "running": true,
+    "pid": 29348,
+    "visualUiVerified": false
+  }
+}

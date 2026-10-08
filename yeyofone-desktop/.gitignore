@@ -1,0 +1,10 @@
+/target/
+/frontend/node_modules/
+/frontend/dist/
+.DS_Store
+/src-tauri/gen/
+__pycache__/
+.native-tools/
+/cloudflare/recordings-worker/node_modules/
+/cloudflare/recordings-worker/.wrangler/
+/cloudflare/recordings-worker/.dev.vars*

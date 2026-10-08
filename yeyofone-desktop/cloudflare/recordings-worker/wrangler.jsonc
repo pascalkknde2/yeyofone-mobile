@@ -1,0 +1,14 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "yeyofone-recordings",
+  "main": "worker.js",
+  "compatibility_date": "2026-10-08",
+  "workers_dev": true,
+  "r2_buckets": [
+    {
+      "binding": "RECORDINGS",
+      "bucket_name": "yeyofone-recordings"
+    }
+  ],
+  "account_id": "6037c121a075ba7218b6ae95b79cb69a"
+}

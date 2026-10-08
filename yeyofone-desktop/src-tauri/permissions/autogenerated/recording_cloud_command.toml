@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-recording-cloud-command"
+description = "Enables the recording_cloud_command command without any pre-configured scope."
+commands.allow = ["recording_cloud_command"]
+
+[[permission]]
+identifier = "deny-recording-cloud-command"
+description = "Denies the recording_cloud_command command without any pre-configured scope."
+commands.deny = ["recording_cloud_command"]

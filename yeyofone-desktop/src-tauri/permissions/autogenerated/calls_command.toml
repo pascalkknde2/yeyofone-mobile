@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-calls-command"
+description = "Enables the calls_command command without any pre-configured scope."
+commands.allow = ["calls_command"]
+
+[[permission]]
+identifier = "deny-calls-command"
+description = "Denies the calls_command command without any pre-configured scope."
+commands.deny = ["calls_command"]

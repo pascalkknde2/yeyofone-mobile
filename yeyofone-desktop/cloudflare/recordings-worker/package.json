@@ -1,0 +1,15 @@
+{
+  "name": "yeyofone-recordings-worker",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "bun test",
+    "deploy": "wrangler deploy",
+    "dev": "wrangler dev",
+    "test:integration": "node integration-test.mjs"
+  },
+  "devDependencies": {
+    "miniflare": "5.20261006.1-alpha",
+    "wrangler": "4.149.0"
+  }
+}
