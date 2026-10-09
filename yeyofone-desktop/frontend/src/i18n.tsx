@@ -34,30 +34,6 @@ export function translate(text: string, language: Language): string {
     return `${language === "fr" ? "Poste" : language === "es" ? "Extensión" : "Durchwahl"} ${extension[1]}`;
   const patterns: [RegExp, Record<"fr" | "es" | "de", string>][] = [
     [
-      /^(.+) joined the preview room\.$/,
-      {
-        fr: "$1 a rejoint la salle de démonstration.",
-        es: "$1 se unió a la sala de muestra.",
-        de: "$1 ist dem Vorschauraum beigetreten.",
-      },
-    ],
-    [
-      /^(.+) has the floor in this preview\.$/,
-      {
-        fr: "$1 a la parole dans cet aperçu.",
-        es: "$1 tiene la palabra en esta vista previa.",
-        de: "$1 hat in dieser Vorschau das Wort.",
-      },
-    ],
-    [
-      /^Room focus: (.+)$/,
-      {
-        fr: "Sujet actuel : $1",
-        es: "Tema actual: $1",
-        de: "Aktuelles Thema: $1",
-      },
-    ],
-    [
       /^(\d+) sample recordings$/,
       {
         fr: "$1 enregistrements de démonstration",
@@ -80,18 +56,6 @@ export function translate(text: string, language: Language): string {
         es: "Abrir contacto $1",
         de: "Kontakt $1 öffnen",
       },
-    ],
-    [
-      /^Focus (.+)$/,
-      {
-        fr: "Mettre $1 au premier plan",
-        es: "Enfocar a $1",
-        de: "$1 fokussieren",
-      },
-    ],
-    [
-      /^Agenda: (.+)$/,
-      { fr: "Ordre du jour : $1", es: "Agenda: $1", de: "Agenda: $1" },
     ],
   ];
   for (const [pattern, labels] of patterns) {

@@ -6,7 +6,6 @@ import { useState, type ReactNode } from "react";
 import { createRoot } from "react-dom/client";
 import "./style.css";
 import "./sidebar.css";
-import { CallWindows, type CallWindowKind } from "./CallWindows";
 import { Dialer } from "./Dialer";
 import { LiveCall } from "./LiveCall";
 import { IncomingCall } from "./IncomingCall";
@@ -304,7 +303,7 @@ function App() {
     null,
   );
   const [routingPreview, setRoutingPreview] = useState(initialRoutingPreview);
-  const [callWindow, setCallWindow] = useState<CallWindowKind | null>(null);
+  const [dialerOpen, setDialerOpen] = useState(false);
   const [contactIndex, setContactIndex] = useState(0);
   const contact = people[contactIndex]!;
   const filtered = records.filter(
@@ -399,7 +398,7 @@ function App() {
             data-icon="phone"
             aria-label={t("Open phone dialer")}
             title={t("Make a call")}
-            onClick={() => setCallWindow("dialer")}
+            onClick={() => setDialerOpen(true)}
           >
             <span className="sidebar-icon-disc">
               <Icon name="phone" size={24} />
@@ -863,6 +862,42 @@ function App() {
             <h2>{t("Call recording storage")}</h2>
             {/* Call history reloads its list whenever it opens, so there's nothing to refresh here. */}
             <RecordingCloudSettings onChange={() => {}} />
+            <h2>{t("Calling features")}</h2>
+            <p>{t("Preview settings · Not saved to your phone system yet")}</p>
+            <div className="settings-features">
+              {(
+                [
+                  [
+                    "forwarding",
+                    "Call forwarding",
+                    "Send calls to another number when you’re busy or away",
+                    "arrow",
+                  ],
+                  [
+                    "ring-groups",
+                    "Ring groups",
+                    "Ring several extensions at once",
+                    "users",
+                  ],
+                  [
+                    "audio-conference",
+                    "Audio conference",
+                    "A voice-only room for a group call",
+                    "phone",
+                  ],
+                ] as const
+              ).map(([kind, label, description, icon]) => (
+                <button key={kind} onClick={() => setCallingFeature(kind)}>
+                  <span className="settings-features__icon">
+                    <Icon name={icon} size={20} />
+                  </span>
+                  <span>
+                    <strong>{t(label)}</strong>
+                    <small>{t(description)}</small>
+                  </span>
+                </button>
+              ))}
+            </div>
             <h2>{t("Appearance")}</h2>
             <p>{t("Light theme · Compact sidebar · Desktop dashboard")}</p>
           </section>
@@ -886,18 +921,9 @@ function App() {
       {conferenceOpen && (
         <ConferenceRoom onClose={() => setConferenceOpen(false)} />
       )}
-      <LiveCall onOpen={() => setCallWindow("dialer")} />
+      <LiveCall onOpen={() => setDialerOpen(true)} />
       <IncomingCall />
-      {callWindow &&
-        (callWindow === "dialer" ? (
-          <Dialer onClose={() => setCallWindow(null)} />
-        ) : (
-          <CallWindows
-            key={callWindow}
-            kind={callWindow}
-            onClose={() => setCallWindow(null)}
-          />
-        ))}
+      {dialerOpen && <Dialer onClose={() => setDialerOpen(false)} />}
     </div>
   );
 }

@@ -72,6 +72,10 @@
   font-size: 17px;
   font-weight: 600;
 }
+/* Focused programmatically when the room opens; it is not a control. */
+.room-title h2:focus {
+  outline: none;
+}
 .room-tabs {
   display: flex;
   gap: 4px;

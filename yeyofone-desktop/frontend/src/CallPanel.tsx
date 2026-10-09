@@ -1,7 +1,7 @@
 import { useState, useId } from "react";
 import { CallControlIcon } from "./CallControlIcon";
 import { RecordingWave } from "./RecordingStudio";
-import { CallIcon } from "./CallWindows";
+import { CallIcon } from "./CallIcon";
 import "./android-call.css";
 import { useLanguage } from "./i18n";
 import { callLabel, reasonLabel, callTime } from "./calls";

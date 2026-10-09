@@ -658,11 +658,6 @@ export const translations: Record<
     es: "Hacer una llamada",
     de: "Anrufen",
   },
-  "Video call": {
-    fr: "Appel vidéo",
-    es: "Videollamada",
-    de: "Videoanruf",
-  },
   "Video conference": {
     fr: "Visioconférence",
     es: "Videoconferencia",
@@ -1069,85 +1064,20 @@ export const translations: Record<
     es: "Pausar",
     de: "Pausieren",
   },
-  "Enter a number or extension": {
-    fr: "Saisissez un numéro ou un poste",
-    es: "Introduce un número o extensión",
-    de: "Nummer oder Durchwahl eingeben",
-  },
-  "Enter number": {
-    fr: "Saisir un numéro",
-    es: "Introducir número",
-    de: "Nummer eingeben",
-  },
-  "Phone number or extension": {
-    fr: "Numéro ou poste",
-    es: "Número o extensión",
-    de: "Nummer oder Durchwahl",
-  },
   "Delete last digit": {
     fr: "Effacer le dernier chiffre",
     es: "Borrar último dígito",
     de: "Letzte Ziffer löschen",
-  },
-  "Enter an extension or phone number, up to 32 characters.": {
-    fr: "Saisissez un numéro ou un poste de 32 caractères maximum.",
-    es: "Introduce un número o extensión de hasta 32 caracteres.",
-    de: "Geben Sie eine Nummer oder Durchwahl mit höchstens 32 Zeichen ein.",
-  },
-  From: {
-    fr: "Depuis",
-    es: "Desde",
-    de: "Von",
   },
   "Extension 1005": {
     fr: "Poste 1005",
     es: "Extensión 1005",
     de: "Durchwahl 1005",
   },
-  "Extension 1000": {
-    fr: "Poste 1000",
-    es: "Extensión 1000",
-    de: "Durchwahl 1000",
-  },
-  "Extension 1000 · Work": {
-    fr: "Poste 1000 · Professionnel",
-    es: "Extensión 1000 · Trabajo",
-    de: "Durchwahl 1000 · Arbeit",
-  },
   Call: {
     fr: "Appeler",
     es: "Llamar",
     de: "Anrufen",
-  },
-  "Interactive preview · No real call or media": {
-    fr: "Aperçu interactif · Aucun appel ni média réel",
-    es: "Vista previa interactiva · Sin llamadas ni medios reales",
-    de: "Interaktive Vorschau · Keine echten Anrufe oder Medien",
-  },
-  "Close call preview": {
-    fr: "Fermer l’aperçu d’appel",
-    es: "Cerrar vista previa de llamada",
-    de: "Anrufvorschau schließen",
-  },
-  "Voice call": {
-    fr: "Appel vocal",
-    es: "Llamada de voz",
-    de: "Sprachanruf",
-  },
-  "Voice call preview": {
-    fr: "Aperçu d’appel vocal",
-    es: "Vista previa de llamada de voz",
-    de: "Sprachanrufvorschau",
-  },
-  "Outgoing call preview": {
-    fr: "Aperçu d’appel sortant",
-    es: "Vista previa de llamada saliente",
-    de: "Vorschau eines ausgehenden Anrufs",
-  },
-  "Calling you…": {
-    fr: "Vous appelle…",
-    es: "Te está llamando…",
-    de: "Ruft Sie an…",
   },
   Answer: {
     fr: "Répondre",
@@ -1159,36 +1089,6 @@ export const translations: Record<
     es: "Rechazar",
     de: "Ablehnen",
   },
-  "Answer incoming call preview": {
-    fr: "Répondre à l’appel de démonstration",
-    es: "Responder a llamada de muestra",
-    de: "Beispielanruf annehmen",
-  },
-  "Decline incoming call preview": {
-    fr: "Refuser l’appel de démonstration",
-    es: "Rechazar llamada de muestra",
-    de: "Beispielanruf ablehnen",
-  },
-  "Answer to explore the call controls": {
-    fr: "Répondez pour découvrir les commandes",
-    es: "Responde para explorar los controles",
-    de: "Annehmen, um die Anrufsteuerung auszuprobieren",
-  },
-  "End call": {
-    fr: "Terminer l’appel",
-    es: "Finalizar llamada",
-    de: "Anruf beenden",
-  },
-  "End voice call preview": {
-    fr: "Terminer l’aperçu d’appel vocal",
-    es: "Finalizar vista previa de voz",
-    de: "Sprachanrufvorschau beenden",
-  },
-  "End video call preview": {
-    fr: "Terminer l’aperçu d’appel vidéo",
-    es: "Finalizar vista previa de vídeo",
-    de: "Videoanrufvorschau beenden",
-  },
   Mute: {
     fr: "Couper le micro",
     es: "Silenciar",
@@ -1199,20 +1099,10 @@ export const translations: Record<
     es: "Activar micrófono",
     de: "Stummschaltung aufheben",
   },
-  Speaker: {
-    fr: "Haut-parleur",
-    es: "Altavoz",
-    de: "Lautsprecher",
-  },
   Keypad: {
     fr: "Clavier",
     es: "Teclado",
     de: "Tastatur",
-  },
-  Video: {
-    fr: "Vidéo",
-    es: "Vídeo",
-    de: "Video",
   },
   "Camera off": {
     fr: "Caméra désactivée",
@@ -1223,51 +1113,6 @@ export const translations: Record<
     fr: "Caméra activée",
     es: "Cámara encendida",
     de: "Kamera an",
-  },
-  "Camera preview": {
-    fr: "Aperçu de la caméra",
-    es: "Vista previa de cámara",
-    de: "Kameravorschau",
-  },
-  "You · Camera preview": {
-    fr: "Vous · Aperçu de la caméra",
-    es: "Tú · Vista previa de cámara",
-    de: "Sie · Kameravorschau",
-  },
-  "Preview session": {
-    fr: "Session de démonstration",
-    es: "Sesión de muestra",
-    de: "Vorschau-Sitzung",
-  },
-  "Preview controls only": {
-    fr: "Commandes de démonstration uniquement",
-    es: "Solo controles de muestra",
-    de: "Nur Vorschau-Steuerung",
-  },
-  "Video preview · Remote camera not connected": {
-    fr: "Aperçu vidéo · Caméra distante non connectée",
-    es: "Vista previa de vídeo · Cámara remota no conectada",
-    de: "Videovorschau · Entfernte Kamera nicht verbunden",
-  },
-  "Toggle fullscreen video preview": {
-    fr: "Basculer l’aperçu en plein écran",
-    es: "Alternar pantalla completa",
-    de: "Vollbildvorschau umschalten",
-  },
-  "Fullscreen is not available in this window.": {
-    fr: "Le plein écran n’est pas disponible ici.",
-    es: "La pantalla completa no está disponible aquí.",
-    de: "Vollbild ist in diesem Fenster nicht verfügbar.",
-  },
-  "Entered tones": {
-    fr: "Tonalités saisies",
-    es: "Tonos introducidos",
-    de: "Eingegebene Töne",
-  },
-  "Enter tones": {
-    fr: "Saisir des tonalités",
-    es: "Introducir tonos",
-    de: "Töne eingeben",
   },
   Notes: {
     fr: "Notes",
@@ -1374,11 +1219,6 @@ export const translations: Record<
     es: "Reunión semanal",
     de: "Wöchentlicher Austausch",
   },
-  "Hosted by you": {
-    fr: "Vous êtes l’hôte",
-    es: "Tú eres el anfitrión",
-    de: "Sie sind Gastgeber",
-  },
   "Close conference preview": {
     fr: "Fermer l’aperçu de conférence",
     es: "Cerrar vista previa de conferencia",
@@ -1445,31 +1285,6 @@ export const translations: Record<
     es: "No se pudo iniciar el uso compartido de pantalla.",
     de: "Bildschirmteilen konnte nicht gestartet werden.",
   },
-  "Everyone has a seat at the table": {
-    fr: "Chacun a sa place",
-    es: "Todos tienen su lugar",
-    de: "Alle kommen zu Wort",
-  },
-  "Grid view": {
-    fr: "Vue en grille",
-    es: "Vista de cuadrícula",
-    de: "Rasteransicht",
-  },
-  "Focus speaker view": {
-    fr: "Vue centrée sur l’intervenant",
-    es: "Vista del orador",
-    de: "Sprecheransicht",
-  },
-  "In focus": {
-    fr: "Au premier plan",
-    es: "En foco",
-    de: "Im Fokus",
-  },
-  "In the room": {
-    fr: "Dans la salle",
-    es: "En la sala",
-    de: "Im Raum",
-  },
   "Host · You": {
     fr: "Hôte · Vous",
     es: "Anfitrión · Tú",
@@ -1500,31 +1315,6 @@ export const translations: Record<
     es: "Ventas",
     de: "Vertrieb",
   },
-  Joined: {
-    fr: "A rejoint la salle",
-    es: "Se ha unido",
-    de: "Beigetreten",
-  },
-  "Who’s next": {
-    fr: "À qui le tour ?",
-    es: "¿Quién sigue?",
-    de: "Wer ist als Nächstes dran?",
-  },
-  "A clear speaking order. Fewer interruptions.": {
-    fr: "Un ordre de parole clair. Moins d’interruptions.",
-    es: "Un orden claro. Menos interrupciones.",
-    de: "Klare Redereihenfolge. Weniger Unterbrechungen.",
-  },
-  "Give floor": {
-    fr: "Donner la parole",
-    es: "Dar la palabra",
-    de: "Wort erteilen",
-  },
-  "Everyone’s had their turn.": {
-    fr: "Tout le monde a eu la parole.",
-    es: "Todos han tenido su turno.",
-    de: "Alle sind zu Wort gekommen.",
-  },
   "Waiting to join": {
     fr: "En attente d’admission",
     es: "Esperando para entrar",
@@ -1550,11 +1340,6 @@ export const translations: Record<
     es: "Notas privadas de muestra · Se borran al salir",
     de: "Private Vorschaunotizen · Beim Verlassen gelöscht",
   },
-  "Make room for better conversations.": {
-    fr: "Place à de meilleures conversations.",
-    es: "Espacio para mejores conversaciones.",
-    de: "Raum für bessere Gespräche.",
-  },
   "Raise hand": {
     fr: "Lever la main",
     es: "Levantar la mano",
@@ -1570,20 +1355,10 @@ export const translations: Record<
     es: "Compartir agenda",
     de: "Agenda teilen",
   },
-  "Stop share": {
-    fr: "Arrêter le partage",
-    es: "Dejar de compartir",
-    de: "Teilen beenden",
-  },
   Leave: {
     fr: "Quitter",
     es: "Salir",
     de: "Verlassen",
-  },
-  "ROOM FOCUS": {
-    fr: "SUJET ACTUEL",
-    es: "TEMA ACTUAL",
-    de: "AKTUELLES THEMA",
   },
   "Team check-in": {
     fr: "Tour de table",
@@ -1609,31 +1384,6 @@ export const translations: Record<
     fr: "Ordre du jour de Sarah · Aperçu",
     es: "Agenda de Sarah · Vista previa",
     de: "Sarahs Agenda · Vorschau",
-  },
-  "Choose an agenda item to guide the room.": {
-    fr: "Choisissez un sujet pour guider la réunion.",
-    es: "Elige un tema para guiar la reunión.",
-    de: "Wählen Sie ein Thema für die Besprechung.",
-  },
-  "Your hand is lowered.": {
-    fr: "Votre main est baissée.",
-    es: "Has bajado la mano.",
-    de: "Ihre Hand ist gesenkt.",
-  },
-  "You’re in the speaking queue.": {
-    fr: "Vous êtes dans la file de parole.",
-    es: "Estás en la cola de turnos.",
-    de: "Sie stehen in der Redewarteschlange.",
-  },
-  "Agenda share preview stopped.": {
-    fr: "Aperçu du partage arrêté.",
-    es: "Vista previa de compartir detenida.",
-    de: "Agenda-Vorschau beendet.",
-  },
-  "Showing an agenda share preview. No device screen is captured.": {
-    fr: "Aperçu de l’ordre du jour. Aucun écran n’est capturé.",
-    es: "Vista previa de agenda. No se captura la pantalla.",
-    de: "Agenda-Vorschau. Kein Bildschirm wird aufgenommen.",
   },
   "No audio is attached to this sample recording.": {
     fr: "Cet enregistrement de démonstration ne contient aucun audio.",
@@ -1666,11 +1416,6 @@ export const translations: Record<
     es: "Idioma",
     de: "Sprache",
   },
-  "Room panel": {
-    fr: "Panneau de la salle",
-    es: "Panel de la sala",
-    de: "Raumbereich",
-  },
   "Show room panel": {
     fr: "Afficher le panneau",
     es: "Mostrar panel",
@@ -1690,6 +1435,31 @@ export const translations: Record<
     fr: "Quitter le plein écran",
     es: "Salir de pantalla completa",
     de: "Vollbild verlassen",
+  },
+  "Calling features": {
+    fr: "Fonctions d’appel",
+    es: "Funciones de llamada",
+    de: "Anruffunktionen",
+  },
+  "Preview settings · Not saved to your phone system yet": {
+    fr: "Réglages de démonstration · Pas encore enregistrés dans votre système téléphonique",
+    es: "Ajustes de muestra · Aún no se guardan en tu centralita",
+    de: "Vorschau-Einstellungen · Noch nicht in Ihrer Telefonanlage gespeichert",
+  },
+  "Send calls to another number when you’re busy or away": {
+    fr: "Renvoyez les appels vers un autre numéro quand vous êtes occupé ou absent",
+    es: "Desvía las llamadas a otro número cuando estés ocupado o ausente",
+    de: "Anrufe an eine andere Nummer weiterleiten, wenn Sie beschäftigt oder abwesend sind",
+  },
+  "Ring several extensions at once": {
+    fr: "Faites sonner plusieurs postes à la fois",
+    es: "Haz sonar varias extensiones a la vez",
+    de: "Mehrere Durchwahlen gleichzeitig klingeln lassen",
+  },
+  "A voice-only room for a group call": {
+    fr: "Une salle audio pour un appel de groupe",
+    es: "Una sala solo de voz para una llamada de grupo",
+    de: "Ein reiner Sprachraum für Gruppenanrufe",
   },
   "Call forwarding": {
     fr: "Renvoi d’appels",
@@ -1900,11 +1670,6 @@ export const translations: Record<
     fr: "Couper les micros des invités",
     es: "Silenciar invitados",
     de: "Alle Gäste stummschalten",
-  },
-  "Other participants": {
-    fr: "Autres participants",
-    es: "Otros participantes",
-    de: "Andere Teilnehmer",
   },
   Voicemail: { fr: "Messagerie vocale", es: "Buzón de voz", de: "Voicemail" },
   "Listen to messages in your SIP mailbox": {

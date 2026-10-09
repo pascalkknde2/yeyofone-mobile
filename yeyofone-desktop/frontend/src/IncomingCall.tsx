@@ -5,7 +5,7 @@ import { callLabel, callTime, reasonLabel } from "./calls";
 import { useLanguage } from "./i18n";
 import "./incoming-call.css";
 import "./android-call.css";
-import { CallIcon } from "./CallWindows";
+import { CallIcon } from "./CallIcon";
 import { CallPanel } from "./CallPanel";
 export function IncomingCall() {
   const { rows, available, busy, error, request } = useCalls();

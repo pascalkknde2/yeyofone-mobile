@@ -1,5 +1,11 @@
 import { useLanguage } from "./i18n";
-import { useEffect, useRef, useState, type CSSProperties } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+  type CSSProperties,
+  type KeyboardEvent,
+} from "react";
 import "./conference-room.css";
 
 type RoomIcon =
@@ -225,6 +231,7 @@ const sampleChat = [
 export function ConferenceRoom({ onClose }: { onClose: () => void }) {
   const { t } = useLanguage();
   const dialog = useRef<HTMLDialogElement>(null);
+  const title = useRef<HTMLHeadingElement>(null);
   const [joined, setJoined] = useState(["you", "alex", "maya", "daniel"]);
   const [focused, setFocused] = useState("alex");
   const [stage, setStage] = useState<"meeting" | "notes">("meeting");
@@ -240,6 +247,36 @@ export function ConferenceRoom({ onClose }: { onClose: () => void }) {
   const [shareError, setShareError] = useState("");
   const screen = useRef<MediaStream | null>(null);
   const shareBox = useRef<HTMLDivElement>(null);
+  const shareButton = useRef<HTMLButtonElement>(null);
+  function closeShareMenu() {
+    setShareMenu(false);
+    shareButton.current?.focus();
+  }
+  // Arrow keys, Home and End move between the menu's items, wrapping around.
+  function moveInMenu(e: KeyboardEvent<HTMLDivElement>) {
+    const items = [
+      ...e.currentTarget.querySelectorAll<HTMLButtonElement>(
+        '[role="menuitem"]',
+      ),
+    ];
+    const at = items.indexOf(document.activeElement as HTMLButtonElement);
+    const next =
+      e.key === "ArrowDown"
+        ? (at + 1) % items.length
+        : e.key === "ArrowUp"
+          ? (at - 1 + items.length) % items.length
+          : e.key === "Home"
+            ? 0
+            : e.key === "End"
+              ? items.length - 1
+              : e.key === "Tab"
+                ? -2
+                : -1;
+    if (next === -2) setShareMenu(false);
+    if (next < 0) return;
+    e.preventDefault();
+    items[next]?.focus();
+  }
   // WebKit doesn't focus clicked buttons, so close on outside clicks, not on blur.
   useEffect(() => {
     if (!shareMenu) return;
@@ -329,6 +366,8 @@ export function ConferenceRoom({ onClose }: { onClose: () => void }) {
         ? document.activeElement
         : null;
     element?.showModal();
+    // showModal() focuses the first button (Notes); start on the room's name instead.
+    title.current?.focus();
     const timer = window.setInterval(() => setSeconds((s) => s + 1), 1000);
     const arrival = window.setTimeout(() => {
       setJoined((old) => (old.includes("elena") ? old : [...old, "elena"]));
@@ -378,7 +417,7 @@ export function ConferenceRoom({ onClose }: { onClose: () => void }) {
       aria-describedby="conference-preview"
       onCancel={(e) => {
         e.preventDefault();
-        if (shareMenu) setShareMenu(false);
+        if (shareMenu) closeShareMenu();
         else closeRoom();
       }}
     >
@@ -389,7 +428,9 @@ export function ConferenceRoom({ onClose }: { onClose: () => void }) {
               <span>
                 {t("Weekly catch-up")} · {time}
               </span>
-              <h2 id="conference-title">{t("Team room")}</h2>
+              <h2 id="conference-title" ref={title} tabIndex={-1}>
+                {t("Team room")}
+              </h2>
             </div>
             <div className="room-tabs" role="group" aria-label={t("View")}>
               {(["notes", "meeting"] as const).map((id) => (
@@ -613,6 +654,7 @@ export function ConferenceRoom({ onClose }: { onClose: () => void }) {
               </button>
               <div className="room-share" ref={shareBox}>
                 <button
+                  ref={shareButton}
                   className={sharing ? "is-on" : ""}
                   aria-label={t(sharing ? "Stop sharing" : "Share")}
                   title={t(sharing ? "Stop sharing" : "Share")}
@@ -625,7 +667,12 @@ export function ConferenceRoom({ onClose }: { onClose: () => void }) {
                   <RoomGlyph name="share" />
                 </button>
                 {shareMenu && (
-                  <div className="room-share__menu" role="menu">
+                  <div
+                    className="room-share__menu"
+                    role="menu"
+                    aria-label={t("Share")}
+                    onKeyDown={moveInMenu}
+                  >
                     <button role="menuitem" autoFocus onClick={shareScreen}>
                       <RoomGlyph name="screen" size={18} />
                       <span>
