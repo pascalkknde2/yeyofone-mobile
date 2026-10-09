@@ -1269,6 +1269,101 @@ export const translations: Record<
     es: "Introducir tonos",
     de: "Töne eingeben",
   },
+  Notes: {
+    fr: "Notes",
+    es: "Notas",
+    de: "Notizen",
+  },
+  Meeting: {
+    fr: "Réunion",
+    es: "Reunión",
+    de: "Besprechung",
+  },
+  Chat: {
+    fr: "Discussion",
+    es: "Chat",
+    de: "Chat",
+  },
+  Participants: {
+    fr: "Participants",
+    es: "Participantes",
+    de: "Teilnehmer",
+  },
+  "Search for people": {
+    fr: "Rechercher des personnes",
+    es: "Buscar personas",
+    de: "Personen suchen",
+  },
+  "On the call": {
+    fr: "Dans l’appel",
+    es: "En la llamada",
+    de: "Im Anruf",
+  },
+  Invited: {
+    fr: "Invités",
+    es: "Invitados",
+    de: "Eingeladen",
+  },
+  You: {
+    fr: "Vous",
+    es: "Tú",
+    de: "Sie",
+  },
+  Host: {
+    fr: "Hôte",
+    es: "Anfitrión",
+    de: "Gastgeber",
+  },
+  View: {
+    fr: "Affichage",
+    es: "Vista",
+    de: "Ansicht",
+  },
+  Speaking: {
+    fr: "Parle",
+    es: "Hablando",
+    de: "Spricht",
+  },
+  Send: {
+    fr: "Envoyer",
+    es: "Enviar",
+    de: "Senden",
+  },
+  Agenda: {
+    fr: "Ordre du jour",
+    es: "Orden del día",
+    de: "Tagesordnung",
+  },
+  "Hand raised": {
+    fr: "Main levée",
+    es: "Mano levantada",
+    de: "Hand gehoben",
+  },
+  "Show on stage": {
+    fr: "Afficher en grand",
+    es: "Mostrar en grande",
+    de: "Groß anzeigen",
+  },
+  "Message everyone": {
+    fr: "Message à tous",
+    es: "Mensaje para todos",
+    de: "Nachricht an alle",
+  },
+  "Preview chat · Messages stay on this device": {
+    fr: "Discussion de démonstration · Les messages restent sur cet appareil",
+    es: "Chat de muestra · Los mensajes se quedan en este dispositivo",
+    de: "Vorschau-Chat · Nachrichten bleiben auf diesem Gerät",
+  },
+  "Morning all! I added the release notes to the agenda.": {
+    fr: "Bonjour à tous ! J’ai ajouté les notes de version à l’ordre du jour.",
+    es: "¡Buenos días! He añadido las notas de la versión al orden del día.",
+    de: "Morgen zusammen! Ich habe die Versionshinweise zur Tagesordnung hinzugefügt.",
+  },
+  "Thanks, I’ll walk through the API changes.": {
+    fr: "Merci, je présenterai les changements de l’API.",
+    es: "Gracias, repasaré los cambios de la API.",
+    de: "Danke, ich gehe die API-Änderungen durch.",
+  },
   "Team room": {
     fr: "Salle d’équipe",
     es: "Sala de equipo",
