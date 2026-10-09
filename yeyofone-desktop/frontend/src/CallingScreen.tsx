@@ -1,4 +1,4 @@
-import { CallIcon } from "./CallWindows";
+import { CallIcon } from "./CallIcon";
 import { DIAL_KEYS } from "./Keypad";
 import { callLabel, type CallStatus } from "./calls";
 import { useLanguage } from "./i18n";

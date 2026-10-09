@@ -1,7 +1,7 @@
 import { RecordingActionIcon } from "./RecordingActionIcon";
 import { recordingPeaks } from "./recordingPeaks";
 import { useEffect, useRef, useState } from "react";
-import { CallIcon } from "./CallWindows";
+import { CallIcon } from "./CallIcon";
 import { callTime } from "./calls";
 import { useLanguage } from "./i18n";
 import "./recording-studio.css";
