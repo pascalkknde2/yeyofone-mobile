@@ -36,7 +36,7 @@ These run on your own device only; nothing is sent to other people.
 ## Housekeeping
 
 - [ ] **10. Remove or archive the nested `yeyofone-desktop/.git`.** It is an older, separate repo (remote `pascalkknde2/yeyofone-desktop`) with its own uncommitted changes, while the `yeyofone-mobile` repo already tracks these files. Easy to commit to the wrong repo by mistake.
-- [ ] **11. Keep `account.md` and `ssh.md` out of git.** They are in the `yeyofone-mobile` root and have stayed uncommitted. If they hold account or SSH details, add them to `.gitignore`.
+- [x] **11. Keep `account.md` and `ssh.md` out of git.** They are in the `yeyofone-mobile` root and have stayed uncommitted. If they hold account or SSH details, add them to `.gitignore`. — done 2026-10-09 (#39): both ignored and `account.md` untracked. Its earlier version is still in git history (`5bb8a94`, on GitHub) and one line looks like a credential, so rotate it if it is real.
 
 ## Bigger projects (plan first)
 
