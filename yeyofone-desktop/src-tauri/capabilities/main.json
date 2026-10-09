@@ -1,6 +1,6 @@
 {
   "identifier": "main-window",
-  "description": "Validated runtime and account commands for the local main window.",
+  "description": "Validated runtime and account commands, plus listening for native call-state events, for the local main window.",
   "windows": [
     "main"
   ],
@@ -12,6 +12,8 @@
     "allow-calls-command",
     "allow-call-history-command",
     "allow-recording-file-command",
-    "allow-recording-cloud-command"
+    "allow-recording-cloud-command",
+    "core:event:allow-listen",
+    "core:event:allow-unlisten"
   ]
 }
