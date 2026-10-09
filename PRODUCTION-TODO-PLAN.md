@@ -152,6 +152,23 @@ Primary files: `IncomingCallService.kt` (including receivers), `MainActivity.kt`
 - [ ] **REL-05 / P1:** Halt update expansion for serious regressions and ship a corrected higher-version-code build. Halting does not downgrade already updated devices.
 - [ ] **REL-06 / P1:** Record launch results and schedule dependency/security maintenance and periodic restore tests.
 
+## iOS — Incoming calls while the app is suspended (PushKit)
+
+**Blocked:** this needs a paid Apple Developer Program membership. The product owner will buy it once the rest of the iOS implementation is complete; until then, these tasks stay open.
+
+**Current state (9 October 2026):** CallKit rings for every incoming call the app receives while it's running, including on the lock screen. About 5–10 seconds after the app leaves the screen, iOS suspends it, and INVITEs no longer reach it. The PBX keeps the registration (300 s expiry), so callers hear silence until FreeSWITCH times out. Verified on an iPhone 13 Pro Max: no log activity at all during a locked-screen call. A free-provisioning app has no supported way to stay reachable, because VoIP keep-alive sockets are deprecated and background audio tricks are rejected in App Store review.
+
+Primary files: `yeyofone-ios/Yeyofone/Yeyofone/Engine/CallKitController.swift`, `Model/AppStore.swift`, the push relay (the v2 relay that Android's `PushRelayClient.kt` registers with), and the PBX integration that triggers wake pushes.
+
+- [ ] **IOS-PUSH-01 / P0:** Enroll in the Apple Developer Program, add the Push Notifications capability, and create an APNs authentication key (.p8) that only the relay can access.
+- [ ] **IOS-PUSH-02 / P0:** Register for VoIP pushes with `PKPushRegistry`. Send the VoIP token to the relay with the same device/credential flow as Android (`PUT /v1/devices/{device}`), marking the platform as APNs VoIP, and revoke it on sign-out, as SEC-04 and SEC-07 describe.
+- [ ] **IOS-PUSH-03 / P0:** Relay: send `incoming_call_wake` and `incoming_call_cancel` as APNs VoIP pushes (`apns-push-type: voip`, topic `<bundle id>.voip`), with the same schema, validation, deduplication and `X-Yeyo-Call-ID` correlation as the FCM path.
+- [ ] **IOS-PUSH-04 / P0:** App: on every VoIP push, report a CallKit call **immediately**, inside `pushRegistry(_:didReceiveIncomingPushWith:...)`. iOS terminates apps that don't, and stops sending them pushes. Then start the engine, re-register, and match the INVITE to the reported call by relay call ID. End the CallKit call if the INVITE never arrives or a cancel push arrives.
+- [ ] **IOS-PUSH-05 / P1:** Decide whether to unregister from the PBX while the app is suspended, so that only push-woken devices ring and callers never hear silence. Verify that FreeSWITCH forks to the remaining devices and to voicemail.
+- [ ] **IOS-PUSH-06 / P1:** Test locked-screen, killed-app and cold-start incoming calls; a cancel before answer; a late push after the call ended; and answering on another device.
+
+**Gate:** a call to an iPhone whose app is suspended or terminated rings through CallKit within the agreed wake-to-ring time, and no reported call is left ringing after the caller cancels.
+
 ## P2 — After stable voice launch
 
 - [ ] Implement real messaging with persistence, delivery/error states and revised privacy disclosures.
