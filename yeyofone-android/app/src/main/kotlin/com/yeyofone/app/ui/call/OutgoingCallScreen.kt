@@ -87,6 +87,7 @@ fun OutgoingCallScreen(
     onHoldChange: (Boolean) -> Unit,
     onDtmf: (Char) -> Unit,
     onOpenTransfer: () -> Unit,
+    onOpenMore: () -> Unit,
     onEndCall: () -> Unit,
 ) {
     var keypadOpen by remember(session.id) { mutableStateOf(false) }
@@ -165,8 +166,8 @@ fun OutgoingCallScreen(
                 CallActionButton(Icons.Default.CallEnd, stringResource(R.string.hang_up), destructive = true) {
                     onEndCall()
                 }
-                CallActionButton(Icons.Default.MoreHoriz, stringResource(if (media.held) R.string.resume else R.string.hold), media.held) {
-                    onHoldChange(!media.held)
+                CallActionButton(Icons.Default.MoreHoriz, stringResource(R.string.more), media.held) {
+                    onOpenMore()
                 }
             }
         }

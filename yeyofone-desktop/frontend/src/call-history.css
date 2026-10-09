@@ -1,0 +1,318 @@
+.call-history-page {
+  max-width: none;
+}
+.call-history-page > .section-heading {
+  align-items: flex-start;
+}
+.call-history-page h1 {
+  font-size: 26px;
+  margin: 0;
+  color: #414b5a;
+}
+.call-history-subtitle {
+  color: #97a2b4;
+  margin: 7px 0 0;
+  font-size: 16px;
+}
+.call-history-refresh {
+  background: #2d8dcc;
+  color: #fff;
+  border: 0;
+  border-radius: 10px;
+  padding: 11px 17px;
+  font-size: 16px;
+}
+.call-history-filters {
+  display: flex;
+  gap: 8px;
+  margin: 26px 0 14px;
+}
+.call-history-filters button {
+  padding: 9px 14px;
+  border-radius: 18px;
+  color: #75839a;
+  background: #fff;
+  font-size: 16px;
+}
+.call-history-filters button.selected {
+  background: #e8f4fc;
+  color: #2789c8;
+}
+.call-history-list {
+  display: grid;
+  gap: 8px;
+}
+.call-history-row {
+  display: grid;
+  grid-template-columns:
+    42px minmax(180px, 1fr) minmax(170px, 0.8fr) minmax(120px, 0.55fr)
+    70px minmax(160px, auto);
+  gap: 14px;
+  align-items: center;
+  background: #fff;
+  padding: 14px 18px;
+  border-radius: 12px;
+  box-shadow: 0 8px 20px #dfe6f22b;
+  color: #8290a5;
+  font-size: 16px;
+}
+.call-history-direction {
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  font-size: 21px;
+  font-weight: 700;
+}
+.call-history-direction.incoming {
+  background: #e5f6ee;
+  color: #21976b;
+}
+.call-history-direction.outgoing {
+  background: #e8f3fc;
+  color: #268dc8;
+}
+.call-history-person {
+  min-width: 0;
+}
+.call-history-person strong,
+.call-history-person small {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.call-history-person strong {
+  font-size: 17px;
+  color: #465164;
+}
+.call-history-person small {
+  color: #a0aabd;
+  margin-top: 4px;
+}
+.call-history-outcome {
+  color: #6e7b91;
+  text-transform: capitalize;
+}
+.call-history-duration {
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  color: #69778d;
+}
+.call-history-error {
+  color: #c34d5c;
+  background: #fff0f1;
+  padding: 12px 16px;
+  border-radius: 8px;
+}
+.call-history-recording-actions {
+  display: flex;
+  gap: 6px;
+  justify-content: flex-end;
+}
+.call-history-recording-actions button,
+.call-recording-player button {
+  border: 0;
+  border-radius: 8px;
+  padding: 8px 10px;
+  color: #247fb5;
+  background: #e9f5fc;
+  font-size: 14px;
+}
+.call-history-no-recording {
+  min-width: 1px;
+}
+.call-recording-player {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: 16px 0;
+  padding: 14px 18px;
+  border-radius: 12px;
+  background: white;
+  color: #465164;
+}
+.call-recording-player audio {
+  flex: 1;
+  min-width: 180px;
+}
+@media (max-width: 800px) {
+  .call-history-row {
+    grid-template-columns: 36px minmax(120px, 1fr) minmax(120px, 0.8fr) 58px;
+    gap: 9px;
+    padding: 12px;
+  }
+  .call-history-row time {
+    display: none;
+  }
+  .call-history-recording-actions {
+    grid-column: 2 / -1;
+    justify-content: flex-start;
+  }
+  .call-history-no-recording {
+    display: none;
+  }
+  .call-recording-player {
+    flex-wrap: wrap;
+  }
+  .call-recording-player audio {
+    flex-basis: 100%;
+  }
+  .call-history-outcome {
+    font-size: 15px;
+  }
+  .call-history-person strong {
+    font-size: 16px;
+  }
+  .call-history-person small {
+    font-size: 15px;
+  }
+}
+
+.recording-cloud-settings {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 18px 22px;
+  margin-top: 24px;
+  color: #465164;
+}
+.recording-cloud-settings summary {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  cursor: pointer;
+}
+.recording-cloud-settings summary span {
+  color: #2789c8;
+  font-size: 14px;
+}
+.recording-cloud-settings p {
+  font-size: 14px;
+  line-height: 1.6;
+}
+.recording-cloud-settings form {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+.recording-cloud-settings label {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 14px;
+}
+.recording-cloud-settings input:not([type="checkbox"]) {
+  padding: 12px;
+  border: 1px solid #dce3ee;
+  border-radius: 8px;
+  background: #f8fafc;
+  color: #334155;
+  width: 100%;
+  box-sizing: border-box;
+}
+.recording-cloud-settings .recording-cloud-auto {
+  flex-direction: row;
+  align-items: center;
+  grid-column: 1/-1;
+}
+.recording-cloud-buttons {
+  display: flex;
+  gap: 12px;
+  grid-column: 1/-1;
+}
+.recording-cloud-buttons button,
+.recording-delete-confirm button {
+  border: 0;
+  border-radius: 8px;
+  padding: 10px 14px;
+  background: #e9f5fc;
+  color: #247fb5;
+}
+.call-history-recording-actions {
+  flex-wrap: wrap;
+  max-width: 320px;
+}
+.recording-cloud-badge {
+  color: #21976b;
+  font-size: 12px;
+  align-self: center;
+}
+.call-history-page button.recording-delete {
+  background: #fff0f1;
+  color: #c34d5c;
+  border: 0;
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-size: 14px;
+}
+.recording-delete-confirm[open] {
+  display: flex;
+  width: min(560px, calc(100vw - 48px));
+  border: 1px solid #fecdd3;
+  box-shadow: 0 24px 80px #0f172a44;
+  flex-wrap: wrap;
+  gap: 14px;
+  align-items: center;
+  background: #fff0f1;
+  padding: 18px;
+  border-radius: 12px;
+  margin: 16px 0;
+  color: #933343;
+}
+.recording-delete-confirm > div {
+  flex: 1;
+  flex-basis: 100%;
+}
+.recording-delete-confirm p {
+  font-size: 14px;
+}
+.call-history-page button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+@media (max-width: 800px) {
+  .recording-cloud-settings form {
+    grid-template-columns: 1fr;
+  }
+  .recording-delete-confirm {
+    flex-wrap: wrap;
+  }
+  .recording-delete-confirm > div {
+    flex-basis: 100%;
+  }
+}
+
+.recording-delete-confirm::backdrop {
+  background: #0f172a88;
+  backdrop-filter: blur(5px);
+}
+
+.call-history-recording-actions {
+  flex-wrap: nowrap;
+}
+.call-history-recording-actions .recording-icon-button,
+.recording-icon-status {
+  display: inline-grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  padding: 0;
+  flex: 0 0 38px;
+  border-radius: 10px;
+}
+.call-history-recording-actions button.recording-icon-button {
+  padding: 0;
+}
+.recording-icon-status {
+  background: #ecfdf5;
+  color: #21976b;
+}
+.call-history-recording-actions .recording-icon-button:hover:not(:disabled) {
+  filter: brightness(0.96);
+}
+.call-history-recording-actions .recording-icon-button:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: 3px;
+}

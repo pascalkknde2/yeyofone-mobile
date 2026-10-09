@@ -1,0 +1,181 @@
+.recording-studio {
+  display: grid;
+  grid-template-columns: 220px minmax(0, 1fr);
+  gap: 32px;
+  background: #100d38;
+  color: #f5f3ff;
+  border: 1px solid #373062;
+  border-radius: 24px;
+  padding: 32px;
+  margin: 24px 0;
+  box-shadow: 0 18px 45px #100d3820;
+}
+.recording-studio__art {
+  display: grid;
+  place-items: center;
+  align-self: center;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: linear-gradient(155deg, #d40599, #6746ed);
+  color: #100d38;
+  width: 100%;
+  max-width: 220px;
+}
+.recording-studio__art svg {
+  width: 55%;
+  height: 55%;
+  stroke-width: 2.5;
+}
+.recording-studio__heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+.recording-studio__heading small {
+  color: #aaa2d2;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 1.8px;
+}
+.recording-studio__heading h3 {
+  font-size: 24px;
+  margin: 8px 0 0;
+  overflow-wrap: anywhere;
+  color: #eeeaff;
+}
+.recording-studio button {
+  cursor: pointer;
+  font: inherit;
+  border: 0;
+  color: white;
+}
+.recording-studio__close {
+  background: #ffffff0c;
+  padding: 8px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+}
+.recording-wave {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  height: 90px;
+  margin: 16px 0;
+}
+.recording-wave i {
+  flex: 1;
+  max-width: 7px;
+  min-width: 2px;
+  border-radius: 20px;
+  background: linear-gradient(#d609a4, #6055ed);
+  opacity: 0.75;
+}
+.recording-wave i:nth-child(-n + 12) {
+  background: #5556ed;
+}
+.recording-wave i:nth-child(n + 24) {
+  background: #d609a4;
+}
+.recording-wave.is-active i {
+  animation: recording-wave-pulse 900ms ease-in-out infinite alternate;
+}
+.recording-studio__seek {
+  width: 100%;
+  accent-color: #b727d2;
+  cursor: pointer;
+}
+.recording-studio__time {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  color: #b7b0d4;
+  margin-top: 8px;
+}
+.recording-studio__controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  margin-top: 24px;
+}
+.recording-studio__play {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: #4648e9;
+  display: grid;
+  place-items: center;
+}
+.recording-studio__play svg {
+  width: 28px;
+  height: 28px;
+}
+.recording-studio__stop {
+  background: linear-gradient(100deg, #d609a4, #753bce);
+  border-radius: 30px;
+  padding: 12px 36px;
+  font-weight: 600;
+}
+.recording-studio button:focus-visible {
+  outline: 3px solid #e9b8ff;
+  outline-offset: 4px;
+}
+.recording-studio button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+@keyframes recording-wave-pulse {
+  to {
+    transform: scaleY(0.45);
+    opacity: 1;
+  }
+}
+@media (max-width: 640px) {
+  .recording-studio {
+    grid-template-columns: 1fr;
+    padding: 24px;
+    gap: 24px;
+  }
+  .recording-studio__art {
+    width: 120px;
+    justify-self: center;
+  }
+  .recording-wave {
+    gap: 3px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .recording-wave.is-active i {
+    animation: none;
+  }
+}
+
+.recording-wave--audio {
+  gap: 3px;
+  justify-content: stretch;
+}
+.recording-wave--audio i {
+  max-width: none;
+  opacity: 0.25;
+  transition: opacity 100ms linear;
+}
+.recording-wave--audio i.is-played {
+  opacity: 1;
+}
+.recording-wave-status {
+  color: #b7b0d4;
+}
+
+.recording-studio__delete {
+  background: transparent;
+  color: #fda4af !important;
+  padding: 10px;
+  font-size: 13px !important;
+}
+.recording-studio__controls {
+  flex-wrap: wrap;
+}

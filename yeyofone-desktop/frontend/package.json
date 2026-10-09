@@ -1,0 +1,27 @@
+{
+  "name": "yeyofone-desktop-ui",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1",
+    "typecheck": "tsc --noEmit",
+    "build": "bun run typecheck && vite build",
+    "tauri": "cd .. && frontend/node_modules/.bin/tauri",
+    "format": "prettier --write ."
+  },
+  "dependencies": {
+    "@tauri-apps/api": "2.12.1",
+    "prettier": "^3.9.9",
+    "react": "19.3.0",
+    "react-dom": "19.3.0"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "2.12.1",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "typescript": "7.0.2",
+    "vite": "8.3.3"
+  },
+  "packageManager": "bun@1.4.2"
+}

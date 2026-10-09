@@ -1,0 +1,29 @@
+{
+  "schemaVersion": 1,
+  "phase": 8,
+  "platform": "macOS",
+  "architecture": "x86_64",
+  "date": "2026-10-08",
+  "rustTestsPassed": 50,
+  "osVaultTestIgnored": 1,
+  "frontendTestsPassed": 8,
+  "nativeCTestPassed": 2,
+  "liveProvider": {
+    "accountUsername": "1005",
+    "authorizedDestination": "1001",
+    "registerSipCode": 200,
+    "ringingSipCode": 180,
+    "connectedSipCode": 200,
+    "audioRoutingActive": true,
+    "audioError": false,
+    "muteUnmuteCommandsPassed": true,
+    "endedReason": "local_hangup",
+    "connectedDurationSeconds": 5,
+    "humanTwoWayAudioVerified": false
+  },
+  "interactiveUiVerified": false,
+  "windowsLinuxVerified": false,
+  "finalBundleMiB": 36.34,
+  "finalLaunchPid": 35323,
+  "microphoneUsageDescriptionVerified": true
+}

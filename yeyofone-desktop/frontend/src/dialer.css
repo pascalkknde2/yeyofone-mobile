@@ -1,0 +1,565 @@
+/* ---------- Design tokens ---------- */
+.dialer {
+  --dialer-bg: #ffffff;
+  --dialer-fg: #1b2433;
+  --dialer-muted: #64748b;
+  --dialer-border: #e2e8f0;
+  --dialer-surface: #f7f9fc;
+  --dialer-surface-2: #eef2f7;
+  --dialer-primary: #2563eb;
+  --dialer-primary-fg: #ffffff;
+  --dialer-accent: #0ea5a0;
+  --dialer-danger: #e11d48;
+  --dialer-danger-fg: #ffffff;
+  --dialer-warn: #f59e0b;
+  --dialer-ok: #16a34a;
+  --dialer-shadow: 0 24px 60px rgba(15, 23, 42, 0.28);
+  --dialer-radius: 20px;
+  --dialer-radius-sm: 12px;
+  --dialer-gap: 16px;
+
+  width: min(460px, calc(100vw - 24px));
+  max-height: min(92vh, 760px);
+  overflow: auto;
+  border: 0;
+  border-radius: var(--dialer-radius);
+  padding: 24px;
+  color: var(--dialer-fg);
+  background: var(--dialer-bg);
+  box-shadow: var(--dialer-shadow);
+  font:
+    15px/1.5 system-ui,
+    -apple-system,
+    "Segoe UI",
+    Roboto,
+    sans-serif;
+  overscroll-behavior: contain;
+}
+
+.dialer::backdrop {
+  background: rgba(15, 23, 42, 0.55);
+  backdrop-filter: blur(6px);
+}
+
+/* ---------- Header ---------- */
+.dialer__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.dialer__title {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+}
+
+.dialer__close {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--dialer-surface-2);
+  color: var(--dialer-muted);
+  cursor: pointer;
+  transition:
+    background 120ms ease,
+    color 120ms ease;
+}
+.dialer__close:hover {
+  background: var(--dialer-border);
+  color: var(--dialer-fg);
+}
+
+/* ---------- Account picker ---------- */
+.account-picker {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+.account-picker__label,
+.dial-input__label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--dialer-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.account-picker__row {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+.account-picker__select {
+  flex: 1;
+  min-width: 0;
+  padding: 11px 12px;
+  border: 1px solid var(--dialer-border);
+  border-radius: var(--dialer-radius-sm);
+  background: var(--dialer-surface);
+  color: inherit;
+  font: inherit;
+}
+
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  background: var(--dialer-surface-2);
+  color: var(--dialer-muted);
+}
+.status-pill__dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+.status-pill--ok {
+  background: color-mix(in oklab, var(--dialer-ok) 12%, transparent);
+  color: var(--dialer-ok);
+}
+.status-pill--warn {
+  background: color-mix(in oklab, var(--dialer-warn) 14%, transparent);
+  color: #b45309;
+}
+.status-pill--err {
+  background: color-mix(in oklab, var(--dialer-danger) 12%, transparent);
+  color: var(--dialer-danger);
+}
+.status-pill--muted {
+  background: var(--dialer-surface-2);
+  color: var(--dialer-muted);
+}
+
+/* ---------- Destination input ---------- */
+.dial-input {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+.dial-input__field {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 14px;
+  border: 1px solid var(--dialer-border);
+  border-radius: var(--dialer-radius-sm);
+  background: var(--dialer-surface);
+  color: inherit;
+  font: inherit;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+  transition:
+    border-color 120ms ease,
+    box-shadow 120ms ease;
+}
+.dial-input__field:focus {
+  outline: none;
+  border-color: var(--dialer-primary);
+  box-shadow: 0 0 0 3px
+    color-mix(in oklab, var(--dialer-primary) 25%, transparent);
+}
+.dial-input__field[aria-invalid="true"] {
+  border-color: var(--dialer-danger);
+}
+
+/* ---------- Keypad ---------- */
+.keypad {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin: 18px 0;
+}
+.keypad__key {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  height: 62px;
+  border: 1px solid var(--dialer-border);
+  border-radius: 14px;
+  background: var(--dialer-surface);
+  color: var(--dialer-fg);
+  cursor: pointer;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    background 100ms ease,
+    transform 60ms ease;
+}
+.keypad__key:hover {
+  background: var(--dialer-surface-2);
+}
+.keypad__key:active {
+  transform: scale(0.97);
+  background: var(--dialer-border);
+}
+.keypad__digit {
+  font-size: 22px;
+  font-weight: 600;
+  line-height: 1;
+}
+.keypad__letters {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  color: var(--dialer-muted);
+}
+.keypad__key--action {
+  grid-column: 3;
+  color: var(--dialer-muted);
+}
+
+/* ---------- Submit ---------- */
+.dialer__submit {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 52px;
+  padding: 14px;
+  border: 0;
+  border-radius: var(--dialer-radius-sm);
+  background: var(--dialer-accent);
+  color: white;
+  cursor: pointer;
+}
+.dialer {
+  box-sizing: border-box;
+  min-height: min(640px, 90vh);
+}
+.dialer button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.dialer :focus-visible {
+  outline: 3px solid var(--dialer-primary);
+  outline-offset: 3px;
+}
+.dialer__error,
+.call-panel__alert {
+  color: var(--dialer-danger);
+}
+.dialer__hint,
+.call-panel__account,
+.call-panel__hint,
+.call-panel__sip {
+  color: var(--dialer-muted);
+}
+.call-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 32px 0;
+  gap: 16px;
+}
+.call-panel p,
+.call-panel h3 {
+  margin: 0;
+}
+.call-panel__avatar {
+  display: grid;
+  place-items: center;
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  background: var(--dialer-surface-2);
+  color: var(--dialer-accent);
+}
+.call-panel__peer {
+  font-size: 28px;
+  overflow-wrap: anywhere;
+  max-width: 100%;
+}
+.call-panel__timer {
+  font-size: 40px;
+  font-variant-numeric: tabular-nums;
+}
+.call-panel__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 20px;
+}
+.call-btn {
+  min-height: 48px;
+  padding: 12px 18px;
+  border: 0;
+  border-radius: 12px;
+  background: var(--dialer-surface-2);
+  color: var(--dialer-fg);
+  cursor: pointer;
+}
+.call-btn--end,
+.call-btn--danger-ghost {
+  background: var(--dialer-danger);
+  color: white;
+}
+.call-btn--warn {
+  background: var(--dialer-warn);
+  color: #1b2433;
+}
+.call-panel__recording {
+  color: var(--dialer-danger);
+}
+.live-call-banner {
+  position: fixed;
+  bottom: 22px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 90;
+  border: 0;
+  border-radius: 18px;
+  padding: 16px 24px;
+  background: #187f66;
+  color: white;
+  font-size: 16px;
+  max-width: 80vw;
+}
+@media (max-width: 420px) {
+  .dialer {
+    padding: 18px;
+  }
+  .account-picker__row {
+    flex-wrap: wrap;
+  }
+  .account-picker__select {
+    flex-basis: 100%;
+  }
+}
+@media (prefers-color-scheme: dark) {
+  .dialer {
+    --dialer-bg: #152033;
+    --dialer-fg: #eef2f7;
+    --dialer-muted: #a8b6cb;
+    --dialer-border: #38465c;
+    --dialer-surface: #1e2b40;
+    --dialer-surface-2: #293850;
+    --dialer-ok: #4ade80;
+    --dialer-danger: #fb7185;
+  }
+  .status-pill--warn {
+    color: #fbbf24;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .dialer * {
+    transition: none !important;
+    animation: none !important;
+  }
+}
+
+/* Quiet number entry and outgoing calling, inspired by the phone keypad. */
+.dialer--number-entry,
+.dialer--calling {
+  --dialer-bg: #fafafa;
+  --dialer-fg: #7b9194;
+  --dialer-muted: #879b9d;
+  --dialer-surface: #f1f5f4;
+  --dialer-surface-2: #e7eeec;
+  border-radius: 38px;
+  width: min(432px, calc(100vw - 32px));
+  padding: 24px 32px 38px;
+  min-height: min(760px, 90dvh);
+}
+.dialer--number-entry .dialer__title,
+.dialer--calling .dialer__title,
+.dialer--number-entry .dial-input__label,
+.dialer--number-entry .account-picker__label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.dialer--number-entry .dialer__header,
+.dialer--calling .dialer__header {
+  justify-content: flex-end;
+  margin-bottom: 14px;
+}
+.dialer--number-entry .dialer__close,
+.dialer--calling .dialer__close {
+  background: transparent;
+}
+.dialer--number-entry .account-picker {
+  margin: 0 0 32px;
+}
+.dialer--number-entry .account-picker__row {
+  gap: 6px;
+}
+.dialer--number-entry .account-picker__select {
+  border: 0;
+  background: transparent;
+  padding: 6px;
+  font-size: 12px;
+}
+.dialer--number-entry .status-pill {
+  padding: 4px 6px;
+  font-size: 10px;
+}
+.dialer--number-entry .dial-input {
+  margin: 0;
+}
+.dialer--number-entry .dial-input__field {
+  padding: 10px 0;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  text-align: center;
+  color: #7b9194;
+  font-size: clamp(24px, 4vw, 36px);
+  font-weight: 600;
+  letter-spacing: -0.025em;
+}
+.dialer--number-entry .dial-input__field::placeholder {
+  color: #a7b4b5;
+  font-size: 26px;
+  font-weight: 400;
+}
+.dialer--number-entry .dial-input__field:focus {
+  box-shadow: none;
+}
+.dialer--number-entry .dial-input__field:focus-visible {
+  outline: 2px solid #bad7cd;
+  outline-offset: 4px;
+  border-radius: 8px;
+}
+.calling-screen {
+  padding-top: 42px;
+  text-align: center;
+}
+.calling-screen__number {
+  margin: 0;
+  font-size: clamp(26px, 4vw, 36px);
+  font-weight: 600;
+  line-height: 1.3;
+  letter-spacing: -0.025em;
+  overflow-wrap: anywhere;
+  color: #7b9194;
+}
+.calling-screen__status {
+  margin: 22px 0 0;
+  min-height: 28px;
+  text-align: center;
+  color: #b5babc;
+  font-size: 19px;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+.dialer--number-entry .keypad,
+.calling-screen__keypad {
+  position: relative;
+  gap: 14px 10px;
+  max-width: 320px;
+  margin: 72px auto 0;
+}
+.dialer--number-entry .keypad__key,
+.calling-screen .keypad__key {
+  height: 72px;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: #7b9194;
+  gap: 7px;
+}
+.dialer--number-entry .keypad__key:hover {
+  background: #edf4f0;
+}
+.dialer--number-entry .keypad__digit,
+.calling-screen .keypad__digit {
+  font-size: 37px;
+  font-weight: 400;
+}
+.dialer--number-entry .keypad__letters,
+.calling-screen .keypad__letters {
+  min-height: 14px;
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  color: #b8bfc0;
+  font-weight: 500;
+}
+.calling-screen .keypad__key:disabled {
+  opacity: 1;
+  cursor: default;
+}
+.dialer--number-entry .keypad__key--action {
+  position: absolute;
+  bottom: -100px;
+  right: 8px;
+  width: 48px;
+  height: 48px;
+  color: #a6b4b5;
+}
+.dialer--number-entry .dialer__submit,
+.calling-screen .dialer__submit {
+  display: grid;
+  place-items: center;
+  width: 72px;
+  height: 72px;
+  min-height: 72px;
+  padding: 0;
+  margin: 66px auto 0;
+  border-radius: 50%;
+  background: #12d874;
+  color: white;
+  box-shadow:
+    0 0 0 7px #14d7770b,
+    0 7px 28px #11d37538;
+}
+.dialer--number-entry .dialer__submit svg,
+.calling-screen .dialer__submit svg {
+  width: 34px;
+  height: 34px;
+}
+.calling-screen .dialer__submit--cancel {
+  background: #ee6069;
+  box-shadow:
+    0 0 0 7px #ee60690b,
+    0 7px 28px #ee606938;
+}
+.dialer--number-entry .dialer__submit:hover:not(:disabled) {
+  background: #0fc86a;
+}
+.dialer--number-entry .dialer__hint {
+  text-align: center;
+  font-size: 12px;
+}
+@media (max-width: 420px), (max-height: 760px) {
+  .dialer--number-entry,
+  .dialer--calling {
+    padding: 20px 24px 28px;
+    min-height: 0;
+  }
+  .dialer--number-entry .keypad,
+  .calling-screen__keypad {
+    margin-top: 36px;
+    gap: 8px;
+  }
+  .dialer--number-entry .dialer__submit,
+  .calling-screen .dialer__submit {
+    margin-top: 38px;
+  }
+  .dialer--number-entry .keypad__key--action {
+    bottom: -72px;
+  }
+  .calling-screen {
+    padding-top: 26px;
+  }
+}

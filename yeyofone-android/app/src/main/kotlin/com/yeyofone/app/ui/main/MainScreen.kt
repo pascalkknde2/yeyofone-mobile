@@ -66,7 +66,6 @@ import com.yeyofone.app.ui.theme.CardGradientStart
 import com.yeyofone.app.ui.theme.CardWhite
 import com.yeyofone.app.ui.theme.DangerLight
 import com.yeyofone.app.ui.theme.InactiveGray
-import com.yeyofone.app.ui.theme.OrangeLight
 import com.yeyofone.app.ui.theme.PrimaryLight
 import com.yeyofone.app.ui.theme.SuccessLight
 import com.yeyofone.app.ui.theme.TextPrimary
@@ -260,13 +259,13 @@ private fun QuickActions(onKeypad: () -> Unit, onContacts: () -> Unit, onHistory
 @Composable
 private fun QuickAction(icon: ImageVector, label: String, color: Color, modifier: Modifier, onClick: () -> Unit) {
     Column(
-        modifier.border(1.dp, BorderLight, RoundedCornerShape(12.dp)).clip(RoundedCornerShape(12.dp))
-            .background(Color.White).clickable(onClick = onClick).padding(vertical = 16.dp),
+        modifier.clip(RoundedCornerShape(16.dp))
+            .clickable(onClick = onClick).padding(vertical = 12.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
-        Box(Modifier.size(40.dp).clip(CircleShape).background(when (color) { AccentBlue -> PrimaryLight; AccentGreen -> SuccessLight; else -> OrangeLight }), contentAlignment = Alignment.Center) {
-            Icon(icon, null, tint = color, modifier = Modifier.size(20.dp))
+        Box(Modifier.size(60.dp).clip(CircleShape).background(color.copy(alpha = 0.13f)), contentAlignment = Alignment.Center) {
+            Icon(icon, null, tint = color, modifier = Modifier.size(30.dp))
         }
         Text(label, fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = TextPrimary, maxLines = 1)
     }

@@ -1,0 +1,54 @@
+{
+  "schemaVersion": 1,
+  "profile": "audio-static-v1",
+  "sources": {
+    "pjproject": {
+      "version": "2.17",
+      "url": "https://codeload.github.com/pjsip/pjproject/tar.gz/refs/tags/2.17",
+      "sha256": "065fe06c06788d97c35f563796d59f00ce52fe9558a52d7b490a042a966facce",
+      "directory": "pjproject-2.17"
+    },
+    "openssl": {
+      "version": "3.5.9",
+      "url": "https://github.com/openssl/openssl/releases/download/openssl-3.5.9/openssl-3.5.9.tar.gz",
+      "sha256": "603f5602e2eef00d77fbd429d34dcd5822bb301757a1bc9cdb24c670f1eb859a",
+      "directory": "openssl-3.5.9"
+    }
+  },
+  "platform": "Darwin",
+  "architecture": "x86_64",
+  "cmake": "4.1.2",
+  "reproducibility": {
+    "mode": "same-directory-clean-pjsip-rebuild",
+    "matchingArchives": 16,
+    "opensslRebuilt": false
+  },
+  "compiler": [
+    "set(CMAKE_CXX_COMPILER \"/usr/bin/c++\")",
+    "set(CMAKE_CXX_COMPILER_ARG1 \"\")",
+    "set(CMAKE_CXX_COMPILER_ID \"AppleClang\")",
+    "set(CMAKE_CXX_COMPILER_VERSION \"21.0.0.21000099\")",
+    "set(CMAKE_CXX_COMPILER_VERSION_INTERNAL \"\")",
+    "set(CMAKE_CXX_COMPILER_WRAPPER \"\")",
+    "set(CMAKE_CXX_STANDARD_COMPUTED_DEFAULT \"14\")",
+    "set(CMAKE_CXX_EXTENSIONS_COMPUTED_DEFAULT \"ON\")"
+  ],
+  "artifacts": {
+    "build/pjproject/pjlib/libpjlib.a": "4d14c0641dcd4afe7803e5d670478a03bc271c7bd2194bfd44a049c76cb6c543",
+    "build/pjproject/pjlib-util/libpjlib-util.a": "03e5c1ff942b5f3c71e2120ce0bd29d00e54b6cc323175174ac75a101de39555",
+    "build/pjproject/pjmedia/libpjmedia-audiodev.a": "00e0770b901937eec9b12d078638cf4d1300e47fcce1137a2e22cfb9716a006f",
+    "build/pjproject/pjmedia/libpjmedia-codec.a": "85afd209d40218993d425fd699a3ee5e2540e74f59f1fb17d2048f2635c15225",
+    "build/pjproject/pjmedia/libpjmedia-videodev.a": "abf03ca32c7481b41652a23568994857cc499ef1559f954206a2de77b9ba75ef",
+    "build/pjproject/pjmedia/libpjmedia.a": "cbc92de74482836f4b8c20e9dc7498a290f5c0e22a7ba50f971f7510f5eef909",
+    "build/pjproject/pjnath/libpjnath.a": "8d6c5d58c81e9d51aa39c07dcbcdab8e4bfde6d369362393917a3407d97cc8f7",
+    "build/pjproject/pjsip/libpjsip-simple.a": "40873b4569d59b9fddb2049c28414d9570e11a3f5be286e3c05768ea38109b7d",
+    "build/pjproject/pjsip/libpjsip-ua.a": "b023323e46e3540f21a2e42e0ad9b25a1374c2a48d9c1d65a7fb46d1c9185613",
+    "build/pjproject/pjsip/libpjsip.a": "80e4f70c6faee2a831ea7b3c9fcbc05b2d212ade90004a41f4b084b9b034e865",
+    "build/pjproject/pjsip/libpjsua-lib.a": "4d5753ded811391be5077e553a88fb041814ef89cc3f998db54150a73247c79f",
+    "build/pjproject/pjsip/libpjsua2.a": "c727978c372b20c75c788638dd16eb87cd4750a4cc7a67f00b551aa13254cd08",
+    "build/pjproject/third_party/resample/libresample.a": "315739ddf476f96d603b5e1da7bfebabd07076515171afefdf4b3d3f786ac4b5",
+    "build/pjproject/third_party/srtp/libsrtp.a": "8cf13d02cd7676c094804d5231530c32fb6376fa85c68d9211013e992f299c43",
+    "openssl-install/lib/libcrypto.a": "65e1845910b2424c7b30f5b1faa0cc32448d5080216cffe934ac467bc37688c8",
+    "openssl-install/lib/libssl.a": "95ee8a25c06d52c6047318411453c2b62d259cda224622799c00672a8685fec3"
+  }
+}
