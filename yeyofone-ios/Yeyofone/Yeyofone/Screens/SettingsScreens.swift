@@ -28,7 +28,7 @@ struct SettingsScreen: View {
 
     private var sections: [(String, [SettingEntry])] {
         let accountCount = store.accounts.filter(\.enabled).count
-        var sections: [(String, [SettingEntry])] = [
+        let sections: [(String, [SettingEntry])] = [
             (String(localized: "Account"), [
                 SettingEntry(icon: "person.crop.circle.fill", color: Palette.accentBlue, title: String(localized: "Accounts"),
                              subtitle: String(localized: "\(accountCount) accounts connected")) { store.screen = .accounts },
@@ -59,12 +59,6 @@ struct SettingsScreen: View {
                              subtitle: String(localized: "Version \(AppInfo.version) • Terms • Privacy")),
             ]),
         ]
-        #if DEBUG
-        sections.append((String(localized: "Developer"), [
-                SettingEntry(icon: "phone.badge.waveform.fill", color: Palette.accentGreen, title: String(localized: "Simulate incoming call"),
-                             subtitle: String(localized: "Preview the incoming-call screen")) { store.simulateIncomingCall() },
-            ]))
-        #endif
         let trimmed = query.trimmingCharacters(in: .whitespaces)
         guard !trimmed.isEmpty else { return sections }
         return sections.compactMap { title, entries in

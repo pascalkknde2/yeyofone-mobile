@@ -1,9 +1,7 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
-    "" : {
-
-    },
+    "" : {},
     "%@ is on hold" : {
       "localizations" : {
         "de" : {
@@ -492,6 +490,50 @@
         }
       }
     },
+    "Add Contact" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kontakt hinzufügen"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Añadir contacto"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajouter un contact"
+          }
+        }
+      }
+    },
+    "Add a SIP account to make calls" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Füge ein SIP-Konto hinzu, um Anrufe zu tätigen"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Añade una cuenta SIP para llamar"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajoutez un compte SIP pour passer des appels"
+          }
+        }
+      }
+    },
     "Add account" : {
       "localizations" : {
         "de" : {
@@ -515,28 +557,6 @@
       }
     },
     "Add contact" : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Kontakt hinzufügen"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Añadir contacto"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ajouter un contact"
-          }
-        }
-      }
-    },
-    "Add Contact" : {
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -806,28 +826,6 @@
         }
       }
     },
-    "Auto-record, Storage, Format" : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Automatische Aufnahme, Speicher, Format"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Grabación automática, almacenamiento, formato"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Enregistrement auto, stockage, format"
-          }
-        }
-      }
-    },
     "Auto-Translate" : {
       "localizations" : {
         "de" : {
@@ -852,6 +850,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Traduction automatique"
+          }
+        }
+      }
+    },
+    "Auto-record, Storage, Format" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Automatische Aufnahme, Speicher, Format"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Grabación automática, almacenamiento, formato"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enregistrement auto, stockage, format"
           }
         }
       }
@@ -918,6 +938,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Bluetooth"
+          }
+        }
+      }
+    },
+    "CALL ENDED" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ANRUF BEENDET"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "LLAMADA FINALIZADA"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "APPEL TERMINÉ"
           }
         }
       }
@@ -1010,72 +1052,6 @@
         }
       }
     },
-    "Call back" : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Zurückrufen"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Devolver llamada"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Rappeler"
-          }
-        }
-      }
-    },
-    "Call ended" : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Anruf beendet"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Llamada finalizada"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Appel terminé"
-          }
-        }
-      }
-    },
-    "CALL ENDED" : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "ANRUF BEENDET"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "LLAMADA FINALIZADA"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "APPEL TERMINÉ"
-          }
-        }
-      }
-    },
     "Call Forwarding" : {
       "localizations" : {
         "de" : {
@@ -1142,28 +1118,6 @@
         }
       }
     },
-    "Call someone else privately, then complete or return" : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Privat mit jemand anderem sprechen, dann abschließen oder zurückkehren"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Llama a otra persona en privado y luego completa o regresa"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Appelez quelqu’un d’autre en privé, puis terminez ou revenez"
-          }
-        }
-      }
-    },
     "Call Waiting" : {
       "localizations" : {
         "de" : {
@@ -1182,6 +1136,94 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Double appel"
+          }
+        }
+      }
+    },
+    "Call back" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zurückrufen"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Devolver llamada"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rappeler"
+          }
+        }
+      }
+    },
+    "Call ended" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Anruf beendet"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Llamada finalizada"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Appel terminé"
+          }
+        }
+      }
+    },
+    "Call failed" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Anruf fehlgeschlagen"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Error en la llamada"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Échec de l’appel"
+          }
+        }
+      }
+    },
+    "Call someone else privately, then complete or return" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Privat mit jemand anderem sprechen, dann abschließen oder zurückkehren"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Llama a otra persona en privado y luego completa o regresa"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Appelez quelqu’un d’autre en privé, puis terminez ou revenez"
           }
         }
       }
@@ -1886,29 +1928,6 @@
         }
       }
     },
-    "Developer" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Entwickler"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Desarrollador"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Développeur"
-          }
-        }
-      }
-    },
     "Disabled" : {
       "localizations" : {
         "de" : {
@@ -2085,6 +2104,28 @@
         }
       }
     },
+    "Edit Contact" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kontakt bearbeiten"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Editar contacto"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Modifier le contact"
+          }
+        }
+      }
+    },
     "Edit account" : {
       "localizations" : {
         "de" : {
@@ -2151,24 +2192,24 @@
         }
       }
     },
-    "Edit Contact" : {
+    "Enable ICE" : {
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Kontakt bearbeiten"
+            "value" : "ICE aktivieren"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Editar contacto"
+            "value" : "Activar ICE"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Modifier le contact"
+            "value" : "Activer ICE"
           }
         }
       }
@@ -2191,28 +2232,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Activer le renvoi d’appel"
-          }
-        }
-      }
-    },
-    "Enable ICE" : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "ICE aktivieren"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Activar ICE"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Activer ICE"
           }
         }
       }
@@ -2451,108 +2470,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Favoris"
-          }
-        }
-      }
-    },
-    "filter.all" : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Alle"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "All"
-          }
-        },
-        "en-GB" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "All"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Todas"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tous"
-          }
-        }
-      }
-    },
-    "filter.missed" : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Verpasst"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Missed"
-          }
-        },
-        "en-GB" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Missed"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Perdidas"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Manqués"
-          }
-        }
-      }
-    },
-    "filter.voicemail" : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Mailbox"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Voicemail"
-          }
-        },
-        "en-GB" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Voicemail"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Buzón de voz"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Messagerie"
           }
         }
       }
@@ -2893,28 +2810,6 @@
         }
       }
     },
-    "Incoming" : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Eingehend"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Entrante"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Entrant"
-          }
-        }
-      }
-    },
     "INCOMING CALL" : {
       "localizations" : {
         "de" : {
@@ -2933,6 +2828,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "APPEL ENTRANT"
+          }
+        }
+      }
+    },
+    "Incoming" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Eingehend"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Entrante"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Entrant"
           }
         }
       }
@@ -3065,6 +2982,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "État du message"
+          }
+        }
+      }
+    },
+    "Microphone permission is required to place a call" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Für Anrufe ist die Mikrofonberechtigung erforderlich"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Se necesita permiso del micrófono para llamar"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "L’autorisation du micro est requise pour passer un appel"
           }
         }
       }
@@ -3333,6 +3272,28 @@
         }
       }
     },
+    "No SIP accounts configured" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Keine SIP-Konten eingerichtet"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No hay cuentas SIP configuradas"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aucun compte SIP configuré"
+          }
+        }
+      }
+    },
     "No contacts yet" : {
       "localizations" : {
         "de" : {
@@ -3439,28 +3400,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Aucun enregistrement pour le moment"
-          }
-        }
-      }
-    },
-    "No SIP accounts configured" : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Keine SIP-Konten eingerichtet"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "No hay cuentas SIP configuradas"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Aucun compte SIP configuré"
           }
         }
       }
@@ -3861,29 +3800,6 @@
         }
       }
     },
-    "Preview the incoming-call screen" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Bildschirm für eingehende Anrufe anzeigen"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ver la pantalla de llamada entrante"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Afficher l’écran d’appel entrant"
-          }
-        }
-      }
-    },
     "Primary account" : {
       "localizations" : {
         "de" : {
@@ -4044,28 +3960,6 @@
         }
       }
     },
-    "Recent calls" : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Letzte Anrufe"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Llamadas recientes"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Appels récents"
-          }
-        }
-      }
-    },
     "Recent Recordings" : {
       "localizations" : {
         "de" : {
@@ -4084,6 +3978,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Enregistrements récents"
+          }
+        }
+      }
+    },
+    "Recent calls" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Letzte Anrufe"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Llamadas recientes"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Appels récents"
           }
         }
       }
@@ -4528,6 +4444,94 @@
         }
       }
     },
+    "SIP Server" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "SIP-Server"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Servidor SIP"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Serveur SIP"
+          }
+        }
+      }
+    },
+    "SIP accounts" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "SIP-Konten"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cuentas SIP"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Comptes SIP"
+          }
+        }
+      }
+    },
+    "SIP username" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "SIP-Benutzername"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Usuario SIP"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nom d’utilisateur SIP"
+          }
+        }
+      }
+    },
+    "STUN server (optional)" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "STUN-Server (optional)"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Servidor STUN (opcional)"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Serveur STUN (facultatif)"
+          }
+        }
+      }
+    },
     "Save" : {
       "localizations" : {
         "de" : {
@@ -4836,95 +4840,6 @@
         }
       }
     },
-    "Simulate incoming call" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Eingehenden Anruf simulieren"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Simular llamada entrante"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Simuler un appel entrant"
-          }
-        }
-      }
-    },
-    "SIP accounts" : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "SIP-Konten"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Cuentas SIP"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Comptes SIP"
-          }
-        }
-      }
-    },
-    "SIP Server" : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "SIP-Server"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Servidor SIP"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Serveur SIP"
-          }
-        }
-      }
-    },
-    "SIP username" : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "SIP-Benutzername"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Usuario SIP"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Nom d’utilisateur SIP"
-          }
-        }
-      }
-    },
     "Social" : {
       "localizations" : {
         "de" : {
@@ -5123,24 +5038,90 @@
         }
       }
     },
-    "STUN server (optional)" : {
+    "TLS isn't available on iOS yet. Use UDP or TCP." : {
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "STUN-Server (optional)"
+            "value" : "TLS ist unter iOS noch nicht verfügbar. Verwende UDP oder TCP."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Servidor STUN (opcional)"
+            "value" : "TLS aún no está disponible en iOS. Usa UDP o TCP."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Serveur STUN (facultatif)"
+            "value" : "TLS n’est pas encore disponible sur iOS. Utilisez UDP ou TCP."
+          }
+        }
+      }
+    },
+    "TODAY" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "HEUTE"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "HOY"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "AUJOURD’HUI"
+          }
+        }
+      }
+    },
+    "TURN server (optional)" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "TURN-Server (optional)"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Servidor TURN (opcional)"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Serveur TURN (facultatif)"
+          }
+        }
+      }
+    },
+    "TURN username (optional)" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "TURN-Benutzername (optional)"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Usuario TURN (opcional)"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nom d’utilisateur TURN (facultatif)"
           }
         }
       }
@@ -5211,6 +5192,28 @@
         }
       }
     },
+    "The calling engine couldn't start (%lld)." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Die Anruf-Engine konnte nicht gestartet werden (%lld)."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No se pudo iniciar el motor de llamadas (%lld)."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le moteur d’appel n’a pas pu démarrer (%lld)."
+          }
+        }
+      }
+    },
     "This account type is not supported yet" : {
       "localizations" : {
         "de" : {
@@ -5255,28 +5258,6 @@
         }
       }
     },
-    "TODAY" : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "HEUTE"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "HOY"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "AUJOURD’HUI"
-          }
-        }
-      }
-    },
     "Transfer" : {
       "localizations" : {
         "de" : {
@@ -5317,6 +5298,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Destination du transfert"
+          }
+        }
+      }
+    },
+    "Transfer failed" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Weiterleitung fehlgeschlagen"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Error en la transferencia"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Échec du transfert"
           }
         }
       }
@@ -5453,50 +5456,6 @@
         }
       }
     },
-    "TURN server (optional)" : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "TURN-Server (optional)"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Servidor TURN (opcional)"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Serveur TURN (facultatif)"
-          }
-        }
-      }
-    },
-    "TURN username (optional)" : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "TURN-Benutzername (optional)"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Usuario TURN (opcional)"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Nom d’utilisateur TURN (facultatif)"
-          }
-        }
-      }
-    },
     "Type a message…" : {
       "localizations" : {
         "de" : {
@@ -5515,6 +5474,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Saisissez un message…"
+          }
+        }
+      }
+    },
+    "Unknown caller" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unbekannter Anrufer"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Llamante desconocido"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Appelant inconnu"
           }
         }
       }
@@ -5879,6 +5860,108 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "YeyoFone • Version %@"
+          }
+        }
+      }
+    },
+    "filter.all" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alle"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "All"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "All"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Todas"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tous"
+          }
+        }
+      }
+    },
+    "filter.missed" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Verpasst"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Missed"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Missed"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Perdidas"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Manqués"
+          }
+        }
+      }
+    },
+    "filter.voicemail" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mailbox"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Voicemail"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Voicemail"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Buzón de voz"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Messagerie"
           }
         }
       }

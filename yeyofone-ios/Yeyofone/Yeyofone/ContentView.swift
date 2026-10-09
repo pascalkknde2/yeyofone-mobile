@@ -8,11 +8,11 @@
 import SwiftUI
 
 #Preview("Home") {
-    RootView().environment(AppStore())
+    RootView().environment(AppStore(demo: true))
 }
 
 #Preview("Incoming call") {
-    let store = AppStore()
-    store.simulateIncomingCall()
+    let store = AppStore(demo: true)
+    store.openForDebugging("incoming")
     return RootView().environment(store)
 }

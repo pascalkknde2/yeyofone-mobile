@@ -3,12 +3,17 @@
 //  Yeyofone
 //
 //  Screen state for the whole app, the iOS counterpart of Android's YeyoFoneViewModel.
-//  There is no SIP engine on iOS yet: accounts, contacts and history are in-memory sample
-//  data and calls are simulated, so every screen can be exercised end to end.
+//  Accounts, contacts and history are stored on the device; registration and calls run on
+//  SipEngine (PJSIP through the shared YeyoFone bridge). A demo store with sample data and
+//  no engine backs SwiftUI previews and the debug-only -YFScreen launch argument.
 //
 
 import Foundation
 import Observation
+import os
+
+/// State changes only; never account secrets. View with Console or `log stream --predicate 'subsystem == "com.yeyofone.app"'`.
+nonisolated private let log = Logger(subsystem: "com.yeyofone.app", category: "sip")
 
 enum AppScreen: Equatable {
     case home, contacts, history, chat, settings
@@ -39,11 +44,19 @@ enum CallPage { case main, options, transfer }
 final class AppStore {
     var screen: AppScreen = .home
 
-    var accounts: [SipAccount] = SampleData.accounts
+    var accounts: [SipAccount] = [] {
+        didSet { save(accounts, to: "accounts") }
+    }
     var registration: [UUID: RegistrationState] = [:]
-    var preferences: [UUID: AccountPreferences] = [:]
-    var contacts: [Contact] = SampleData.contacts
-    var history: [CallLog] = SampleData.history
+    var preferences: [UUID: AccountPreferences] = [:] {
+        didSet { save(preferences, to: "preferences") }
+    }
+    var contacts: [Contact] = [] {
+        didSet { save(contacts, to: "contacts") }
+    }
+    var history: [CallLog] = [] {
+        didSet { save(history, to: "history") }
+    }
     var forwardingDestination: String?
 
     var activeCall: CallSession?
@@ -51,22 +64,44 @@ final class AppStore {
     var consultationCall: CallSession?
     var callPage: CallPage = .main
     var endedSummary: CallSummary?
+    /// A short message shown over the current screen, such as a failed call.
+    var notice: String?
 
-    var availableRoutes: [AudioRoute] = AudioRoute.allCases
-    var selectedRoute: AudioRoute = .earpiece
+    var availableRoutes: [AudioRoute] = [.earpiece, .speaker]
+    var selectedRoute: AudioRoute = .earpiece {
+        didSet { if engine != nil, activeCall != nil { AudioController.select(selectedRoute) } }
+    }
 
     var chatContactName = "Noah Anderson"
     var chatContactOnline = true
     var chatMessages: [ChatMessage] = SampleData.chatMessages
     var contactTyping = true
 
-    private var timers: [UUID: [Task<Void, Never>]] = [:]
+    @ObservationIgnored private let persists: Bool
+    @ObservationIgnored private var engine: SipEngine?
+    @ObservationIgnored private var accountTokens: [UUID: UInt64] = [:]
+    @ObservationIgnored private var nextAccountToken: UInt64 = 1
+    @ObservationIgnored private var nextCallToken: UInt64 = 1
+    @ObservationIgnored private var finishedCalls: Set<UInt64> = []
+    @ObservationIgnored private var pendingTransfers: Set<UInt64> = []
+    @ObservationIgnored private var retries: [UUID: Task<Void, Never>] = [:]
 
-    init() {
-        for account in accounts {
-            registration[account.id] = account.enabled ? .registered : .notRegistered
-            preferences[account.id] = AccountPreferences()
+    init(demo: Bool = false) {
+        persists = !demo
+        if demo {
+            accounts = SampleData.accounts
+            contacts = SampleData.contacts
+            history = SampleData.history
+            for account in accounts {
+                registration[account.id] = account.enabled ? .registered : .notRegistered
+            }
+            return
         }
+        accounts = LocalStore.load([SipAccount].self, from: "accounts") ?? []
+        preferences = LocalStore.load([UUID: AccountPreferences].self, from: "preferences") ?? [:]
+        contacts = LocalStore.load([Contact].self, from: "contacts") ?? []
+        history = LocalStore.load([CallLog].self, from: "history") ?? []
+        startEngine()
     }
 
     var primaryAccount: SipAccount? { accounts.first }
@@ -107,29 +142,95 @@ final class AppStore {
     func setEnabled(_ id: UUID, _ enabled: Bool) {
         guard let index = accounts.firstIndex(where: { $0.id == id }) else { return }
         accounts[index].enabled = enabled
-        if enabled { register(id) } else { registration[id] = .notRegistered }
+        if enabled {
+            register(id)
+        } else {
+            retries.removeValue(forKey: id)?.cancel()
+            if let token = accountTokens[id] { engine?.register(token: token, renew: false) }
+            registration[id] = .notRegistered
+        }
     }
 
+    /// Sends a fresh REGISTER, adding the account to the engine first if needed.
     func register(_ id: UUID) {
-        registration[id] = .registering
-        schedule(id, after: 1.2) { [weak self] in self?.registration[id] = .registered }
+        guard let account = accounts.first(where: { $0.id == id }), account.enabled else { return }
+        guard engine != nil else { return }
+        if let token = accountTokens[id] {
+            registration[id] = .registering
+            engine?.register(token: token, renew: true)
+        } else {
+            addToEngine(account)
+        }
     }
 
-    func save(_ account: SipAccount) {
+    /// Saves the account; a non-empty `password` replaces the stored one.
+    func save(_ account: SipAccount, password: String?) {
+        if let password, !password.isEmpty {
+            PasswordStore.setPassword(password, for: account.id)
+        }
         if let index = accounts.firstIndex(where: { $0.id == account.id }) {
             accounts[index] = account
         } else {
             accounts.append(account)
-            preferences[account.id] = AccountPreferences()
         }
-        if account.enabled { register(account.id) }
+        removeFromEngine(account.id)
+        if account.enabled { addToEngine(account) } else { registration[account.id] = .notRegistered }
     }
 
     func deleteAccount(_ id: UUID) {
+        removeFromEngine(id)
+        PasswordStore.deletePassword(for: id)
         accounts.removeAll { $0.id == id }
         registration[id] = nil
         preferences[id] = nil
         screen = .accounts
+    }
+
+    /// Registration can lapse while iOS suspends the app, so refresh it when the app comes back.
+    func refreshRegistrations() {
+        for account in accounts where account.enabled { register(account.id) }
+    }
+
+    private func addToEngine(_ account: SipAccount) {
+        guard let engine else { return }
+        // The iOS engine is built without TLS for now; see docs/pjsip-build.md.
+        guard account.transport != .tls, let password = PasswordStore.password(for: account.id) else {
+            registration[account.id] = .failed
+            return
+        }
+        let token = nextAccountToken
+        nextAccountToken += 1
+        accountTokens[account.id] = token
+        registration[account.id] = .registering
+        engine.addAccount(
+            token: token, username: account.username, host: account.domain, password: password,
+            port: account.port, transport: account.transport == .tcp ? .tcp : .udp
+        ) { [weak self] code in
+            guard let self, accountTokens[account.id] == token else { return }
+            log.info("Account \(token) added to engine: \(code)")
+            if code == 0 {
+                self.engine?.register(token: token, renew: true)
+            } else {
+                accountTokens[account.id] = nil
+                registration[account.id] = .failed
+            }
+        }
+    }
+
+    private func removeFromEngine(_ id: UUID) {
+        retries.removeValue(forKey: id)?.cancel()
+        guard let token = accountTokens.removeValue(forKey: id) else { return }
+        engine?.removeAccount(token: token)
+    }
+
+    private func scheduleRetry(_ id: UUID) {
+        guard retries[id] == nil else { return }
+        retries[id] = Task { [weak self] in
+            try? await Task.sleep(for: .seconds(30))
+            guard let self, !Task.isCancelled else { return }
+            retries[id] = nil
+            if registration[id] == .failed { register(id) }
+        }
     }
 
     // MARK: Contacts
@@ -156,98 +257,150 @@ final class AppStore {
     // MARK: Calls
 
     func startCall(to destination: String) {
-        let trimmed = destination.trimmingCharacters(in: .whitespaces)
-        guard !trimmed.isEmpty, activeCall == nil else { return }
-        let session = CallSession(
-            remoteName: contactName(for: trimmed) ?? trimmed,
-            remoteNumber: trimmed,
-            direction: .outgoing,
-            state: .calling
-        )
-        activeCall = session
-        callPage = .main
-        schedule(session.id, after: 1.5) { [weak self] in self?.updateActive(session.id) { $0.state = .ringing } }
-        schedule(session.id, after: 3.5) { [weak self] in
-            self?.updateActive(session.id) {
-                $0.state = .connected
-                $0.connectedAt = Date()
+        let number = destination.trimmingCharacters(in: .whitespaces)
+        guard !number.isEmpty, activeCall == nil, incomingCall == nil, let engine else { return }
+        guard let account = callingAccount, let accountToken = accountTokens[account.id] else {
+            notice = String(localized: "Add a SIP account to make calls")
+            return
+        }
+        Task {
+            guard await AudioController.requestMicrophone() else {
+                notice = String(localized: "Microphone permission is required to place a call")
+                return
+            }
+            guard activeCall == nil else { return }
+            let token = newCallToken()
+            activeCall = CallSession(token: token, remoteName: contactName(for: number) ?? number,
+                                     remoteNumber: number, direction: .outgoing, state: .calling)
+            callPage = .main
+            prepareAudioRoutes()
+            engine.startCall(account: accountToken, token: token, uri: sipUri(number, account: account)) { [weak self] code in
+                log.info("Call \(token) start: \(code)")
+                guard let self, code != 0, activeCall?.token == token else { return }
+                activeCall = nil
+                notice = String(localized: "Call failed")
             }
         }
     }
 
-    /// Debug helper standing in for a real INVITE, so the incoming-call screen can be exercised.
-    func simulateIncomingCall() {
-        guard incomingCall == nil, activeCall == nil else { return }
-        let contact = contacts.first
-        incomingCall = CallSession(
-            remoteName: contact?.displayName ?? "1001",
-            remoteNumber: contact?.number ?? "1001",
-            direction: .incoming,
-            state: .ringing
-        )
-    }
-
     func acceptIncoming() {
-        guard var call = incomingCall else { return }
-        call.state = .connected
-        call.connectedAt = Date()
-        incomingCall = nil
-        activeCall = call
-        callPage = .main
+        guard let call = incomingCall else { return }
+        guard let engine else {
+            incomingCall = nil
+            activeCall = CallSession(remoteName: call.remoteName, remoteNumber: call.remoteNumber,
+                                     direction: .incoming, state: .connected, connectedAt: Date())
+            return
+        }
+        Task {
+            guard await AudioController.requestMicrophone() else {
+                notice = String(localized: "Microphone permission is required to place a call")
+                return
+            }
+            guard incomingCall?.token == call.token else { return }
+            incomingCall = nil
+            var answered = call
+            answered.state = .connecting
+            activeCall = answered
+            callPage = .main
+            prepareAudioRoutes()
+            engine.answer(token: call.token) { [weak self] code in
+                if code != 0 { self?.notice = String(localized: "Call failed") }
+            }
+        }
     }
 
     func declineIncoming() {
         guard let call = incomingCall else { return }
         incomingCall = nil
+        finishedCalls.insert(call.token)
+        engine?.reject(token: call.token)
         finish(call)
     }
 
     func endCall() {
-        cancelTimers(for: consultationCall?.id)
-        consultationCall = nil
         guard let call = activeCall else { return }
-        activeCall = nil
-        callPage = .main
-        finish(call)
+        guard let engine, call.token != 0 else {
+            activeCall = nil
+            consultationCall = nil
+            callPage = .main
+            finish(call)
+            return
+        }
+        if let consultation = consultationCall { engine.hangup(token: consultation.token) }
+        engine.hangup(token: call.token)
     }
 
-    func setMuted(_ muted: Bool) { activeCall?.muted = muted }
+    func setMuted(_ muted: Bool) {
+        guard let call = activeCall else { return }
+        activeCall?.muted = muted
+        engine?.mute(token: call.token, muted: muted)
+    }
 
     func setHeld(_ held: Bool) {
         guard var call = activeCall else { return }
         call.held = held
         if call.connectedAt != nil { call.state = held ? .held : .connected }
         activeCall = call
+        // The engine refuses while a transfer or another hold is in progress; its next snapshot restores the state.
+        engine?.hold(token: call.token, held: held)
     }
 
     func sendDtmf(_ digit: String) {
-        // Tones are sent by the SIP engine; nothing to do in the simulated build.
+        guard let call = activeCall, let character = digit.first else { return }
+        engine?.sendDtmf(token: call.token, digit: character)
     }
 
     func blindTransfer(to destination: String) {
-        guard !destination.isEmpty else { return }
-        endCall()
-    }
-
-    func startConsultation(to destination: String) {
-        let session = CallSession(
-            remoteName: contactName(for: destination) ?? destination,
-            remoteNumber: destination,
-            direction: .outgoing,
-            state: .calling
-        )
-        consultationCall = session
-        schedule(session.id, after: 2) { [weak self] in
-            guard self?.consultationCall?.id == session.id else { return }
-            self?.consultationCall?.state = .connected
-            self?.consultationCall?.connectedAt = Date()
+        let number = destination.trimmingCharacters(in: .whitespaces)
+        guard !number.isEmpty, let call = activeCall else { return }
+        callPage = .main
+        guard let engine, let account = callingAccount else {
+            endCall()
+            return
+        }
+        pendingTransfers.insert(call.token)
+        engine.transfer(token: call.token, uri: sipUri(number, account: account)) { [weak self] code in
+            guard let self, code != 0 else { return }
+            pendingTransfers.remove(call.token)
+            notice = String(localized: "Transfer failed")
         }
     }
 
-    func completeTransfer() { endCall() }
+    func startConsultation(to destination: String) {
+        let number = destination.trimmingCharacters(in: .whitespaces)
+        guard !number.isEmpty, activeCall != nil, consultationCall == nil else { return }
+        guard let engine else {
+            consultationCall = CallSession(remoteName: contactName(for: number) ?? number, remoteNumber: number,
+                                           direction: .outgoing, state: .connected, connectedAt: Date())
+            return
+        }
+        guard let account = callingAccount, let accountToken = accountTokens[account.id] else { return }
+        let token = newCallToken()
+        consultationCall = CallSession(token: token, remoteName: contactName(for: number) ?? number,
+                                       remoteNumber: number, direction: .outgoing, state: .calling)
+        engine.startCall(account: accountToken, token: token, uri: sipUri(number, account: account)) { [weak self] code in
+            guard let self, code != 0, consultationCall?.token == token else { return }
+            consultationCall = nil
+            notice = String(localized: "Call failed")
+        }
+    }
+
+    func completeTransfer() {
+        guard let call = activeCall, let consultation = consultationCall else { return }
+        guard let engine else {
+            endCall()
+            return
+        }
+        pendingTransfers.insert(call.token)
+        engine.transfer(token: call.token, uri: nil, consultation: consultation.token) { [weak self] code in
+            guard let self, code != 0 else { return }
+            pendingTransfers.remove(call.token)
+            notice = String(localized: "Transfer failed")
+        }
+    }
 
     func returnToCaller() {
-        cancelTimers(for: consultationCall?.id)
+        if let consultation = consultationCall { engine?.hangup(token: consultation.token) }
         consultationCall = nil
         setHeld(false)
         callPage = .main
@@ -264,14 +417,30 @@ final class AppStore {
         startCall(to: summary.callerNumber)
     }
 
-    private func updateActive(_ id: UUID, _ change: (inout CallSession) -> Void) {
-        guard var call = activeCall, call.id == id else { return }
-        change(&call)
-        activeCall = call
+    /// The account calls go out on: the first enabled account the engine knows about.
+    private var callingAccount: SipAccount? {
+        accounts.first { $0.enabled && accountTokens[$0.id] != nil }
+    }
+
+    /// Like Android, a short number or user part is dialled at the account's own domain and port.
+    private func sipUri(_ destination: String, account: SipAccount) -> String {
+        let user = destination.split(separator: "@").first.map(String.init) ?? destination
+        let bare = user.replacingOccurrences(of: "sip:", with: "")
+        let transport = account.transport == .tcp ? ";transport=tcp" : ""
+        return "sip:\(bare)@\(account.domain):\(account.port)\(transport)"
+    }
+
+    private func newCallToken() -> UInt64 {
+        defer { nextCallToken += 1 }
+        return nextCallToken
+    }
+
+    private func prepareAudioRoutes() {
+        availableRoutes = AudioController.availableRoutes()
+        selectedRoute = .earpiece
     }
 
     private func finish(_ call: CallSession) {
-        cancelTimers(for: call.id)
         let answered = call.connectedAt != nil
         let duration = call.connectedAt.map { Date().timeIntervalSince($0) } ?? 0
         let type: CallType = call.direction == .outgoing ? .outgoing : (answered ? .incoming : .missed)
@@ -296,22 +465,141 @@ final class AppStore {
         )
     }
 
-    private func schedule(_ owner: UUID, after seconds: Double, _ action: @escaping @MainActor () -> Void) {
-        let task = Task { @MainActor in
-            try? await Task.sleep(for: .seconds(seconds))
-            guard !Task.isCancelled else { return }
-            action()
-        }
-        timers[owner, default: []].append(task)
+    // MARK: Engine
+
+    private func startEngine() {
+        let engine = SipEngine(
+            onSnapshot: { snapshot in
+                Task { @MainActor [weak self] in self?.apply(snapshot) }
+            },
+            onStartFailure: { code in
+                log.error("Engine failed to start: \(code)")
+                Task { @MainActor [weak self] in
+                    self?.engine = nil
+                    self?.notice = String(localized: "The calling engine couldn't start (\(Int(code))).")
+                }
+            }
+        )
+        self.engine = engine
+        engine.start()
+        log.info("Engine started with \(self.accounts.count) account(s)")
+        for account in accounts where account.enabled { addToEngine(account) }
     }
 
-    private func cancelTimers(for owner: UUID?) {
-        guard let owner else { return }
-        timers[owner]?.forEach { $0.cancel() }
-        timers[owner] = nil
+    private func apply(_ snapshot: EngineSnapshot) {
+        for (id, token) in accountTokens {
+            guard let update = snapshot.registrations[token],
+                  let account = accounts.first(where: { $0.id == id }) else { continue }
+            let state = Self.registrationState(update, enabled: account.enabled)
+            if registration[id] != state {
+                log.info("Account \(token): \(String(describing: state)) (status \(update.status), SIP \(update.sipCode), expires \(update.expires)s, failure kind \(update.failureKind))")
+                registration[id] = state
+            }
+            if state == .failed, account.enabled { scheduleRetry(id) }
+        }
+        for call in snapshot.calls { apply(call) }
+        finishedCalls.formIntersection(snapshot.calls.map(\.token))
+    }
+
+    private func apply(_ call: EngineCall) {
+        log.debug("Call \(call.token): state \(call.state), SIP \(call.sipCode), incoming \(call.incoming), held \(call.held), transfer pending \(call.transferPending) (\(call.transferCode))")
+        if call.state == InviteState.disconnected {
+            if !finishedCalls.contains(call.token) {
+                finishedCalls.insert(call.token)
+                callEnded(call)
+            }
+            engine?.release(token: call.token)
+            return
+        }
+        if pendingTransfers.contains(call.token), !call.transferPending {
+            pendingTransfers.remove(call.token)
+            if (200..<300).contains(Int(call.transferCode)) {
+                // The other party now has the call; end our leg.
+                engine?.hangup(token: call.token)
+            } else {
+                notice = String(localized: "Transfer failed")
+            }
+        }
+        if let current = activeCall, current.token == call.token {
+            let updated = Self.merge(current, call)
+            if updated != current { activeCall = updated }
+        } else if let current = consultationCall, current.token == call.token {
+            let updated = Self.merge(current, call)
+            if updated != current { consultationCall = updated }
+        } else if let current = incomingCall, current.token == call.token {
+            let updated = Self.merge(current, call)
+            if updated != current { incomingCall = updated }
+        } else if call.incoming, incomingCall == nil, activeCall == nil, !finishedCalls.contains(call.token),
+                  call.state == InviteState.incoming || call.state == InviteState.early {
+            let number = call.caller.isEmpty ? String(localized: "Unknown caller") : call.caller
+            incomingCall = CallSession(token: call.token, remoteName: contactName(for: number) ?? number,
+                                       remoteNumber: number, direction: .incoming, state: .ringing)
+        }
+    }
+
+    private func callEnded(_ call: EngineCall) {
+        pendingTransfers.remove(call.token)
+        if consultationCall?.token == call.token {
+            // The original caller stays on hold until the user returns to them.
+            consultationCall = nil
+            return
+        }
+        if let session = activeCall, session.token == call.token {
+            activeCall = nil
+            callPage = .main
+            if let consultation = consultationCall {
+                engine?.hangup(token: consultation.token)
+                consultationCall = nil
+            }
+            finish(session)
+        } else if let session = incomingCall, session.token == call.token {
+            incomingCall = nil
+            finish(session)
+        }
+    }
+
+    private static func merge(_ session: CallSession, _ call: EngineCall) -> CallSession {
+        var session = session
+        session.muted = call.muted
+        session.held = call.held
+        switch call.state {
+        case InviteState.calling:
+            session.state = .calling
+        case InviteState.incoming, InviteState.early:
+            session.state = .ringing
+        case InviteState.connecting:
+            session.state = .connecting
+        case InviteState.confirmed:
+            session.state = call.held ? .held : .connected
+            if session.connectedAt == nil {
+                session.connectedAt = Date().addingTimeInterval(-Double(call.connectedMilliseconds) / 1000)
+            }
+        default:
+            break
+        }
+        return session
+    }
+
+    private static func registrationState(_ update: EngineRegistration, enabled: Bool) -> RegistrationState {
+        switch update.phase {
+        case 1:
+            return update.renew ? .registering : .unregistering
+        case 2:
+            if update.status == 0, (200..<300).contains(Int(update.sipCode)) {
+                return update.expires > 0 ? .registered : .notRegistered
+            }
+            return enabled ? .failed : .notRegistered
+        default:
+            return enabled ? .registering : .notRegistered
+        }
+    }
+
+    private func save<Value: Encodable>(_ value: Value, to name: String) {
+        if persists { LocalStore.save(value, to: name) }
     }
 
     #if DEBUG
+    /// Opens a screen directly for screenshots; only used with the demo store.
     func openForDebugging(_ name: String) {
         switch name {
         case "keypad": screen = .dial(destination: "1001")
@@ -327,11 +615,11 @@ final class AppStore {
         case "incomingSettings": screen = .incomingCallsSettings
         case "language": screen = .languageSettings
         case "recordings": screen = .recordings
-        case "incoming": simulateIncomingCall()
+        case "incoming":
+            incomingCall = CallSession(remoteName: "Noah Anderson", remoteNumber: "1001", direction: .incoming, state: .ringing)
         case "call":
-            startCall(to: "1001")
-            activeCall?.state = .connected
-            activeCall?.connectedAt = Date().addingTimeInterval(-83)
+            activeCall = CallSession(remoteName: "Noah Anderson", remoteNumber: "1001", direction: .outgoing,
+                                     state: .connected, connectedAt: Date().addingTimeInterval(-83))
         case "options": openForDebugging("call"); callPage = .options
         case "transfer": openForDebugging("call"); callPage = .transfer
         case "ended":
@@ -353,6 +641,7 @@ final class AppStore {
     }
 }
 
+/// Sample content for SwiftUI previews and screenshots; the real app starts empty.
 enum SampleData {
     static let accounts: [SipAccount] = [
         SipAccount(
