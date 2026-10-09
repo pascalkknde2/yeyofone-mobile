@@ -178,7 +178,10 @@
     <string name="settings_section_calls">Anrufeinstellungen</string>
     <string name="settings_section_more">Mehr</string>
     <string name="settings_accounts">Konten</string>
-    <string name="settings_accounts_connected">%1$d Konten verbunden</string>
+    <plurals name="settings_accounts_connected">
+        <item quantity="one">%1$d Konto verbunden</item>
+        <item quantity="other">%1$d Konten verbunden</item>
+    </plurals>
     <string name="settings_enterprise">Unternehmensanmeldung</string>
     <string name="settings_enterprise_subtitle">Mit Ihrem Arbeitskonto verbinden</string>
     <string name="new_badge">Neu</string>
@@ -316,7 +319,10 @@
     <string name="recordings_title">Aufnahmen</string>
     <string name="recording_storage_title">Speicher</string>
     <string name="recording_storage_used">Belegter Speicher</string>
-    <string name="recording_count">%1$d Aufnahmen gespeichert</string>
+    <plurals name="recording_count">
+        <item quantity="one">%1$d Aufnahme gespeichert</item>
+        <item quantity="other">%1$d Aufnahmen gespeichert</item>
+    </plurals>
     <string name="recording_search_hint">Aufnahmen durchsuchen …</string>
     <string name="recording_recent_title">Letzte Aufnahmen</string>
     <string name="recording_empty_title">Noch keine Aufnahmen</string>

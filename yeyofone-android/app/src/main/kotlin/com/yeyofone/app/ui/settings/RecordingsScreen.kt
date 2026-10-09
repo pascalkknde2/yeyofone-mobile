@@ -30,6 +30,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -144,7 +145,7 @@ fun RecordingsScreen(onBack: () -> Unit) {
                                 Box(Modifier.fillMaxWidth(progress).fillMaxHeight().background(AccentBlue))
                             }
                             Text(
-                                stringResource(R.string.recording_count, recordings.size),
+                                pluralStringResource(R.plurals.recording_count, recordings.size, recordings.size),
                                 Modifier.padding(top = 8.dp),
                                 fontSize = 12.sp,
                                 color = InactiveGray,

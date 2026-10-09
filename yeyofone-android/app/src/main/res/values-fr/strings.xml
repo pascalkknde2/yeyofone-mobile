@@ -178,7 +178,11 @@
     <string name="settings_section_calls">Paramètres d’appel</string>
     <string name="settings_section_more">Plus</string>
     <string name="settings_accounts">Comptes</string>
-    <string name="settings_accounts_connected">%1$d comptes connectés</string>
+    <plurals name="settings_accounts_connected">
+        <item quantity="one">%1$d compte connecté</item>
+        <item quantity="many">%1$d comptes connectés</item>
+        <item quantity="other">%1$d comptes connectés</item>
+    </plurals>
     <string name="settings_enterprise">Connexion entreprise</string>
     <string name="settings_enterprise_subtitle">Connectez-vous avec votre compte professionnel</string>
     <string name="new_badge">Nouveau</string>
@@ -316,7 +320,11 @@
     <string name="recordings_title">Enregistrements</string>
     <string name="recording_storage_title">Stockage</string>
     <string name="recording_storage_used">Stockage utilisé</string>
-    <string name="recording_count">%1$d enregistrements sauvegardés</string>
+    <plurals name="recording_count">
+        <item quantity="one">%1$d enregistrement sauvegardé</item>
+        <item quantity="many">%1$d enregistrements sauvegardés</item>
+        <item quantity="other">%1$d enregistrements sauvegardés</item>
+    </plurals>
     <string name="recording_search_hint">Rechercher des enregistrements…</string>
     <string name="recording_recent_title">Enregistrements récents</string>
     <string name="recording_empty_title">Aucun enregistrement pour le moment</string>

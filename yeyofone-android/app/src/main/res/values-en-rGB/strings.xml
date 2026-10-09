@@ -178,7 +178,10 @@
     <string name="settings_section_calls">Call Settings</string>
     <string name="settings_section_more">More</string>
     <string name="settings_accounts">Accounts</string>
-    <string name="settings_accounts_connected">%1$d accounts connected</string>
+    <plurals name="settings_accounts_connected">
+        <item quantity="one">%1$d account connected</item>
+        <item quantity="other">%1$d accounts connected</item>
+    </plurals>
     <string name="settings_enterprise">Enterprise Sign In</string>
     <string name="settings_enterprise_subtitle">Connect with your work account</string>
     <string name="new_badge">New</string>
@@ -316,7 +319,10 @@
     <string name="recordings_title">Recordings</string>
     <string name="recording_storage_title">Storage</string>
     <string name="recording_storage_used">Storage Used</string>
-    <string name="recording_count">%1$d recordings saved</string>
+    <plurals name="recording_count">
+        <item quantity="one">%1$d recording saved</item>
+        <item quantity="other">%1$d recordings saved</item>
+    </plurals>
     <string name="recording_search_hint">Search recordings…</string>
     <string name="recording_recent_title">Recent Recordings</string>
     <string name="recording_empty_title">No recordings yet</string>
