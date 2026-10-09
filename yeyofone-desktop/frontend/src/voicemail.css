@@ -1,130 +1,376 @@
+/* Same slate/blue palette as the sidebar and filters; green is reserved for placing the call. */
 .voicemail-page {
-  max-width: 980px;
+  max-width: 1040px;
 }
 .voicemail-page h1 {
   margin: 0;
-  color: #414b5a;
+  color: #0f172a;
   font-size: 27px;
 }
 .voicemail-page .section-heading p {
-  margin: 8px 0 0;
-  color: #91a0b4;
+  margin: 6px 0 0;
+  color: #64748b;
+}
+.voicemail-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 320px;
+  gap: 24px;
+  align-items: start;
+  margin-top: 8px;
+}
+.voicemail-card,
+.voicemail-guide {
+  border: 1px solid #e8edf4;
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 1px 2px #0f172a0a;
 }
 .voicemail-card {
-  width: min(100%, 560px);
   display: grid;
-  gap: 18px;
-  margin: 28px 0;
+  gap: 20px;
   padding: 28px;
-  border-radius: 20px;
-  background: #fff;
-  box-shadow: 0 14px 38px #34577a12;
 }
-.voicemail-card label {
+.voicemail-card__head {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid #f1f5f9;
+}
+.voicemail-card__head h2,
+.voicemail-guide h2 {
+  margin: 0;
+  color: #0f172a;
+  font-size: 17px;
+  font-weight: 600;
+}
+.voicemail-card__head p {
+  margin: 4px 0 0;
+  color: #64748b;
+  font-size: 14px;
+}
+.voicemail-badge {
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  color: #2563eb;
+  background: #eff6ff;
+}
+
+/* ---------- Form ---------- */
+.voicemail-field {
   display: grid;
   gap: 8px;
-  color: #526178;
+}
+.voicemail-field > span {
+  color: #334155;
+  font-size: 14px;
   font-weight: 600;
+}
+.voicemail-field small {
+  color: #64748b;
+  font-size: 13px;
+  line-height: 1.5;
 }
 .voicemail-card select,
 .voicemail-card input {
   width: 100%;
-  min-height: 48px;
-  padding: 10px 13px;
-  border: 1px solid #dfe7f0;
-  border-radius: 11px;
-  color: #465164;
-  background: #f9fbfe;
+  min-height: 46px;
+  padding: 10px 14px;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  color: #0f172a;
+  background: #fff;
   font: inherit;
+  transition:
+    border-color 0.15s,
+    box-shadow 0.15s;
 }
-.voicemail-hint,
-.voicemail-muted,
-.voicemail-privacy {
+.voicemail-card select {
+  appearance: none;
+  padding-right: 40px;
+  background: #fff
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")
+    no-repeat right 14px center;
+  cursor: pointer;
+}
+.voicemail-card select:hover,
+.voicemail-card input:hover {
+  border-color: #cbd5e1;
+}
+.voicemail-card select:focus-visible,
+.voicemail-card input:focus-visible {
+  outline: none;
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px #2563eb26;
+}
+.voicemail-code {
+  max-width: 200px;
+  font-size: 18px !important;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.08em;
+}
+.voicemail-code[aria-invalid="true"] {
+  border-color: #fca5a5;
+}
+.voicemail-registration {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: #b45309;
+  font-size: 13px;
+  font-weight: 500;
+}
+.voicemail-registration i,
+.voicemail-status i {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #f59e0b;
+}
+.voicemail-registration.is-registered {
+  color: #15803d;
+}
+.voicemail-registration.is-registered i {
+  background: #16a34a;
+}
+.voicemail-warning,
+.voicemail-error {
   margin: 0;
-  color: #8795a9;
-  line-height: 1.55;
+  padding: 11px 14px;
+  border-radius: 10px;
+  font-size: 14px;
+  line-height: 1.5;
 }
-.voicemail-muted {
-  color: #b47631;
+.voicemail-warning {
+  color: #92400e;
+  background: #fffbeb;
+  border: 1px solid #fde68a;
 }
-.voicemail-open,
-.voicemail-hangup {
-  min-height: 50px;
-  border: 0;
-  border-radius: 12px;
-  color: white;
-  background: #258ac7;
-  font: inherit;
-  font-weight: 700;
+.voicemail-error {
+  color: #b91c1c;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
 }
-.voicemail-open:disabled {
-  opacity: 0.5;
-}
-.voicemail-call-status {
-  display: flex;
+.voicemail-open {
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 9px;
-  color: #718198;
+  gap: 10px;
+  min-height: 48px;
+  border-radius: 12px;
+  color: white;
+  background: #16a34a;
+  font-weight: 600;
+  box-shadow: 0 4px 12px #16a34a33;
+  transition:
+    background 0.15s,
+    box-shadow 0.15s;
 }
-.voicemail-call-status i {
-  width: 9px;
-  height: 9px;
+.voicemail-open:hover:not(:disabled) {
+  background: #15803d;
+}
+.voicemail-open:disabled {
+  color: #94a3b8;
+  background: #f1f5f9;
+  box-shadow: none;
+  cursor: not-allowed;
+}
+
+/* ---------- Live call ---------- */
+.voicemail-live {
+  justify-items: center;
+  gap: 14px;
+  padding: 36px 28px 32px;
+  text-align: center;
+}
+.voicemail-avatar {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 88px;
+  height: 88px;
   border-radius: 50%;
-  background: #f2ae39;
+  color: #2563eb;
+  background: #eff6ff;
 }
-.voicemail-call-status i.connected {
-  background: #39aa7e;
+.voicemail-avatar.is-connecting::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 2px solid #93c5fd;
+  animation: voicemail-pulse 1.6s ease-out infinite;
+}
+@keyframes voicemail-pulse {
+  from {
+    transform: scale(1);
+    opacity: 1;
+  }
+  to {
+    transform: scale(1.45);
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .voicemail-avatar.is-connecting::after {
+    animation: none;
+  }
+}
+.voicemail-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 12px;
+  border-radius: 999px;
+  color: #b45309;
+  background: #fffbeb;
+  font-size: 13px;
+  font-weight: 600;
+}
+.voicemail-status.is-connected {
+  color: #15803d;
+  background: #f0fdf4;
+}
+.voicemail-status.is-connected i {
+  background: #16a34a;
 }
 .voicemail-account {
-  text-align: center;
-  color: #465164;
+  color: #0f172a;
   font-size: 20px;
 }
 .voicemail-duration {
-  text-align: center;
-  color: #718198;
-  font-size: 28px;
+  margin-top: -6px;
+  color: #64748b;
+  font-size: 15px;
   font-variant-numeric: tabular-nums;
+}
+.voicemail-live__hint {
+  max-width: 380px;
+  margin: 0;
+  color: #64748b;
+  font-size: 14px;
+  line-height: 1.55;
 }
 .voicemail-keypad {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 10px;
-  max-width: 340px;
-  margin: 0 auto;
+  grid-template-columns: repeat(3, 64px);
+  gap: 12px 22px;
+  margin: 8px 0 4px;
 }
 .voicemail-keypad button {
-  aspect-ratio: 1.6;
-  border: 0;
-  border-radius: 14px;
-  color: #307fae;
-  background: #eff7fc;
-  font-size: 22px;
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  color: #334155;
+  background: #f1f5f9;
+  font-size: 26px;
+  font-weight: 400;
+  transition:
+    background 0.1s,
+    color 0.1s,
+    transform 0.06s;
 }
-.voicemail-keypad button:hover {
-  background: #dff0fa;
+.voicemail-keypad button:hover:not(:disabled) {
+  color: white;
+  background: #2563eb;
+}
+.voicemail-keypad button:active:not(:disabled) {
+  transform: scale(0.95);
+  background: #1d4ed8;
 }
 .voicemail-keypad button:disabled {
   opacity: 0.5;
 }
-.voicemail-privacy {
-  text-align: center;
+.voicemail-hangup {
+  display: grid;
+  place-items: center;
+  width: 64px;
+  height: 64px;
+  margin-top: 8px;
+  border-radius: 50%;
+  color: white;
+  background: #dc2626;
+  box-shadow: 0 6px 16px #dc262640;
+  transition: background 0.15s;
+}
+.voicemail-hangup:hover:not(:disabled) {
+  background: #b91c1c;
+}
+.voicemail-hangup:disabled {
+  opacity: 0.6;
+}
+
+/* ---------- Guide ---------- */
+.voicemail-guide {
+  padding: 24px;
+}
+.voicemail-guide ol {
+  display: grid;
+  gap: 18px;
+  margin: 18px 0 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: voicemail-step;
+}
+.voicemail-guide li {
+  position: relative;
+  display: grid;
+  gap: 3px;
+  padding-left: 40px;
+  counter-increment: voicemail-step;
+}
+.voicemail-guide li::before {
+  content: counter(voicemail-step);
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  color: #2563eb;
+  background: #eff6ff;
+  font-size: 13px;
+  font-weight: 700;
+}
+.voicemail-guide strong {
+  color: #0f172a;
   font-size: 14px;
 }
-.voicemail-hangup {
-  background: #df596b;
+.voicemail-guide li span {
+  color: #64748b;
+  font-size: 13px;
+  line-height: 1.5;
 }
-.voicemail-error {
-  margin: 0;
-  padding: 12px;
-  border-radius: 10px;
-  color: #b13142;
-  background: #fff0f1;
+.voicemail-privacy {
+  display: flex;
+  gap: 10px;
+  margin: 22px 0 0;
+  padding-top: 18px;
+  border-top: 1px solid #f1f5f9;
+  color: #64748b;
+  font-size: 13px;
+  line-height: 1.5;
+}
+.voicemail-privacy svg {
+  margin-top: 2px;
+  color: #94a3b8;
+}
+
+@media (max-width: 1000px) {
+  .voicemail-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 @media (max-width: 640px) {
   .voicemail-card {
     padding: 20px;
-    margin-top: 18px;
+  }
+  .voicemail-keypad {
+    gap: 10px 16px;
   }
 }

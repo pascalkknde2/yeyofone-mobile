@@ -2,7 +2,7 @@
 
 ## Lucide icons
 
-The SVG icon paths in `src/main.tsx` (`Icon`) come from Lucide, https://lucide.dev.
+The SVG icon paths in `src/main.tsx` (`Icon`) and `src/Voicemail.tsx` (`VoicemailIcon`) come from Lucide, https://lucide.dev.
 
 ISC License
 
