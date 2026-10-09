@@ -303,7 +303,8 @@ function App() {
     null,
   );
   const [routingPreview, setRoutingPreview] = useState(initialRoutingPreview);
-  const [dialerOpen, setDialerOpen] = useState(false);
+  // null = closed; otherwise the number to start with ("" for an empty dialer).
+  const [dialer, setDialer] = useState<string | null>(null);
   const [contactIndex, setContactIndex] = useState(0);
   const contact = people[contactIndex]!;
   const filtered = records.filter(
@@ -398,7 +399,7 @@ function App() {
             data-icon="phone"
             aria-label={t("Open phone dialer")}
             title={t("Make a call")}
-            onClick={() => setDialerOpen(true)}
+            onClick={() => setDialer("")}
           >
             <span className="sidebar-icon-disc">
               <Icon name="phone" size={24} />
@@ -916,14 +917,20 @@ function App() {
           settings={routingPreview}
           onSave={setRoutingPreview}
           onClose={() => setCallingFeature(null)}
+          onCall={(destination) => {
+            setCallingFeature(null);
+            setDialer(destination);
+          }}
         />
       )}
       {conferenceOpen && (
         <ConferenceRoom onClose={() => setConferenceOpen(false)} />
       )}
-      <LiveCall onOpen={() => setDialerOpen(true)} />
+      <LiveCall onOpen={() => setDialer("")} />
       <IncomingCall />
-      {dialerOpen && <Dialer onClose={() => setDialerOpen(false)} />}
+      {dialer !== null && (
+        <Dialer initialDestination={dialer} onClose={() => setDialer(null)} />
+      )}
     </div>
   );
 }

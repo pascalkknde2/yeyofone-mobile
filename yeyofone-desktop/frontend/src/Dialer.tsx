@@ -12,7 +12,13 @@ import { isTauri } from "@tauri-apps/api/core";
 
 import "./dialer.css";
 
-export function Dialer({ onClose }: { onClose: () => void }) {
+export function Dialer({
+  onClose,
+  initialDestination = "",
+}: {
+  onClose: () => void;
+  initialDestination?: string;
+}) {
   const { t } = useLanguage();
   const calls = useCalls();
   const dialogRef = useRef<HTMLDialogElement>(null);
@@ -20,7 +26,7 @@ export function Dialer({ onClose }: { onClose: () => void }) {
   const generationRef = useRef(0);
 
   const [selected, setSelected] = useState("");
-  const [destination, setDestination] = useState("");
+  const [destination, setDestination] = useState(initialDestination);
   const dialSession = useDialSession();
   const { busy, intent, error } = dialSession;
 
@@ -56,7 +62,6 @@ export function Dialer({ onClose }: { onClose: () => void }) {
       accounts[0];
     if (preferred) setSelected(preferred.id);
   }, [accounts, statuses, selected]);
-
 
   // Modal lifecycle.
   useEffect(() => {

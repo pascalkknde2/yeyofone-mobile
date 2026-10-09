@@ -80,11 +80,14 @@ export function CallingFeatures({
   settings,
   onSave,
   onClose,
+  onCall,
 }: {
   kind: CallingFeature;
   settings: RoutingPreview;
   onSave: (value: RoutingPreview) => void;
   onClose: () => void;
+  // Opens the real dialer with this number filled in.
+  onCall: (destination: string) => void;
 }) {
   const { t } = useLanguage();
   const dialog = useRef<HTMLDialogElement>(null);
@@ -364,22 +367,37 @@ export function CallingFeatures({
                 ) || t("Select members")}
               </span>
             </div>
-            <button
-              className="feature-secondary"
-              onClick={() =>
-                setStatus(
-                  draft.members.length
-                    ? t(draft.strategy) +
-                        ": " +
-                        draft.members.join(
-                          draft.strategy === "Ring everyone" ? " + " : " → ",
-                        )
-                    : t("Select members"),
-                )
-              }
-            >
-              {t("Preview ring flow")}
-            </button>
+            <div className="ring-group-actions">
+              <button
+                className="feature-primary"
+                disabled={!/^\d{1,8}$/.test(draft.groupExtension)}
+                onClick={() => onCall(draft.groupExtension)}
+              >
+                <FeatureIcon name="phone" />
+                {t("Call group")}
+              </button>
+              <button
+                className="feature-secondary"
+                onClick={() =>
+                  setStatus(
+                    draft.members.length
+                      ? t(draft.strategy) +
+                          ": " +
+                          draft.members.join(
+                            draft.strategy === "Ring everyone" ? " + " : " → ",
+                          )
+                      : t("Select members"),
+                  )
+                }
+              >
+                {t("Preview ring flow")}
+              </button>
+            </div>
+            <p className="ring-group-call-note">
+              {t(
+                "Call group dials this extension on your phone system. This preview doesn’t create the group there.",
+              )}
+            </p>
           </>
         ) : !inRoom ? (
           <div className="audio-lobby">
