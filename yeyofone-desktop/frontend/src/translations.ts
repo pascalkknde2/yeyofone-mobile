@@ -788,11 +788,6 @@ export const translations: Record<
     es: "10 de julio",
     de: "10. Juli",
   },
-  "10 July ⌄": {
-    fr: "10 juillet ⌄",
-    es: "10 de julio ⌄",
-    de: "10. Juli ⌄",
-  },
   "01 July – 10 July": {
     fr: "01 juillet – 10 juillet",
     es: "01 de julio – 10 de julio",
@@ -1069,15 +1064,15 @@ export const translations: Record<
     es: "Grabaciones",
     de: "Aufzeichnungen",
   },
-  "Ⅱ Pause": {
-    fr: "Ⅱ Pause",
-    es: "Ⅱ Pausar",
-    de: "Ⅱ Pausieren",
+  "Call recording storage": {
+    fr: "Stockage des enregistrements d’appels",
+    es: "Almacenamiento de grabaciones de llamadas",
+    de: "Speicher für Anrufaufzeichnungen",
   },
-  "▷ Resume": {
-    fr: "▷ Reprendre",
-    es: "▷ Reanudar",
-    de: "▷ Fortsetzen",
+  Pause: {
+    fr: "Pause",
+    es: "Pausar",
+    de: "Pausieren",
   },
   "Enter a number or extension": {
     fr: "Saisissez un numéro ou un poste",

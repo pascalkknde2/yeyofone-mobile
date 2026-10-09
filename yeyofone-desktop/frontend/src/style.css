@@ -297,18 +297,32 @@ strong {
 .filters {
   display: flex;
   align-items: center;
-  gap: 18px;
-  color: #4496ca;
-  font-size: 16px;
-  font-weight: 600;
+  gap: 12px;
+  color: #64748b;
+  font-size: 14px;
+  font-weight: 500;
 }
+/* One select style for every page filter: outlined, with the same chevron. */
 .filters select {
-  border: 0;
-  background: none;
-  color: inherit;
-  font-size: inherit;
+  appearance: none;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 6px 30px 6px 10px;
+  background: #fff
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")
+    no-repeat right 8px center;
+  color: #334155;
+  font: inherit;
+  font-size: 14px;
   cursor: pointer;
-  max-width: 100px;
+  max-width: 180px;
+}
+.filters select:hover {
+  border-color: #cbd5e1;
+}
+.filters select:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: 2px;
 }
 .team-row {
   display: grid;
@@ -399,9 +413,9 @@ strong {
   margin-top: 38px;
 }
 .filter-label {
-  color: #4795c7;
-  font-size: 16px;
-  font-weight: 600;
+  color: #64748b;
+  font-size: 14px;
+  font-weight: 500;
   white-space: nowrap;
 }
 .filter-label span {
@@ -1350,19 +1364,27 @@ button:hover {
   padding-bottom: 8px;
 }
 .pause-button {
-  background: #328fd2;
-  color: white;
-  border-radius: 20px;
-  padding: 5px 10px;
-  font-size: 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background: #fff;
+  color: #334155;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-size: 14px;
+  font-weight: 500;
   white-space: nowrap;
 }
 .pause-button:hover {
-  background: #267cb8;
+  background: #f8fafc;
+  border-color: #cbd5e1;
 }
 .pause-button.paused {
-  background: #ecf4fb;
-  color: #328fd2;
+  background: #eff6ff;
+  border-color: #bfdbfe;
+  color: #2563eb;
 }
 .queue-count {
   display: flex;
@@ -1779,19 +1801,9 @@ footer {
 .offline {
   line-height: 1.5;
 }
+/* The Overview, Statistics and Contacts pages keep their two columns down to 1000px
+   (see the max-width: 1000px rules); this breakpoint only tightens spacing. */
 @media (max-width: 1600px) {
-  .dashboard-grid,
-  .overview-grid,
-  .contact-grid {
-    grid-template-columns: 1fr;
-  }
-  .workspace {
-    max-width: 1150px;
-  }
-  .right-column,
-  .overview-right {
-    margin-top: 32px;
-  }
   .operator-grid,
   .overview-contact-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
