@@ -6,7 +6,7 @@ The iOS app calls PJSIP through the same C bridge as the desktop app (`yeyofone-
 
 - PJPROJECT 2.17, archive `https://codeload.github.com/pjsip/pjproject/tar.gz/refs/tags/2.17`
 - Archive SHA-256: `065fe06c06788d97c35f563796d59f00ce52fe9558a52d7b490a042a966facce` (the same archive as `yeyofone-desktop/native/sources.lock.json`)
-- Bridge: `bridge.cpp` SHA-256 `7d3226b32e6d637ae8a960e3d1ee62beefa1bbddd64a71561617d79214b9f0c5`, `bridge.h` SHA-256 `18717c225d917e8762e562a284963bace038b99e7fa174b20b4081c25c85e0df`
+- Bridge: `bridge.cpp` SHA-256 `6cecebe76917e6c5376fb6aac611fcb04327664d7ef43601373642af192b0b88`, `bridge.h` SHA-256 `18717c225d917e8762e562a284963bace038b99e7fa174b20b4081c25c85e0df`
 - Toolchain: Xcode 26.4.1, iOS SDK 26.4, minimum iOS 17.0
 - Built: 9 October 2026 on macOS (Intel)
 
@@ -28,8 +28,8 @@ The app links `-lc++` and the AudioToolbox, AVFoundation, CFNetwork and CoreAudi
 
 | Slice | Size | SHA-256 |
 | --- | --- | --- |
-| `ios-arm64/libyeyofone-voip.a` | 12.1 MB | `860e12db81cd8235a617c8fdef25ad0ab489ba228cd809af3e6a0dfa63028c2b` |
-| `ios-arm64_x86_64-simulator/libyeyofone-voip.a` | 23.6 MB | `03c47712dbb8470ca524860b03ad4948adab3ca602e107223c5720b7538be5d4` |
+| `ios-arm64/libyeyofone-voip.a` | 12.1 MB | `ca199017ae7963716f7d73e066758e6b833197e2018bcd8a8c7e51dc67d1438a` |
+| `ios-arm64_x86_64-simulator/libyeyofone-voip.a` | 23.6 MB | `730fa7c13de6eb8ee512822c283703cf1f6210a15e3763a9eb4e64332878752e` |
 
 ## Verified
 
@@ -61,6 +61,10 @@ The iOS Simulator (iPhone 17 Pro, iOS 26.4.1, Intel Mac) registers, but calls fa
 ### CallKit
 
 Incoming calls are reported to CallKit, which rings and shows the system call UI. The bridge's own ringtone is off on devices (`yv_set_ringtone`). CallKit owns audio session activation. The bridge's sound device can't open before that, so `provider(_:didActivate:)` reopens it through `yv_audio_device`. The app must declare the `voip` background mode, or CallKit resets the provider as soon as it's created, and every reported call is then ended. On 9 October 2026, an incoming call from 1001 rang through CallKit on the iPhone, was answered, and had two-way audio.
+
+### Ringback
+
+While an outgoing call is ringing (`EARLY`), the bridge plays a local UK ringback tone: 400 + 450 Hz, 0.4 s on, 0.2 s off, 0.4 s on, 2 s off. It goes to the playback device. The tone stops when the far end sends early media (183 with SDP), or when the call is answered, cancelled or ends. Verified on the iPhone calling 1002, including hanging up while it rang.
 
 ### Running the live tests
 
