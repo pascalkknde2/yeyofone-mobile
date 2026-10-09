@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import { listen } from "@tauri-apps/api/event";
 import { useCalls } from "./useCalls";
 import { callLabel, callTime, reasonLabel } from "./calls";
@@ -7,12 +7,21 @@ import "./incoming-call.css";
 import "./android-call.css";
 import { CallIcon } from "./CallIcon";
 import { CallPanel } from "./CallPanel";
-export function IncomingCall() {
+import type { CallTool } from "./CallBar";
+export function IncomingCall({
+  hiddenId,
+  onHide,
+  initialTool,
+}: {
+  // Id of the call whose screen is minimized (the call bar shows instead).
+  hiddenId: string | null;
+  onHide: (id: string) => void;
+  initialTool?: CallTool;
+}) {
   const { rows, available, busy, error, request } = useCalls();
   const { t } = useLanguage();
   const dialog = useRef<HTMLDialogElement>(null),
     answer = useRef<HTMLButtonElement>(null);
-  const [dismissed, setDismissed] = useState<string | null>(null);
   const call = rows.find(
     (c) => c.direction === "incoming" && c.state !== "ended",
   );
@@ -32,16 +41,16 @@ export function IncomingCall() {
     };
   }, []);
   useEffect(() => {
-    if (!call || dismissed === call.id) return;
+    if (!call || hiddenId === call.id) return;
     const node = dialog.current;
     if (node && !node.open) node.showModal();
     if (call.state === "incoming") answer.current?.focus();
-  }, [call?.id, call?.state, dismissed]);
+  }, [call?.id, call?.state, hiddenId]);
   function close() {
-    setDismissed(call?.id ?? null);
+    if (call) onHide(call.id);
     dialog.current?.close();
   }
-  if (!call || dismissed === call.id) return null;
+  if (!call || hiddenId === call.id) return null;
   const ringing = call.state === "incoming";
   return (
     <dialog
@@ -57,9 +66,9 @@ export function IncomingCall() {
         <span className="incoming-brand">
           <i /> {t(ringing ? "Incoming call" : "Call")}
         </span>
-        {!ringing && (
+        {call.state !== "ended" && (
           <button type="button" className="incoming-hide" onClick={close}>
-            {t("Hide call")}
+            {t("Minimize call")}
           </button>
         )}
       </header>
@@ -105,6 +114,7 @@ export function IncomingCall() {
           callsAvailable={available}
           callsBusy={busy}
           onRequest={request}
+          initialTool={initialTool}
         />
       )}
       {ringing ? (

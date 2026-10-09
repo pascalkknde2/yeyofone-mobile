@@ -336,20 +336,6 @@
 .call-panel__recording {
   color: var(--dialer-danger);
 }
-.live-call-banner {
-  position: fixed;
-  bottom: 22px;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 90;
-  border: 0;
-  border-radius: 18px;
-  padding: 16px 24px;
-  background: #187f66;
-  color: white;
-  font-size: 16px;
-  max-width: 80vw;
-}
 @media (max-width: 420px) {
   .dialer {
     padding: 18px;

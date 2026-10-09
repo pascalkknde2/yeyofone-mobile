@@ -105,10 +105,10 @@ export const translations: Record<
     de: "Unbekannter Anrufer",
   },
   "Answering…": { fr: "Réponse…", es: "Respondiendo…", de: "Wird angenommen…" },
-  "Hide call": {
-    fr: "Masquer l’appel",
-    es: "Ocultar llamada",
-    de: "Anruf ausblenden",
+  "Minimize call": {
+    fr: "Réduire l’appel",
+    es: "Minimizar llamada",
+    de: "Anruf minimieren",
   },
   Dismiss: { fr: "Fermer", es: "Descartar", de: "Schließen" },
   "Missed call.": {

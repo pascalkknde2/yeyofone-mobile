@@ -19,6 +19,8 @@ type Props = {
   callsAvailable: boolean;
   callsBusy: boolean;
   onRequest: CallRequest;
+  // Open with this tool showing (used when the minimized call bar expands).
+  initialTool?: "transfer" | "consult" | "keypad";
 };
 
 export function CallPanel({
@@ -28,10 +30,11 @@ export function CallPanel({
   callsAvailable,
   callsBusy,
   onRequest,
+  initialTool,
 }: Props) {
   const { t } = useLanguage();
   const [tool, setTool] = useState<"transfer" | "consult" | "keypad" | null>(
-    null,
+    initialTool ?? null,
   );
   const [destination, setDestination] = useState("");
   const [digits, setDigits] = useState("");
