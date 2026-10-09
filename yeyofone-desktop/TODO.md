@@ -17,9 +17,9 @@ Improvements for the desktop app (`yeyofone-desktop/`). When a task is finished,
 
 These run on your own device only; nothing is sent to other people.
 
-- [x] **5. Real camera preview on your own tile.** Camera capture is already allowed by the app, so the Camera button can show your webcam instead of initials. — done 2026-10-09 (branch `feat/desktop-room-local-media`): Camera starts off; turning it on shows your live, mirrored video in your tile and on the stage. Added `NSCameraUsageDescription` to Info.plist.
-- [x] **6. Real mic activity for you.** Light your "speaking" badge from the microphone level, and make Mute actually stop the mic. — done 2026-10-09 (branch `feat/desktop-room-local-media`): the mic starts muted; Unmute opens it and your speaking badge follows the real mic level; Mute releases it.
-- [x] **7. Show your screen in your own tile while sharing**, so someone else can be on the stage while you still see what you share. — done 2026-10-09 (branch `feat/desktop-room-local-media`): putting someone else on stage keeps your share running and moves your screen into your tile; clicking your tile brings it back.
+- [x] **5. Real camera preview on your own tile.** Camera capture is already allowed by the app, so the Camera button can show your webcam instead of initials. — done 2026-10-09 (#37): Camera starts off; turning it on shows your live, mirrored video in your tile and on the stage. Added `NSCameraUsageDescription` to Info.plist.
+- [x] **6. Real mic activity for you.** Light your "speaking" badge from the microphone level, and make Mute actually stop the mic. — done 2026-10-09 (#37): the mic starts muted; Unmute opens it and your speaking badge follows the real mic level; Mute releases it.
+- [x] **7. Show your screen in your own tile while sharing**, so someone else can be on the stage while you still see what you share. — done 2026-10-09 (#37): putting someone else on stage keeps your share running and moves your screen into your tile; clicking your tile brings it back.
 
 ## Quality
 
