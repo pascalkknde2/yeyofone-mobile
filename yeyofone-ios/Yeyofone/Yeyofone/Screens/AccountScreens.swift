@@ -545,6 +545,7 @@ private struct EditorField: View {
             .textInputAutocapitalization(.never)
             .autocorrectionDisabled()
             .focused($focused)
+            .accessibilityLabel(Text(label))
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 10)

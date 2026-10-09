@@ -62,6 +62,18 @@ enum LocalStore {
         try? data.write(to: url(name), options: [.atomic, .completeFileProtectionUntilFirstUserAuthentication])
     }
 
+    #if DEBUG
+    /// Deletes all saved data and stored passwords, so UI tests start from a clean install.
+    static func resetForTesting() {
+        for account in load([SipAccount].self, from: "accounts") ?? [] {
+            PasswordStore.deletePassword(for: account.id)
+        }
+        for name in ["accounts", "preferences", "contacts", "history"] {
+            try? FileManager.default.removeItem(at: url(name))
+        }
+    }
+    #endif
+
     private static func url(_ name: String) -> URL {
         let directory = URL.applicationSupportDirectory.appending(path: "YeyoFone", directoryHint: .isDirectory)
         try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)

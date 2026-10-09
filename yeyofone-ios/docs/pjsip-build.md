@@ -33,8 +33,29 @@ The app links `-lc++` and the AudioToolbox, AVFoundation, CFNetwork and CoreAudi
 
 ## Verified
 
-- Registration of extension 1005 on the sysinfos.co.uk FreeSWITCH PBX over UDP, from an iPhone 13 Pro Max on iOS 26.6.2.
-- The engine starts on the iPhone 17 Pro simulator (iOS 26.4.1).
+On 9 October 2026, an iPhone 13 Pro Max (iOS 26.6.2) ran `YeyofoneUITests/LiveSipTests` against the sysinfos.co.uk FreeSWITCH PBX over UDP, as extension 1005:
+
+- `testRegistersAndCallsOwnExtension`: registration, a call to the device's own extension (answered by the PBX), mute, hold and resume, then hang-up and the call-ended screen.
+- `testCallsLivePeer` (1002): an outgoing call answered by a person, kept connected for 10 seconds, then hung up.
+- `testAnswersIncomingCall` (1001): an incoming call answered by the app, kept connected for 10 seconds, then hung up.
+
+The tests check what the screens show, not the audio itself.
+
+The iOS Simulator (iPhone 17 Pro, iOS 26.4.1, Intel Mac) registers, but calls fail when the audio starts. PJSIP reports status 506637, which is CoreAudio OSStatus −66637, a voice-processing audio unit error. Test calls on a device.
+
+### Running the live tests
+
+The account comes from environment variables, so no credentials are stored in the repository:
+
+```sh
+TEST_RUNNER_YF_SIP_USER=<extension> TEST_RUNNER_YF_SIP_DOMAIN=<pbx host> TEST_RUNNER_YF_SIP_PASSWORD=<password> \
+TEST_RUNNER_YF_LIVE_PEER=<extension that answers or calls> \
+xcodebuild test -project Yeyofone.xcodeproj -scheme Yeyofone -destination 'platform=iOS,id=<device>' \
+  -allowProvisioningUpdates DEVELOPMENT_TEAM=<team> -parallel-testing-enabled NO \
+  -only-testing:YeyofoneUITests/LiveSipTests/<test>
+```
+
+Each test launches the app with `-YFResetData`, which in debug builds deletes saved accounts, passwords, contacts and history. Keep the device unlocked while a test runs.
 
 ## Not yet supported
 

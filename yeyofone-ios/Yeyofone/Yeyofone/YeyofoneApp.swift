@@ -20,6 +20,7 @@ struct YeyofoneApp: App {
             _store = State(initialValue: demo)
             return
         }
+        if CommandLine.arguments.contains("-YFResetData") { LocalStore.resetForTesting() }
         #endif
         _store = State(initialValue: AppStore())
     }
