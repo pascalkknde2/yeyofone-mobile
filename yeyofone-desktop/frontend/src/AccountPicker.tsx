@@ -11,6 +11,8 @@ type Props = {
   available: boolean;
   loading: boolean;
   disabled: boolean;
+  /** Only show the account's status, and only when it can't be used for calls. */
+  statusOnly?: boolean;
 };
 
 export function AccountPicker({
@@ -21,6 +23,7 @@ export function AccountPicker({
   available,
   loading,
   disabled,
+  statusOnly = false,
 }: Props) {
   const { t } = useLanguage();
   const account = accounts.find((a) => a.id === selected);
@@ -34,6 +37,22 @@ export function AccountPicker({
     registered: status?.state === "registered",
     t,
   });
+
+  if (statusOnly) {
+    if (tone === "ok") return null;
+    return (
+      <div className="account-picker account-picker--status-only">
+        <span
+          className={`status-pill status-pill--${tone}`}
+          role="status"
+          aria-live="polite"
+        >
+          <span className="status-pill__dot" aria-hidden="true" />
+          {account ? `${account.label} · ${label}` : label}
+        </span>
+      </div>
+    );
+  }
 
   return (
     <div className="account-picker">

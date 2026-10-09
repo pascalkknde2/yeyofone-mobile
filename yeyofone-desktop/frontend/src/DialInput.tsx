@@ -18,7 +18,10 @@ export const DialInput = forwardRef<HTMLInputElement, Props>(function DialInput(
 
   return (
     <div className="dial-input">
-      <label className="dial-input__label" htmlFor="dialer-destination">
+      <label
+        className="dial-input__label dialer__sr-only"
+        htmlFor="dialer-destination"
+      >
         {t("Destination")}
       </label>
       <input
