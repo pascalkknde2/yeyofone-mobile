@@ -1,4 +1,5 @@
 import { Accounts } from "./Accounts";
+import { RecordingCloudSettings } from "./RecordingCloudSettings";
 import { NativeStatus } from "./NativeStatus";
 import { useLanguage, LanguageProvider, LanguageSelector } from "./i18n";
 import { useState, type ReactNode } from "react";
@@ -25,67 +26,115 @@ type IconName =
   | "users"
   | "phone"
   | "play"
+  | "pause"
+  | "voicemail"
+  | "video"
+  | "mail"
+  | "smartphone"
   | "search"
   | "bell"
   | "download"
   | "arrow"
   | "conference";
+// Icon paths from Lucide (https://lucide.dev, ISC License); see LICENSES-THIRD-PARTY.md.
 function Icon({ name, size = 20 }: { name: IconName; size?: number }) {
   const paths: Record<IconName, ReactNode> = {
-    conference: (
-      <>
-        <rect x="2" y="3" width="16" height="12" rx="2" />
-        <path d="m18 7 4-2v8l-4-2M5 20h10" />
-        <circle cx="8" cy="8" r="1.5" />
-        <path d="M5 12a3 3 0 0 1 6 0" />
-      </>
-    ),
     grid: (
       <>
-        <rect x="3" y="3" width="7" height="7" rx="1" />
-        <rect x="14" y="3" width="7" height="7" rx="1" />
-        <rect x="3" y="14" width="7" height="7" rx="1" />
-        <rect x="14" y="14" width="7" height="7" rx="1" />
+        <rect width="7" height="7" x="3" y="3" rx="1" />
+        <rect width="7" height="7" x="14" y="3" rx="1" />
+        <rect width="7" height="7" x="14" y="14" rx="1" />
+        <rect width="7" height="7" x="3" y="14" rx="1" />
       </>
     ),
     chart: (
       <>
-        <path d="M4 20V5h4v15M10 20V2h4v18M16 20V9h4v11" />
+        <path d="M3 3v18h18" />
+        <path d="M18 17V9" />
+        <path d="M13 17V5" />
+        <path d="M8 17v-3" />
       </>
     ),
     settings: (
       <>
-        <path d="m9 3-1 3-3 1-2 4 2 2v4l3 1 2 3h4l1-3 3-1 2-4-2-2V7l-3-1-2-3Z" />
+        <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" />
         <circle cx="12" cy="12" r="3" />
       </>
     ),
     users: (
       <>
-        <circle cx="9" cy="7" r="3" />
-        <path d="M3 21v-3a6 6 0 0 1 12 0v3ZM16 4a3 3 0 0 1 0 6M18 14a5 5 0 0 1 3 5v2" />
+        <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+        <circle cx="9" cy="7" r="4" />
+        <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
+        <path d="M16 3.13a4 4 0 0 1 0 7.75" />
       </>
     ),
     phone: (
-      <path d="m7 3 3 5-3 3c2 3 3 4 6 6l3-3 5 3c0 3-2 5-5 4C9 19 5 15 3 8 2 5 4 3 7 3Z" />
+      <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
     ),
-    play: <path d="m8 4 12 8-12 8Z" />,
+    play: <polygon points="6 3 20 12 6 21 6 3" />,
+    pause: (
+      <>
+        <rect x="14" y="4" width="4" height="16" rx="1" />
+        <rect x="6" y="4" width="4" height="16" rx="1" />
+      </>
+    ),
+    voicemail: (
+      <>
+        <circle cx="6" cy="12" r="4" />
+        <circle cx="18" cy="12" r="4" />
+        <line x1="6" x2="18" y1="16" y2="16" />
+      </>
+    ),
+    video: (
+      <>
+        <path d="m22 8-6 4 6 4V8Z" />
+        <rect x="2" y="6" width="14" height="12" rx="2" ry="2" />
+      </>
+    ),
+    conference: (
+      <>
+        <path d="m22 8-6 4 6 4V8Z" />
+        <rect x="2" y="6" width="14" height="12" rx="2" ry="2" />
+      </>
+    ),
+    mail: (
+      <>
+        <rect width="20" height="16" x="2" y="4" rx="2" />
+        <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
+      </>
+    ),
+    smartphone: (
+      <>
+        <rect width="14" height="20" x="5" y="2" rx="2" ry="2" />
+        <path d="M12 18h.01" />
+      </>
+    ),
     search: (
       <>
-        <circle cx="10" cy="10" r="7" />
-        <path d="m15 15 6 6" />
+        <circle cx="11" cy="11" r="8" />
+        <path d="m21 21-4.3-4.3" />
       </>
     ),
     bell: (
       <>
-        <path d="M5 17h14l-2-4V9a5 5 0 0 0-10 0v4ZM10 21h4" />
+        <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9" />
+        <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" />
       </>
     ),
     download: (
       <>
-        <path d="M12 3v12m-5-5 5 5 5-5M4 15v6h16v-6" />
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+        <polyline points="7 10 12 15 17 10" />
+        <line x1="12" x2="12" y1="15" y2="3" />
       </>
     ),
-    arrow: <path d="M4 12h16m-5-5 5 5-5 5" />,
+    arrow: (
+      <>
+        <path d="M5 12h14" />
+        <path d="m12 5 7 7-7 7" />
+      </>
+    ),
   };
   return (
     <svg
@@ -94,7 +143,7 @@ function Icon({ name, size = 20 }: { name: IconName; size?: number }) {
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
-      strokeWidth="1.7"
+      strokeWidth="1.75"
       strokeLinecap="round"
       strokeLinejoin="round"
       aria-hidden="true"
@@ -320,7 +369,7 @@ function App() {
             [
               ["Overview", "grid"],
               ["Call history", "phone"],
-              ["Voicemail", "play"],
+              ["Voicemail", "voicemail"],
               ["Statistics", "chart"],
               ["Settings", "settings"],
               ["Contacts", "users"],
@@ -346,7 +395,7 @@ function App() {
         </nav>
         <div className="sidebar-bottom">
           <button
-            className="nav-item"
+            className="nav-item nav-item--primary"
             data-icon="phone"
             aria-label={t("Open phone dialer")}
             title={t("Make a call")}
@@ -354,21 +403,6 @@ function App() {
           >
             <span className="sidebar-icon-disc">
               <Icon name="phone" size={24} />
-            </span>
-          </button>
-          <button
-            className="nav-item"
-            data-icon="play"
-            aria-label={t("Recordings availability")}
-            title={t("Recordings")}
-            onClick={() =>
-              setNotice(
-                "Sample recordings have no audio attached. Live recordings are not connected yet.",
-              )
-            }
-          >
-            <span className="sidebar-icon-disc">
-              <Icon name="play" size={24} />
             </span>
           </button>
           <button
@@ -385,6 +419,9 @@ function App() {
         </div>
       </aside>
       <main className="workspace">
+        {/* Demo controls for working on the UI; not part of the built app. */}
+        {import.meta.env.DEV && (
+          <>
         <div className="preview-note">
           <span>
             <i /> {t("Design preview")} <span className="note-divider">/</span>{" "}
@@ -401,7 +438,7 @@ function App() {
             <Icon name="grid" size={18} /> {t("Make a call")}
           </button>
           <button onClick={() => setCallWindow("video")}>
-            <Icon name="play" size={18} /> {t("Video call")}
+            <Icon name="video" size={18} /> {t("Video call")}
           </button>
           <button onClick={() => setConferenceOpen(true)}>
             <Icon name="conference" size={20} /> {t("Video conference")}
@@ -419,6 +456,8 @@ function App() {
             {t("Audio conference")}
           </button>
         </div>
+          </>
+        )}
         {notice && (
           <div className="notice" role="status">
             {t(notice)}
@@ -523,9 +562,7 @@ function App() {
               <section className="call-statistics">
                 <div className="section-heading">
                   <h2>{t("Call statistics")}</h2>
-                  <span className="filter-label">
-                    {t("Priority accounts")} <span>⌄</span>
-                  </span>
+                  <span className="filter-label">{t("Priority accounts")}</span>
                 </div>
                 <div className="chart-card">
                   <TrendChart hourly />
@@ -715,13 +752,11 @@ function App() {
                       </span>
                     </div>
                     <div className="contact-line">
-                      <span className="contact-mobile" aria-hidden="true">
-                        ▯
-                      </span>
+                      <Icon name="smartphone" />
                       <span>+44 7700 9000{20 + contactIndex}</span>
                     </div>
                     <div className="contact-line contact-email">
-                      <span aria-hidden="true">✉</span>
+                      <Icon name="mail" />
                       <span>
                         {contact.name.toLowerCase().replace(" ", ".")}
                         @example.com
@@ -786,9 +821,7 @@ function App() {
                       </button>
                     ))}
                   </div>
-                  <span className="filter-label">
-                    {t("10 July")} <span>⌄</span>
-                  </span>
+                  <span className="filter-label">{t("10 July")}</span>
                 </div>
                 <div className="contact-record-table">
                   <div className="contact-record-row table-heading">
@@ -856,14 +889,19 @@ function App() {
           <section className="standalone settings-panel">
             <h1>{t("Settings")}</h1>
             <Accounts />
+            <h2>{t("Call recording storage")}</h2>
+            {/* Call history reloads its list whenever it opens, so there's nothing to refresh here. */}
+            <RecordingCloudSettings onChange={() => {}} />
             <h2>{t("Appearance")}</h2>
             <p>{t("Light theme · Compact sidebar · Desktop dashboard")}</p>
           </section>
         )}
-        <footer>
-          YeyoFone Desktop{" "}
-          <span>{t("Sample workspace · No live calls connected")}</span>
-        </footer>
+        {import.meta.env.DEV && (
+          <footer>
+            YeyoFone Desktop{" "}
+            <span>{t("Sample workspace · No live calls connected")}</span>
+          </footer>
+        )}
       </main>
       {callingFeature && (
         <CallingFeatures
@@ -959,7 +997,7 @@ function Overview({
                   </option>
                 ))}
               </select>
-              <span>{t("10 July ⌄")}</span>
+              <span className="filter-label">{t("10 July")}</span>
             </div>
           </div>
           <div className="chart-card overview-chart">
@@ -1044,7 +1082,7 @@ function Overview({
                 </button>
               ))}
             </div>
-            <span className="filter-label">{t("10 July ⌄")}</span>
+            <span className="filter-label">{t("10 July")}</span>
           </div>
           <div className="overview-record-row table-heading">
             <span>{t("Time")}</span>
@@ -1145,7 +1183,8 @@ function Overview({
                     );
                   }}
                 >
-                  {t(paused.includes(r.name) ? "▷ Resume" : "Ⅱ Pause")}
+                  <Icon name={paused.includes(r.name) ? "play" : "pause"} size={14} />
+                  {t(paused.includes(r.name) ? "Resume" : "Pause")}
                 </button>
                 <button
                   className="ellipsis"

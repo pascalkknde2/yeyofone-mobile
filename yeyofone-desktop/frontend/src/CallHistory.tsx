@@ -1,8 +1,5 @@
 import { RecordingActionIcon } from "./RecordingActionIcon";
-import {
-  RecordingCloudSettings,
-  recordingCloud,
-} from "./RecordingCloudSettings";
+import { recordingCloud } from "./RecordingCloudSettings";
 import { RecordingStudio } from "./RecordingStudio";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { invoke, isTauri } from "@tauri-apps/api/core";
@@ -234,7 +231,6 @@ export function CallHistory({ search = "" }: { search?: string }) {
           {t("Refresh")}
         </button>
       </div>
-      <RecordingCloudSettings onChange={() => void refresh()} />
       <div
         className="call-history-filters"
         role="group"
