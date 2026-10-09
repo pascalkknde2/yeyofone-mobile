@@ -26,6 +26,45 @@ type RoomIcon =
   | "send"
   | "screen"
   | "agenda";
+const stopTracks = (stream: MediaStream | null) =>
+  stream?.getTracks().forEach((track) => track.stop());
+function mediaFailure(error: unknown, device: "camera" | "microphone") {
+  const name = error instanceof DOMException ? error.name : "";
+  if (name === "NotAllowedError")
+    return device === "camera"
+      ? "Camera access was not allowed."
+      : "Microphone access was not allowed.";
+  if (name === "NotFoundError")
+    return device === "camera"
+      ? "No camera was found."
+      : "No microphone was found.";
+  return device === "camera"
+    ? "The camera couldn’t start."
+    : "The microphone couldn’t start.";
+}
+function LiveVideo({
+  stream,
+  label,
+  mirror = false,
+}: {
+  stream: MediaStream | null;
+  label: string;
+  mirror?: boolean;
+}) {
+  return (
+    <video
+      className={`room-video${mirror ? " is-mirrored" : ""}`}
+      ref={(video) => {
+        if (video && video.srcObject !== stream) video.srcObject = stream;
+      }}
+      autoPlay
+      muted
+      playsInline
+      aria-label={label}
+    />
+  );
+}
+
 // Icon paths from Lucide (https://lucide.dev, ISC License); see LICENSES-THIRD-PARTY.md.
 function RoomGlyph({ name, size = 22 }: { name: RoomIcon; size?: number }) {
   return (
@@ -238,13 +277,21 @@ export function ConferenceRoom({ onClose }: { onClose: () => void }) {
   const [panel, setPanel] = useState<"chat" | "participants">("participants");
   const [panelOpen, setPanelOpen] = useState(() => window.innerWidth > 900);
   const [query, setQuery] = useState("");
-  const [muted, setMuted] = useState(false);
-  const [camera, setCamera] = useState(true);
+  // Camera, mic and screen are real local captures shown only on this device;
+  // nothing is sent. Camera and mic start off so macOS only asks when you turn them on.
+  const [muted, setMuted] = useState(true);
+  const [camera, setCamera] = useState(false);
+  const [talking, setTalking] = useState(false);
+  const cameraStream = useRef<MediaStream | null>(null);
+  const micStream = useRef<MediaStream | null>(null);
+  const meter = useRef<{ context: AudioContext; frame: number } | null>(null);
   const [raised, setRaised] = useState(false);
-  // "screen" is a real local capture shown only on this device; nothing is sent.
   const [sharing, setSharing] = useState<"agenda" | "screen" | null>(null);
+  // While you share your screen, someone else can take the stage; your screen then
+  // shows in your own tile.
+  const [shareOnStage, setShareOnStage] = useState(true);
   const [shareMenu, setShareMenu] = useState(false);
-  const [shareError, setShareError] = useState("");
+  const [mediaError, setMediaError] = useState("");
   const screen = useRef<MediaStream | null>(null);
   const shareBox = useRef<HTMLDivElement>(null);
   const shareButton = useRef<HTMLButtonElement>(null);
@@ -316,19 +363,108 @@ export function ConferenceRoom({ onClose }: { onClose: () => void }) {
     onClose();
   }
   function stopSharing() {
-    screen.current?.getTracks().forEach((track) => track.stop());
+    stopTracks(screen.current);
     screen.current = null;
     setSharing(null);
   }
+  function stopMic() {
+    stopTracks(micStream.current);
+    micStream.current = null;
+    if (meter.current) {
+      cancelAnimationFrame(meter.current.frame);
+      void meter.current.context.close();
+      meter.current = null;
+    }
+    setTalking(false);
+    setMuted(true);
+  }
+  // Release every capture when the room closes.
   useEffect(
-    () => () => screen.current?.getTracks().forEach((t) => t.stop()),
+    () => () => {
+      stopTracks(screen.current);
+      stopTracks(cameraStream.current);
+      stopTracks(micStream.current);
+      if (meter.current) {
+        cancelAnimationFrame(meter.current.frame);
+        void meter.current.context.close();
+      }
+    },
     [],
   );
+  async function toggleCamera() {
+    if (camera) {
+      stopTracks(cameraStream.current);
+      cameraStream.current = null;
+      setCamera(false);
+      return;
+    }
+    if (!navigator.mediaDevices?.getUserMedia) {
+      setMediaError("Camera and microphone aren’t available in this window.");
+      return;
+    }
+    try {
+      cameraStream.current = await navigator.mediaDevices.getUserMedia({
+        video: true,
+      });
+      setCamera(true);
+      setMediaError("");
+    } catch (error) {
+      setMediaError(mediaFailure(error, "camera"));
+    }
+  }
+  async function toggleMic() {
+    if (!muted) {
+      stopMic();
+      return;
+    }
+    if (!navigator.mediaDevices?.getUserMedia) {
+      setMediaError("Camera and microphone aren’t available in this window.");
+      return;
+    }
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      micStream.current = stream;
+      // Light your "speaking" badge from the microphone level.
+      const context = new AudioContext();
+      void context.resume();
+      const analyser = context.createAnalyser();
+      analyser.fftSize = 512;
+      context.createMediaStreamSource(stream).connect(analyser);
+      const samples = new Uint8Array(analyser.fftSize);
+      let loud = false;
+      const tick = () => {
+        if (!meter.current) return;
+        analyser.getByteTimeDomainData(samples);
+        let sum = 0;
+        for (const sample of samples) sum += ((sample - 128) / 128) ** 2;
+        const level = Math.sqrt(sum / samples.length);
+        // Two thresholds so the badge doesn't flicker around one value.
+        const next = loud ? level > 0.02 : level > 0.04;
+        if (next !== loud) {
+          loud = next;
+          setTalking(next);
+        }
+        meter.current.frame = requestAnimationFrame(tick);
+      };
+      meter.current = { context, frame: requestAnimationFrame(tick) };
+      setMuted(false);
+      setMediaError("");
+    } catch (error) {
+      stopMic();
+      setMediaError(mediaFailure(error, "microphone"));
+    }
+  }
+  function showOnStage(id: string) {
+    setFocused(id);
+    setStage("meeting");
+    if (sharing === "screen") setShareOnStage(id === "you");
+    else if (sharing === "agenda") stopSharing();
+  }
   async function shareScreen() {
     setShareMenu(false);
-    setShareError("");
+    setMediaError("");
     if (!navigator.mediaDevices?.getDisplayMedia) {
-      setShareError("Screen sharing isn’t available in this window.");
+      setMediaError("Screen sharing isn’t available in this window.");
       return;
     }
     try {
@@ -343,9 +479,10 @@ export function ConferenceRoom({ onClose }: { onClose: () => void }) {
         if (screen.current === stream) stopSharing();
       });
       setSharing("screen");
+      setShareOnStage(true);
       setStage("meeting");
     } catch (error) {
-      setShareError(
+      setMediaError(
         error instanceof DOMException && error.name === "NotAllowedError"
           ? "Screen sharing was cancelled or not allowed."
           : "Screen sharing couldn’t start.",
@@ -354,7 +491,7 @@ export function ConferenceRoom({ onClose }: { onClose: () => void }) {
   }
   function shareAgenda() {
     setShareMenu(false);
-    setShareError("");
+    setMediaError("");
     stopSharing();
     setSharing("agenda");
     setStage("meeting");
@@ -385,7 +522,10 @@ export function ConferenceRoom({ onClose }: { onClose: () => void }) {
     participants.find((person) => person.id === focused) ?? participants[0]!;
   const match = (person: Person) =>
     person.name.toLowerCase().includes(query.trim().toLowerCase());
-  const cameraOff = (person: Person) => person.id === "you" && !camera;
+  const speaking = (person: Person) =>
+    person.id === "you"
+      ? !muted && talking
+      : person.id === speaker.id && !sharing;
   const handUp = (person: Person) => person.id === "you" && raised;
   const time = `${String(Math.floor(seconds / 60)).padStart(2, "0")}:${String(seconds % 60).padStart(2, "0")}`;
 
@@ -401,11 +541,7 @@ export function ConferenceRoom({ onClose }: { onClose: () => void }) {
       className={className}
       style={{ "--participant-color": person.color } as CSSProperties}
     >
-      {cameraOff(person) ? (
-        <RoomGlyph name="video-off" size={20} />
-      ) : (
-        person.initials
-      )}
+      {person.initials}
     </span>
   );
 
@@ -505,18 +641,18 @@ export function ConferenceRoom({ onClose }: { onClose: () => void }) {
           ) : (
             <>
               <div className="room-stage">
-                {shareError && (
-                  <p className="room-share-error" role="alert">
-                    {t(shareError)}
+                {mediaError && (
+                  <p className="room-media-error" role="alert">
+                    {t(mediaError)}
                     <button
                       aria-label={t("Dismiss notification")}
-                      onClick={() => setShareError("")}
+                      onClick={() => setMediaError("")}
                     >
                       <RoomGlyph name="close" size={16} />
                     </button>
                   </p>
                 )}
-                {sharing === "screen" ? (
+                {sharing === "screen" && shareOnStage ? (
                   <div className="room-screen">
                     <video
                       ref={(video) => {
@@ -568,7 +704,15 @@ export function ConferenceRoom({ onClose }: { onClose: () => void }) {
                       { "--participant-color": speaker.color } as CSSProperties
                     }
                   >
-                    {avatar(speaker, "room-speaker__avatar")}
+                    {speaker.id === "you" && camera ? (
+                      <LiveVideo
+                        stream={cameraStream.current}
+                        label={t("Your camera")}
+                        mirror
+                      />
+                    ) : (
+                      avatar(speaker, "room-speaker__avatar")
+                    )}
                     <span className="room-speaker__name">
                       {speaker.name}
                       {speaker.id === "you" && ` (${t("You")})`}
@@ -578,22 +722,32 @@ export function ConferenceRoom({ onClose }: { onClose: () => void }) {
               </div>
               <div className="room-strip" aria-label={t("Participants")}>
                 {participants.map((person) => {
-                  const speaking = person.id === speaker.id && !sharing;
+                  const you = person.id === "you";
                   return (
                     <button
                       key={person.id}
-                      className={`room-tile${speaking ? " is-speaking" : ""}`}
+                      className="room-tile"
                       style={
                         { "--participant-color": person.color } as CSSProperties
                       }
                       aria-label={`${t("Show on stage")}: ${person.name}`}
                       aria-pressed={person.id === speaker.id}
-                      onClick={() => {
-                        setFocused(person.id);
-                        stopSharing();
-                      }}
+                      onClick={() => showOnStage(person.id)}
                     >
-                      {avatar(person, "room-tile__avatar")}
+                      {you && sharing === "screen" && !shareOnStage ? (
+                        <LiveVideo
+                          stream={screen.current}
+                          label={t("Your shared screen")}
+                        />
+                      ) : you && camera ? (
+                        <LiveVideo
+                          stream={cameraStream.current}
+                          label={t("Your camera")}
+                          mirror
+                        />
+                      ) : (
+                        avatar(person, "room-tile__avatar")
+                      )}
                       <span className="room-tile__name">
                         {person.id === "you" ? t("You") : person.name}
                       </span>
@@ -608,12 +762,12 @@ export function ConferenceRoom({ onClose }: { onClose: () => void }) {
                             <RoomGlyph name="hand" size={14} />
                           </i>
                         )}
-                        {person.id === "you" && muted ? (
+                        {you && muted ? (
                           <i className="room-badge room-badge--muted">
                             <RoomGlyph name="mic-off" size={14} />
                           </i>
                         ) : (
-                          speaking && (
+                          speaking(person) && (
                             <i className="room-badge">
                               <RoomGlyph name="speaking" size={14} />
                             </i>
@@ -639,7 +793,7 @@ export function ConferenceRoom({ onClose }: { onClose: () => void }) {
                 className={!camera ? "is-off" : ""}
                 aria-label={t(camera ? "Camera off" : "Camera on")}
                 title={t(camera ? "Camera off" : "Camera on")}
-                onClick={() => setCamera(!camera)}
+                onClick={() => void toggleCamera()}
               >
                 <RoomGlyph name={camera ? "video" : "video-off"} />
               </button>
@@ -648,7 +802,7 @@ export function ConferenceRoom({ onClose }: { onClose: () => void }) {
                 className={muted ? "is-off" : ""}
                 aria-label={t(muted ? "Unmute" : "Mute")}
                 title={t(muted ? "Unmute" : "Mute")}
-                onClick={() => setMuted(!muted)}
+                onClick={() => void toggleMic()}
               >
                 <RoomGlyph name={muted ? "mic-off" : "mic"} />
               </button>
@@ -755,7 +909,7 @@ export function ConferenceRoom({ onClose }: { onClose: () => void }) {
                             : t(person.id === "you" ? "Host" : person.role)}
                         </small>
                       </div>
-                      {person.id === speaker.id && !sharing ? (
+                      {speaking(person) ? (
                         <span
                           className="room-roster__action is-speaking"
                           title={t("Speaking")}
@@ -767,11 +921,7 @@ export function ConferenceRoom({ onClose }: { onClose: () => void }) {
                           className="room-roster__action"
                           aria-label={`${t("Show on stage")}: ${person.name}`}
                           title={t("Show on stage")}
-                          onClick={() => {
-                            setFocused(person.id);
-                            stopSharing();
-                            setStage("meeting");
-                          }}
+                          onClick={() => showOnStage(person.id)}
                         >
                           <RoomGlyph name="pin" size={16} />
                         </button>

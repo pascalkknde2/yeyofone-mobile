@@ -1235,6 +1235,46 @@ export const translations: Record<
     es: "Compartir",
     de: "Teilen",
   },
+  "Your camera": {
+    fr: "Votre caméra",
+    es: "Tu cámara",
+    de: "Ihre Kamera",
+  },
+  "Camera and microphone aren’t available in this window.": {
+    fr: "La caméra et le micro ne sont pas disponibles dans cette fenêtre.",
+    es: "La cámara y el micrófono no están disponibles en esta ventana.",
+    de: "Kamera und Mikrofon sind in diesem Fenster nicht verfügbar.",
+  },
+  "Camera access was not allowed.": {
+    fr: "L’accès à la caméra n’a pas été autorisé.",
+    es: "No se permitió el acceso a la cámara.",
+    de: "Der Kamerazugriff wurde nicht erlaubt.",
+  },
+  "Microphone access was not allowed.": {
+    fr: "L’accès au micro n’a pas été autorisé.",
+    es: "No se permitió el acceso al micrófono.",
+    de: "Der Mikrofonzugriff wurde nicht erlaubt.",
+  },
+  "No camera was found.": {
+    fr: "Aucune caméra trouvée.",
+    es: "No se encontró ninguna cámara.",
+    de: "Keine Kamera gefunden.",
+  },
+  "No microphone was found.": {
+    fr: "Aucun micro trouvé.",
+    es: "No se encontró ningún micrófono.",
+    de: "Kein Mikrofon gefunden.",
+  },
+  "The camera couldn’t start.": {
+    fr: "Impossible de démarrer la caméra.",
+    es: "No se pudo iniciar la cámara.",
+    de: "Die Kamera konnte nicht gestartet werden.",
+  },
+  "The microphone couldn’t start.": {
+    fr: "Impossible de démarrer le micro.",
+    es: "No se pudo iniciar el micrófono.",
+    de: "Das Mikrofon konnte nicht gestartet werden.",
+  },
   "Share screen": {
     fr: "Partager l’écran",
     es: "Compartir pantalla",

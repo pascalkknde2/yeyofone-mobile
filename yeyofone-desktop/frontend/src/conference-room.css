@@ -251,7 +251,7 @@
 .room-stage {
   position: relative;
 }
-.room-share-error {
+.room-media-error {
   position: absolute;
   z-index: 1;
   top: 14px;
@@ -268,7 +268,7 @@
   font-size: 14px;
   transform: translateX(-50%);
 }
-.room-share-error button {
+.room-media-error button {
   display: grid;
   place-items: center;
   width: 26px;
@@ -276,8 +276,24 @@
   border-radius: 6px;
   color: #b91c1c;
 }
-.room-share-error button:hover {
+.room-media-error button:hover {
   background: #fee2e2;
+}
+
+/* Your camera (or shared screen) filling the stage or a tile. */
+.room-video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  background: #000;
+}
+.room-video.is-mirrored {
+  transform: scaleX(-1);
+}
+.room-tile .room-video:not(.is-mirrored) {
+  object-fit: contain;
 }
 
 /* Thumbnail strip. */

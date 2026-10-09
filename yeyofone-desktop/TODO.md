@@ -17,9 +17,9 @@ Improvements for the desktop app (`yeyofone-desktop/`). When a task is finished,
 
 These run on your own device only; nothing is sent to other people.
 
-- [ ] **5. Real camera preview on your own tile.** Camera capture is already allowed by the app, so the Camera button can show your webcam instead of initials.
-- [ ] **6. Real mic activity for you.** Light your "speaking" badge from the microphone level, and make Mute actually stop the mic.
-- [ ] **7. Show your screen in your own tile while sharing**, so someone else can be on the stage while you still see what you share.
+- [x] **5. Real camera preview on your own tile.** Camera capture is already allowed by the app, so the Camera button can show your webcam instead of initials. — done 2026-10-09 (branch `feat/desktop-room-local-media`): Camera starts off; turning it on shows your live, mirrored video in your tile and on the stage. Added `NSCameraUsageDescription` to Info.plist.
+- [x] **6. Real mic activity for you.** Light your "speaking" badge from the microphone level, and make Mute actually stop the mic. — done 2026-10-09 (branch `feat/desktop-room-local-media`): the mic starts muted; Unmute opens it and your speaking badge follows the real mic level; Mute releases it.
+- [x] **7. Show your screen in your own tile while sharing**, so someone else can be on the stage while you still see what you share. — done 2026-10-09 (branch `feat/desktop-room-local-media`): putting someone else on stage keeps your share running and moves your screen into your tile; clicking your tile brings it back.
 
 ## Quality
 
@@ -30,6 +30,7 @@ These run on your own device only; nothing is sent to other people.
   - [ ] Voicemail call: dial *97, enter the PIN with the keypad, hang up.
   - [ ] Incoming call after the event-permission fix (#34): the call screen should appear without the half-second delay.
   - [ ] Share screen with a real click, including the macOS Screen Recording prompt and a release build.
+  - [ ] Team room camera and mic: macOS asks once for each, your video appears, the speaking badge follows your voice, and Mute/Camera off release the devices.
 
 ## Housekeeping
 
