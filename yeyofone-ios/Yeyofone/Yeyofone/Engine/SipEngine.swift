@@ -111,7 +111,9 @@ nonisolated final class SipEngine: Thread, @unchecked Sendable {
                 publish(handle)
                 lastPoll = Date()
             }
-            Thread.sleep(forTimeInterval: 0.01)
+            // PJSIP runs without its own threads, so RTP is only read when this loop pumps it:
+            // poll every 2 ms during calls to keep packet timing even, and every 20 ms when idle.
+            Thread.sleep(forTimeInterval: published.calls.isEmpty ? 0.02 : 0.002)
         }
         _ = yv_stop(handle)
         _ = yv_destroy(handle)
