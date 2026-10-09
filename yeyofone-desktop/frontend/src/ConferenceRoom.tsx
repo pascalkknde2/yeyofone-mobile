@@ -7,6 +7,12 @@ import {
   type KeyboardEvent,
 } from "react";
 import "./conference-room.css";
+import {
+  LocalCaptures,
+  mediaFailure,
+  micLevel,
+  nextTalking,
+} from "./roomMedia";
 
 type RoomIcon =
   | "video"
@@ -26,22 +32,6 @@ type RoomIcon =
   | "send"
   | "screen"
   | "agenda";
-const stopTracks = (stream: MediaStream | null) =>
-  stream?.getTracks().forEach((track) => track.stop());
-function mediaFailure(error: unknown, device: "camera" | "microphone") {
-  const name = error instanceof DOMException ? error.name : "";
-  if (name === "NotAllowedError")
-    return device === "camera"
-      ? "Camera access was not allowed."
-      : "Microphone access was not allowed.";
-  if (name === "NotFoundError")
-    return device === "camera"
-      ? "No camera was found."
-      : "No microphone was found.";
-  return device === "camera"
-    ? "The camera couldn’t start."
-    : "The microphone couldn’t start.";
-}
 function LiveVideo({
   stream,
   label,
@@ -282,8 +272,7 @@ export function ConferenceRoom({ onClose }: { onClose: () => void }) {
   const [muted, setMuted] = useState(true);
   const [camera, setCamera] = useState(false);
   const [talking, setTalking] = useState(false);
-  const cameraStream = useRef<MediaStream | null>(null);
-  const micStream = useRef<MediaStream | null>(null);
+  const [captures] = useState(() => new LocalCaptures());
   const meter = useRef<{ context: AudioContext; frame: number } | null>(null);
   const [raised, setRaised] = useState(false);
   const [sharing, setSharing] = useState<"agenda" | "screen" | null>(null);
@@ -292,7 +281,6 @@ export function ConferenceRoom({ onClose }: { onClose: () => void }) {
   const [shareOnStage, setShareOnStage] = useState(true);
   const [shareMenu, setShareMenu] = useState(false);
   const [mediaError, setMediaError] = useState("");
-  const screen = useRef<MediaStream | null>(null);
   const shareBox = useRef<HTMLDivElement>(null);
   const shareButton = useRef<HTMLButtonElement>(null);
   function closeShareMenu() {
@@ -363,13 +351,11 @@ export function ConferenceRoom({ onClose }: { onClose: () => void }) {
     onClose();
   }
   function stopSharing() {
-    stopTracks(screen.current);
-    screen.current = null;
+    captures.stop("screen");
     setSharing(null);
   }
   function stopMic() {
-    stopTracks(micStream.current);
-    micStream.current = null;
+    captures.stop("microphone");
     if (meter.current) {
       cancelAnimationFrame(meter.current.frame);
       void meter.current.context.close();
@@ -381,9 +367,7 @@ export function ConferenceRoom({ onClose }: { onClose: () => void }) {
   // Release every capture when the room closes.
   useEffect(
     () => () => {
-      stopTracks(screen.current);
-      stopTracks(cameraStream.current);
-      stopTracks(micStream.current);
+      captures.stopAll();
       if (meter.current) {
         cancelAnimationFrame(meter.current.frame);
         void meter.current.context.close();
@@ -393,8 +377,7 @@ export function ConferenceRoom({ onClose }: { onClose: () => void }) {
   );
   async function toggleCamera() {
     if (camera) {
-      stopTracks(cameraStream.current);
-      cameraStream.current = null;
+      captures.stop("camera");
       setCamera(false);
       return;
     }
@@ -403,9 +386,10 @@ export function ConferenceRoom({ onClose }: { onClose: () => void }) {
       return;
     }
     try {
-      cameraStream.current = await navigator.mediaDevices.getUserMedia({
-        video: true,
-      });
+      captures.set(
+        "camera",
+        await navigator.mediaDevices.getUserMedia({ video: true }),
+      );
       setCamera(true);
       setMediaError("");
     } catch (error) {
@@ -423,7 +407,7 @@ export function ConferenceRoom({ onClose }: { onClose: () => void }) {
     }
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      micStream.current = stream;
+      captures.set("microphone", stream);
       // Light your "speaking" badge from the microphone level.
       const context = new AudioContext();
       void context.resume();
@@ -435,11 +419,7 @@ export function ConferenceRoom({ onClose }: { onClose: () => void }) {
       const tick = () => {
         if (!meter.current) return;
         analyser.getByteTimeDomainData(samples);
-        let sum = 0;
-        for (const sample of samples) sum += ((sample - 128) / 128) ** 2;
-        const level = Math.sqrt(sum / samples.length);
-        // Two thresholds so the badge doesn't flicker around one value.
-        const next = loud ? level > 0.02 : level > 0.04;
+        const next = nextTalking(micLevel(samples), loud);
         if (next !== loud) {
           loud = next;
           setTalking(next);
@@ -472,11 +452,10 @@ export function ConferenceRoom({ onClose }: { onClose: () => void }) {
         video: true,
         audio: false,
       });
-      screen.current?.getTracks().forEach((track) => track.stop());
-      screen.current = stream;
+      captures.set("screen", stream);
       // Ending the share from the system's own controls stops it here too.
       stream.getVideoTracks()[0]?.addEventListener("ended", () => {
-        if (screen.current === stream) stopSharing();
+        if (captures.get("screen") === stream) stopSharing();
       });
       setSharing("screen");
       setShareOnStage(true);
@@ -656,8 +635,9 @@ export function ConferenceRoom({ onClose }: { onClose: () => void }) {
                   <div className="room-screen">
                     <video
                       ref={(video) => {
-                        if (video && video.srcObject !== screen.current)
-                          video.srcObject = screen.current;
+                        const stream = captures.get("screen");
+                        if (video && video.srcObject !== stream)
+                          video.srcObject = stream;
                       }}
                       autoPlay
                       muted
@@ -706,7 +686,7 @@ export function ConferenceRoom({ onClose }: { onClose: () => void }) {
                   >
                     {speaker.id === "you" && camera ? (
                       <LiveVideo
-                        stream={cameraStream.current}
+                        stream={captures.get("camera")}
                         label={t("Your camera")}
                         mirror
                       />
@@ -736,12 +716,12 @@ export function ConferenceRoom({ onClose }: { onClose: () => void }) {
                     >
                       {you && sharing === "screen" && !shareOnStage ? (
                         <LiveVideo
-                          stream={screen.current}
+                          stream={captures.get("screen")}
                           label={t("Your shared screen")}
                         />
                       ) : you && camera ? (
                         <LiveVideo
-                          stream={cameraStream.current}
+                          stream={captures.get("camera")}
                           label={t("Your camera")}
                           mirror
                         />

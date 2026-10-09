@@ -23,9 +23,10 @@ These run on your own device only; nothing is sent to other people.
 
 ## Quality
 
-- [ ] **8. Tests for Voicemail and the Team room.** `frontend/tests/` covers call logic, the dialer, registration and recording waveforms (11 tests), but no screens. Start with:
+- [x] **8. Tests for Voicemail and the Team room.** `frontend/tests/` covers call logic, the dialer, registration and recording waveforms (11 tests), but no screens. Start with:
   - Voicemail: the call button stays disabled until an account is registered.
   - Team room: Share screen stops capturing when you leave the room.
+  — done 2026-10-09 (branch `test/desktop-screen-tests`): the screens' rules moved into `src/mailbox.ts` and `src/roomMedia.ts` and are covered by 9 new tests (20 in total). The tests check those modules, not the rendered screens; screen-level tests would need a DOM test setup (e.g. happy-dom).
 - [ ] **9. Test these in the real app:**
   - [ ] Voicemail call: dial *97, enter the PIN with the keypad, hang up.
   - [ ] Incoming call after the event-permission fix (#34): the call screen should appear without the half-second delay.

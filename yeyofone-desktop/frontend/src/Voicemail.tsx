@@ -4,6 +4,12 @@ import { useLanguage } from "./i18n";
 import { useCalls } from "./useCalls";
 import { callLabel, callTime } from "./calls";
 import { parseRegistrations, type RegistrationStatus } from "./registration";
+import {
+  canCallVoicemail,
+  isRegistered,
+  isValidAccessCode,
+  pickVoicemailAccount,
+} from "./mailbox";
 import "./voicemail.css";
 
 type Account = {
@@ -61,15 +67,7 @@ export function Voicemail() {
           setAccounts(response.data);
           setRegistrations(status);
           setAccountId((old) =>
-            response.data.some((a) => a.id === old)
-              ? old
-              : (response.data.find(
-                  (a) =>
-                    a.enabled &&
-                    status.some(
-                      (s) => s.accountId === a.id && s.state === "registered",
-                    ),
-                )?.id ?? ""),
+            pickVoicemailAccount(old, response.data, status),
           );
         }
       } catch {
@@ -85,18 +83,26 @@ export function Voicemail() {
   }, []);
 
   const selected = accounts.find((a) => a.id === accountId);
-  const registered = registrations.some(
-    (s) => s.accountId === accountId && s.state === "registered",
-  );
+  const registered = isRegistered(accountId, registrations);
   const call = useMemo(
     () => (callId ? calls.rows.find((row) => row.id === callId) : undefined),
     [callId, calls.rows],
   );
   const activeCall = calls.rows.find((row) => row.state !== "ended");
-  const validCode = /^[0-9*#]{2,32}$/.test(accessCode);
+  const validCode = isValidAccessCode(accessCode);
+  const canOpen =
+    !!selected &&
+    canCallVoicemail({
+      accountSelected: true,
+      registered,
+      accessCode,
+      callInProgress: !!activeCall,
+      busy,
+      callingAvailable: calls.available,
+    });
 
   async function openMailbox() {
-    if (!selected || !registered || !validCode || activeCall || busy) return;
+    if (!selected || !canOpen) return;
     setBusy(true);
     setError("");
     localStorage.setItem("yeyofone.voicemail.account", selected.id);
@@ -132,13 +138,6 @@ export function Voicemail() {
 
   const live = call && call.state !== "ended";
   const connected = call?.state === "connected";
-  const canOpen =
-    !!selected &&
-    registered &&
-    validCode &&
-    !activeCall &&
-    !busy &&
-    calls.available;
 
   return (
     <section className="standalone voicemail-page">
