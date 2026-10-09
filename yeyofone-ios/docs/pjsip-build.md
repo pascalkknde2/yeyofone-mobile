@@ -6,7 +6,7 @@ The iOS app calls PJSIP through the same C bridge as the desktop app (`yeyofone-
 
 - PJPROJECT 2.17, archive `https://codeload.github.com/pjsip/pjproject/tar.gz/refs/tags/2.17`
 - Archive SHA-256: `065fe06c06788d97c35f563796d59f00ce52fe9558a52d7b490a042a966facce` (the same archive as `yeyofone-desktop/native/sources.lock.json`)
-- Bridge: `bridge.cpp` SHA-256 `4a6e7beda721dd6b005d3fae8e3dc59e5e8d3b1db482b1195e3d1baf9ade0cb0`, `bridge.h` SHA-256 `9acd86bfa5b8f4d951ce9af86d4b1b36b34839b48ff30d5e2945f84130fc3fd6`
+- Bridge: `bridge.cpp` SHA-256 `7d3226b32e6d637ae8a960e3d1ee62beefa1bbddd64a71561617d79214b9f0c5`, `bridge.h` SHA-256 `18717c225d917e8762e562a284963bace038b99e7fa174b20b4081c25c85e0df`
 - Toolchain: Xcode 26.4.1, iOS SDK 26.4, minimum iOS 17.0
 - Built: 9 October 2026 on macOS (Intel)
 
@@ -28,8 +28,8 @@ The app links `-lc++` and the AudioToolbox, AVFoundation, CFNetwork and CoreAudi
 
 | Slice | Size | SHA-256 |
 | --- | --- | --- |
-| `ios-arm64/libyeyofone-voip.a` | 12.1 MB | `23761ce32f65799200c4419a5987ebb2eaff77ec9100f84885bf6885ce6e6084` |
-| `ios-arm64_x86_64-simulator/libyeyofone-voip.a` | 23.6 MB | `a03ed4748eb410ae661398805b88bccd09048e76af385608df183525ff101dc6` |
+| `ios-arm64/libyeyofone-voip.a` | 12.1 MB | `860e12db81cd8235a617c8fdef25ad0ab489ba228cd809af3e6a0dfa63028c2b` |
+| `ios-arm64_x86_64-simulator/libyeyofone-voip.a` | 23.6 MB | `03c47712dbb8470ca524860b03ad4948adab3ca602e107223c5720b7538be5d4` |
 
 ## Verified
 
@@ -58,6 +58,10 @@ xcrun devicectl device copy from --device <device> --domain-type appDataContaine
 
 The iOS Simulator (iPhone 17 Pro, iOS 26.4.1, Intel Mac) registers, but calls fail when the audio starts. PJSIP reports status 506637, which is CoreAudio OSStatus −66637, a voice-processing audio unit error. Test calls on a device.
 
+### CallKit
+
+Incoming calls are reported to CallKit, which rings and shows the system call UI. The bridge's own ringtone is off on devices (`yv_set_ringtone`). CallKit owns audio session activation. The bridge's sound device can't open before that, so `provider(_:didActivate:)` reopens it through `yv_audio_device`. The app must declare the `voip` background mode, or CallKit resets the provider as soon as it's created, and every reported call is then ended. On 9 October 2026, an incoming call from 1001 rang through CallKit on the iPhone, was answered, and had two-way audio.
+
 ### Running the live tests
 
 The account comes from environment variables, so no credentials are stored in the repository:
@@ -77,7 +81,7 @@ Each test launches the app with `-YFResetData`, which in debug builds deletes sa
 - **TLS:** needs an iOS TLS backend (OpenSSL or Darwin SSL), plus a CA source for the bridge, which reads `/etc/ssl/cert.pem`. That file doesn't exist on iOS. The account editor blocks TLS until then.
 - **Call waiting:** the shared bridge answers a second incoming call with 486 Busy Here.
 - **Account options the bridge doesn't take:** a separate authentication username, the registrar URI, outbound proxy, STUN/TURN/ICE, SRTP and registration expiry. These are saved but not used.
-- **Background incoming calls:** these need CallKit and PushKit VoIP push, which requires a paid Apple Developer Program membership.
+- **Incoming calls while the app is suspended:** these need PushKit VoIP push, which requires a paid Apple Developer Program membership. CallKit already handles every call the app receives while it's running.
 
 ## Licence gate
 

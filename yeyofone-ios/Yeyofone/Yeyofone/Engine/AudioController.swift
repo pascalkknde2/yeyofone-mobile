@@ -2,8 +2,10 @@
 //  AudioController.swift
 //  Yeyofone
 //
-//  Microphone permission and call audio routing. PJSIP's CoreAudio backend owns the
-//  audio session's category and activation; this only chooses the output route.
+//  Microphone permission, the call audio session, and output routing. PJSIP's iOS CoreAudio
+//  backend leaves the session's category to the app (SETUP_AV_AUDIO_SESSION is 0), so calls
+//  set it here. CallKit activates the session for incoming calls; outgoing calls activate it
+//  themselves.
 //
 
 import AVFoundation
@@ -15,6 +17,21 @@ enum AudioController {
         case .denied: return false
         default: return await AVAudioApplication.requestRecordPermission()
         }
+    }
+
+    /// Voice-call category and mode, with Bluetooth headsets allowed. Doesn't activate the session.
+    static func configureSession() {
+        try? AVAudioSession.sharedInstance().setCategory(.playAndRecord, mode: .voiceChat, options: [.allowBluetoothHFP])
+    }
+
+    /// For calls CallKit doesn't manage.
+    static func activateSession() {
+        configureSession()
+        try? AVAudioSession.sharedInstance().setActive(true)
+    }
+
+    static func deactivateSession() {
+        try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
     }
 
     /// Routes available right now: the earpiece and speaker always, Bluetooth when a headset is connected.

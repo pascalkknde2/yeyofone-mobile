@@ -245,6 +245,7 @@ struct YvHandle {
     const std::thread::id owner = std::this_thread::get_id();
     std::unique_ptr<EngineEndpoint> endpoint;
     bool running = false;
+    bool ringtone = true;
     std::map<uint64_t,std::unique_ptr<NativeCall>> calls;
     std::map<uint64_t,std::unique_ptr<NativeAccount>> accounts;
 };
@@ -255,7 +256,7 @@ void NativeAccount::onIncomingCall(pj::OnIncomingCallParam& event) noexcept {
   const uint64_t serial=incoming_serial.fetch_add(1);if(serial==0||serial>0x7fffffffffffffffULL){pjsua_call_answer(event.callId,PJSIP_SC_SERVICE_UNAVAILABLE,nullptr,nullptr);return;}
   const uint64_t token=0x8000000000000000ULL|serial;
   auto call=std::make_unique<NativeCall>(*this,token,*endpoint,false,event.callId,true);
-  auto* incoming=call.get();owner->calls.emplace(token,std::move(call));incoming->start_ringtone();incoming->send_ringing();
+  auto* incoming=call.get();owner->calls.emplace(token,std::move(call));if(owner->ringtone)incoming->start_ringtone();incoming->send_ringing();
  } catch (...) {pjsua_call_answer(event.callId,PJSIP_SC_TEMPORARILY_UNAVAILABLE,nullptr,nullptr);}
 }
 int32_t check(YvHandle* h) {
@@ -503,6 +504,24 @@ extern "C" int32_t yv_call_release(YvHandle* h,uint64_t token) noexcept {
     if(auto code=check(h))return code;
     auto found=h->calls.find(token);if(found==h->calls.end())return 0;
     try{h->calls.erase(found);if(h->calls.empty()&&h->endpoint)h->endpoint->audDevManager().setNoDev();return 0;}catch(const pj::Error& e){return e.status;}catch(...){return -1;}
+}
+
+extern "C" int32_t yv_set_ringtone(YvHandle* h,int32_t enabled) noexcept {
+ if(auto code=check(h))return code;if(enabled!=0&&enabled!=1)return -6;
+ h->ringtone=enabled!=0;return 0;
+}
+extern "C" int32_t yv_audio_device(YvHandle* h,int32_t open) noexcept {
+ if(auto code=check(h))return code;if(open!=0&&open!=1)return -6;
+ if(!h->running)return 0;
+ try{
+  auto& d=h->endpoint->audDevManager();
+  if(!open){d.setNoDev();return 0;}
+  // Only calls that carry audio need the device; with none, leave it closed.
+  if(std::none_of(h->calls.begin(),h->calls.end(),[](const auto& x){return x.second->isActive();}))return 0;
+  pjsua_set_no_snd_dev();
+  pj_status_t status=pjsua_set_snd_dev(PJMEDIA_AUD_DEFAULT_CAPTURE_DEV,PJMEDIA_AUD_DEFAULT_PLAYBACK_DEV);
+  return status;
+ }catch(const pj::Error&e){return e.status;}catch(...){return -1;}
 }
 
 extern "C" int32_t yv_call_list(YvHandle* h,YvCall* output,uint32_t capacity,uint32_t* count) noexcept {
