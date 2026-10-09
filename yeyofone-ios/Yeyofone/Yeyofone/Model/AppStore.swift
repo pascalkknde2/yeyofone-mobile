@@ -502,7 +502,7 @@ final class AppStore {
     }
 
     private func apply(_ call: EngineCall) {
-        log.debug("Call \(call.token): state \(call.state), SIP \(call.sipCode), incoming \(call.incoming), held \(call.held), transfer pending \(call.transferPending) (\(call.transferCode))")
+        log.info("Call \(call.token): state \(call.state), SIP \(call.sipCode), incoming \(call.incoming), held \(call.held), media \(call.mediaActive), audio \(call.audioActive), audio error \(call.audioError), transfer pending \(call.transferPending) (\(call.transferCode))")
         if call.state == InviteState.disconnected {
             if !finishedCalls.contains(call.token) {
                 finishedCalls.insert(call.token)

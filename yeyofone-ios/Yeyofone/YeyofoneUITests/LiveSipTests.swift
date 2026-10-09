@@ -25,7 +25,7 @@ final class LiveSipTests: XCTestCase {
             throw XCTSkip("Set YF_SIP_USER, YF_SIP_PASSWORD and YF_SIP_DOMAIN to run live SIP tests.")
         }
         app = XCUIApplication()
-        app.launchArguments += ["-YFResetData", "-AppleLanguages", "(en)", "-AppleLocale", "en_US"]
+        app.launchArguments += ["-YFResetData", "-YFEngineLog", "-AppleLanguages", "(en)", "-AppleLocale", "en_US"]
         app.launch()
     }
 

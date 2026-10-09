@@ -176,7 +176,7 @@ public:
     void hold(bool value){
         if(getInfo().state!=PJSIP_INV_STATE_CONFIRMED||controls.transfer_pending||hold_pending)throw pj::Error(PJ_EINVALIDOP,"hold","","",0);
         if(controls.held==value)return;
-        pj::CallOpParam p(true);
+        pj::CallOpParam p(true);p.opt.audioCount=1;p.opt.videoCount=0;p.opt.textCount=0;
         previous_hold=controls.held;hold_pending=true;
         try{if(value)setHold(p);else{p.opt.flag=PJSUA_CALL_UNHOLD;reinvite(p);}}catch(...){hold_pending=false;throw;}
         controls.held=value;route();
@@ -198,7 +198,7 @@ public:
     void start_ringtone() noexcept {if(!is_incoming||ringtone_active)return;try{auto& devices=endpoint.audDevManager();devices.setPlaybackDev(PJMEDIA_AUD_DEFAULT_PLAYBACK_DEV);ringtone.createToneGenerator(16000,1);pj::ToneDesc tone;tone.freq1=440;tone.freq2=480;tone.on_msec=1000;tone.off_msec=3000;tone.volume=9000;pj::ToneDescVector tones;tones.push_back(tone);ringtone.play(tones,true);ringtone.startTransmit(devices.getPlaybackDevMedia());ringtone_active=true;}catch(...){try{ringtone.stop();}catch(...){}}}
     void stop_ringtone() noexcept {if(!ringtone_active)return;try{ringtone.stopTransmit(endpoint.audDevManager().getPlaybackDevMedia());}catch(...){}try{ringtone.stop();}catch(...){}ringtone_active=false;}
     void send_ringing(){if(!is_incoming)return;pj::CallOpParam p;p.statusCode=PJSIP_SC_RINGING;pj::Call::answer(p);}
-    void answer(){auto state=getInfo().state;if(!is_incoming||(state!=PJSIP_INV_STATE_INCOMING&&state!=PJSIP_INV_STATE_EARLY))throw pj::Error(PJ_EINVALIDOP,"answer","","",0);stop_ringtone();audio=true;pj::CallOpParam p(true);p.statusCode=PJSIP_SC_OK;p.opt.audioCount=1;p.opt.videoCount=0;auto& d=endpoint.audDevManager();d.setCaptureDev(PJMEDIA_AUD_DEFAULT_CAPTURE_DEV);d.setPlaybackDev(PJMEDIA_AUD_DEFAULT_PLAYBACK_DEV);try{pj::Call::answer(p);}catch(...){d.setNoDev();throw;}}
+    void answer(){auto state=getInfo().state;if(!is_incoming||(state!=PJSIP_INV_STATE_INCOMING&&state!=PJSIP_INV_STATE_EARLY))throw pj::Error(PJ_EINVALIDOP,"answer","","",0);stop_ringtone();audio=true;pj::CallOpParam p(true);p.statusCode=PJSIP_SC_OK;p.opt.audioCount=1;p.opt.videoCount=0;p.opt.textCount=0;auto& d=endpoint.audDevManager();d.setCaptureDev(PJMEDIA_AUD_DEFAULT_CAPTURE_DEV);d.setPlaybackDev(PJMEDIA_AUD_DEFAULT_PLAYBACK_DEV);try{pj::Call::answer(p);}catch(...){d.setNoDev();throw;}}
     void reject(){if(!is_incoming)return;auto state=getInfo().state;if(state!=PJSIP_INV_STATE_INCOMING&&state!=PJSIP_INV_STATE_EARLY)return;stop_ringtone();pj::CallOpParam p;p.statusCode=PJSIP_SC_DECLINE;pj::Call::hangup(p);cancelled=true;}
     void start_recording(const std::string& final_path) {
         auto info=getInfo();
@@ -388,6 +388,12 @@ extern "C" int32_t yv_account_add(YvHandle* h, const YvAccountConfig* c) noexcep
         config.regConfig.retryIntervalSec=0;config.regConfig.firstRetryIntervalSec=0;config.regConfig.randomRetryIntervalSec=0;
         config.regConfig.timeoutSec=300;config.regConfig.delayBeforeRefreshSec=30;config.regConfig.unregWaitMsec=1000;
         config.sipConfig.transportId=transport;
+        // Same media/NAT policy as yeyofone-android, live-verified against FreeSWITCH: without STUN/ICE,
+        // advertise the address learned from REGISTER instead of a private device address; omit RFC 5626
+        // ";ob" (FreeSWITCH then sends no RTP at all on inbound or bridged calls); offer plain RTP only,
+        // since this bridge has no SRTP setting and SDES keys must not travel over UDP/TCP signaling.
+        config.natConfig.sdpNatRewriteUse=1;config.natConfig.sipOutboundUse=0;
+        config.mediaConfig.srtpUse=PJMEDIA_SRTP_DISABLED;
         config.sipConfig.authCreds.emplace_back("digest","*",std::string(reinterpret_cast<const char*>(c->username),c->username_len),0,std::string(reinterpret_cast<const char*>(c->password),c->password_len));
         auto account=std::make_unique<NativeAccount>(c->token,h->endpoint.get(),h);account->transport=transport;
         account->target_host=std::string(reinterpret_cast<const char*>(c->host),c->host_len);account->target_port=c->port;account->target_transport=type;
@@ -441,7 +447,7 @@ extern "C" int32_t yv_call_start(YvHandle* h,uint64_t account,uint64_t token,con
         if(audio){try{auto& devices=h->endpoint->audDevManager();devices.setCaptureDev(PJMEDIA_AUD_DEFAULT_CAPTURE_DEV);devices.setPlaybackDev(PJMEDIA_AUD_DEFAULT_PLAYBACK_DEV);}catch(...){h->endpoint->audDevManager().setNoDev();return -11;}}
         auto call=std::make_unique<NativeCall>(acc,token,*h->endpoint,audio!=0);
         auto* pointer=call.get();h->calls.emplace(token,std::move(call));
-        try{pj::CallOpParam options(true);options.opt.audioCount=1;options.opt.videoCount=0;pointer->makeCall(destination,options);pointer->update();}
+        try{pj::CallOpParam options(true);options.opt.audioCount=1;options.opt.videoCount=0;options.opt.textCount=0;pointer->makeCall(destination,options);pointer->update();}
         catch(...){h->calls.erase(token);if(audio&&h->calls.empty())h->endpoint->audDevManager().setNoDev();throw;}
         return 0;
     }catch(const pj::Error& e){return e.status;}catch(...){return -1;}

@@ -2,7 +2,8 @@
 # Builds PJSIP and the shared YeyoFone C bridge (yeyofone-desktop/native/bridge.cpp) for
 # iPhone and the iOS Simulator, and packages them as Yeyofone/Frameworks/YeyofoneVoIP.xcframework.
 #
-# Usage: tools/build-pjsip-ios.sh [--jobs N]
+# Usage: tools/build-pjsip-ios.sh [--jobs N] [--bridge-only]
+#   --bridge-only  recompile only the bridge against the PJSIP already built in build/native
 # Environment: PJ_ARCHIVE=<path to pjproject-2.17.tar.gz> to use an already downloaded archive.
 # The archive is verified against the pinned SHA-256 before use; see docs/pjsip-build.md.
 set -euo pipefail
@@ -19,10 +20,12 @@ BRIDGE="$REPO/yeyofone-desktop/native"
 FRAMEWORKS="$ROOT/Yeyofone/Frameworks"
 OUTPUT="$FRAMEWORKS/YeyofoneVoIP.xcframework"
 JOBS="$(sysctl -n hw.ncpu)"
+BRIDGE_ONLY=0
 
 while [ $# -gt 0 ]; do
     case "$1" in
         --jobs) JOBS="$2"; shift 2 ;;
+        --bridge-only) BRIDGE_ONLY=1; shift ;;
         *) echo "Unknown option: $1" >&2; exit 2 ;;
     esac
 done
@@ -69,6 +72,12 @@ build_slice() {
         min_flag="-mios-simulator-version-min=$MIN_IOS"
     fi
 
+    if [ "$BRIDGE_ONLY" = 1 ]; then
+        [ -f "$source/build.mak" ] || { echo "No PJSIP build in $dir; run without --bridge-only first" >&2; exit 1; }
+        link_slice "$name" "$sdk"
+        return
+    fi
+
     echo "==> PJSIP $PJ_VERSION for $name"
     rm -rf "$dir"
     mkdir -p "$dir"
@@ -101,6 +110,14 @@ EOF
             || { grep -E "error|Error" "$dir/make.log" | tail -40 >&2; exit 1; }
     )
 
+    link_slice "$name" "$sdk"
+}
+
+# link_slice <name> <sdk>: compiles the bridge and merges it with that slice's PJSIP libraries.
+link_slice() {
+    local name="$1" sdk="$2"
+    local dir="$WORK/$name"
+    local source="$dir/pjproject-$PJ_VERSION"
     # Compiler flags and library list exactly as PJSIP's generated build.mak describes them.
     local print_make="$dir/print.mak"
     cat > "$print_make" <<EOF

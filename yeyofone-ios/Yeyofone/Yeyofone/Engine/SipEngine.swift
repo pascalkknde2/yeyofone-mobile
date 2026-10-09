@@ -33,6 +33,10 @@ nonisolated struct EngineCall: Equatable, Sendable {
     var connectedMilliseconds: UInt64
     var muted: Bool
     var held: Bool
+    var mediaActive: Bool
+    var audioActive: Bool
+    /// The last PJSIP status from connecting the call's audio, 0 when none.
+    var audioError: Int32
     var transferPending: Bool
     var transferCode: Int32
 }
@@ -89,6 +93,9 @@ nonisolated final class SipEngine: Thread, @unchecked Sendable {
             onStartFailure(started)
             return
         }
+        #if DEBUG
+        if CommandLine.arguments.contains("-YFEngineLog") { EngineLog.start() }
+        #endif
         var lastPoll = Date.distantPast
         var event = YvEvent()
         while !isCancelled {
@@ -252,6 +259,9 @@ nonisolated final class SipEngine: Thread, @unchecked Sendable {
                     connectedMilliseconds: call.connected_ms,
                     muted: call.muted != 0,
                     held: controls.held != 0,
+                    mediaActive: call.media_active != 0,
+                    audioActive: call.audio_active != 0,
+                    audioError: call.audio_error,
                     transferPending: controls.transfer_pending != 0,
                     transferCode: controls.transfer_code
                 ))
@@ -269,3 +279,31 @@ nonisolated final class SipEngine: Thread, @unchecked Sendable {
         }
     }
 }
+
+#if DEBUG
+// PJSIP's logging API, from the linked static library. The bridge turns PJSIP logging off;
+// debug builds can turn it back on to diagnose media problems.
+@_silgen_name("pj_log_set_level")
+nonisolated private func pj_log_set_level(_ level: Int32)
+@_silgen_name("pj_log_set_log_func")
+nonisolated private func pj_log_set_log_func(_ function: @convention(c) (Int32, UnsafePointer<CChar>?, Int32) -> Void)
+
+/// Writes PJSIP's log (level 5, without SIP messages) to Documents/pjsip.log. Debug builds only,
+/// enabled with the -YFEngineLog launch argument; copy it off a device with
+/// `xcrun devicectl device copy from --domain-type appDataContainer ...`.
+nonisolated enum EngineLog {
+    nonisolated(unsafe) private static var file: FileHandle?
+
+    static func start() {
+        let url = URL.documentsDirectory.appending(path: "pjsip.log")
+        FileManager.default.createFile(atPath: url.path(), contents: nil)
+        file = try? FileHandle(forWritingTo: url)
+        pj_log_set_log_func { _, data, length in
+            guard let data, length > 0 else { return }
+            let bytes = UnsafeRawBufferPointer(start: data, count: Int(length))
+            EngineLog.file?.write(Data(bytes))
+        }
+        pj_log_set_level(5)
+    }
+}
+#endif
