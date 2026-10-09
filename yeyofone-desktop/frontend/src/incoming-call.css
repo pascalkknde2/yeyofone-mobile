@@ -10,6 +10,11 @@
   text-align: center;
   box-shadow: 0 25px 90px #172c4a55;
   font-size: 16px;
+  /* The call view is sized to fit; scrolling stays available on very short windows, without a visible scrollbar. */
+  scrollbar-width: none;
+}
+.incoming-call-dialog::-webkit-scrollbar {
+  display: none;
 }
 .incoming-call-dialog::backdrop {
   background: #152b4977;

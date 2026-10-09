@@ -2,7 +2,6 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useLanguage } from "./i18n";
 import { useAccounts } from "./useAccounts";
 import { useCalls } from "./useCalls";
-import { useRingback } from "./useRingback";
 import { CallingScreen } from "./CallingScreen";
 import { CallPanel } from "./CallPanel";
 import { AccountPicker } from "./AccountPicker";
@@ -58,8 +57,6 @@ export function Dialer({ onClose }: { onClose: () => void }) {
     if (preferred) setSelected(preferred.id);
   }, [accounts, statuses, selected]);
 
-  // Ringback lifecycle.
-  useRingback(session);
 
   // Modal lifecycle.
   useEffect(() => {
@@ -108,7 +105,7 @@ export function Dialer({ onClose }: { onClose: () => void }) {
       }}
     >
       <header className="dialer__header">
-        <h2 id="dialer-title" className="dialer__title">
+        <h2 id="dialer-title" className="dialer__title dialer__sr-only">
           {t(title)}
         </h2>
         <button
@@ -152,7 +149,10 @@ export function Dialer({ onClose }: { onClose: () => void }) {
             void dial();
           }}
         >
+          {/* With a single account there's nothing to choose: it's used automatically, and only a
+              problem with it (not registered, disabled) is shown. */}
           <AccountPicker
+            statusOnly={accounts.length <= 1}
             accounts={accounts}
             statuses={statuses}
             selected={selected}
@@ -175,9 +175,11 @@ export function Dialer({ onClose }: { onClose: () => void }) {
             errorId={error ? "dialer-error" : undefined}
           />
 
-          <p className="calling-screen__status" role="status">
-            {t(busy ? "Dialing…" : "Make a call")}
-          </p>
+          {busy && (
+            <p className="calling-screen__status" role="status">
+              {t("Dialing…")}
+            </p>
+          )}
 
           <Keypad
             value={destination}

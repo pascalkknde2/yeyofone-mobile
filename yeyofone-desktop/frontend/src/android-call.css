@@ -2,19 +2,18 @@ section.call-panel {
   background: #f4f7f9;
   color: #0f172a;
   border-radius: 24px;
-  padding: 48px 0 0;
+  padding: 24px 0 0;
   gap: 8px;
-  min-height: 460px;
 }
 .call-panel .call-panel__avatar {
   position: relative;
-  width: 120px;
-  height: 120px;
-  margin-bottom: 24px;
+  width: 96px;
+  height: 96px;
+  margin-bottom: 12px;
   background: white;
   border: 1px solid #10b98133;
   color: #0f172a;
-  font-size: 48px;
+  font-size: 38px;
   font-weight: 600;
   isolation: isolate;
 }
@@ -28,7 +27,7 @@ section.call-panel {
   animation: android-call-pulse 1s ease-in-out infinite alternate;
 }
 .call-panel .call-panel__peer {
-  font-size: 32px;
+  font-size: 28px;
   letter-spacing: -0.5px;
 }
 .call-panel .call-panel__account {
@@ -57,7 +56,7 @@ section.call-panel {
 }
 .call-panel .call-panel__actions {
   margin-top: auto;
-  padding: 32px 16px 40px;
+  padding: 20px 12px 24px;
   width: 100%;
   box-sizing: border-box;
   border-radius: 32px 32px 24px 24px;
@@ -382,11 +381,52 @@ section.call-panel {
   margin: 10px auto 0;
 }
 .call-tool__keypad button {
-  min-height: 48px;
+  width: 52px;
+  height: 52px;
+  justify-self: center;
   border: 0;
-  border-radius: 12px;
+  border-radius: 50%;
   font-size: 23px;
   background: #edf1f5;
   color: #203644;
   cursor: pointer;
+  transition:
+    background 100ms ease,
+    color 100ms ease;
+}
+.call-tool__keypad button:hover:not(:disabled) {
+  background: #2563eb;
+  color: white;
+}
+.call-tool__keypad button:active:not(:disabled) {
+  background: #1d4ed8;
+  color: white;
+}
+
+/* Short windows: compact the call panel so the dialog fits without scrolling. */
+@media (max-height: 760px) {
+  section.call-panel {
+    padding-top: 12px;
+    gap: 4px;
+  }
+  .call-panel .call-panel__avatar {
+    width: 72px;
+    height: 72px;
+    margin-bottom: 8px;
+    font-size: 30px;
+  }
+  .call-panel .call-panel__peer {
+    font-size: 24px;
+  }
+  .call-panel .call-panel__actions {
+    padding: 14px 8px 16px;
+  }
+  .call-panel .call-panel__actions .call-btn {
+    gap: 8px;
+  }
+  .android-control-icon {
+    width: 56px;
+    height: 56px;
+    font-size: 22px;
+  }
 }
