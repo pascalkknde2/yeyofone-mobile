@@ -54,6 +54,13 @@ int32_t yv_stop(struct YvHandle* handle) YV_NOEXCEPT;
 int32_t yv_pump(struct YvHandle* handle) YV_NOEXCEPT;
 int32_t yv_next_event(struct YvHandle* handle, struct YvEvent* output) YV_NOEXCEPT;
 int32_t yv_destroy(struct YvHandle* handle) YV_NOEXCEPT;
+/* Whether incoming calls play the bridge's own ringtone (default 1). Hosts that ring through the
+ * system, such as iOS CallKit, turn it off. */
+int32_t yv_set_ringtone(struct YvHandle* handle, int32_t enabled) YV_NOEXCEPT;
+/* Opens (1) or closes (0) the default sound devices for the active calls without changing their
+ * media connections. iOS CallKit hosts call this when the system activates or deactivates the
+ * audio session, since audio must not start before activation. */
+int32_t yv_audio_device(struct YvHandle* handle, int32_t open) YV_NOEXCEPT;
 #ifdef __cplusplus
 }
 #endif

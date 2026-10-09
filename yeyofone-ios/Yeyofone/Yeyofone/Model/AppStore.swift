@@ -85,6 +85,9 @@ final class AppStore {
     @ObservationIgnored private var finishedCalls: Set<UInt64> = []
     @ObservationIgnored private var pendingTransfers: Set<UInt64> = []
     @ObservationIgnored private var retries: [UUID: Task<Void, Never>] = [:]
+    @ObservationIgnored private var callKit: CallKitController?
+    /// True while a call that CallKit doesn't manage has activated the audio session itself.
+    @ObservationIgnored private var ownsAudioSession = false
 
     init(demo: Bool = false) {
         persists = !demo
@@ -273,6 +276,8 @@ final class AppStore {
             activeCall = CallSession(token: token, remoteName: contactName(for: number) ?? number,
                                      remoteNumber: number, direction: .outgoing, state: .calling)
             callPage = .main
+            AudioController.activateSession()
+            ownsAudioSession = true
             prepareAudioRoutes()
             engine.startCall(account: accountToken, token: token, uri: sipUri(number, account: account)) { [weak self] code in
                 log.info("Call \(token) start: \(code)")
@@ -283,41 +288,140 @@ final class AppStore {
         }
     }
 
+    // The in-app buttons below route through CallKit for calls it manages, so the system UI stays in
+    // step; CallKit then calls back into the matching answer/end/mute/hold implementation.
+
     func acceptIncoming() {
         guard let call = incomingCall else { return }
-        guard let engine else {
-            incomingCall = nil
-            activeCall = CallSession(remoteName: call.remoteName, remoteNumber: call.remoteNumber,
-                                     direction: .incoming, state: .connected, connectedAt: Date())
-            return
-        }
-        Task {
-            guard await AudioController.requestMicrophone() else {
-                notice = String(localized: "Microphone permission is required to place a call")
-                return
-            }
-            guard incomingCall?.token == call.token else { return }
-            incomingCall = nil
-            var answered = call
-            answered.state = .connecting
-            activeCall = answered
-            callPage = .main
-            prepareAudioRoutes()
-            engine.answer(token: call.token) { [weak self] code in
-                if code != 0 { self?.notice = String(localized: "Call failed") }
-            }
+        if let callKit, callKit.isManaged(call.id) {
+            callKit.requestAnswer(call.id)
+        } else {
+            answerIncoming(id: call.id) { _ in }
         }
     }
 
     func declineIncoming() {
         guard let call = incomingCall else { return }
+        if let callKit, callKit.isManaged(call.id) {
+            callKit.requestEnd(call.id)
+        } else {
+            rejectIncoming(call)
+        }
+    }
+
+    func endCall() {
+        guard let call = activeCall else { return }
+        if let callKit, callKit.isManaged(call.id) {
+            callKit.requestEnd(call.id)
+        } else {
+            hangUpActive()
+        }
+    }
+
+    func setMuted(_ muted: Bool) {
+        guard let call = activeCall else { return }
+        if let callKit, callKit.isManaged(call.id) {
+            callKit.requestMute(call.id, muted)
+        } else {
+            applyMute(id: call.id, muted)
+        }
+    }
+
+    func setHeld(_ held: Bool) {
+        guard let call = activeCall else { return }
+        if let callKit, callKit.isManaged(call.id) {
+            callKit.requestHold(call.id, held)
+        } else {
+            applyHold(id: call.id, held) { _ in }
+        }
+    }
+
+    private func answerIncoming(id: UUID, completion: @escaping (Bool) -> Void) {
+        guard let call = incomingCall, call.id == id else {
+            completion(false)
+            return
+        }
+        guard let engine else {
+            incomingCall = nil
+            activeCall = CallSession(remoteName: call.remoteName, remoteNumber: call.remoteNumber,
+                                     direction: .incoming, state: .connected, connectedAt: Date())
+            completion(true)
+            return
+        }
+        let viaCallKit = callKit?.isManaged(id) == true
+        Task {
+            guard await AudioController.requestMicrophone() else {
+                notice = String(localized: "Microphone permission is required to place a call")
+                completion(false)
+                return
+            }
+            guard incomingCall?.token == call.token else {
+                completion(false)
+                return
+            }
+            incomingCall = nil
+            var answered = call
+            answered.state = .connecting
+            activeCall = answered
+            callPage = .main
+            if !viaCallKit {
+                AudioController.activateSession()
+                ownsAudioSession = true
+            }
+            prepareAudioRoutes()
+            engine.answer(token: call.token) { [weak self] code in
+                log.info("Call \(call.token) answer: \(code)")
+                if code != 0 { self?.notice = String(localized: "Call failed") }
+                completion(code == 0)
+            }
+        }
+    }
+
+    private func rejectIncoming(_ call: CallSession) {
         incomingCall = nil
         finishedCalls.insert(call.token)
         engine?.reject(token: call.token)
         finish(call)
     }
 
-    func endCall() {
+    /// End requested by CallKit: from the system UI, or our own end transaction.
+    private func endFromSystem(_ id: UUID) {
+        if let call = incomingCall, call.id == id {
+            rejectIncoming(call)
+        } else if activeCall?.id == id {
+            hangUpActive()
+        }
+    }
+
+    private func applyMute(id: UUID, _ muted: Bool) {
+        guard let call = activeCall, call.id == id else { return }
+        activeCall?.muted = muted
+        engine?.mute(token: call.token, muted: muted)
+    }
+
+    private func applyHold(id: UUID, _ held: Bool, completion: @escaping (Bool) -> Void) {
+        guard var call = activeCall, call.id == id else {
+            completion(false)
+            return
+        }
+        call.held = held
+        if call.connectedAt != nil { call.state = held ? .held : .connected }
+        activeCall = call
+        guard let engine else {
+            completion(true)
+            return
+        }
+        // The engine refuses while a transfer or another hold is in progress; its next snapshot restores the state.
+        engine.hold(token: call.token, held: held) { code in completion(code == 0) }
+    }
+
+    /// CallKit reset (for example the system's call service restarted): end everything.
+    private func endAllCalls() {
+        if let call = incomingCall { rejectIncoming(call) }
+        if activeCall != nil { hangUpActive() }
+    }
+
+    private func hangUpActive() {
         guard let call = activeCall else { return }
         guard let engine, call.token != 0 else {
             activeCall = nil
@@ -328,21 +432,6 @@ final class AppStore {
         }
         if let consultation = consultationCall { engine.hangup(token: consultation.token) }
         engine.hangup(token: call.token)
-    }
-
-    func setMuted(_ muted: Bool) {
-        guard let call = activeCall else { return }
-        activeCall?.muted = muted
-        engine?.mute(token: call.token, muted: muted)
-    }
-
-    func setHeld(_ held: Bool) {
-        guard var call = activeCall else { return }
-        call.held = held
-        if call.connectedAt != nil { call.state = held ? .held : .connected }
-        activeCall = call
-        // The engine refuses while a transfer or another hold is in progress; its next snapshot restores the state.
-        engine?.hold(token: call.token, held: held)
     }
 
     func sendDtmf(_ digit: String) {
@@ -442,6 +531,11 @@ final class AppStore {
 
     private func finish(_ call: CallSession) {
         let answered = call.connectedAt != nil
+        callKit?.reportEnded(id: call.id, answered: answered)
+        if ownsAudioSession, activeCall == nil, incomingCall == nil {
+            ownsAudioSession = false
+            AudioController.deactivateSession()
+        }
         let duration = call.connectedAt.map { Date().timeIntervalSince($0) } ?? 0
         let type: CallType = call.direction == .outgoing ? .outgoing : (answered ? .incoming : .missed)
         history.insert(
@@ -482,6 +576,28 @@ final class AppStore {
         )
         self.engine = engine
         engine.start()
+        #if !targetEnvironment(simulator)
+        // CallKit rings for incoming calls; the Simulator has no CallKit ringing, so keep the bridge's tone there.
+        engine.setRingtone(false)
+        #endif
+        callKit = CallKitController(handlers: .init(
+            answer: { [weak self] id, done in
+                guard let self else { return done(false) }
+                answerIncoming(id: id, completion: done)
+            },
+            end: { [weak self] id in self?.endFromSystem(id) },
+            mute: { [weak self] id, muted in self?.applyMute(id: id, muted) },
+            hold: { [weak self] id, held, done in
+                guard let self else { return done(false) }
+                applyHold(id: id, held, completion: done)
+            },
+            dtmf: { [weak self] _, digits in digits.forEach { self?.sendDtmf(String($0)) } },
+            audioSession: { [weak self] active in
+                log.info("CallKit audio session active: \(active)")
+                self?.engine?.audioDevice(open: active)
+            },
+            reset: { [weak self] in self?.endAllCalls() }
+        ))
         log.info("Engine started with \(self.accounts.count) account(s)")
         for account in accounts where account.enabled { addToEngine(account) }
     }
@@ -532,8 +648,14 @@ final class AppStore {
         } else if call.incoming, incomingCall == nil, activeCall == nil, !finishedCalls.contains(call.token),
                   call.state == InviteState.incoming || call.state == InviteState.early {
             let number = call.caller.isEmpty ? String(localized: "Unknown caller") : call.caller
-            incomingCall = CallSession(token: call.token, remoteName: contactName(for: number) ?? number,
-                                       remoteNumber: number, direction: .incoming, state: .ringing)
+            let session = CallSession(token: call.token, remoteName: contactName(for: number) ?? number,
+                                      remoteNumber: number, direction: .incoming, state: .ringing)
+            incomingCall = session
+            callKit?.reportIncoming(id: session.id, number: number, name: session.remoteName) { [weak self] outcome in
+                log.info("Call \(call.token) reported to CallKit: \(String(describing: outcome))")
+                guard let self, outcome == .declined, let current = incomingCall, current.id == session.id else { return }
+                rejectIncoming(current)
+            }
         }
     }
 

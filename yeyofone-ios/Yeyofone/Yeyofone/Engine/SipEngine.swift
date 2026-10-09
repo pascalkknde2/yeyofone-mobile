@@ -211,6 +211,16 @@ nonisolated final class SipEngine: Thread, @unchecked Sendable {
         }
     }
 
+    /// Whether incoming calls play the bridge's own ringtone; off when CallKit rings instead.
+    func setRingtone(_ enabled: Bool) {
+        run(nil) { yv_set_ringtone($0, enabled ? 1 : 0) }
+    }
+
+    /// Opens or closes the sound device for active calls, following CallKit's audio session activation.
+    func audioDevice(open: Bool) {
+        run(nil) { yv_audio_device($0, open ? 1 : 0) }
+    }
+
     /// Frees an ended call once the UI has recorded it.
     func release(token: UInt64) {
         run(nil) { yv_call_release($0, token) }
@@ -306,6 +316,12 @@ nonisolated enum EngineLog {
             EngineLog.file?.write(Data(bytes))
         }
         pj_log_set_level(5)
+    }
+
+    /// Adds an app-level line (CallKit, audio session) to the same log, for ordering against PJSIP's lines.
+    static func note(_ message: String) {
+        let time = Date().formatted(.dateTime.hour(.twoDigits(amPM: .omitted)).minute(.twoDigits).second(.twoDigits).secondFraction(.fractional(3)))
+        file?.write(Data("\(time)  app  \(message)\n".utf8))
     }
 }
 #endif
