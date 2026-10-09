@@ -11,6 +11,7 @@ import SwiftUI
 
 struct RootView: View {
     @Environment(AppStore.self) private var store
+    @Environment(\.scenePhase) private var scenePhase
 
     var body: some View {
         Group {
@@ -31,6 +32,10 @@ struct RootView: View {
         .animation(.easeInOut(duration: 0.2), value: store.incomingCall?.id)
         .animation(.easeInOut(duration: 0.2), value: store.activeCall?.id)
         .animation(.easeInOut(duration: 0.2), value: store.endedSummary)
+        .toast(Bindable(store).notice)
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .active { store.refreshRegistrations() }
+        }
     }
 
     private var mainScreen: some View {

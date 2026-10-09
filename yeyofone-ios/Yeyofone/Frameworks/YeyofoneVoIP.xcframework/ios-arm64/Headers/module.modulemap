@@ -1,0 +1,4 @@
+module YeyofoneVoIP {
+    header "yeyofone_voip.h"
+    export *
+}

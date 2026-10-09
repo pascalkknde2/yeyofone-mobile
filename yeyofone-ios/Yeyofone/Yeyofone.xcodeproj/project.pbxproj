@@ -6,8 +6,25 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		A7C0F1000000000000000002 /* Frameworks/YeyofoneVoIP.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = A7C0F1000000000000000001 /* Frameworks/YeyofoneVoIP.xcframework */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		B7D0E2000000000000000001 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 983FE07A3073DB4A00BA1ABE /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 983FE0813073DB4A00BA1ABE;
+			remoteInfo = Yeyofone;
+		};
+/* End PBXContainerItemProxy section */
+
 /* Begin PBXFileReference section */
 		983FE0823073DB4A00BA1ABE /* Yeyofone.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Yeyofone.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		A7C0F1000000000000000001 /* Frameworks/YeyofoneVoIP.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; path = Frameworks/YeyofoneVoIP.xcframework; sourceTree = "<group>"; };
+		A7C0F1000000000000000003 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		B7D0E2000000000000000003 /* YeyofoneUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = YeyofoneUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -16,10 +33,23 @@
 			path = Yeyofone;
 			sourceTree = "<group>";
 		};
+		B7D0E2000000000000000004 /* YeyofoneUITests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = YeyofoneUITests;
+			sourceTree = "<group>";
+		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
 		983FE07F3073DB4A00BA1ABE /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A7C0F1000000000000000002 /* Frameworks/YeyofoneVoIP.xcframework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		B7D0E2000000000000000007 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -33,6 +63,9 @@
 			isa = PBXGroup;
 			children = (
 				983FE0843073DB4A00BA1ABE /* Yeyofone */,
+				B7D0E2000000000000000004 /* YeyofoneUITests */,
+				A7C0F1000000000000000003 /* Info.plist */,
+				A7C0F1000000000000000001 /* Frameworks/YeyofoneVoIP.xcframework */,
 				983FE0833073DB4A00BA1ABE /* Products */,
 			);
 			sourceTree = "<group>";
@@ -41,6 +74,7 @@
 			isa = PBXGroup;
 			children = (
 				983FE0823073DB4A00BA1ABE /* Yeyofone.app */,
+				B7D0E2000000000000000003 /* YeyofoneUITests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -70,6 +104,29 @@
 			productReference = 983FE0823073DB4A00BA1ABE /* Yeyofone.app */;
 			productType = "com.apple.product-type.application";
 		};
+		B7D0E2000000000000000005 /* YeyofoneUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = B7D0E2000000000000000011 /* Build configuration list for PBXNativeTarget "YeyofoneUITests" */;
+			buildPhases = (
+				B7D0E2000000000000000006 /* Sources */,
+				B7D0E2000000000000000007 /* Frameworks */,
+				B7D0E2000000000000000008 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				B7D0E2000000000000000002 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				B7D0E2000000000000000004 /* YeyofoneUITests */,
+			);
+			name = YeyofoneUITests;
+			packageProductDependencies = (
+			);
+			productName = YeyofoneUITests;
+			productReference = B7D0E2000000000000000003 /* YeyofoneUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -82,6 +139,10 @@
 				TargetAttributes = {
 					983FE0813073DB4A00BA1ABE = {
 						CreatedOnToolsVersion = 26.4.1;
+					};
+					B7D0E2000000000000000005 = {
+						CreatedOnToolsVersion = 26.4.1;
+						TestTargetID = 983FE0813073DB4A00BA1ABE;
 					};
 				};
 			};
@@ -104,12 +165,20 @@
 			projectRoot = "";
 			targets = (
 				983FE0813073DB4A00BA1ABE /* Yeyofone */,
+				B7D0E2000000000000000005 /* YeyofoneUITests */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
 		983FE0803073DB4A00BA1ABE /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		B7D0E2000000000000000008 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -126,7 +195,22 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		B7D0E2000000000000000006 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		B7D0E2000000000000000002 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 983FE0813073DB4A00BA1ABE /* Yeyofone */;
+			targetProxy = B7D0E2000000000000000001 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		983FE08B3073DB4D00BA1ABE /* Debug */ = {
@@ -257,16 +341,31 @@
 				CURRENT_PROJECT_VERSION = 1;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Info.plist;
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "YeyoFone uses the microphone for your calls.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UIRequiresFullScreen = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = UIInterfaceOrientationPortrait;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = UIInterfaceOrientationPortrait;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					"-lc++",
+					"-framework",
+					AudioToolbox,
+					"-framework",
+					AVFoundation,
+					"-framework",
+					CFNetwork,
+					"-framework",
+					CoreAudio,
+				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.yeyofone.app.Yeyofone;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
@@ -288,16 +387,31 @@
 				CURRENT_PROJECT_VERSION = 1;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Info.plist;
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "YeyoFone uses the microphone for your calls.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UIRequiresFullScreen = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = UIInterfaceOrientationPortrait;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = UIInterfaceOrientationPortrait;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					"-lc++",
+					"-framework",
+					AudioToolbox,
+					"-framework",
+					AVFoundation,
+					"-framework",
+					CFNetwork,
+					"-framework",
+					CoreAudio,
+				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.yeyofone.app.Yeyofone;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
@@ -307,6 +421,40 @@
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		B7D0E2000000000000000009 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.yeyofone.app.YeyofoneUITests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = Yeyofone;
+			};
+			name = Debug;
+		};
+		B7D0E2000000000000000010 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.yeyofone.app.YeyofoneUITests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = Yeyofone;
 			};
 			name = Release;
 		};
@@ -327,6 +475,15 @@
 			buildConfigurations = (
 				983FE08E3073DB4D00BA1ABE /* Debug */,
 				983FE08F3073DB4D00BA1ABE /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		B7D0E2000000000000000011 /* Build configuration list for PBXNativeTarget "YeyofoneUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				B7D0E2000000000000000009 /* Debug */,
+				B7D0E2000000000000000010 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

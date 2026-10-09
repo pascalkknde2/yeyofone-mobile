@@ -9,13 +9,20 @@ import SwiftUI
 
 @main
 struct YeyofoneApp: App {
-    @State private var store = AppStore()
+    @State private var store: AppStore
 
     init() {
         #if DEBUG
-        // `-YFScreen <name>` opens a screen directly, for screenshots and UI checks.
-        if let name = UserDefaults.standard.string(forKey: "YFScreen") { store.openForDebugging(name) }
+        // `-YFScreen <name>` opens a screen directly on sample data, for screenshots and UI checks.
+        if let name = UserDefaults.standard.string(forKey: "YFScreen") {
+            let demo = AppStore(demo: true)
+            demo.openForDebugging(name)
+            _store = State(initialValue: demo)
+            return
+        }
+        if CommandLine.arguments.contains("-YFResetData") { LocalStore.resetForTesting() }
         #endif
+        _store = State(initialValue: AppStore())
     }
 
     var body: some Scene {

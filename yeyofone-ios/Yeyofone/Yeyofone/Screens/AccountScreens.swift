@@ -448,6 +448,11 @@ struct AccountEditorScreen: View {
             error = String(localized: "Display name, SIP username and domain are required")
             return
         }
+        guard transport != .tls else {
+            // The iOS engine is built without TLS for now; see docs/pjsip-build.md.
+            error = String(localized: "TLS isn't available on iOS yet. Use UDP or TCP.")
+            return
+        }
         guard existing != nil || !password.isEmpty else {
             error = String(localized: "A password is required for a new account")
             return
@@ -485,9 +490,10 @@ struct AccountEditorScreen: View {
             callerId: callerId,
             enabled: existing?.enabled ?? true
         )
-        // The password would go to the Keychain here once a SIP engine exists; it is never kept in UI state.
+        // The password goes straight to the Keychain and isn't kept in UI state.
+        let secret = password
         password = ""
-        store.save(account)
+        store.save(account, password: secret)
         store.screen = existing == nil ? .accounts : .accountDetail(account.id)
     }
 }
@@ -539,6 +545,7 @@ private struct EditorField: View {
             .textInputAutocapitalization(.never)
             .autocorrectionDisabled()
             .focused($focused)
+            .accessibilityLabel(Text(label))
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 10)

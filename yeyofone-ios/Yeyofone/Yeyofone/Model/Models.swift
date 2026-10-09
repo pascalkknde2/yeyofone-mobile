@@ -7,12 +7,12 @@
 
 import Foundation
 
-enum TransportProtocol: String, CaseIterable, Identifiable {
+enum TransportProtocol: String, CaseIterable, Identifiable, Codable {
     case udp = "UDP", tcp = "TCP", tls = "TLS"
     var id: String { rawValue }
 }
 
-struct SipAccount: Identifiable, Equatable {
+struct SipAccount: Identifiable, Equatable, Codable {
     let id: UUID
     var displayName: String
     var username: String
@@ -35,7 +35,7 @@ struct SipAccount: Identifiable, Equatable {
     var sipIdentity: String { "sip:\(username)@\(domain)" }
 }
 
-struct AccountPreferences: Equatable {
+struct AccountPreferences: Equatable, Codable {
     var autoAnswer = false
     var callWaiting = true
     var voicemail = true
@@ -50,14 +50,14 @@ enum RegistrationState: Equatable {
     case notRegistered, registering, registered, failed, unregistering
 }
 
-struct Contact: Identifiable, Equatable {
+struct Contact: Identifiable, Equatable, Codable {
     let id: UUID
     var displayName: String
     var number: String
     var favorite: Bool
 }
 
-enum CallType {
+enum CallType: String, Codable {
     case incoming, outgoing, missed
 
     var label: String {
@@ -69,7 +69,7 @@ enum CallType {
     }
 }
 
-struct CallLog: Identifiable, Equatable {
+struct CallLog: Identifiable, Equatable, Codable {
     let id: UUID
     var contactName: String
     var number: String
@@ -98,6 +98,8 @@ enum CallDirection { case incoming, outgoing }
 
 struct CallSession: Identifiable, Equatable {
     let id = UUID()
+    /// The engine's token for this call; 0 for a call that isn't backed by the engine (previews).
+    var token: UInt64 = 0
     var remoteName: String
     var remoteNumber: String
     var direction: CallDirection
