@@ -192,6 +192,90 @@
   font-weight: 600;
 }
 
+/* Local screen share: the captured display, with a bar to stop it. */
+.room-screen {
+  position: relative;
+  display: grid;
+  height: 100%;
+  background: #000;
+}
+.room-screen video {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  object-fit: contain;
+}
+.room-screen__bar {
+  position: absolute;
+  left: 50%;
+  bottom: 14px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  max-width: calc(100% - 28px);
+  padding: 8px 8px 8px 14px;
+  border-radius: 12px;
+  background: #0f172ae6;
+  transform: translateX(-50%);
+}
+.room-screen__bar span {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+  color: white;
+  font-size: 14px;
+  font-weight: 600;
+}
+.room-screen__bar small {
+  color: #94a3b8;
+  font-size: 12px;
+  font-weight: 500;
+}
+.room-screen__bar button {
+  flex-shrink: 0;
+  padding: 7px 12px;
+  border-radius: 8px;
+  color: white;
+  background: #dc2626;
+  font-size: 13px;
+  font-weight: 600;
+}
+.room-screen__bar button:hover {
+  background: #b91c1c;
+}
+.room-stage {
+  position: relative;
+}
+.room-share-error {
+  position: absolute;
+  z-index: 1;
+  top: 14px;
+  left: 50%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  max-width: calc(100% - 28px);
+  margin: 0;
+  padding: 8px 8px 8px 14px;
+  border-radius: 10px;
+  color: #b91c1c;
+  background: #fef2f2;
+  font-size: 14px;
+  transform: translateX(-50%);
+}
+.room-share-error button {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+  color: #b91c1c;
+}
+.room-share-error button:hover {
+  background: #fee2e2;
+}
+
 /* Thumbnail strip. */
 .room-strip {
   display: grid;
@@ -318,6 +402,52 @@
 .room-control-buttons button.is-on {
   color: white;
   background: #2563eb;
+}
+/* Share menu opens above its button. */
+.room-share {
+  position: relative;
+}
+.room-share__menu {
+  position: absolute;
+  z-index: 2;
+  left: 50%;
+  bottom: calc(100% + 10px);
+  display: grid;
+  gap: 2px;
+  width: 260px;
+  padding: 6px;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 12px 32px #0f172a66;
+  transform: translateX(-50%);
+}
+.room-control-buttons .room-share__menu button {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  height: auto;
+  padding: 10px 12px;
+  border-radius: 8px;
+  color: #2563eb;
+  background: transparent;
+  text-align: left;
+}
+.room-control-buttons .room-share__menu button:hover,
+.room-control-buttons .room-share__menu button:focus-visible {
+  background: #eff6ff;
+}
+.room-share__menu span {
+  display: grid;
+  gap: 2px;
+  color: #0f172a;
+  font-size: 14px;
+  font-weight: 600;
+}
+.room-share__menu small {
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 400;
 }
 .room-control-buttons .room-leave {
   color: white;

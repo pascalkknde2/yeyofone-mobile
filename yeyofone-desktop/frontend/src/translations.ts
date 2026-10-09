@@ -1384,12 +1384,67 @@ export const translations: Record<
     es: "Cerrar vista previa de conferencia",
     de: "Konferenzvorschau schließen",
   },
-  "Interactive conference preview · Sample participants · No live audio, camera, or screen sharing":
+  "Conference preview · Sample participants · Nothing you share is sent to anyone":
     {
-      fr: "Aperçu interactif · Participants de démonstration · Aucun audio, caméra ou partage réel",
-      es: "Vista previa interactiva · Participantes de muestra · Sin audio, cámara ni pantalla reales",
-      de: "Interaktive Vorschau · Beispielteilnehmer · Kein Live-Audio, Kamera oder Bildschirmteilen",
+      fr: "Aperçu de conférence · Participants de démonstration · Rien de ce que vous partagez n’est envoyé",
+      es: "Vista previa de conferencia · Participantes de muestra · Nada de lo que compartes se envía",
+      de: "Konferenzvorschau · Beispielteilnehmer · Geteilte Inhalte werden an niemanden gesendet",
     },
+  Share: {
+    fr: "Partager",
+    es: "Compartir",
+    de: "Teilen",
+  },
+  "Share screen": {
+    fr: "Partager l’écran",
+    es: "Compartir pantalla",
+    de: "Bildschirm teilen",
+  },
+  "Stop sharing": {
+    fr: "Arrêter le partage",
+    es: "Dejar de compartir",
+    de: "Teilen beenden",
+  },
+  "A window or your whole display": {
+    fr: "Une fenêtre ou tout l’écran",
+    es: "Una ventana o toda la pantalla",
+    de: "Ein Fenster oder den ganzen Bildschirm",
+  },
+  "The meeting topics": {
+    fr: "Les sujets de la réunion",
+    es: "Los temas de la reunión",
+    de: "Die Themen der Besprechung",
+  },
+  "You’re sharing your screen": {
+    fr: "Vous partagez votre écran",
+    es: "Estás compartiendo tu pantalla",
+    de: "Sie teilen Ihren Bildschirm",
+  },
+  "Preview only · Not sent to other participants": {
+    fr: "Aperçu uniquement · Non envoyé aux autres participants",
+    es: "Solo vista previa · No se envía a otros participantes",
+    de: "Nur Vorschau · Nicht an andere Teilnehmer gesendet",
+  },
+  "Your shared screen": {
+    fr: "Votre écran partagé",
+    es: "Tu pantalla compartida",
+    de: "Ihr geteilter Bildschirm",
+  },
+  "Screen sharing isn’t available in this window.": {
+    fr: "Le partage d’écran n’est pas disponible dans cette fenêtre.",
+    es: "Compartir pantalla no está disponible en esta ventana.",
+    de: "Bildschirmteilen ist in diesem Fenster nicht verfügbar.",
+  },
+  "Screen sharing was cancelled or not allowed.": {
+    fr: "Le partage d’écran a été annulé ou refusé.",
+    es: "Se canceló o no se permitió compartir la pantalla.",
+    de: "Bildschirmteilen wurde abgebrochen oder nicht erlaubt.",
+  },
+  "Screen sharing couldn’t start.": {
+    fr: "Impossible de démarrer le partage d’écran.",
+    es: "No se pudo iniciar el uso compartido de pantalla.",
+    de: "Bildschirmteilen konnte nicht gestartet werden.",
+  },
   "Everyone has a seat at the table": {
     fr: "Chacun a sa place",
     es: "Todos tienen su lugar",

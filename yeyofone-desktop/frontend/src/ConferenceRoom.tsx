@@ -17,7 +17,9 @@ type RoomIcon =
   | "search"
   | "speaking"
   | "pin"
-  | "send";
+  | "send"
+  | "screen"
+  | "agenda";
 // Icon paths from Lucide (https://lucide.dev, ISC License); see LICENSES-THIRD-PARTY.md.
 function RoomGlyph({ name, size = 22 }: { name: RoomIcon; size?: number }) {
   return (
@@ -135,6 +137,24 @@ function RoomGlyph({ name, size = 22 }: { name: RoomIcon; size?: number }) {
           <path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6h1a2 2 0 0 0 0-4H8a2 2 0 0 0 0 4h1v4.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24Z" />
         </>
       )}
+      {name === "screen" && (
+        <>
+          <path d="m9 10 3-3 3 3" />
+          <path d="M12 13V7" />
+          <rect width="20" height="14" x="2" y="3" rx="2" />
+          <path d="M12 17v4" />
+          <path d="M8 21h8" />
+        </>
+      )}
+      {name === "agenda" && (
+        <>
+          <path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z" />
+          <path d="M14 2v4a2 2 0 0 0 2 2h4" />
+          <path d="M10 9H8" />
+          <path d="M16 13H8" />
+          <path d="M16 17H8" />
+        </>
+      )}
       {name === "send" && (
         <>
           <path d="m22 2-7 20-4-9-9-4Z" />
@@ -214,7 +234,21 @@ export function ConferenceRoom({ onClose }: { onClose: () => void }) {
   const [muted, setMuted] = useState(false);
   const [camera, setCamera] = useState(true);
   const [raised, setRaised] = useState(false);
-  const [sharing, setSharing] = useState(false);
+  // "screen" is a real local capture shown only on this device; nothing is sent.
+  const [sharing, setSharing] = useState<"agenda" | "screen" | null>(null);
+  const [shareMenu, setShareMenu] = useState(false);
+  const [shareError, setShareError] = useState("");
+  const screen = useRef<MediaStream | null>(null);
+  const shareBox = useRef<HTMLDivElement>(null);
+  // WebKit doesn't focus clicked buttons, so close on outside clicks, not on blur.
+  useEffect(() => {
+    if (!shareMenu) return;
+    const outside = (e: PointerEvent) => {
+      if (!shareBox.current?.contains(e.target as Node)) setShareMenu(false);
+    };
+    document.addEventListener("pointerdown", outside);
+    return () => document.removeEventListener("pointerdown", outside);
+  }, [shareMenu]);
   const [seconds, setSeconds] = useState(0);
   const [topic, setTopic] = useState(0);
   const [notes, setNotes] = useState("");
@@ -243,6 +277,50 @@ export function ConferenceRoom({ onClose }: { onClose: () => void }) {
     if (document.fullscreenElement === dialog.current)
       void document.exitFullscreen().catch(() => {});
     onClose();
+  }
+  function stopSharing() {
+    screen.current?.getTracks().forEach((track) => track.stop());
+    screen.current = null;
+    setSharing(null);
+  }
+  useEffect(
+    () => () => screen.current?.getTracks().forEach((t) => t.stop()),
+    [],
+  );
+  async function shareScreen() {
+    setShareMenu(false);
+    setShareError("");
+    if (!navigator.mediaDevices?.getDisplayMedia) {
+      setShareError("Screen sharing isn’t available in this window.");
+      return;
+    }
+    try {
+      const stream = await navigator.mediaDevices.getDisplayMedia({
+        video: true,
+        audio: false,
+      });
+      screen.current?.getTracks().forEach((track) => track.stop());
+      screen.current = stream;
+      // Ending the share from the system's own controls stops it here too.
+      stream.getVideoTracks()[0]?.addEventListener("ended", () => {
+        if (screen.current === stream) stopSharing();
+      });
+      setSharing("screen");
+      setStage("meeting");
+    } catch (error) {
+      setShareError(
+        error instanceof DOMException && error.name === "NotAllowedError"
+          ? "Screen sharing was cancelled or not allowed."
+          : "Screen sharing couldn’t start.",
+      );
+    }
+  }
+  function shareAgenda() {
+    setShareMenu(false);
+    setShareError("");
+    stopSharing();
+    setSharing("agenda");
+    setStage("meeting");
   }
   useEffect(() => {
     const element = dialog.current;
@@ -300,7 +378,8 @@ export function ConferenceRoom({ onClose }: { onClose: () => void }) {
       aria-describedby="conference-preview"
       onCancel={(e) => {
         e.preventDefault();
-        closeRoom();
+        if (shareMenu) setShareMenu(false);
+        else closeRoom();
       }}
     >
       <div className={`room ${panelOpen ? "" : "room--panel-hidden"}`}>
@@ -385,7 +464,41 @@ export function ConferenceRoom({ onClose }: { onClose: () => void }) {
           ) : (
             <>
               <div className="room-stage">
-                {sharing ? (
+                {shareError && (
+                  <p className="room-share-error" role="alert">
+                    {t(shareError)}
+                    <button
+                      aria-label={t("Dismiss notification")}
+                      onClick={() => setShareError("")}
+                    >
+                      <RoomGlyph name="close" size={16} />
+                    </button>
+                  </p>
+                )}
+                {sharing === "screen" ? (
+                  <div className="room-screen">
+                    <video
+                      ref={(video) => {
+                        if (video && video.srcObject !== screen.current)
+                          video.srcObject = screen.current;
+                      }}
+                      autoPlay
+                      muted
+                      playsInline
+                      aria-label={t("Your shared screen")}
+                    />
+                    <div className="room-screen__bar">
+                      <span>
+                        <RoomGlyph name="screen" size={16} />
+                        {t("You’re sharing your screen")}
+                        <small>
+                          {t("Preview only · Not sent to other participants")}
+                        </small>
+                      </span>
+                      <button onClick={stopSharing}>{t("Stop sharing")}</button>
+                    </div>
+                  </div>
+                ) : sharing === "agenda" ? (
                   <div className="room-shared">
                     <span className="room-shared__label">
                       <RoomGlyph name="share" size={16} />
@@ -436,7 +549,7 @@ export function ConferenceRoom({ onClose }: { onClose: () => void }) {
                       aria-pressed={person.id === speaker.id}
                       onClick={() => {
                         setFocused(person.id);
-                        setSharing(false);
+                        stopSharing();
                       }}
                     >
                       {avatar(person, "room-tile__avatar")}
@@ -444,6 +557,11 @@ export function ConferenceRoom({ onClose }: { onClose: () => void }) {
                         {person.id === "you" ? t("You") : person.name}
                       </span>
                       <span className="room-tile__badges">
+                        {person.id === "you" && sharing === "screen" && (
+                          <i className="room-badge">
+                            <RoomGlyph name="screen" size={14} />
+                          </i>
+                        )}
                         {handUp(person) && (
                           <i className="room-badge room-badge--hand">
                             <RoomGlyph name="hand" size={14} />
@@ -471,7 +589,7 @@ export function ConferenceRoom({ onClose }: { onClose: () => void }) {
           <div className="room-controls">
             <p id="conference-preview" className="room-preview-note">
               {t(
-                "Interactive conference preview · Sample participants · No live audio, camera, or screen sharing",
+                "Conference preview · Sample participants · Nothing you share is sent to anyone",
               )}
             </p>
             <div className="room-control-buttons">
@@ -493,18 +611,38 @@ export function ConferenceRoom({ onClose }: { onClose: () => void }) {
               >
                 <RoomGlyph name={muted ? "mic-off" : "mic"} />
               </button>
-              <button
-                aria-pressed={sharing}
-                className={sharing ? "is-on" : ""}
-                aria-label={t(sharing ? "Stop share" : "Share agenda")}
-                title={t(sharing ? "Stop share" : "Share agenda")}
-                onClick={() => {
-                  setSharing(!sharing);
-                  setStage("meeting");
-                }}
-              >
-                <RoomGlyph name="share" />
-              </button>
+              <div className="room-share" ref={shareBox}>
+                <button
+                  className={sharing ? "is-on" : ""}
+                  aria-label={t(sharing ? "Stop sharing" : "Share")}
+                  title={t(sharing ? "Stop sharing" : "Share")}
+                  aria-haspopup={sharing ? undefined : "menu"}
+                  aria-expanded={sharing ? undefined : shareMenu}
+                  onClick={() =>
+                    sharing ? stopSharing() : setShareMenu(!shareMenu)
+                  }
+                >
+                  <RoomGlyph name="share" />
+                </button>
+                {shareMenu && (
+                  <div className="room-share__menu" role="menu">
+                    <button role="menuitem" autoFocus onClick={shareScreen}>
+                      <RoomGlyph name="screen" size={18} />
+                      <span>
+                        {t("Share screen")}
+                        <small>{t("A window or your whole display")}</small>
+                      </span>
+                    </button>
+                    <button role="menuitem" onClick={shareAgenda}>
+                      <RoomGlyph name="agenda" size={18} />
+                      <span>
+                        {t("Share agenda")}
+                        <small>{t("The meeting topics")}</small>
+                      </span>
+                    </button>
+                  </div>
+                )}
+              </div>
               <button
                 aria-pressed={raised}
                 className={raised ? "is-on" : ""}
@@ -584,7 +722,7 @@ export function ConferenceRoom({ onClose }: { onClose: () => void }) {
                           title={t("Show on stage")}
                           onClick={() => {
                             setFocused(person.id);
-                            setSharing(false);
+                            stopSharing();
                             setStage("meeting");
                           }}
                         >
