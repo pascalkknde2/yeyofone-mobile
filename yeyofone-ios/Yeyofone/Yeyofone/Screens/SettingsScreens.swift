@@ -29,40 +29,40 @@ struct SettingsScreen: View {
     private var sections: [(String, [SettingEntry])] {
         let accountCount = store.accounts.filter(\.enabled).count
         var sections: [(String, [SettingEntry])] = [
-            ("Account", [
-                SettingEntry(icon: "person.crop.circle.fill", color: Palette.accentBlue, title: "Accounts",
-                             subtitle: "\(accountCount) accounts connected") { store.screen = .accounts },
-                SettingEntry(icon: "building.2.fill", color: Palette.textPrimary, title: "Enterprise Sign In",
-                             subtitle: "Connect with your work account", badge: "New"),
+            (String(localized: "Account"), [
+                SettingEntry(icon: "person.crop.circle.fill", color: Palette.accentBlue, title: String(localized: "Accounts"),
+                             subtitle: String(localized: "\(accountCount) accounts connected")) { store.screen = .accounts },
+                SettingEntry(icon: "building.2.fill", color: Palette.textPrimary, title: String(localized: "Enterprise Sign In"),
+                             subtitle: String(localized: "Connect with your work account"), badge: String(localized: "New")),
             ]),
-            ("Audio & Video", [
-                SettingEntry(icon: "music.note", color: Palette.accentOrange, title: "Audio",
-                             subtitle: "Speaker, Microphone, Ringtones") { store.screen = .audioSettings },
+            (String(localized: "Audio & Video"), [
+                SettingEntry(icon: "music.note", color: Palette.accentOrange, title: String(localized: "Audio"),
+                             subtitle: String(localized: "Speaker, Microphone, Ringtones")) { store.screen = .audioSettings },
                 // Video, chat and recording aren't implemented; debug builds only, as on Android.
-                SettingEntry(icon: "video.fill", color: Palette.accentRed, title: "Video", subtitle: "Camera, Resolution, Layout",
+                SettingEntry(icon: "video.fill", color: Palette.accentRed, title: String(localized: "Video"), subtitle: String(localized: "Camera, Resolution, Layout"),
                              action: debugOnly { store.screen = .videoSettings }),
-                SettingEntry(icon: "character.bubble.fill", color: Palette.accentRed, title: "Translate",
-                             subtitle: "Real-time language translation"),
+                SettingEntry(icon: "character.bubble.fill", color: Palette.accentRed, title: String(localized: "Translate"),
+                             subtitle: String(localized: "Real-time language translation")),
             ]),
-            ("Call Settings", [
-                SettingEntry(icon: "phone.arrow.down.left.fill", color: Palette.accentGreen, title: "Incoming Calls",
-                             subtitle: "Ringtone, Call Waiting, Forwarding") { store.screen = .incomingCallsSettings },
-                SettingEntry(icon: "record.circle", color: Palette.accentBlue, title: "Recording Calls", subtitle: "Auto-record, Storage, Format",
+            (String(localized: "Call Settings"), [
+                SettingEntry(icon: "phone.arrow.down.left.fill", color: Palette.accentGreen, title: String(localized: "Incoming Calls"),
+                             subtitle: String(localized: "Ringtone, Call Waiting, Forwarding")) { store.screen = .incomingCallsSettings },
+                SettingEntry(icon: "record.circle", color: Palette.accentBlue, title: String(localized: "Recording Calls"), subtitle: String(localized: "Auto-record, Storage, Format"),
                              action: debugOnly { store.screen = .recordings }),
             ]),
-            ("More", [
-                SettingEntry(icon: "globe", color: Palette.accentBlue, title: "Language",
-                             subtitle: "App language and voice preferences") { store.screen = .languageSettings },
-                SettingEntry(icon: "gearshape.fill", color: Palette.accentBlue, title: "Advanced", subtitle: "Network, Codecs, Debugging"),
-                SettingEntry(icon: "square.and.arrow.up", color: Palette.accentGreen, title: "Social", subtitle: "Share, Invite friends, Community"),
-                SettingEntry(icon: "info.circle.fill", color: Palette.inactiveGray, title: "About",
-                             subtitle: "Version \(AppInfo.version) • Terms • Privacy"),
+            (String(localized: "More"), [
+                SettingEntry(icon: "globe", color: Palette.accentBlue, title: String(localized: "Language"),
+                             subtitle: String(localized: "App language and voice preferences")) { store.screen = .languageSettings },
+                SettingEntry(icon: "gearshape.fill", color: Palette.accentBlue, title: String(localized: "Advanced"), subtitle: String(localized: "Network, Codecs, Debugging")),
+                SettingEntry(icon: "square.and.arrow.up", color: Palette.accentGreen, title: String(localized: "Social"), subtitle: String(localized: "Share, Invite friends, Community")),
+                SettingEntry(icon: "info.circle.fill", color: Palette.inactiveGray, title: String(localized: "About"),
+                             subtitle: String(localized: "Version \(AppInfo.version) • Terms • Privacy")),
             ]),
         ]
         #if DEBUG
-        sections.append(("Developer", [
-                SettingEntry(icon: "phone.badge.waveform.fill", color: Palette.accentGreen, title: "Simulate incoming call",
-                             subtitle: "Preview the incoming-call screen") { store.simulateIncomingCall() },
+        sections.append((String(localized: "Developer"), [
+                SettingEntry(icon: "phone.badge.waveform.fill", color: Palette.accentGreen, title: String(localized: "Simulate incoming call"),
+                             subtitle: String(localized: "Preview the incoming-call screen")) { store.simulateIncomingCall() },
             ]))
         #endif
         let trimmed = query.trimmingCharacters(in: .whitespaces)
@@ -127,7 +127,7 @@ struct SettingsScreen: View {
                                 .padding(.leading, 4)
                             VStack(spacing: 0) {
                                 ForEach(Array(entries.enumerated()), id: \.element.id) { index, entry in
-                                    Button { (entry.action ?? { toast = "Coming soon" })() } label: { row(entry) }
+                                    Button { (entry.action ?? { toast = String(localized: "Coming soon") })() } label: { row(entry) }
                                         .buttonStyle(.plain)
                                     if index < entries.count - 1 { RowDivider(leading: 66) }
                                 }
@@ -155,7 +155,7 @@ struct SettingsScreen: View {
     }
 
     private var premiumBanner: some View {
-        Button { toast = "Coming soon" } label: {
+        Button { toast = String(localized: "Coming soon") } label: {
             HStack(spacing: 14) {
                 Image(systemName: "star.fill")
                     .font(.system(size: 20))
@@ -245,7 +245,7 @@ struct AudioSettingsScreen: View {
                             RowDivider(leading: 76)
                             Button { showDevices = true } label: {
                                 IconRow(icon: "music.note", tint: Palette.accentBlue, tileBackground: Palette.primaryLight,
-                                        title: "Output device", subtitle: store.selectedRoute.rawValue)
+                                        title: "Output device", subtitle: store.selectedRoute.label)
                             }
                             .buttonStyle(.plain)
                         }
@@ -253,7 +253,7 @@ struct AudioSettingsScreen: View {
                     GroupSection(title: "Ringtones") {
                         Button { showRingtones = true } label: {
                             IconRow(icon: "music.note", tint: Palette.accentBlue, tileBackground: Palette.primaryLight,
-                                    title: "Ringtone", subtitle: ringtone)
+                                    title: "Ringtone", subtitle: Ringtone.label(ringtone))
                         }
                         .buttonStyle(.plain)
                     }
@@ -266,13 +266,26 @@ struct AudioSettingsScreen: View {
         .background(Palette.backgroundGray)
         .confirmationDialog("Output device", isPresented: $showDevices, titleVisibility: .visible) {
             ForEach(store.availableRoutes) { route in
-                Button(route == store.selectedRoute ? "\(route.rawValue) ✓" : route.rawValue) { store.selectedRoute = route }
+                Button(route == store.selectedRoute ? "\(route.label) ✓" : route.label) { store.selectedRoute = route }
             }
         }
         .confirmationDialog("Ringtone", isPresented: $showRingtones, titleVisibility: .visible) {
-            ForEach(["Default", "Chime", "Silent"], id: \.self) { name in
-                Button(name == ringtone ? "\(name) ✓" : name) { ringtone = name }
+            ForEach(Ringtone.all, id: \.self) { name in
+                Button(name == ringtone ? "\(Ringtone.label(name)) ✓" : Ringtone.label(name)) { ringtone = name }
             }
+        }
+    }
+}
+
+/// Ringtone choices are stored by English name and shown in the current language.
+private enum Ringtone {
+    static let all = ["Default", "Chime", "Silent"]
+
+    static func label(_ name: String) -> String {
+        switch name {
+        case "Chime": String(localized: "Chime")
+        case "Silent": String(localized: "Silent")
+        default: String(localized: "Default")
         }
     }
 }
@@ -286,9 +299,9 @@ struct VideoSettingsScreen: View {
     @State private var layout = 0
     private let resolutions = ["480p", "720p HD", "1080p Full HD", "4K Ultra HD"]
     private let layouts = [
-        ("Speaker view", "Active speaker fills screen"),
-        ("Grid view", "All participants equal size"),
-        ("Gallery view", "Horizontal scrolling"),
+        (String(localized: "Speaker view"), String(localized: "Active speaker fills screen")),
+        (String(localized: "Grid view"), String(localized: "All participants equal size")),
+        (String(localized: "Gallery view"), String(localized: "Horizontal scrolling")),
     ]
 
     var body: some View {
@@ -321,7 +334,7 @@ struct VideoSettingsScreen: View {
                     GroupSection(title: "Camera") {
                         Button { frontCamera.toggle() } label: {
                             IconRow(icon: "video.fill", tint: Palette.accentOrange, tileBackground: Palette.orangeLight,
-                                    title: "Camera device", subtitle: frontCamera ? "Front camera" : "Rear camera") {
+                                    title: "Camera device", subtitle: frontCamera ? String(localized: "Front camera") : String(localized: "Rear camera")) {
                                 Image(systemName: "arrow.triangle.2.circlepath.camera").foregroundStyle(Palette.inactiveGray)
                             }
                         }
@@ -455,7 +468,7 @@ struct IncomingCallsSettingsScreen: View {
                         RowDivider()
                         Button { store.screen = .audioSettings } label: {
                             IconRow(icon: "music.note", tint: Palette.accentOrange, tileBackground: Palette.orangeLight,
-                                    title: "Ringtone", subtitle: ringtone)
+                                    title: "Ringtone", subtitle: Ringtone.label(ringtone))
                         }
                         .buttonStyle(.plain)
                         RowDivider()
@@ -469,7 +482,8 @@ struct IncomingCallsSettingsScreen: View {
                         Button { showForwarding = true } label: {
                             IconRow(icon: "phone.arrow.right.fill", tint: Palette.accentBlue, tileBackground: Palette.primaryLight,
                                     title: "Call Forwarding",
-                                    subtitle: store.forwardingDestination.map { "Forwarding to \($0)" } ?? "Forward calls to another number")
+                                    subtitle: store.forwardingDestination.map { String(localized: "Forwarding to \($0)") }
+                                        ?? String(localized: "Forward calls to another number"))
                         }
                         .buttonStyle(.plain)
                         RowDivider()
@@ -525,7 +539,7 @@ private struct ForwardingSheet: View {
                         let trimmed = number.trimmingCharacters(in: .whitespaces)
                         let valid = trimmed.count >= 2 && trimmed.allSatisfy { $0.isNumber || $0 == "+" || $0 == "*" || $0 == "#" }
                         if enabled && !valid {
-                            error = "Enter a valid phone number or extension"
+                            error = String(localized: "Enter a valid phone number or extension")
                             return
                         }
                         onSave(enabled ? trimmed : nil)
@@ -553,17 +567,33 @@ private struct AppLanguage: Identifiable {
     var id: String { tag }
 }
 
-private let appLanguages = [
-    AppLanguage(tag: "en-US", label: "English (US)", flag: "🇺🇸"),
-    AppLanguage(tag: "en-GB", label: "English (UK)", flag: "🇬🇧"),
-    AppLanguage(tag: "es", label: "Español", flag: "🇪🇸"),
-    AppLanguage(tag: "fr", label: "Français", flag: "🇫🇷"),
-    AppLanguage(tag: "de", label: "Deutsch", flag: "🇩🇪"),
-]
+private var appLanguages: [AppLanguage] {
+    [
+        AppLanguage(tag: "en-US", label: String(localized: "English (US)"), flag: "🇺🇸"),
+        AppLanguage(tag: "en-GB", label: String(localized: "English (UK)"), flag: "🇬🇧"),
+        AppLanguage(tag: "es", label: String(localized: "Español"), flag: "🇪🇸"),
+        AppLanguage(tag: "fr", label: String(localized: "Français"), flag: "🇫🇷"),
+        AppLanguage(tag: "de", label: String(localized: "Deutsch"), flag: "🇩🇪"),
+    ]
+}
+
+/// The app's language, matching the localization iOS chose for this launch.
+private enum AppLanguagePreference {
+    static var current: String {
+        let preferred = Bundle.main.preferredLocalizations.first ?? "en"
+        return preferred == "en" ? "en-US" : preferred
+    }
+
+    /// iOS reads this when the app starts, so the new language shows on the next launch.
+    static func set(_ tag: String) {
+        UserDefaults.standard.set([tag], forKey: "AppleLanguages")
+    }
+}
 
 struct LanguageSettingsScreen: View {
     @Environment(AppStore.self) private var store
-    @AppStorage("appLanguage") private var languageTag = "en-US"
+    @State private var languageTag = AppLanguagePreference.current
+    @State private var restartNeeded = false
     @AppStorage("autoTranslate") private var autoTranslate = true
     @AppStorage("voiceAccent") private var accentTag = "en-US"
     @State private var expanded = false
@@ -585,7 +615,11 @@ struct LanguageSettingsScreen: View {
                             ForEach(appLanguages) { language in
                                 RowDivider(leading: 20)
                                 Button {
-                                    languageTag = language.tag
+                                    if language.tag != languageTag {
+                                        languageTag = language.tag
+                                        AppLanguagePreference.set(language.tag)
+                                        restartNeeded = language.tag != AppLanguagePreference.current
+                                    }
                                     withAnimation { expanded = false }
                                 } label: {
                                     languageRow(language, trailing: language.tag == languageTag ? "checkmark" : nil, tint: Color(hex: 0x22C55E))
@@ -593,6 +627,14 @@ struct LanguageSettingsScreen: View {
                                 .buttonStyle(.plain)
                             }
                         }
+                    }
+                    if restartNeeded {
+                        Text("Restart YeyoFone to use the new language.")
+                            .font(.system(size: 13))
+                            .foregroundStyle(Palette.textSecondary)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(.horizontal, 4)
+                            .padding(.top, -12)
                     }
                     GroupSection(title: "Voice & Translation", bordered: true) {
                         ToggleRow(icon: "globe", tint: Palette.purple, tileBackground: Palette.purpleLight,
@@ -619,7 +661,8 @@ struct LanguageSettingsScreen: View {
     }
 
     private var accentLabel: String {
-        accentTag == "en-US" ? "American English" : appLanguages.first { $0.tag == accentTag }?.label ?? "American English"
+        let american = String(localized: "American English")
+        return accentTag == "en-US" ? american : appLanguages.first { $0.tag == accentTag }?.label ?? american
     }
 
     private func languageRow(_ language: AppLanguage, trailing: String?, tint: Color) -> some View {
@@ -659,12 +702,12 @@ struct RecordingsScreen: View {
                                     .font(.system(size: 14, weight: .semibold))
                                     .foregroundStyle(Palette.textPrimary)
                                 Spacer()
-                                Text("0 B / \(totalStorage)")
+                                Text(verbatim: "0 B / \(totalStorage)")
                                     .font(.system(size: 13))
                                     .foregroundStyle(Palette.textSecondary)
                             }
                             Capsule().fill(Palette.borderLight).frame(height: 8).padding(.top, 12)
-                            Text("0 recordings saved")
+                            Text("\(0) recordings saved")
                                 .font(.system(size: 12))
                                 .foregroundStyle(Palette.inactiveGray)
                                 .padding(.top, 8)
@@ -678,10 +721,10 @@ struct RecordingsScreen: View {
                         Image(systemName: "mic.fill")
                             .font(.system(size: 28))
                             .foregroundStyle(Palette.inactiveGray)
-                        Text(query.isEmpty ? "No recordings yet" : "No matches")
+                        (query.isEmpty ? Text("No recordings yet") : Text("No matches"))
                             .font(.system(size: 16, weight: .semibold))
                             .foregroundStyle(Palette.textPrimary)
-                        Text(query.isEmpty ? "Saved recordings on this device will appear here." : "Try another name.")
+                        (query.isEmpty ? Text("Saved recordings on this device will appear here.") : Text("Try another name."))
                             .font(.system(size: 13))
                             .foregroundStyle(Palette.textSecondary)
                     }

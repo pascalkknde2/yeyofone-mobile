@@ -211,7 +211,7 @@ struct AccountDetailScreen: View {
             } label: {
                 HStack(spacing: 8) {
                     if account.enabled { Image(systemName: "arrow.clockwise") }
-                    Text(account.enabled ? "Re-register Account" : "Sign In")
+                    account.enabled ? Text("Re-register Account") : Text("Sign In")
                 }
                 .font(.system(size: 16, weight: .semibold))
                 .foregroundStyle(.white)
@@ -235,19 +235,19 @@ struct AccountDetailScreen: View {
     }
 
     private func status(_ account: SipAccount, _ state: RegistrationState) -> (String, Color) {
-        guard account.enabled else { return ("Disabled", Palette.inactiveGray) }
+        guard account.enabled else { return (String(localized: "Disabled"), Palette.inactiveGray) }
         switch state {
-        case .registered: return ("Registered", Palette.accentGreen)
-        case .registering: return ("Registering…", Palette.accentOrange)
-        case .failed: return ("Registration failed", Palette.accentRed)
-        case .unregistering: return ("Unregistering…", Palette.inactiveGray)
-        case .notRegistered: return ("Not registered", Palette.inactiveGray)
+        case .registered: return (String(localized: "Registered"), Palette.accentGreen)
+        case .registering: return (String(localized: "Registering…"), Palette.accentOrange)
+        case .failed: return (String(localized: "Registration failed"), Palette.accentRed)
+        case .unregistering: return (String(localized: "Unregistering…"), Palette.inactiveGray)
+        case .notRegistered: return (String(localized: "Not registered"), Palette.inactiveGray)
         }
     }
 }
 
 private struct DetailSection<Content: View>: View {
-    let title: String
+    let title: LocalizedStringKey
     @ViewBuilder let content: Content
 
     var body: some View {
@@ -272,7 +272,7 @@ private struct HairlineDivider: View {
 }
 
 private struct InfoRow: View {
-    let label: String
+    let label: LocalizedStringKey
     let value: String
     var mono = false
 
@@ -293,7 +293,7 @@ private struct InfoRow: View {
 }
 
 private struct SwitchRow: View {
-    let label: String
+    let label: LocalizedStringKey
     @Binding var isOn: Bool
 
     var body: some View {
@@ -445,23 +445,23 @@ struct AccountEditorScreen: View {
         let user = username.trimmingCharacters(in: .whitespaces)
         let host = domain.trimmingCharacters(in: .whitespaces)
         guard !name.isEmpty, !user.isEmpty, !host.isEmpty else {
-            error = "Display name, SIP username and domain are required"
+            error = String(localized: "Display name, SIP username and domain are required")
             return
         }
         guard existing != nil || !password.isEmpty else {
-            error = "A password is required for a new account"
+            error = String(localized: "A password is required for a new account")
             return
         }
         guard let portValue = Int(port), (1...65_535).contains(portValue) else {
-            error = "Port must be between 1 and 65535"
+            error = String(localized: "Port must be between 1 and 65535")
             return
         }
         guard let expiryValue = Int(expiry), (60...86_400).contains(expiryValue) else {
-            error = "Registration expiry must be between 60 and 86400 seconds"
+            error = String(localized: "Registration expiry must be between 60 and 86400 seconds")
             return
         }
         if ice, stun.trimmingCharacters(in: .whitespaces).isEmpty {
-            error = "ICE needs a STUN server"
+            error = String(localized: "ICE needs a STUN server")
             return
         }
         let trimmedRegistrar = registrar.trimmingCharacters(in: .whitespaces)
@@ -493,8 +493,8 @@ struct AccountEditorScreen: View {
 }
 
 private struct EditorLabel: View {
-    let text: String
-    init(_ text: String) { self.text = text }
+    let text: LocalizedStringKey
+    init(_ text: LocalizedStringKey) { self.text = text }
 
     var body: some View {
         Text(text)
@@ -515,7 +515,7 @@ private struct EditorCard<Content: View>: View {
 }
 
 private struct EditorField: View {
-    let label: String
+    let label: LocalizedStringKey
     @Binding var text: String
     var secure = false
     var keyboard: UIKeyboardType = .default
@@ -550,7 +550,7 @@ private struct EditorField: View {
 }
 
 private struct CheckRow: View {
-    let label: String
+    let label: LocalizedStringKey
     @Binding var isOn: Bool
     var enabled = true
 

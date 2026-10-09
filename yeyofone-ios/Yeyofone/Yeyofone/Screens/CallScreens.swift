@@ -29,7 +29,7 @@ struct OutgoingCallScreen: View {
                         .foregroundStyle(session.held ? Palette.accentBlue : Palette.textPrimary)
                         .frame(width: 48, height: 48)
                 }
-                .accessibilityLabel(session.held ? "Resume" : "Hold")
+                .accessibilityLabel(session.held ? Text("Resume") : Text("Hold"))
             }
             .font(.system(size: 18, weight: .semibold))
             .foregroundStyle(Palette.textPrimary)
@@ -142,7 +142,7 @@ private struct CallerIdentity: View {
 
 private struct CallActionButton: View {
     let icon: String
-    let label: String
+    let label: LocalizedStringKey
     var active = false
     var destructive = false
     var enabled = true
@@ -275,7 +275,7 @@ struct CallEndedScreen: View {
                 Spacer()
                 HStack(spacing: 6) {
                     Image(systemName: "phone.down.fill").font(.system(size: 12))
-                    Text(summary.missed ? "Missed" : "CALL ENDED")
+                    (summary.missed ? Text("Missed") : Text("CALL ENDED"))
                         .font(.system(size: 12, weight: .bold))
                 }
                 .foregroundStyle(accent)
@@ -310,7 +310,7 @@ struct CallEndedScreen: View {
                     }
                     HStack(spacing: 8) {
                         Circle().fill(accent).frame(width: 8, height: 8)
-                        Text(summary.missed ? "Missed" : (summary.direction == .incoming ? "Incoming" : "Outgoing"))
+                        Text(summary.missed ? CallType.missed.label : (summary.direction == .incoming ? CallType.incoming.label : CallType.outgoing.label))
                             .font(.system(size: 16, weight: .medium))
                             .foregroundStyle(Palette.textSecondary)
                     }
@@ -353,7 +353,7 @@ struct CallEndedScreen: View {
         .background(Palette.backgroundGray)
     }
 
-    private func detail(_ label: String, _ value: String) -> some View {
+    private func detail(_ label: LocalizedStringKey, _ value: String) -> some View {
         VStack(spacing: 4) {
             Text(label)
                 .font(.system(size: 11, weight: .semibold))
@@ -426,18 +426,18 @@ struct CallOptionsScreen: View {
                 ScrollView {
                     VStack(spacing: 0) {
                         OptionRow(icon: held ? "play.fill" : "pause.fill", title: held ? "Resume" : "Hold",
-                                  subtitle: held ? "Resume the held call" : "Put this call on hold") {
+                                  subtitle: held ? String(localized: "Resume the held call") : String(localized: "Put this call on hold")) {
                             store.setHeld(!held)
                         }
                         RowDivider(leading: 18)
                         OptionRow(icon: "person.badge.plus", title: "Consult transfer",
-                                  subtitle: "Call someone else privately, then complete or return") {
+                                  subtitle: String(localized: "Call someone else privately, then complete or return")) {
                             if !held { store.setHeld(true) }
                             enteringDestination = true
                         }
                         if store.availableRoutes.count > 1 {
                             RowDivider(leading: 18)
-                            OptionRow(icon: "speaker.wave.2.fill", title: "Output device", subtitle: store.selectedRoute.rawValue) {
+                            OptionRow(icon: "speaker.wave.2.fill", title: "Output device", subtitle: store.selectedRoute.label) {
                                 showRoutePicker = true
                             }
                         }
@@ -451,7 +451,7 @@ struct CallOptionsScreen: View {
         .background(Palette.backgroundGray)
         .confirmationDialog("Output device", isPresented: $showRoutePicker, titleVisibility: .visible) {
             ForEach(store.availableRoutes) { route in
-                Button(route == store.selectedRoute ? "\(route.rawValue) ✓" : route.rawValue) { store.selectedRoute = route }
+                Button(route == store.selectedRoute ? "\(route.label) ✓" : route.label) { store.selectedRoute = route }
             }
         }
     }
@@ -459,9 +459,10 @@ struct CallOptionsScreen: View {
     private func consultationCenter(_ session: CallSession) -> some View {
         VStack(spacing: 8) {
             Spacer()
-            Text(session.remoteName == session.remoteNumber
-                 ? "Consultation: \(session.remoteName)"
-                 : "Consultation: \(session.remoteName) · Ext. \(session.remoteNumber)")
+            // A bare extension has no separate display name; don't repeat it as "1002 · Ext. 1002".
+            (session.remoteName == session.remoteNumber
+                ? Text("Consultation: \(session.remoteName)")
+                : Text("Consultation: \(session.remoteName) · Ext. \(session.remoteNumber)"))
                 .font(.system(size: 22, weight: .bold))
                 .foregroundStyle(Palette.textPrimary)
             Text(session.state.label)
@@ -481,7 +482,7 @@ struct CallOptionsScreen: View {
 
 private struct OptionRow: View {
     let icon: String
-    let title: String
+    let title: LocalizedStringKey
     let subtitle: String
     let action: () -> Void
 

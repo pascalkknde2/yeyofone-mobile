@@ -28,7 +28,7 @@ struct ChatScreen: View {
                             .background(Capsule().fill(Palette.borderLight))
                             .padding(.vertical, 8)
                         ForEach(store.chatMessages) { message in
-                            MessageBubble(message: message) { toast = "Coming soon" }
+                            MessageBubble(message: message) { toast = String(localized: "Coming soon") }
                                 .id(message.id)
                         }
                         if store.contactTyping {
@@ -68,7 +68,7 @@ struct ChatScreen: View {
                 Text(store.chatContactName)
                     .font(.system(size: 16, weight: .semibold))
                     .lineLimit(1)
-                Text(store.chatContactOnline ? "Online" : "Offline")
+                (store.chatContactOnline ? Text("Online") : Text("Offline"))
                     .font(.system(size: 12))
                     .foregroundStyle(store.chatContactOnline ? Palette.accentGreen : Palette.textSecondary)
             }
@@ -77,7 +77,7 @@ struct ChatScreen: View {
                 Image(systemName: "phone.fill").frame(width: 40, height: 40)
             }
             .accessibilityLabel("Voice call")
-            Button { toast = "Coming soon" } label: {
+            Button { toast = String(localized: "Coming soon") } label: {
                 Image(systemName: "video.fill").frame(width: 40, height: 40)
             }
             .accessibilityLabel("Video call")
@@ -92,7 +92,7 @@ struct ChatScreen: View {
     private var inputBar: some View {
         let canSend = !input.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
         return HStack(alignment: .bottom, spacing: 10) {
-            Button { toast = "Coming soon" } label: {
+            Button { toast = String(localized: "Coming soon") } label: {
                 Image(systemName: "paperclip")
                     .foregroundStyle(Palette.textSecondary)
                     .frame(width: 40, height: 40)

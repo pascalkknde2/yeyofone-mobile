@@ -149,7 +149,7 @@ private struct ContactEditSheet: View {
                     }
                 }
             }
-            .navigationTitle(contact == nil ? "Add Contact" : "Edit Contact")
+            .navigationTitle(contact == nil ? Text("Add Contact") : Text("Edit Contact"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
@@ -158,7 +158,7 @@ private struct ContactEditSheet: View {
                         let trimmedName = name.trimmingCharacters(in: .whitespaces)
                         let trimmedNumber = number.trimmingCharacters(in: .whitespaces)
                         guard !trimmedName.isEmpty, !trimmedNumber.isEmpty else {
-                            error = "Name and number are required"
+                            error = String(localized: "Name and number are required")
                             return
                         }
                         onSave(Contact(id: contact?.id ?? UUID(), displayName: trimmedName, number: trimmedNumber, favorite: favorite))

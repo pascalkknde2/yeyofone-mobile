@@ -20,6 +20,15 @@ struct CallHistoryScreen: View {
         }
     }
 
+    // Own keys: Android translates the filter tabs differently from the call-type labels (e.g. "Perdidas" vs "Perdida").
+    private var filterTitles: [String] {
+        [
+            String(localized: "filter.all", defaultValue: "All"),
+            String(localized: "filter.missed", defaultValue: "Missed"),
+            String(localized: "filter.voicemail", defaultValue: "Voicemail"),
+        ]
+    }
+
     var body: some View {
         VStack(spacing: 0) {
             VStack(spacing: 16) {
@@ -33,7 +42,7 @@ struct CallHistoryScreen: View {
                     .disabled(store.history.isEmpty)
                     .accessibilityLabel("Edit call history")
                 }
-                ChipTabs(titles: ["All", "Missed", "Voicemail"], selection: $selectedTab)
+                ChipTabs(titles: filterTitles, selection: $selectedTab)
                     .padding(.horizontal, 24)
             }
             .padding(.top, 16)

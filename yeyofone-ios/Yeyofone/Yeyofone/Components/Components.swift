@@ -47,12 +47,12 @@ struct BottomNavigationBar: View {
 extension Tab {
     var label: String {
         switch self {
-        case .home: "Home"
-        case .keypad: "Keypad"
-        case .contacts: "Contacts"
-        case .calls: "Calls"
-        case .chat: "Chat"
-        case .settings: "Settings"
+        case .home: String(localized: "Home")
+        case .keypad: String(localized: "Keypad")
+        case .contacts: String(localized: "Contacts")
+        case .calls: String(localized: "Calls")
+        case .chat: String(localized: "Chat")
+        case .settings: String(localized: "Settings")
         }
     }
 
@@ -145,12 +145,12 @@ private struct DialKeyStyle: ButtonStyle {
 /// The large typed number with its backspace button, shared by the dial, transfer and consult screens.
 struct DialedNumberDisplay: View {
     let number: String
-    var placeholder = "Enter number"
+    var placeholder: LocalizedStringKey = "Enter number"
     let onBackspace: () -> Void
 
     var body: some View {
         VStack(spacing: 8) {
-            Text(number.isEmpty ? placeholder : number)
+            (number.isEmpty ? Text(placeholder) : Text(verbatim: number))
                 .font(.system(size: number.isEmpty ? 16 : 32, weight: number.isEmpty ? .regular : .medium))
                 .tracking(number.isEmpty ? 0 : 1)
                 .foregroundStyle(number.isEmpty ? Palette.inactiveGray : Palette.textPrimary)
@@ -175,7 +175,7 @@ struct DialedNumberDisplay: View {
 /// Large filled circle with an uppercase caption: Accept, Decline, Call Again, Transfer now…
 struct PrimaryCallActionButton: View {
     let icon: String
-    let label: String
+    let label: LocalizedStringKey
     let color: Color
     var enabled = true
     let action: () -> Void
@@ -205,7 +205,7 @@ struct PrimaryCallActionButton: View {
 /// Small white circle with a caption underneath: Message, Remind Me, Return to caller…
 struct SecondaryCallActionButton: View {
     let icon: String
-    let label: String
+    let label: LocalizedStringKey
     let action: () -> Void
 
     var body: some View {
@@ -250,7 +250,7 @@ struct CallTray<Content: View>: View {
 
 /// Back arrow + bold title, used by settings sub-pages.
 struct BackHeader: View {
-    let title: String
+    let title: LocalizedStringKey
     let onBack: () -> Void
 
     var body: some View {
@@ -276,7 +276,7 @@ struct BackHeader: View {
 
 /// Back arrow, centered title and an empty balance slot, used by the in-call sub-screens.
 struct CenteredBackHeader: View {
-    let title: String
+    let title: LocalizedStringKey
     var icon = "arrow.left"
     let onBack: () -> Void
 
@@ -302,7 +302,7 @@ struct CenteredBackHeader: View {
 
 /// Large bold title with an optional trailing icon button, used by the tab screens.
 struct TabHeader<Trailing: View>: View {
-    let title: String
+    let title: LocalizedStringKey
     @ViewBuilder var trailing: Trailing
 
     var body: some View {
@@ -355,7 +355,7 @@ struct IconTile: View {
 // MARK: Grouped rows (settings-style)
 
 struct GroupSection<Content: View>: View {
-    let title: String
+    let title: LocalizedStringKey
     var bordered = false
     @ViewBuilder let content: Content
 
@@ -391,7 +391,7 @@ struct IconRow<Accessory: View>: View {
     let icon: String
     let tint: Color
     var tileBackground: Color?
-    let title: String
+    let title: LocalizedStringKey
     let subtitle: String
     @ViewBuilder var accessory: Accessory
 
@@ -416,7 +416,7 @@ struct IconRow<Accessory: View>: View {
 }
 
 extension IconRow where Accessory == Chevron {
-    init(icon: String, tint: Color, tileBackground: Color? = nil, title: String, subtitle: String) {
+    init(icon: String, tint: Color, tileBackground: Color? = nil, title: LocalizedStringKey, subtitle: String) {
         self.init(icon: icon, tint: tint, tileBackground: tileBackground, title: title, subtitle: subtitle) { Chevron() }
     }
 }
@@ -434,12 +434,12 @@ struct ToggleRow: View {
     let icon: String
     let tint: Color
     let tileBackground: Color
-    let title: String
-    let subtitle: String
+    let title: LocalizedStringKey
+    let subtitle: LocalizedStringResource
     @Binding var isOn: Bool
 
     var body: some View {
-        IconRow(icon: icon, tint: tint, tileBackground: tileBackground, title: title, subtitle: subtitle) {
+        IconRow(icon: icon, tint: tint, tileBackground: tileBackground, title: title, subtitle: String(localized: subtitle)) {
             Toggle("", isOn: $isOn)
                 .labelsHidden()
                 .tint(Palette.accentGreen)
@@ -476,7 +476,7 @@ struct ChipTabs: View {
 }
 
 struct SearchField: View {
-    let placeholder: String
+    let placeholder: LocalizedStringKey
     @Binding var text: String
     var background: Color = Palette.backgroundGray
 
@@ -500,15 +500,15 @@ struct SearchField: View {
 }
 
 struct EmptyStateView: View {
-    let title: String
-    var subtitle = ""
+    let title: LocalizedStringKey
+    var subtitle: LocalizedStringKey?
 
     var body: some View {
         VStack(spacing: 8) {
             Text(title)
                 .font(.system(size: 16, weight: .semibold))
                 .foregroundStyle(Palette.textSecondary)
-            if !subtitle.isEmpty {
+            if let subtitle {
                 Text(subtitle)
                     .font(.system(size: 14))
                     .foregroundStyle(Palette.inactiveGray)

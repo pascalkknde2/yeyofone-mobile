@@ -140,7 +140,8 @@ private struct ForwardingBanner: View {
         HStack(spacing: 10) {
             Image(systemName: "phone.arrow.right.fill")
                 .font(.system(size: 15))
-            Text(accountNumber.map { "Calls to \($0) are being forwarded to \(destination)" } ?? "Forwarding to \(destination)")
+            Text(accountNumber.map { String(localized: "Calls to \($0) are being forwarded to \(destination)") }
+                 ?? String(localized: "Forwarding to \(destination)"))
                 .font(.system(size: 13, weight: .medium))
             Spacer(minLength: 0)
         }
@@ -171,7 +172,7 @@ private struct AccountStatusCard: View {
                     .overlay(RoundedRectangle(cornerRadius: 2).stroke(.black.opacity(0.2), lineWidth: 1).frame(width: 20, height: 16))
             }
             VStack(alignment: .leading, spacing: 4) {
-                Text(account?.displayName ?? "No SIP accounts configured")
+                Text(account?.displayName ?? String(localized: "No SIP accounts configured"))
                     .font(.system(size: 22, weight: .semibold))
                     .tracking(-0.5)
                     .foregroundStyle(.white)
@@ -186,7 +187,7 @@ private struct AccountStatusCard: View {
             Rectangle().fill(.white.opacity(0.1)).frame(height: 1)
             Button(action: onManage) {
                 HStack(spacing: 4) {
-                    Text(account == nil ? "Add account" : "Manage Account")
+                    (account == nil ? Text("Add account") : Text("Manage Account"))
                         .font(.system(size: 13))
                     Image(systemName: "chevron.right")
                         .font(.system(size: 11, weight: .semibold))
@@ -210,7 +211,7 @@ private struct AccountStatusCard: View {
 
 private struct QuickAction: View {
     let icon: String
-    let label: String
+    let label: LocalizedStringKey
     let color: Color
     let action: () -> Void
 
@@ -235,8 +236,8 @@ private struct QuickAction: View {
 }
 
 private struct SectionHeader: View {
-    let title: String
-    let action: String
+    let title: LocalizedStringKey
+    let action: LocalizedStringKey
     let onAction: () -> Void
 
     var body: some View {
@@ -274,7 +275,7 @@ private struct RecentCallRow: View {
                     Image(systemName: call.callType.arrowIcon)
                         .font(.system(size: 11, weight: .bold))
                         .foregroundStyle(missed ? Palette.accentRed : Palette.accentGreen)
-                    Text("\(call.callType.label) • \(call.timestamp.formatted(.dateTime.hour(.twoDigits(amPM: .omitted)).minute(.twoDigits)))")
+                    Text(verbatim: "\(call.callType.label) • \(call.timestamp.formatted(.dateTime.hour(.twoDigits(amPM: .omitted)).minute(.twoDigits)))")
                         .font(.system(size: 13))
                         .foregroundStyle(missed ? Palette.accentRed : Palette.textSecondary)
                 }

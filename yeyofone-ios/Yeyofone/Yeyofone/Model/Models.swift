@@ -62,9 +62,9 @@ enum CallType {
 
     var label: String {
         switch self {
-        case .incoming: "Incoming"
-        case .outgoing: "Outgoing"
-        case .missed: "Missed"
+        case .incoming: String(localized: "Incoming")
+        case .outgoing: String(localized: "Outgoing")
+        case .missed: String(localized: "Missed")
         }
     }
 }
@@ -84,12 +84,12 @@ enum CallState: Equatable {
 
     var label: String {
         switch self {
-        case .calling: "Calling…"
-        case .ringing: "Ringing…"
-        case .connecting: "Connecting…"
-        case .connected: "Connected"
-        case .held: "On hold"
-        case .ended: "Call ended"
+        case .calling: String(localized: "Calling…")
+        case .ringing: String(localized: "Ringing…")
+        case .connecting: String(localized: "Connecting…")
+        case .connected: String(localized: "Connected")
+        case .held: String(localized: "On hold")
+        case .ended: String(localized: "Call ended")
         }
     }
 }
@@ -121,6 +121,14 @@ struct CallSummary: Equatable {
 enum AudioRoute: String, CaseIterable, Identifiable {
     case earpiece = "Earpiece", speaker = "Speaker", bluetooth = "Bluetooth"
     var id: String { rawValue }
+
+    var label: String {
+        switch self {
+        case .earpiece: String(localized: "Earpiece")
+        case .speaker: String(localized: "Speaker")
+        case .bluetooth: String(localized: "Bluetooth")
+        }
+    }
 }
 
 enum MessageStatus { case sent, delivered, read }
@@ -145,6 +153,8 @@ enum DurationFormat {
     /// "4m 05s" or "42s", used by call history rows.
     static func short(_ seconds: TimeInterval) -> String {
         let total = Int(seconds)
-        return total >= 60 ? String(format: "%dm %02ds", total / 60, total % 60) : "\(total)s"
+        return total >= 60
+            ? String(format: String(localized: "%dm %02ds"), total / 60, total % 60)
+            : String(format: String(localized: "%ds"), total)
     }
 }
