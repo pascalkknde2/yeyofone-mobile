@@ -137,9 +137,6 @@
 .tabs {
   flex-wrap: wrap;
 }
-.call-preview-toolbar button {
-  white-space: normal;
-}
 .call-control {
   overflow-wrap: anywhere;
 }
