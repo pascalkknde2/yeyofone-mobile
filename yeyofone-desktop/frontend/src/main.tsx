@@ -419,44 +419,15 @@ function App() {
         </div>
       </aside>
       <main className="workspace">
-        {/* Demo controls for working on the UI; not part of the built app. */}
+        {/* Design-preview banner for working on the UI; not part of the built app. */}
         {import.meta.env.DEV && (
-          <>
-        <div className="preview-note">
-          <span>
-            <i /> {t("Design preview")} <span className="note-divider">/</span>{" "}
-            {t("Sample data")}
-          </span>
-          <NativeStatus />
-        </div>
-        <div className="call-preview-toolbar">
-          <span>{t("Call screens")}</span>
-          <button onClick={() => setCallWindow("incoming")}>
-            <Icon name="phone" size={18} /> {t("Incoming call")}
-          </button>
-          <button onClick={() => setCallWindow("dialer")}>
-            <Icon name="grid" size={18} /> {t("Make a call")}
-          </button>
-          <button onClick={() => setCallWindow("video")}>
-            <Icon name="video" size={18} /> {t("Video call")}
-          </button>
-          <button onClick={() => setConferenceOpen(true)}>
-            <Icon name="conference" size={20} /> {t("Video conference")}
-          </button>
-          <button onClick={() => setCallingFeature("forwarding")}>
-            <Icon name="arrow" size={20} />
-            {t("Call forwarding")}
-          </button>
-          <button onClick={() => setCallingFeature("ring-groups")}>
-            <Icon name="users" size={20} />
-            {t("Ring groups")}
-          </button>
-          <button onClick={() => setCallingFeature("audio-conference")}>
-            <Icon name="phone" size={20} />
-            {t("Audio conference")}
-          </button>
-        </div>
-          </>
+          <div className="preview-note">
+            <span>
+              <i /> {t("Design preview")}{" "}
+              <span className="note-divider">/</span> {t("Sample data")}
+            </span>
+            <NativeStatus />
+          </div>
         )}
         {notice && (
           <div className="notice" role="status">
@@ -1183,7 +1154,10 @@ function Overview({
                     );
                   }}
                 >
-                  <Icon name={paused.includes(r.name) ? "play" : "pause"} size={14} />
+                  <Icon
+                    name={paused.includes(r.name) ? "play" : "pause"}
+                    size={14}
+                  />
                   {t(paused.includes(r.name) ? "Resume" : "Pause")}
                 </button>
                 <button

@@ -648,11 +648,6 @@ export const translations: Record<
     es: "Grabaciones de llamadas",
     de: "Anrufaufzeichnungen",
   },
-  "Call screens": {
-    fr: "Écrans d’appel",
-    es: "Pantallas de llamada",
-    de: "Anrufansichten",
-  },
   "Incoming call": {
     fr: "Appel entrant",
     es: "Llamada entrante",
