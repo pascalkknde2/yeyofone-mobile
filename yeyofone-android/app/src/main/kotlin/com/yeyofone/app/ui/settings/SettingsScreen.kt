@@ -55,6 +55,7 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -112,7 +113,7 @@ fun SettingsScreen(
                 Icons.Default.AccountCircle,
                 AccentBlue,
                 stringResource(R.string.settings_accounts),
-                stringResource(R.string.settings_accounts_connected, accountCount),
+                pluralStringResource(R.plurals.settings_accounts_connected, accountCount, accountCount),
                 action = onAccountsClick,
             ),
             SettingEntry(
