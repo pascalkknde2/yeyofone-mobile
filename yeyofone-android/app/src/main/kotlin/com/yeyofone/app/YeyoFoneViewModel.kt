@@ -131,6 +131,20 @@ class YeyoFoneViewModel(
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), YeyoFoneUiState())
 
+    init {
+        // completeTransfer() hands both legs to the PBX and never clears the consultation, so
+        // forget it once no call is live; otherwise the next call's More screen reopens the old,
+        // ended consultation. (While a call is still live, an ended consultation is kept so the
+        // user can see it and tap Return to caller.)
+        viewModelScope.launch {
+            calls.sessions.collect { sessions ->
+                if (consultationCallId.value != null && sessions.all { it.state.isTerminal() }) {
+                    consultationCallId.value = null
+                }
+            }
+        }
+    }
+
     fun showHome() { screen.value = AppScreen.Home }
     fun showAccounts() { screen.value = AppScreen.Accounts }
     fun showContacts() { screen.value = AppScreen.Contacts }

@@ -79,6 +79,7 @@ fun CallOptionsScreen(
     availableRoutes: List<AudioRoute>,
     selectedRoute: AudioRoute?,
     onSelectRoute: (AudioRoute) -> Unit,
+    heldCallerName: String,
     consultationSession: CallSession?,
     onStartConsultation: (String) -> Unit,
     onCompleteTransfer: () -> Unit,
@@ -99,13 +100,14 @@ fun CallOptionsScreen(
             IconButton(onClick = onCancel) {
                 Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.cancel), tint = CallTextPrimary)
             }
-            Text(stringResource(R.string.more_options), fontSize = 18.sp, fontWeight = FontWeight.Bold, color = CallTextPrimary)
+            val title = if (consultationSession != null || enteringDestination) R.string.consult_transfer else R.string.more_options
+            Text(stringResource(title), fontSize = 18.sp, fontWeight = FontWeight.Bold, color = CallTextPrimary)
             Spacer(Modifier.size(48.dp))
         }
 
         when {
             consultationSession != null -> {
-                ConsultationCenter(consultationSession, Modifier.weight(1f))
+                ConsultationCenter(consultationSession, heldCallerName, Modifier.weight(1f))
                 ConsultationTray(consultationSession, onCompleteTransfer, onReturnToCaller)
             }
             enteringDestination -> {
@@ -253,7 +255,7 @@ private fun ConsultDestinationTray(enabled: Boolean, onStart: () -> Unit) {
 }
 
 @Composable
-private fun ConsultationCenter(session: CallSession, modifier: Modifier = Modifier) {
+private fun ConsultationCenter(session: CallSession, heldCallerName: String, modifier: Modifier = Modifier) {
     val identity = session.remoteUri.toSipIdentity()
     Column(
         modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = 32.dp),
@@ -261,7 +263,12 @@ private fun ConsultationCenter(session: CallSession, modifier: Modifier = Modifi
         verticalArrangement = Arrangement.Center,
     ) {
         Text(
-            stringResource(R.string.consultation_identity, identity.displayName, identity.extension),
+            // A bare extension has no separate display name; don't repeat it as "1002 · Ext. 1002".
+            if (identity.displayName == identity.extension) {
+                stringResource(R.string.consultation_call, identity.displayName)
+            } else {
+                stringResource(R.string.consultation_identity, identity.displayName, identity.extension)
+            },
             fontSize = 22.sp,
             fontWeight = FontWeight.Bold,
             color = CallTextPrimary,
@@ -269,6 +276,13 @@ private fun ConsultationCenter(session: CallSession, modifier: Modifier = Modifi
         )
         Spacer(Modifier.height(8.dp))
         Text(stringResource(session.state.statusLabel()), fontSize = 15.sp, color = CallTextSecondary)
+        Spacer(Modifier.height(24.dp))
+        Text(
+            stringResource(R.string.consultation_caller_on_hold, heldCallerName),
+            fontSize = 13.sp,
+            color = CallTextSecondary,
+            textAlign = TextAlign.Center,
+        )
     }
 }
 

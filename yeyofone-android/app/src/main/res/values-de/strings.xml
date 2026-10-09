@@ -146,6 +146,7 @@
     <string name="consultation_destination">Rückfrageziel</string>
     <string name="start_consultation">Rückfrage starten</string>
     <string name="consultation_call">Rückfrage: %1$s</string>
+    <string name="consultation_caller_on_hold">%1$s wird gehalten</string>
     <string name="complete_transfer">Weiterleitung abschließen</string>
     <string name="return_to_caller">Zurück zum Anrufer</string>
     <string name="waiting_for_hold">Warten, bis der ursprüngliche Anruf gehalten wird …</string>

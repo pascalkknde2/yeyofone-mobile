@@ -284,7 +284,11 @@ private fun AccountsApp(
             it.direction == CallDirection.INCOMING && (it.state == CallState.Incoming || it.state == CallState.Ringing)
         }
     } else null
-    val waitingCall = nonTerminal.firstOrNull { it.id != activeCall?.id && it.id != primaryRinging?.id }
+    // The attended-transfer consultation leg is our own outgoing call, already shown (with its
+    // Complete/Return actions) by CallOptionsScreen - it must never surface as a "waiting" call.
+    val waitingCall = nonTerminal.firstOrNull {
+        it.id != activeCall?.id && it.id != primaryRinging?.id && it.id != state.consultationCallId
+    }
     // Outgoing calls keep using AppScreen.Dial's own OutgoingCallScreen rendering below; only an
     // incoming call (ringing, or already answered) uses the IncomingCallScreen wrapper.
     val showIncomingWrapper = primaryRinging ?: activeCall?.takeIf { it.direction == CallDirection.INCOMING }
@@ -820,6 +824,7 @@ private fun OutgoingCallHost(
             availableRoutes = availableRoutes,
             selectedRoute = selectedRoute,
             onSelectRoute = onSelectRoute,
+            heldCallerName = session.remoteUri.toSipIdentity().displayName,
             consultationSession = consultationSession,
             onStartConsultation = onStartConsultation,
             onCompleteTransfer = onCompleteTransfer,

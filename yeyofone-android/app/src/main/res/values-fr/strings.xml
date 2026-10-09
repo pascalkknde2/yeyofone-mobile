@@ -146,6 +146,7 @@
     <string name="consultation_destination">Destination de la consultation</string>
     <string name="start_consultation">Démarrer la consultation</string>
     <string name="consultation_call">Consultation : %1$s</string>
+    <string name="consultation_caller_on_hold">%1$s est en attente</string>
     <string name="complete_transfer">Terminer le transfert</string>
     <string name="return_to_caller">Revenir à l’appelant</string>
     <string name="waiting_for_hold">En attente de la mise en attente de l’appel d’origine…</string>
