@@ -140,9 +140,6 @@
 .call-control {
   overflow-wrap: anywhere;
 }
-.conference-control-buttons {
-  flex-wrap: wrap;
-}
 .contact-line {
   overflow-wrap: anywhere;
 }
@@ -177,9 +174,6 @@
   }
   .search {
     max-width: 220px;
-  }
-  .conference-controls {
-    flex-wrap: wrap;
   }
 }
 @media (max-width: 600px) {
@@ -219,9 +213,6 @@
   .incoming-call-actions {
     padding-left: 15px;
     padding-right: 15px;
-  }
-  .conference-header {
-    flex-wrap: wrap;
   }
 }
 
