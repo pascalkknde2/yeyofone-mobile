@@ -7,18 +7,12 @@
 
 import SwiftUI
 
-struct ContentView: View {
-    var body: some View {
-        VStack {
-            Image(systemName: "globe")
-                .imageScale(.large)
-                .foregroundStyle(.tint)
-            Text("Hello, world!")
-        }
-        .padding()
-    }
+#Preview("Home") {
+    RootView().environment(AppStore())
 }
 
-#Preview {
-    ContentView()
+#Preview("Incoming call") {
+    let store = AppStore()
+    store.simulateIncomingCall()
+    return RootView().environment(store)
 }
