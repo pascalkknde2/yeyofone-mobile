@@ -109,6 +109,8 @@ class NativeCall final : public pj::Call {
     bool audio, capture_connected=false, playback_connected=false;
     pj::ToneGenerator ringtone;
     bool ringtone_active=false;
+    pj::ToneGenerator ringback;
+    bool ringback_created=false,ringback_active=false;
     std::unique_ptr<pj::AudioMediaRecorder> recorder;
     std::filesystem::path recording_final_path, recording_temp_path;
     int recording_media_index=-1;
@@ -122,7 +124,7 @@ public:
     bool cancelled=false;
     bool is_incoming=false;
     NativeCall(NativeAccount& account,uint64_t token,pj::Endpoint& ep,bool use_audio,int call_id=PJSUA_INVALID_ID,bool incoming=false):pj::Call(account,call_id),endpoint(ep),audio(use_audio),account_token(account.token),is_incoming(incoming){latest.token=token;latest.account_token=account.token;latest.incoming=incoming?1:0;if(incoming){latest.state=PJSIP_INV_STATE_INCOMING;capture_caller();}}
-    ~NativeCall() override { stop_recording(); stop_ringtone(); }
+    ~NativeCall() override { stop_recording(); stop_ringtone(); stop_ringback(); }
     void capture_caller() noexcept {try{auto info=getInfo();auto* pool=pjsua_pool_create("caller-check",512,512);if(!pool)return;struct Guard{pj_pool_t*p;~Guard(){pj_pool_release(p);}}guard{pool};std::string uri=info.remoteUri;auto* parsed=pjsip_parse_uri(pool,uri.data(),uri.size(),0);if(!parsed||(!PJSIP_URI_SCHEME_IS_SIP(parsed)&&!PJSIP_URI_SCHEME_IS_SIPS(parsed)))return;auto* sip=static_cast<pjsip_sip_uri*>(pjsip_uri_get_uri(parsed));if(sip->user.slen<1||sip->user.slen>64)return;for(pj_ssize_t i=0;i<sip->user.slen;++i){unsigned char c=static_cast<unsigned char>(sip->user.ptr[i]);if(!(std::isalnum(c)||c=='+'||c=='*'||c=='#'||c=='-'||c=='_'||c=='.'))return;}std::lock_guard<std::mutex> lock(mutex);latest.caller_len=static_cast<int32_t>(sip->user.slen);std::copy(sip->user.ptr,sip->user.ptr+sip->user.slen,latest.caller);}catch(...){} }
     void update() noexcept {
         try {
@@ -137,6 +139,11 @@ public:
         try {
             auto info=getInfo();
             if(ringtone_active&&info.state!=PJSIP_INV_STATE_INCOMING&&info.state!=PJSIP_INV_STATE_EARLY)stop_ringtone();
+            if(!is_incoming){
+                // Local ringback while the far end rings, unless it sends its own early media (183 with SDP).
+                const bool early_media=std::any_of(info.media.begin(),info.media.end(),[](const pj::CallMediaInfo& m){return m.type==PJMEDIA_TYPE_AUDIO&&m.status==PJSUA_CALL_MEDIA_ACTIVE;});
+                if(info.state==PJSIP_INV_STATE_EARLY&&!early_media&&!cancelled)start_ringback();else stop_ringback();
+            }
             if(info.state==PJSIP_INV_STATE_DISCONNECTED){stop_recording();return;}
             if(controls.held){
                 if(media_index>=0){try{auto stream=getAudioMedia(media_index);auto& d=endpoint.audDevManager();if(capture_connected)d.getCaptureDevMedia().stopTransmit(stream);if(playback_connected)stream.stopTransmit(d.getPlaybackDevMedia());if(recorder&&recording_audio_connected)stream.stopTransmit(*recorder);}catch(...){}}
@@ -196,6 +203,9 @@ public:
     void onCallState(pj::OnCallStateParam& event) noexcept override {capture_error(event.e);update();route();}
     void onCallMediaState(pj::OnCallMediaStateParam&) noexcept override {update();route();}
     void start_ringtone() noexcept {if(!is_incoming||ringtone_active)return;try{auto& devices=endpoint.audDevManager();devices.setPlaybackDev(PJMEDIA_AUD_DEFAULT_PLAYBACK_DEV);ringtone.createToneGenerator(16000,1);pj::ToneDesc tone;tone.freq1=440;tone.freq2=480;tone.on_msec=1000;tone.off_msec=3000;tone.volume=9000;pj::ToneDescVector tones;tones.push_back(tone);ringtone.play(tones,true);ringtone.startTransmit(devices.getPlaybackDevMedia());ringtone_active=true;}catch(...){try{ringtone.stop();}catch(...){}}}
+    // UK ringback cadence (400+450 Hz: 0.4 s on, 0.2 s off, 0.4 s on, 2 s off).
+    void start_ringback() noexcept {if(is_incoming||!audio||ringback_active)return;try{auto& devices=endpoint.audDevManager();if(!ringback_created){ringback.createToneGenerator(16000,1);ringback_created=true;}pj::ToneDesc first;first.freq1=400;first.freq2=450;first.on_msec=400;first.off_msec=200;first.volume=0;pj::ToneDesc second=first;second.off_msec=2000;pj::ToneDescVector tones;tones.push_back(first);tones.push_back(second);ringback.play(tones,true);ringback.startTransmit(devices.getPlaybackDevMedia());ringback_active=true;}catch(...){try{ringback.stop();}catch(...){}}}
+    void stop_ringback() noexcept {if(!ringback_active)return;try{ringback.stopTransmit(endpoint.audDevManager().getPlaybackDevMedia());}catch(...){}try{ringback.stop();}catch(...){}ringback_active=false;}
     void stop_ringtone() noexcept {if(!ringtone_active)return;try{ringtone.stopTransmit(endpoint.audDevManager().getPlaybackDevMedia());}catch(...){}try{ringtone.stop();}catch(...){}ringtone_active=false;}
     void send_ringing(){if(!is_incoming)return;pj::CallOpParam p;p.statusCode=PJSIP_SC_RINGING;pj::Call::answer(p);}
     void answer(){auto state=getInfo().state;if(!is_incoming||(state!=PJSIP_INV_STATE_INCOMING&&state!=PJSIP_INV_STATE_EARLY))throw pj::Error(PJ_EINVALIDOP,"answer","","",0);stop_ringtone();audio=true;pj::CallOpParam p(true);p.statusCode=PJSIP_SC_OK;p.opt.audioCount=1;p.opt.videoCount=0;p.opt.textCount=0;auto& d=endpoint.audDevManager();d.setCaptureDev(PJMEDIA_AUD_DEFAULT_CAPTURE_DEV);d.setPlaybackDev(PJMEDIA_AUD_DEFAULT_PLAYBACK_DEV);try{pj::Call::answer(p);}catch(...){d.setNoDev();throw;}}
