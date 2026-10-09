@@ -1767,6 +1767,46 @@ export const translations: Record<
     es: "Escucha los mensajes de tu buzón SIP.",
     de: "Hören Sie Nachrichten in Ihrer SIP-Mailbox ab.",
   },
+  "Call your mailbox": {
+    fr: "Appeler votre messagerie",
+    es: "Llama a tu buzón",
+    de: "Mailbox anrufen",
+  },
+  "Your messages play over a normal call.": {
+    fr: "Vos messages sont lus pendant un appel normal.",
+    es: "Tus mensajes se reproducen en una llamada normal.",
+    de: "Ihre Nachrichten werden in einem normalen Anruf abgespielt.",
+  },
+  "How it works": {
+    fr: "Comment ça marche",
+    es: "Cómo funciona",
+    de: "So funktioniert es",
+  },
+  "YeyoFone dials your access code on the selected account.": {
+    fr: "YeyoFone compose votre code d’accès avec le compte sélectionné.",
+    es: "YeyoFone marca tu código de acceso con la cuenta seleccionada.",
+    de: "YeyoFone wählt Ihren Zugangscode mit dem ausgewählten Konto.",
+  },
+  "Enter your PIN": {
+    fr: "Saisissez votre code",
+    es: "Introduce tu PIN",
+    de: "PIN eingeben",
+  },
+  "Use the on-screen keypad when the system asks.": {
+    fr: "Utilisez le clavier à l’écran quand le système le demande.",
+    es: "Usa el teclado en pantalla cuando el sistema lo pida.",
+    de: "Nutzen Sie das Tastenfeld auf dem Bildschirm, wenn das System danach fragt.",
+  },
+  "Listen and manage": {
+    fr: "Écouter et gérer",
+    es: "Escucha y gestiona",
+    de: "Anhören und verwalten",
+  },
+  "Follow the voice prompts to play, save or delete messages.": {
+    fr: "Suivez les instructions vocales pour écouter, garder ou supprimer vos messages.",
+    es: "Sigue las indicaciones de voz para reproducir, guardar o borrar mensajes.",
+    de: "Folgen Sie den Sprachansagen, um Nachrichten abzuspielen, zu speichern oder zu löschen.",
+  },
   "Voicemail access code": {
     fr: "Code d’accès à la messagerie vocale",
     es: "Código de acceso al buzón de voz",
