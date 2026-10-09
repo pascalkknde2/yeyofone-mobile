@@ -4,14 +4,14 @@ Improvements for the desktop app (`yeyofone-desktop/`). When a task is finished,
 
 ## In progress
 
-- [ ] **Share screen in the Team room** (branch `feat/desktop-room-screen-share`, committed locally as `33e8d2b`, not pushed). The share menu offers Share screen and Share agenda; the captured screen shows live on the stage, only on this device. Still to do: try it with a real click in the app, then push and open a PR.
+- [ ] **Share screen in the Team room** (in PR #36). The share menu offers Share screen and Share agenda; the captured screen shows live on the stage, only on this device. Still to do: try it with a real click in the app.
 
 ## Quick wins
 
-- [x] **1. Remove leftovers from the old Team room.** About 20 translations in `frontend/src/translations.ts` and 4 patterns in `frontend/src/i18n.tsx` ("…joined the preview room", "…has the floor in this preview", "Room focus: …", "Focus …") are no longer used. — done 2026-10-09 (branch `chore/desktop-cleanup-1-4`): removed 22 translations and 5 patterns (also "Agenda: …").
-- [x] **2. Deal with the preview screens that can no longer be opened.** Since PR #33 these have no way in: incoming-call and video-call previews (`CallWindows.tsx`), Call forwarding, Ring groups and Audio conference (`CallingFeatures.tsx`), plus their state in `main.tsx`. Delete the code or give the screens a real place in the app. — done 2026-10-09 (branch `chore/desktop-cleanup-1-4`): Call forwarding, Ring groups and Audio conference now open from a "Calling features" section in Settings; the incoming/video call demo windows are deleted (`CallIcon` moved to its own file, 30 demo-only translations removed).
-- [x] **3. Set the Team room's opening focus on purpose.** The first button ("Notes") gets focus when the room opens, so keyboard users may see an outline there. Focus the Meeting tab or the Close button instead. — done 2026-10-09 (branch `chore/desktop-cleanup-1-4`): focus now starts on the "Team room" title, with no outline.
-- [x] **4. Arrow keys in the share menu.** It is marked as a menu, so ↑/↓ should move between items; today only Tab works. — done 2026-10-09 (branch `chore/desktop-cleanup-1-4`): ↑/↓ wrap, Home/End jump, Tab and Escape close (Escape returns focus to the share button).
+- [x] **1. Remove leftovers from the old Team room.** About 20 translations in `frontend/src/translations.ts` and 4 patterns in `frontend/src/i18n.tsx` ("…joined the preview room", "…has the floor in this preview", "Room focus: …", "Focus …") are no longer used. — done 2026-10-09 (#36): removed 22 translations and 5 patterns (also "Agenda: …").
+- [x] **2. Deal with the preview screens that can no longer be opened.** Since PR #33 these have no way in: incoming-call and video-call previews (`CallWindows.tsx`), Call forwarding, Ring groups and Audio conference (`CallingFeatures.tsx`), plus their state in `main.tsx`. Delete the code or give the screens a real place in the app. — done 2026-10-09 (#36): Call forwarding, Ring groups and Audio conference now open from a "Calling features" section in Settings; the incoming/video call demo windows are deleted (`CallIcon` moved to its own file, 30 demo-only translations removed).
+- [x] **3. Set the Team room's opening focus on purpose.** The first button ("Notes") gets focus when the room opens, so keyboard users may see an outline there. Focus the Meeting tab or the Close button instead. — done 2026-10-09 (#36): focus now starts on the "Team room" title, with no outline.
+- [x] **4. Arrow keys in the share menu.** It is marked as a menu, so ↑/↓ should move between items; today only Tab works. — done 2026-10-09 (#36): ↑/↓ wrap, Home/End jump, Tab and Escape close (Escape returns focus to the share button).
 
 ## Make the Team room more real
 
