@@ -49,7 +49,7 @@ These run on your own device only; nothing is sent to other people.
 ## Appearance
 
 - [x] **15. Dark and light mode.** Sun/Moon toggle in the top bar and Light / Dark / System in Settings → Appearance (Lucide icons); the choice is remembered and System follows the computer. Colours moved to tokens in `frontend/src/theme-colors.css` (light = original design, dark = computed and tuned). — done 2026-10-10 (#44).
-- [x] **16. Dark mode for the Team room's side panel** (Chat / Participants), which stays white; the rest of the room is already dark. — done 2026-10-10 (branch `fix/desktop-room-panel-dark`): the panel, Notes view, shared agenda, share menu and error banner use room colour variables with dark values; light mode is pixel-identical.
+- [x] **16. Dark mode for the Team room's side panel** (Chat / Participants), which stays white; the rest of the room is already dark. — done 2026-10-10 (#45): the panel, Notes view, shared agenda, share menu and error banner use room colour variables with dark values; light mode is pixel-identical.
 
 ## Bigger projects (plan first)
 
