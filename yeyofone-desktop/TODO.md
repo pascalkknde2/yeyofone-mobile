@@ -46,6 +46,11 @@ These run on your own device only; nothing is sent to other people.
 - [x] **13. Improve the in-call screen.** Dark look matching the call bar, bigger caller info, labelled main buttons (Mute, Keypad, Hold, Add call, More, Hang up), a two-calls view with Merge, and a conference view with per-person End. — done 2026-10-10 (#41).
 - [ ] **14. Rebuild the iOS framework** with `yeyofone-ios/tools/build-pjsip-ios.sh --bridge-only` so iOS also gets the shared bridge's new merge function (the change is additive; nothing in iOS uses it yet).
 
+## Appearance
+
+- [x] **15. Dark and light mode.** Sun/Moon toggle in the top bar and Light / Dark / System in Settings → Appearance (Lucide icons); the choice is remembered and System follows the computer. Colours moved to tokens in `frontend/src/theme-colors.css` (light = original design, dark = computed and tuned). — done 2026-10-10 (branch `feat/desktop-dark-mode`).
+- [ ] **16. Dark mode for the Team room's side panel** (Chat / Participants), which stays white; the rest of the room is already dark.
+
 ## Bigger projects (plan first)
 
 - [ ] **Real video calls and screen sharing over SIP.** The native PJSIP build is audio-only today; needs video enabled and a screen-capture video source.

@@ -4,12 +4,12 @@
 }
 .voicemail-page h1 {
   margin: 0;
-  color: #0f172a;
+  color: var(--c-0f172a-t);
   font-size: 27px;
 }
 .voicemail-page .section-heading p {
   margin: 6px 0 0;
-  color: #64748b;
+  color: var(--c-64748b-t);
 }
 .voicemail-layout {
   display: grid;
@@ -20,9 +20,9 @@
 }
 .voicemail-card,
 .voicemail-guide {
-  border: 1px solid #e8edf4;
+  border: 1px solid var(--c-e8edf4-b);
   border-radius: 16px;
-  background: #fff;
+  background: var(--c-ffffff-s);
   box-shadow: 0 1px 2px #0f172a0a;
 }
 .voicemail-card {
@@ -35,18 +35,18 @@
   align-items: center;
   gap: 14px;
   padding-bottom: 20px;
-  border-bottom: 1px solid #f1f5f9;
+  border-bottom: 1px solid var(--c-f1f5f9-b);
 }
 .voicemail-card__head h2,
 .voicemail-guide h2 {
   margin: 0;
-  color: #0f172a;
+  color: var(--c-0f172a-t);
   font-size: 17px;
   font-weight: 600;
 }
 .voicemail-card__head p {
   margin: 4px 0 0;
-  color: #64748b;
+  color: var(--c-64748b-t);
   font-size: 14px;
 }
 .voicemail-badge {
@@ -55,8 +55,8 @@
   width: 48px;
   height: 48px;
   border-radius: 12px;
-  color: #2563eb;
-  background: #eff6ff;
+  color: var(--c-2563eb-t);
+  background: var(--c-eff6ff-s);
 }
 
 /* ---------- Form ---------- */
@@ -65,12 +65,12 @@
   gap: 8px;
 }
 .voicemail-field > span {
-  color: #334155;
+  color: var(--c-334155-t);
   font-size: 14px;
   font-weight: 600;
 }
 .voicemail-field small {
-  color: #64748b;
+  color: var(--c-64748b-t);
   font-size: 13px;
   line-height: 1.5;
 }
@@ -79,10 +79,10 @@
   width: 100%;
   min-height: 46px;
   padding: 10px 14px;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--c-e2e8f0-b);
   border-radius: 10px;
-  color: #0f172a;
-  background: #fff;
+  color: var(--c-0f172a-t);
+  background: var(--c-ffffff-s);
   font: inherit;
   transition:
     border-color 0.15s,
@@ -91,19 +91,19 @@
 .voicemail-card select {
   appearance: none;
   padding-right: 40px;
-  background: #fff
+  background: var(--c-ffffff-s)
     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")
     no-repeat right 14px center;
   cursor: pointer;
 }
 .voicemail-card select:hover,
 .voicemail-card input:hover {
-  border-color: #cbd5e1;
+  border-color: var(--c-cbd5e1-b);
 }
 .voicemail-card select:focus-visible,
 .voicemail-card input:focus-visible {
   outline: none;
-  border-color: #2563eb;
+  border-color: var(--c-2563eb-b);
   box-shadow: 0 0 0 3px #2563eb26;
 }
 .voicemail-code {
@@ -113,13 +113,13 @@
   letter-spacing: 0.08em;
 }
 .voicemail-code[aria-invalid="true"] {
-  border-color: #fca5a5;
+  border-color: var(--c-fca5a5-b);
 }
 .voicemail-registration {
   display: inline-flex;
   align-items: center;
   gap: 7px;
-  color: #b45309;
+  color: var(--c-b45309-t);
   font-size: 13px;
   font-weight: 500;
 }
@@ -128,13 +128,13 @@
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: #f59e0b;
+  background: var(--c-f59e0b-s);
 }
 .voicemail-registration.is-registered {
-  color: #15803d;
+  color: var(--c-15803d-t);
 }
 .voicemail-registration.is-registered i {
-  background: #16a34a;
+  background: var(--c-16a34a-s);
 }
 .voicemail-warning,
 .voicemail-error {
@@ -145,14 +145,14 @@
   line-height: 1.5;
 }
 .voicemail-warning {
-  color: #92400e;
-  background: #fffbeb;
-  border: 1px solid #fde68a;
+  color: var(--c-92400e-t);
+  background: var(--c-fffbeb-s);
+  border: 1px solid var(--c-fde68a-b);
 }
 .voicemail-error {
-  color: #b91c1c;
-  background: #fef2f2;
-  border: 1px solid #fecaca;
+  color: var(--c-b91c1c-t);
+  background: var(--c-fef2f2-s);
+  border: 1px solid var(--c-fecaca-b);
 }
 .voicemail-open {
   display: inline-flex;
@@ -162,7 +162,7 @@
   min-height: 48px;
   border-radius: 12px;
   color: white;
-  background: #16a34a;
+  background: var(--c-16a34a-s);
   font-weight: 600;
   box-shadow: 0 4px 12px #16a34a33;
   transition:
@@ -170,11 +170,11 @@
     box-shadow 0.15s;
 }
 .voicemail-open:hover:not(:disabled) {
-  background: #15803d;
+  background: var(--c-15803d-s);
 }
 .voicemail-open:disabled {
-  color: #94a3b8;
-  background: #f1f5f9;
+  color: var(--c-94a3b8-t);
+  background: var(--c-f1f5f9-s);
   box-shadow: none;
   cursor: not-allowed;
 }
@@ -193,15 +193,15 @@
   width: 88px;
   height: 88px;
   border-radius: 50%;
-  color: #2563eb;
-  background: #eff6ff;
+  color: var(--c-2563eb-t);
+  background: var(--c-eff6ff-s);
 }
 .voicemail-avatar.is-connecting::after {
   content: "";
   position: absolute;
   inset: 0;
   border-radius: 50%;
-  border: 2px solid #93c5fd;
+  border: 2px solid var(--c-93c5fd-b);
   animation: voicemail-pulse 1.6s ease-out infinite;
 }
 @keyframes voicemail-pulse {
@@ -225,32 +225,32 @@
   gap: 8px;
   padding: 4px 12px;
   border-radius: 999px;
-  color: #b45309;
-  background: #fffbeb;
+  color: var(--c-b45309-t);
+  background: var(--c-fffbeb-s);
   font-size: 13px;
   font-weight: 600;
 }
 .voicemail-status.is-connected {
-  color: #15803d;
-  background: #f0fdf4;
+  color: var(--c-15803d-t);
+  background: var(--c-f0fdf4-s);
 }
 .voicemail-status.is-connected i {
-  background: #16a34a;
+  background: var(--c-16a34a-s);
 }
 .voicemail-account {
-  color: #0f172a;
+  color: var(--c-0f172a-t);
   font-size: 20px;
 }
 .voicemail-duration {
   margin-top: -6px;
-  color: #64748b;
+  color: var(--c-64748b-t);
   font-size: 15px;
   font-variant-numeric: tabular-nums;
 }
 .voicemail-live__hint {
   max-width: 380px;
   margin: 0;
-  color: #64748b;
+  color: var(--c-64748b-t);
   font-size: 14px;
   line-height: 1.55;
 }
@@ -264,8 +264,8 @@
   width: 64px;
   height: 64px;
   border-radius: 50%;
-  color: #334155;
-  background: #f1f5f9;
+  color: var(--c-334155-t);
+  background: var(--c-f1f5f9-s);
   font-size: 26px;
   font-weight: 400;
   transition:
@@ -275,11 +275,11 @@
 }
 .voicemail-keypad button:hover:not(:disabled) {
   color: white;
-  background: #2563eb;
+  background: var(--c-2563eb-s);
 }
 .voicemail-keypad button:active:not(:disabled) {
   transform: scale(0.95);
-  background: #1d4ed8;
+  background: var(--c-1d4ed8-s);
 }
 .voicemail-keypad button:disabled {
   opacity: 0.5;
@@ -292,12 +292,12 @@
   margin-top: 8px;
   border-radius: 50%;
   color: white;
-  background: #dc2626;
+  background: var(--c-dc2626-s);
   box-shadow: 0 6px 16px #dc262640;
   transition: background 0.15s;
 }
 .voicemail-hangup:hover:not(:disabled) {
-  background: #b91c1c;
+  background: var(--c-b91c1c-s);
 }
 .voicemail-hangup:disabled {
   opacity: 0.6;
@@ -332,17 +332,17 @@
   width: 26px;
   height: 26px;
   border-radius: 50%;
-  color: #2563eb;
-  background: #eff6ff;
+  color: var(--c-2563eb-t);
+  background: var(--c-eff6ff-s);
   font-size: 13px;
   font-weight: 700;
 }
 .voicemail-guide strong {
-  color: #0f172a;
+  color: var(--c-0f172a-t);
   font-size: 14px;
 }
 .voicemail-guide li span {
-  color: #64748b;
+  color: var(--c-64748b-t);
   font-size: 13px;
   line-height: 1.5;
 }
@@ -351,14 +351,14 @@
   gap: 10px;
   margin: 22px 0 0;
   padding-top: 18px;
-  border-top: 1px solid #f1f5f9;
-  color: #64748b;
+  border-top: 1px solid var(--c-f1f5f9-b);
+  color: var(--c-64748b-t);
   font-size: 13px;
   line-height: 1.5;
 }
 .voicemail-privacy svg {
   margin-top: 2px;
-  color: #94a3b8;
+  color: var(--c-94a3b8-t);
 }
 
 @media (max-width: 1000px) {

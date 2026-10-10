@@ -1,8 +1,8 @@
 /* One neutral style for every item; the active page and the call action carry the accent. */
 .sidebar {
-  border-right: 1px solid #e8edf4;
+  border-right: 1px solid var(--c-e8edf4-b);
   padding-top: 24px;
-  background: #fff;
+  background: var(--c-ffffff-s);
 }
 .sidebar nav {
   display: flex;
@@ -11,8 +11,8 @@
   align-items: center;
 }
 .sidebar .nav-item {
-  --icon-color: #64748b;
-  --accent: #2563eb;
+  --icon-color: var(--c-64748b);
+  --accent: var(--c-2563eb);
   height: 56px;
   width: 100%;
   color: var(--icon-color);
@@ -36,8 +36,8 @@
   background: transparent;
 }
 .sidebar .nav-item:hover .sidebar-icon-disc {
-  background: #f1f5f9;
-  color: #0f172a;
+  background: var(--c-f1f5f9-s);
+  color: var(--c-0f172a-t);
 }
 .sidebar .nav-item.active:before {
   height: 24px;
@@ -50,7 +50,7 @@
 }
 .sidebar .nav-item.active .sidebar-icon-disc {
   color: var(--accent);
-  background: #eff6ff;
+  background: var(--c-eff6ff-s);
 }
 .sidebar .nav-item:focus-visible {
   outline: none;
@@ -62,12 +62,12 @@
 /* The call action is the sidebar's one filled button. */
 .sidebar .nav-item--primary .sidebar-icon-disc {
   border-radius: 50%;
-  background: #16a34a;
+  background: var(--c-16a34a-s);
   color: white;
   box-shadow: 0 4px 12px #16a34a33;
 }
 .sidebar .nav-item--primary:hover .sidebar-icon-disc {
-  background: #15803d;
+  background: var(--c-15803d-s);
   color: white;
 }
 .sidebar-bottom {
@@ -84,7 +84,7 @@
   top: 0;
   width: 27px;
   height: 1px;
-  background: #e8eef7;
+  background: var(--c-e8eef7-s);
 }
 .sidebar .sidebar-bottom .nav-item {
   width: 100%;

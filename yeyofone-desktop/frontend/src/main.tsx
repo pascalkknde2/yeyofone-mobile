@@ -1,9 +1,11 @@
 import { Accounts } from "./Accounts";
 import { RecordingCloudSettings } from "./RecordingCloudSettings";
 import { NativeStatus } from "./NativeStatus";
+import { useTheme } from "./theme";
 import { useLanguage, LanguageProvider, LanguageSelector } from "./i18n";
 import { useState, type ReactNode } from "react";
 import { createRoot } from "react-dom/client";
+import "./theme-colors.css";
 import "./style.css";
 import "./sidebar.css";
 import { Dialer } from "./Dialer";
@@ -31,6 +33,9 @@ type IconName =
   | "mail"
   | "smartphone"
   | "search"
+  | "sun"
+  | "moon"
+  | "monitor"
   | "bell"
   | "download"
   | "arrow"
@@ -107,6 +112,27 @@ function Icon({ name, size = 20 }: { name: IconName; size?: number }) {
       <>
         <rect width="14" height="20" x="5" y="2" rx="2" ry="2" />
         <path d="M12 18h.01" />
+      </>
+    ),
+    sun: (
+      <>
+        <circle cx="12" cy="12" r="4" />
+        <path d="M12 2v2" />
+        <path d="M12 20v2" />
+        <path d="m4.93 4.93 1.41 1.41" />
+        <path d="m17.66 17.66 1.41 1.41" />
+        <path d="M2 12h2" />
+        <path d="M20 12h2" />
+        <path d="m6.34 17.66-1.41 1.41" />
+        <path d="m19.07 4.93-1.41 1.41" />
+      </>
+    ),
+    moon: <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z" />,
+    monitor: (
+      <>
+        <rect width="20" height="14" x="2" y="3" rx="2" />
+        <line x1="8" x2="16" y1="21" y2="21" />
+        <line x1="12" x2="12" y1="17" y2="21" />
       </>
     ),
     search: (
@@ -250,12 +276,27 @@ function TrendChart({
           x2="0"
           y2="1"
         >
-          <stop offset="0%" stopColor="#d5ddeb" stopOpacity=".65" />
-          <stop offset="100%" stopColor="#d5ddeb" stopOpacity=".2" />
+          <stop
+            offset="0%"
+            style={{ stopColor: "var(--chart-area)" }}
+            stopOpacity=".65"
+          />
+          <stop
+            offset="100%"
+            style={{ stopColor: "var(--chart-area)" }}
+            stopOpacity=".2"
+          />
         </linearGradient>
       </defs>
       {[25, 70, 115, 160].map((y) => (
-        <line key={y} x1="45" x2="489" y1={y} y2={y} stroke="#edf0f7" />
+        <line
+          key={y}
+          x1="45"
+          x2="489"
+          y1={y}
+          y2={y}
+          style={{ stroke: "var(--chart-grid)" }}
+        />
       ))}
       {lines.map((line) => (
         <g key={line.name}>
@@ -292,6 +333,7 @@ function TrendChart({
 }
 function App() {
   const { t } = useLanguage();
+  const theme = useTheme();
   const [page, setPage] = useState("Overview");
   const [search, setSearch] = useState("");
   const [direction, setDirection] = useState("Incoming");
@@ -347,6 +389,24 @@ function App() {
           )}
         </label>
         <LanguageSelector />
+        <button
+          className="theme-toggle icon-button"
+          aria-label={t(
+            theme.theme === "dark"
+              ? "Switch to light mode"
+              : "Switch to dark mode",
+          )}
+          title={t(
+            theme.theme === "dark"
+              ? "Switch to light mode"
+              : "Switch to dark mode",
+          )}
+          onClick={() =>
+            theme.choose(theme.theme === "dark" ? "light" : "dark")
+          }
+        >
+          <Icon name={theme.theme === "dark" ? "sun" : "moon"} size={24} />
+        </button>
         <button
           className="notification icon-button"
           aria-label={t("Show notifications")}
@@ -561,7 +621,7 @@ function App() {
                           cy="60"
                           r="51"
                           fill="none"
-                          stroke="#edf0f8"
+                          style={{ stroke: "var(--chart-grid)" }}
                           strokeWidth="3"
                         />
                         <circle
@@ -904,7 +964,37 @@ function App() {
               ))}
             </div>
             <h2>{t("Appearance")}</h2>
-            <p>{t("Light theme · Compact sidebar · Desktop dashboard")}</p>
+            <div
+              className="theme-choice"
+              role="radiogroup"
+              aria-label={t("Theme")}
+            >
+              {(
+                [
+                  ["light", "Light", "sun"],
+                  ["dark", "Dark", "moon"],
+                  ["system", "System", "monitor"],
+                ] as const
+              ).map(([value, label, icon]) => (
+                <button
+                  key={value}
+                  role="radio"
+                  aria-checked={theme.choice === value}
+                  className={theme.choice === value ? "selected" : ""}
+                  onClick={() => theme.choose(value)}
+                >
+                  <Icon name={icon} size={20} />
+                  {t(label)}
+                </button>
+              ))}
+            </div>
+            <p>
+              {t(
+                theme.choice === "system"
+                  ? "Follows your computer’s light or dark setting."
+                  : "Stays the same whatever your computer uses.",
+              )}
+            </p>
           </section>
         )}
         {import.meta.env.DEV && (
@@ -1071,7 +1161,7 @@ function Overview({
                     cy="60"
                     r="51"
                     fill="none"
-                    stroke="#edf0f8"
+                    style={{ stroke: "var(--chart-grid)" }}
                     strokeWidth="3"
                   />
                   <circle

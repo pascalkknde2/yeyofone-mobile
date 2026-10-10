@@ -7,15 +7,15 @@
 .call-history-page h1 {
   font-size: 26px;
   margin: 0;
-  color: #414b5a;
+  color: var(--c-414b5a-t);
 }
 .call-history-subtitle {
-  color: #97a2b4;
+  color: var(--c-97a2b4-t);
   margin: 7px 0 0;
   font-size: 16px;
 }
 .call-history-refresh {
-  background: #2d8dcc;
+  background: var(--c-2d8dcc-s);
   color: #fff;
   border: 0;
   border-radius: 10px;
@@ -30,13 +30,13 @@
 .call-history-filters button {
   padding: 9px 14px;
   border-radius: 18px;
-  color: #75839a;
-  background: #fff;
+  color: var(--c-75839a-t);
+  background: var(--c-ffffff-s);
   font-size: 16px;
 }
 .call-history-filters button.selected {
-  background: #e8f4fc;
-  color: #2789c8;
+  background: var(--c-e8f4fc-s);
+  color: var(--c-2789c8-t);
 }
 .call-history-list {
   display: grid;
@@ -49,11 +49,11 @@
     70px minmax(160px, auto);
   gap: 14px;
   align-items: center;
-  background: #fff;
+  background: var(--c-ffffff-s);
   padding: 14px 18px;
   border-radius: 12px;
   box-shadow: 0 8px 20px #dfe6f22b;
-  color: #8290a5;
+  color: var(--c-8290a5-t);
   font-size: 16px;
 }
 .call-history-direction {
@@ -66,12 +66,12 @@
   font-weight: 700;
 }
 .call-history-direction.incoming {
-  background: #e5f6ee;
-  color: #21976b;
+  background: var(--c-e5f6ee-s);
+  color: var(--c-21976b-t);
 }
 .call-history-direction.outgoing {
-  background: #e8f3fc;
-  color: #268dc8;
+  background: var(--c-e8f3fc-s);
+  color: var(--c-268dc8-t);
 }
 .call-history-person {
   min-width: 0;
@@ -85,24 +85,24 @@
 }
 .call-history-person strong {
   font-size: 17px;
-  color: #465164;
+  color: var(--c-465164-t);
 }
 .call-history-person small {
-  color: #a0aabd;
+  color: var(--c-a0aabd-t);
   margin-top: 4px;
 }
 .call-history-outcome {
-  color: #6e7b91;
+  color: var(--c-6e7b91-t);
   text-transform: capitalize;
 }
 .call-history-duration {
   font-variant-numeric: tabular-nums;
   text-align: right;
-  color: #69778d;
+  color: var(--c-69778d-t);
 }
 .call-history-error {
-  color: #c34d5c;
-  background: #fff0f1;
+  color: var(--c-c34d5c-t);
+  background: var(--c-fff0f1-s);
   padding: 12px 16px;
   border-radius: 8px;
 }
@@ -116,8 +116,8 @@
   border: 0;
   border-radius: 8px;
   padding: 8px 10px;
-  color: #247fb5;
-  background: #e9f5fc;
+  color: var(--c-247fb5-t);
+  background: var(--c-e9f5fc-s);
   font-size: 14px;
 }
 .call-history-no-recording {
@@ -130,8 +130,8 @@
   margin: 16px 0;
   padding: 14px 18px;
   border-radius: 12px;
-  background: white;
-  color: #465164;
+  background: var(--c-ffffff-s);
+  color: var(--c-465164-t);
 }
 .call-recording-player audio {
   flex: 1;
@@ -171,12 +171,12 @@
 }
 
 .recording-cloud-settings {
-  background: white;
-  border: 1px solid #e2e8f0;
+  background: var(--c-ffffff-s);
+  border: 1px solid var(--c-e2e8f0-b);
   border-radius: 14px;
   padding: 18px 22px;
   margin-top: 24px;
-  color: #465164;
+  color: var(--c-465164-t);
 }
 .recording-cloud-settings summary {
   display: flex;
@@ -185,7 +185,7 @@
   cursor: pointer;
 }
 .recording-cloud-settings summary span {
-  color: #2789c8;
+  color: var(--c-2789c8-t);
   font-size: 14px;
 }
 .recording-cloud-settings p {
@@ -205,10 +205,10 @@
 }
 .recording-cloud-settings input:not([type="checkbox"]) {
   padding: 12px;
-  border: 1px solid #dce3ee;
+  border: 1px solid var(--c-dce3ee-b);
   border-radius: 8px;
-  background: #f8fafc;
-  color: #334155;
+  background: var(--c-f8fafc-s);
+  color: var(--c-334155-t);
   width: 100%;
   box-sizing: border-box;
 }
@@ -227,21 +227,21 @@
   border: 0;
   border-radius: 8px;
   padding: 10px 14px;
-  background: #e9f5fc;
-  color: #247fb5;
+  background: var(--c-e9f5fc-s);
+  color: var(--c-247fb5-t);
 }
 .call-history-recording-actions {
   flex-wrap: wrap;
   max-width: 320px;
 }
 .recording-cloud-badge {
-  color: #21976b;
+  color: var(--c-21976b-t);
   font-size: 12px;
   align-self: center;
 }
 .call-history-page button.recording-delete {
-  background: #fff0f1;
-  color: #c34d5c;
+  background: var(--c-fff0f1-s);
+  color: var(--c-c34d5c-t);
   border: 0;
   border-radius: 8px;
   padding: 8px 10px;
@@ -250,16 +250,16 @@
 .recording-delete-confirm[open] {
   display: flex;
   width: min(560px, calc(100vw - 48px));
-  border: 1px solid #fecdd3;
+  border: 1px solid var(--c-fecdd3-b);
   box-shadow: 0 24px 80px #0f172a44;
   flex-wrap: wrap;
   gap: 14px;
   align-items: center;
-  background: #fff0f1;
+  background: var(--c-fff0f1-s);
   padding: 18px;
   border-radius: 12px;
   margin: 16px 0;
-  color: #933343;
+  color: var(--c-933343-t);
 }
 .recording-delete-confirm > div {
   flex: 1;
@@ -285,7 +285,7 @@
 }
 
 .recording-delete-confirm::backdrop {
-  background: #0f172a88;
+  background: var(--c-0f172a88-s);
   backdrop-filter: blur(5px);
 }
 
@@ -306,13 +306,13 @@
   padding: 0;
 }
 .recording-icon-status {
-  background: #ecfdf5;
-  color: #21976b;
+  background: var(--c-ecfdf5-s);
+  color: var(--c-21976b-t);
 }
 .call-history-recording-actions .recording-icon-button:hover:not(:disabled) {
   filter: brightness(0.96);
 }
 .call-history-recording-actions .recording-icon-button:focus-visible {
-  outline: 2px solid #2563eb;
+  outline: 2px solid var(--c-2563eb-b);
   outline-offset: 3px;
 }
