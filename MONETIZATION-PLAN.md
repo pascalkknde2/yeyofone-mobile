@@ -82,6 +82,26 @@ Discount for annual billing; free trial (e.g. 14 days) for Pro and Business.
 - [ ] White-label kit: branding config, build pipeline per partner, contract template
 - [ ] Monthly review of revenue, margin per user and churn
 
+## How much it could earn per month
+
+These are illustrations built from the price guesses above, not a forecast. The pilot phase gives the real numbers.
+
+**Formula:** monthly revenue = paying users × average price per user per month. At an average of about £8 per user, £1,000 a month needs about 125 paying users; £5,000 needs about 625.
+
+| Stage | Who pays | Monthly revenue (before costs) |
+|-------|----------|--------------------------------|
+| **First months (pilots)** | 5 small businesses × 8 users on Business (£10) = £400; 1 white-label partner with 50 users (£3) = £150 | **≈ £550** |
+| **End of year 1** | 30 businesses × 8 users at £10 = £2,400; 150 Pro users at £5 = £750; 3 partners × 150 users at £3 = £1,350; AI add-on used by 1 in 5 paying users at ≈ £9 each = £700 | **≈ £5,000** |
+| **Year 2–3, if it goes well** | ≈ 1,000 direct users averaging £9 = £9,000; 3,000 white-label users at £3 = £9,000; AI add-on ≈ £2,000 | **≈ £20,000** |
+
+**What you keep is less.** Take off payment fees (a few percent through a card processor such as Stripe, or 15–30% when people pay inside the App Store or Google Play), the AI add-on's own per-minute costs (plan on keeping roughly half of that revenue), cloud storage, hosting and support time. A margin of very roughly 60–80% before paying yourself is a reasonable starting assumption for this kind of software — confirm it with the cost formula above.
+
+**What decides which row you reach:**
+- **Getting customers** — most growth comes from selling directly to businesses and to white-label partners; free users who start paying are often only a few percent.
+- **White label** — one provider with hundreds of users is worth more than dozens of individual sign-ups.
+- **Churn** — keeping customers matters as much as winning them; call quality on real networks is what keeps them.
+- **Readiness** — iOS background calls, the in-app checks and billing must be finished before anyone can pay.
+
 ## What to measure
 Paying users · monthly recurring revenue (MRR) · margin per user · trial → paid conversion · churn · call success rate · support tickets per 100 users.
 
