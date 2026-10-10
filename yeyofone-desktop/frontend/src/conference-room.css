@@ -12,6 +12,48 @@
   box-shadow: 0 30px 100px #0f172a66;
   overflow: hidden;
 }
+/* Light "paper" parts of the room (side panel, notes, shared agenda, menus). */
+.conference-dialog {
+  --room-paper: #fff;
+  --room-paper-2: #f8fafc;
+  --room-paper-muted: #f1f5f9;
+  --room-border: #e2e8f0;
+  --room-divider: #f1f5f9;
+  --room-ink: #0f172a;
+  --room-ink-2: #334155;
+  --room-ink-3: #475569;
+  --room-ink-muted: #64748b;
+  --room-ink-faint: #94a3b8;
+  --room-tint: #eff6ff;
+  --room-tint-strong: #dbeafe;
+  --room-tint-border: #bfdbfe;
+  --room-accent: #2563eb;
+  --room-accent-strong: #1d4ed8;
+  --room-error-bg: #fef2f2;
+  --room-error-bg-2: #fee2e2;
+  --room-error-ink: #b91c1c;
+}
+/* In dark mode they use the same greys as the meeting stage. */
+:root[data-theme="dark"] .conference-dialog {
+  --room-paper: #1e2026;
+  --room-paper-2: #1a1c21;
+  --room-paper-muted: #2a2d34;
+  --room-border: #343842;
+  --room-divider: #2a2d34;
+  --room-ink: #f1f5f9;
+  --room-ink-2: #d4d9e1;
+  --room-ink-3: #b4bcc8;
+  --room-ink-muted: #949cab;
+  --room-ink-faint: #6b7280;
+  --room-tint: #1c2a44;
+  --room-tint-strong: #1e3358;
+  --room-tint-border: #2b4a7a;
+  --room-accent: #3b82f6;
+  --room-accent-strong: #93c5fd;
+  --room-error-bg: #3a1d22;
+  --room-error-bg-2: #4a2229;
+  --room-error-ink: #fca5a5;
+}
 .conference-dialog::backdrop {
   background: #0f172a99;
   backdrop-filter: blur(6px);
@@ -164,8 +206,8 @@
   height: 100%;
   overflow: auto;
   padding: 36px 44px;
-  color: #0f172a;
-  background: #f8fafc;
+  color: var(--room-ink);
+  background: var(--room-paper-2);
 }
 .room-shared__label {
   display: inline-flex;
@@ -173,8 +215,8 @@
   gap: 8px;
   padding: 5px 12px;
   border-radius: 999px;
-  color: #2563eb;
-  background: #dbeafe;
+  color: var(--room-accent);
+  background: var(--room-tint-strong);
   font-size: 13px;
   font-weight: 600;
 }
@@ -188,11 +230,11 @@
   gap: 10px;
   margin: 0;
   padding-left: 22px;
-  color: #475569;
+  color: var(--room-ink-3);
   font-size: 17px;
 }
 .room-shared li.current {
-  color: #2563eb;
+  color: var(--room-accent);
   font-weight: 600;
 }
 
@@ -263,8 +305,8 @@
   margin: 0;
   padding: 8px 8px 8px 14px;
   border-radius: 10px;
-  color: #b91c1c;
-  background: #fef2f2;
+  color: var(--room-error-ink);
+  background: var(--room-error-bg);
   font-size: 14px;
   transform: translateX(-50%);
 }
@@ -274,10 +316,10 @@
   width: 26px;
   height: 26px;
   border-radius: 6px;
-  color: #b91c1c;
+  color: var(--room-error-ink);
 }
 .room-media-error button:hover {
-  background: #fee2e2;
+  background: var(--room-error-bg-2);
 }
 
 /* Your camera (or shared screen) filling the stage or a tile. */
@@ -437,7 +479,7 @@
   width: 260px;
   padding: 6px;
   border-radius: 12px;
-  background: #fff;
+  background: var(--room-paper);
   box-shadow: 0 12px 32px #0f172a66;
   transform: translateX(-50%);
 }
@@ -449,23 +491,23 @@
   height: auto;
   padding: 10px 12px;
   border-radius: 8px;
-  color: #2563eb;
+  color: var(--room-accent);
   background: transparent;
   text-align: left;
 }
 .room-control-buttons .room-share__menu button:hover,
 .room-control-buttons .room-share__menu button:focus-visible {
-  background: #eff6ff;
+  background: var(--room-tint);
 }
 .room-share__menu span {
   display: grid;
   gap: 2px;
-  color: #0f172a;
+  color: var(--room-ink);
   font-size: 14px;
   font-weight: 600;
 }
 .room-share__menu small {
-  color: #64748b;
+  color: var(--room-ink-muted);
   font-size: 12px;
   font-weight: 400;
 }
@@ -486,8 +528,8 @@
   min-height: 0;
   padding: 28px 32px;
   border-radius: 14px;
-  color: #0f172a;
-  background: #f8fafc;
+  color: var(--room-ink);
+  background: var(--room-paper-2);
 }
 .room-notes h3 {
   margin: 0;
@@ -506,10 +548,10 @@
   gap: 12px;
   width: 100%;
   padding: 10px 12px;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--room-border);
   border-radius: 10px;
-  color: #334155;
-  background: white;
+  color: var(--room-ink-2);
+  background: var(--room-paper);
   font-weight: 500;
   text-align: left;
 }
@@ -519,38 +561,38 @@
   width: 26px;
   height: 26px;
   border-radius: 50%;
-  color: #2563eb;
-  background: #eff6ff;
+  color: var(--room-accent);
+  background: var(--room-tint);
   font-size: 13px;
   font-weight: 700;
 }
 .room-notes ol button.current {
-  border-color: #bfdbfe;
-  color: #1d4ed8;
-  background: #eff6ff;
+  border-color: var(--room-tint-border);
+  color: var(--room-accent-strong);
+  background: var(--room-tint);
 }
 .room-notes ol button.current span {
   color: white;
-  background: #2563eb;
+  background: var(--room-accent);
 }
 .room-notes label {
-  color: #334155;
+  color: var(--room-ink-2);
   font-size: 14px;
   font-weight: 600;
 }
 .room-notes textarea {
   min-height: 0;
   padding: 12px 14px;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--room-border);
   border-radius: 10px;
-  color: #0f172a;
-  background: white;
+  color: var(--room-ink);
+  background: var(--room-paper);
   font: inherit;
   resize: none;
 }
 .room-notes p {
   margin: 0;
-  color: #64748b;
+  color: var(--room-ink-muted);
   font-size: 13px;
 }
 
@@ -559,15 +601,15 @@
   display: grid;
   grid-template-rows: auto minmax(0, 1fr);
   min-height: 0;
-  color: #0f172a;
-  background: #fff;
+  color: var(--room-ink);
+  background: var(--room-paper);
 }
 .room-panel__tabs {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 6px;
   padding: 16px;
-  border-bottom: 1px solid #f1f5f9;
+  border-bottom: 1px solid var(--room-divider);
 }
 .room-panel__tabs button {
   display: inline-flex;
@@ -576,28 +618,28 @@
   gap: 8px;
   padding: 10px;
   border-radius: 10px;
-  color: #64748b;
+  color: var(--room-ink-muted);
   font-size: 15px;
   font-weight: 600;
 }
 .room-panel__tabs button:hover {
-  color: #0f172a;
+  color: var(--room-ink);
 }
 .room-panel__tabs button.selected {
-  color: #0f172a;
-  background: #f1f5f9;
+  color: var(--room-ink);
+  background: var(--room-paper-muted);
 }
 .room-panel__tabs button span,
 .room-panel h3 span {
   padding: 1px 7px;
   border-radius: 6px;
-  color: #475569;
-  background: #fff;
+  color: var(--room-ink-3);
+  background: var(--room-paper);
   font-size: 12px;
   font-weight: 600;
 }
 .room-panel h3 span {
-  background: #f1f5f9;
+  background: var(--room-paper-muted);
 }
 .room-panel__body {
   min-height: 0;
@@ -610,15 +652,15 @@
   gap: 10px;
   padding: 0 12px;
   border-radius: 10px;
-  color: #94a3b8;
-  background: #f1f5f9;
+  color: var(--room-ink-faint);
+  background: var(--room-paper-muted);
 }
 .room-search input {
   flex: 1;
   min-width: 0;
   height: 42px;
   border: 0;
-  color: #0f172a;
+  color: var(--room-ink);
   background: transparent;
   font: inherit;
 }
@@ -672,7 +714,7 @@
 .room-roster small {
   display: block;
   margin-top: 2px;
-  color: #64748b;
+  color: var(--room-ink-muted);
   font-size: 13px;
 }
 .room-roster__action {
@@ -681,30 +723,30 @@
   width: 32px;
   height: 32px;
   border-radius: 50%;
-  color: #2563eb;
-  background: #eff6ff;
+  color: var(--room-accent);
+  background: var(--room-tint);
 }
 button.room-roster__action:hover {
   color: white;
-  background: #2563eb;
+  background: var(--room-accent);
 }
 .room-roster__action.is-speaking {
   color: white;
-  background: #2563eb;
+  background: var(--room-accent);
 }
 .room-admit {
   padding: 6px 12px;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--room-border);
   border-radius: 8px;
-  color: #334155;
-  background: white;
+  color: var(--room-ink-2);
+  background: var(--room-paper);
   font-size: 13px;
   font-weight: 600;
 }
 .room-admit:hover {
-  border-color: #bfdbfe;
-  color: #1d4ed8;
-  background: #eff6ff;
+  border-color: var(--room-tint-border);
+  color: var(--room-accent-strong);
+  background: var(--room-tint);
 }
 
 /* Chat. */
@@ -737,15 +779,15 @@ button.room-roster__action:hover {
   margin: 4px 0 0;
   padding: 9px 12px;
   border-radius: 4px 12px 12px 12px;
-  color: #334155;
-  background: #f1f5f9;
+  color: var(--room-ink-2);
+  background: var(--room-paper-muted);
   font-size: 14px;
   line-height: 1.45;
   overflow-wrap: anywhere;
 }
 .room-chat__messages li.is-mine p {
   color: white;
-  background: #2563eb;
+  background: var(--room-accent);
 }
 .room-chat__form {
   display: flex;
@@ -756,10 +798,11 @@ button.room-roster__action:hover {
   min-width: 0;
   height: 42px;
   padding: 0 12px;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--room-border);
   border-radius: 10px;
-  color: #0f172a;
+  color: var(--room-ink);
   font: inherit;
+  background: var(--room-paper);
 }
 .room-chat__form button {
   display: grid;
@@ -768,16 +811,16 @@ button.room-roster__action:hover {
   height: 42px;
   border-radius: 10px;
   color: white;
-  background: #2563eb;
+  background: var(--room-accent);
 }
 .room-chat__form button:disabled {
-  color: #94a3b8;
-  background: #f1f5f9;
+  color: var(--room-ink-faint);
+  background: var(--room-paper-muted);
   cursor: not-allowed;
 }
 .room-chat__note {
   margin: 0;
-  color: #94a3b8;
+  color: var(--room-ink-faint);
   font-size: 12px;
 }
 
