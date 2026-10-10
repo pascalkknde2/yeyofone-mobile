@@ -116,6 +116,23 @@ class NativeCall final : public pj::Call {
     int recording_media_index=-1;
     bool recording_audio_connected=false, recording_capture_connected=false;
     int media_index=-1;
+    // Merged calls: each call's audio is sent to the other, and both stay
+    // connected to the local devices, so the conference bridge mixes all three.
+    NativeCall* peer=nullptr;
+    void link_peer() noexcept {
+        if(!peer||controls.held||peer->controls.held||media_index<0||peer->media_index<0)return;
+        // startTransmit on an existing connection is a no-op, so this is safe on every route().
+        try{auto mine=getAudioMedia(media_index);auto theirs=peer->getAudioMedia(peer->media_index);mine.startTransmit(theirs);theirs.startTransmit(mine);}catch(...){}
+    }
+    void stop_peer_audio() noexcept {
+        if(!peer||media_index<0||peer->media_index<0)return;
+        try{auto mine=getAudioMedia(media_index);auto theirs=peer->getAudioMedia(peer->media_index);mine.stopTransmit(theirs);theirs.stopTransmit(mine);}catch(...){}
+    }
+    void unlink_peer() noexcept {
+        if(!peer)return;
+        stop_peer_audio();
+        peer->peer=nullptr;peer=nullptr;
+    }
 public:
     const uint64_t account_token;
     bool hold_pending=false, previous_hold=false;
@@ -124,7 +141,7 @@ public:
     bool cancelled=false;
     bool is_incoming=false;
     NativeCall(NativeAccount& account,uint64_t token,pj::Endpoint& ep,bool use_audio,int call_id=PJSUA_INVALID_ID,bool incoming=false):pj::Call(account,call_id),endpoint(ep),audio(use_audio),account_token(account.token),is_incoming(incoming){latest.token=token;latest.account_token=account.token;latest.incoming=incoming?1:0;if(incoming){latest.state=PJSIP_INV_STATE_INCOMING;capture_caller();}}
-    ~NativeCall() override { stop_recording(); stop_ringtone(); stop_ringback(); }
+    ~NativeCall() override { unlink_peer(); stop_recording(); stop_ringtone(); stop_ringback(); }
     void capture_caller() noexcept {try{auto info=getInfo();auto* pool=pjsua_pool_create("caller-check",512,512);if(!pool)return;struct Guard{pj_pool_t*p;~Guard(){pj_pool_release(p);}}guard{pool};std::string uri=info.remoteUri;auto* parsed=pjsip_parse_uri(pool,uri.data(),uri.size(),0);if(!parsed||(!PJSIP_URI_SCHEME_IS_SIP(parsed)&&!PJSIP_URI_SCHEME_IS_SIPS(parsed)))return;auto* sip=static_cast<pjsip_sip_uri*>(pjsip_uri_get_uri(parsed));if(sip->user.slen<1||sip->user.slen>64)return;for(pj_ssize_t i=0;i<sip->user.slen;++i){unsigned char c=static_cast<unsigned char>(sip->user.ptr[i]);if(!(std::isalnum(c)||c=='+'||c=='*'||c=='#'||c=='-'||c=='_'||c=='.'))return;}std::lock_guard<std::mutex> lock(mutex);latest.caller_len=static_cast<int32_t>(sip->user.slen);std::copy(sip->user.ptr,sip->user.ptr+sip->user.slen,latest.caller);}catch(...){} }
     void update() noexcept {
         try {
@@ -144,8 +161,9 @@ public:
                 const bool early_media=std::any_of(info.media.begin(),info.media.end(),[](const pj::CallMediaInfo& m){return m.type==PJMEDIA_TYPE_AUDIO&&m.status==PJSUA_CALL_MEDIA_ACTIVE;});
                 if(info.state==PJSIP_INV_STATE_EARLY&&!early_media&&!cancelled)start_ringback();else stop_ringback();
             }
-            if(info.state==PJSIP_INV_STATE_DISCONNECTED){stop_recording();return;}
+            if(info.state==PJSIP_INV_STATE_DISCONNECTED){unlink_peer();stop_recording();return;}
             if(controls.held){
+                stop_peer_audio();
                 if(media_index>=0){try{auto stream=getAudioMedia(media_index);auto& d=endpoint.audDevManager();if(capture_connected)d.getCaptureDevMedia().stopTransmit(stream);if(playback_connected)stream.stopTransmit(d.getPlaybackDevMedia());if(recorder&&recording_audio_connected)stream.stopTransmit(*recorder);}catch(...){}}
                 capture_connected=false;playback_connected=false;recording_audio_connected=false;
                 if(recorder&&recording_capture_connected){try{endpoint.audDevManager().getCaptureDevMedia().stopTransmit(*recorder);}catch(...){}recording_capture_connected=false;}
@@ -173,6 +191,7 @@ public:
                         if(!send&&recording_capture_connected){devices.getCaptureDevMedia().stopTransmit(*recorder);recording_capture_connected=false;}
                     }
                 }
+                if(audio)link_peer();
                 std::lock_guard<std::mutex> lock(mutex);++latest.sequence;latest.media_active=1;latest.audio_active=audio?1:0;latest.recording=recorder?1:0;return;
             }
             if(recorder&&recording_capture_connected){try{endpoint.audDevManager().getCaptureDevMedia().stopTransmit(*recorder);}catch(...){}recording_capture_connected=false;}
@@ -181,7 +200,7 @@ public:
           catch(...){std::lock_guard<std::mutex> lock(mutex);latest.audio_error=-1;latest.audio_active=0;}
     }
     void hold(bool value){
-        if(getInfo().state!=PJSIP_INV_STATE_CONFIRMED||controls.transfer_pending||hold_pending)throw pj::Error(PJ_EINVALIDOP,"hold","","",0);
+        if(peer||getInfo().state!=PJSIP_INV_STATE_CONFIRMED||controls.transfer_pending||hold_pending)throw pj::Error(PJ_EINVALIDOP,"hold","","",0);
         if(controls.held==value)return;
         pj::CallOpParam p(true);p.opt.audioCount=1;p.opt.videoCount=0;p.opt.textCount=0;
         previous_hold=controls.held;hold_pending=true;
@@ -201,7 +220,16 @@ public:
     }
     void onCallMediaTransportState(pj::OnCallMediaTransportStateParam& event) noexcept override {if(event.status){try{std::lock_guard<std::mutex> lock(mutex);latest.audio_error=event.status;latest.audio_active=0;}catch(...){}}}
     void onCallState(pj::OnCallStateParam& event) noexcept override {capture_error(event.e);update();route();}
-    void onCallMediaState(pj::OnCallMediaStateParam&) noexcept override {update();route();}
+    void onCallMediaState(pj::OnCallMediaStateParam&) noexcept override {update();route();if(peer)peer->route();}
+    // Takes any held call off hold, then links the two calls' audio both ways.
+    void merge_with(NativeCall& other){
+        auto ready=[](NativeCall& c){return c.getInfo().state==PJSIP_INV_STATE_CONFIRMED&&!c.controls.transfer_pending&&!c.hold_pending&&!c.cancelled;};
+        if(&other==this||peer||other.peer||!ready(*this)||!ready(other))throw pj::Error(PJ_EINVALIDOP,"merge","","",0);
+        if(controls.held)hold(false);
+        if(other.controls.held)other.hold(false);
+        peer=&other;other.peer=this;
+        route();other.route();
+    }
     void start_ringtone() noexcept {if(!is_incoming||ringtone_active)return;try{auto& devices=endpoint.audDevManager();devices.setPlaybackDev(PJMEDIA_AUD_DEFAULT_PLAYBACK_DEV);ringtone.createToneGenerator(16000,1);pj::ToneDesc tone;tone.freq1=440;tone.freq2=480;tone.on_msec=1000;tone.off_msec=3000;tone.volume=9000;pj::ToneDescVector tones;tones.push_back(tone);ringtone.play(tones,true);ringtone.startTransmit(devices.getPlaybackDevMedia());ringtone_active=true;}catch(...){try{ringtone.stop();}catch(...){}}}
     // UK ringback cadence (400+450 Hz: 0.4 s on, 0.2 s off, 0.4 s on, 2 s off).
     void start_ringback() noexcept {if(is_incoming||!audio||ringback_active)return;try{auto& devices=endpoint.audDevManager();if(!ringback_created){ringback.createToneGenerator(16000,1);ringback_created=true;}pj::ToneDesc first;first.freq1=400;first.freq2=450;first.on_msec=400;first.off_msec=200;first.volume=0;pj::ToneDesc second=first;second.off_msec=2000;pj::ToneDescVector tones;tones.push_back(first);tones.push_back(second);ringback.play(tones,true);ringback.startTransmit(devices.getPlaybackDevMedia());ringback_active=true;}catch(...){try{ringback.stop();}catch(...){}}}
@@ -497,6 +525,11 @@ extern "C" int32_t yv_call_controls(YvHandle* h,uint64_t token,YvCallControls* o
 extern "C" int32_t yv_call_hold(YvHandle* h,uint64_t token,int32_t held) noexcept {
  if(auto code=check(h))return code;auto f=h->calls.find(token);if(f==h->calls.end()||(held!=0&&held!=1))return -6;
  try{f->second->hold(held!=0);return 0;}catch(const pj::Error&e){return e.status;}catch(...){return -1;}
+}
+extern "C" int32_t yv_call_merge(YvHandle* h,uint64_t first,uint64_t second) noexcept {
+ if(auto code=check(h))return code;if(first==second)return -6;
+ auto a=h->calls.find(first),b=h->calls.find(second);if(a==h->calls.end()||b==h->calls.end())return -6;
+ try{a->second->merge_with(*b->second);return 0;}catch(const pj::Error&e){return e.status;}catch(...){return -1;}
 }
 extern "C" int32_t yv_call_transfer(YvHandle* h,uint64_t token,const uint8_t* uri,uint32_t len,uint64_t consultation) noexcept {
  if(auto code=check(h))return code;auto f=h->calls.find(token);if(f==h->calls.end())return -6;

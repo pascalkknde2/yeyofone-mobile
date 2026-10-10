@@ -273,82 +273,12 @@
   color: var(--dialer-danger);
 }
 .dialer__hint,
-.call-panel__account,
 .call-panel__hint,
 .call-panel__sip {
   color: var(--dialer-muted);
 }
-.call-panel {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-  padding: 32px 0;
-  gap: 16px;
-}
-.call-panel p,
-.call-panel h3 {
-  margin: 0;
-}
-.call-panel__avatar {
-  display: grid;
-  place-items: center;
-  width: 100px;
-  height: 100px;
-  border-radius: 50%;
-  background: var(--dialer-surface-2);
-  color: var(--dialer-accent);
-}
-.call-panel__peer {
-  font-size: 28px;
-  overflow-wrap: anywhere;
-  max-width: 100%;
-}
-.call-panel__timer {
-  font-size: 40px;
-  font-variant-numeric: tabular-nums;
-}
-.call-panel__actions {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 12px;
-  margin-top: 20px;
-}
-.call-btn {
-  min-height: 48px;
-  padding: 12px 18px;
-  border: 0;
-  border-radius: 12px;
-  background: var(--dialer-surface-2);
-  color: var(--dialer-fg);
-  cursor: pointer;
-}
-.call-btn--end,
-.call-btn--danger-ghost {
-  background: var(--dialer-danger);
-  color: white;
-}
-.call-btn--warn {
-  background: var(--dialer-warn);
-  color: #1b2433;
-}
 .call-panel__recording {
   color: var(--dialer-danger);
-}
-.live-call-banner {
-  position: fixed;
-  bottom: 22px;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 90;
-  border: 0;
-  border-radius: 18px;
-  padding: 16px 24px;
-  background: #187f66;
-  color: white;
-  font-size: 16px;
-  max-width: 80vw;
 }
 @media (max-width: 420px) {
   .dialer {

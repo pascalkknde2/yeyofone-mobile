@@ -398,7 +398,8 @@ async fn calls_command(
                 | CallAction::Transfer
                 | CallAction::ConsultStart
                 | CallAction::ConsultComplete
-                | CallAction::ConsultCancel => engine.call_control(
+                | CallAction::ConsultCancel
+                | CallAction::ConsultMerge => engine.call_control(
                     req.id.as_deref().unwrap_or_default(),
                     match req.action {
                         CallAction::Hold => "hold",
@@ -406,6 +407,7 @@ async fn calls_command(
                         CallAction::Transfer => "transfer",
                         CallAction::ConsultStart => "consult_start",
                         CallAction::ConsultComplete => "consult_complete",
+                        CallAction::ConsultMerge => "consult_merge",
                         _ => "consult_cancel",
                     },
                     req.destination.as_deref().unwrap_or_default(),

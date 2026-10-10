@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import type { CallTool } from "./CallBar";
 import { useLanguage } from "./i18n";
 import { useAccounts } from "./useAccounts";
 import { useCalls } from "./useCalls";
@@ -15,9 +16,11 @@ import "./dialer.css";
 export function Dialer({
   onClose,
   initialDestination = "",
+  initialTool,
 }: {
   onClose: () => void;
   initialDestination?: string;
+  initialTool?: CallTool;
 }) {
   const { t } = useLanguage();
   const calls = useCalls();
@@ -116,7 +119,8 @@ export function Dialer({
         <button
           type="button"
           className="dialer__close"
-          aria-label={t("Close")}
+          aria-label={t(active ? "Minimize call" : "Close")}
+          title={t(active ? "Minimize call" : "Close")}
           onClick={onClose}
         >
           <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
@@ -145,6 +149,7 @@ export function Dialer({
           callsAvailable={calls.available}
           callsBusy={calls.busy}
           onRequest={calls.request}
+          initialTool={initialTool}
         />
       ) : (
         <form

@@ -561,6 +561,7 @@ mod tests {
                     transfer_pending: false,
                     transfer_code: 0,
                     consult_parent_id: None,
+                    merged_with: None,
                 },
                 2,
             )

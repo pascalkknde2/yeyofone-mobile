@@ -7,7 +7,7 @@ import { createRoot } from "react-dom/client";
 import "./style.css";
 import "./sidebar.css";
 import { Dialer } from "./Dialer";
-import { LiveCall } from "./LiveCall";
+import { CallBar, type CallTool } from "./CallBar";
 import { IncomingCall } from "./IncomingCall";
 import { CallHistory } from "./CallHistory";
 import { Voicemail } from "./Voicemail";
@@ -305,6 +305,10 @@ function App() {
   const [routingPreview, setRoutingPreview] = useState(initialRoutingPreview);
   // null = closed; otherwise the number to start with ("" for an empty dialer).
   const [dialer, setDialer] = useState<string | null>(null);
+  // Incoming call whose screen is minimized, and the tool to open when a
+  // minimized call expands again.
+  const [hiddenIncoming, setHiddenIncoming] = useState<string | null>(null);
+  const [callTool, setCallTool] = useState<CallTool | undefined>();
   const [contactIndex, setContactIndex] = useState(0);
   const contact = people[contactIndex]!;
   const filtered = records.filter(
@@ -926,10 +930,39 @@ function App() {
       {conferenceOpen && (
         <ConferenceRoom onClose={() => setConferenceOpen(false)} />
       )}
-      <LiveCall onOpen={() => setDialer("")} />
-      <IncomingCall />
+      <CallBar
+        hidden={(calls) =>
+          dialer !== null ||
+          calls.some(
+            (c) => c.direction === "incoming" && hiddenIncoming !== c.id,
+          )
+        }
+        onExpand={(calls, tool) => {
+          setCallTool(tool);
+          // An answered incoming call reopens in its own screen; others in the dialer.
+          if (calls.some((c) => c.direction === "incoming"))
+            setHiddenIncoming(null);
+          else setDialer("");
+        }}
+      />
+      <IncomingCall
+        key={callTool ?? "screen"}
+        hiddenId={hiddenIncoming}
+        onHide={(id) => {
+          setHiddenIncoming(id);
+          setCallTool(undefined);
+        }}
+        initialTool={callTool}
+      />
       {dialer !== null && (
-        <Dialer initialDestination={dialer} onClose={() => setDialer(null)} />
+        <Dialer
+          initialDestination={dialer}
+          initialTool={callTool}
+          onClose={() => {
+            setDialer(null);
+            setCallTool(undefined);
+          }}
+        />
       )}
     </div>
   );

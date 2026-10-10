@@ -1,12 +1,7 @@
 import { useLanguage } from "./i18n";
-import {
-  useEffect,
-  useRef,
-  useState,
-  type CSSProperties,
-  type KeyboardEvent,
-} from "react";
+import { useEffect, useRef, useState, type CSSProperties } from "react";
 import "./conference-room.css";
+import { moveInMenu, useCloseOnOutsideClick } from "./menuKeys";
 import {
   LocalCaptures,
   mediaFailure,
@@ -287,40 +282,7 @@ export function ConferenceRoom({ onClose }: { onClose: () => void }) {
     setShareMenu(false);
     shareButton.current?.focus();
   }
-  // Arrow keys, Home and End move between the menu's items, wrapping around.
-  function moveInMenu(e: KeyboardEvent<HTMLDivElement>) {
-    const items = [
-      ...e.currentTarget.querySelectorAll<HTMLButtonElement>(
-        '[role="menuitem"]',
-      ),
-    ];
-    const at = items.indexOf(document.activeElement as HTMLButtonElement);
-    const next =
-      e.key === "ArrowDown"
-        ? (at + 1) % items.length
-        : e.key === "ArrowUp"
-          ? (at - 1 + items.length) % items.length
-          : e.key === "Home"
-            ? 0
-            : e.key === "End"
-              ? items.length - 1
-              : e.key === "Tab"
-                ? -2
-                : -1;
-    if (next === -2) setShareMenu(false);
-    if (next < 0) return;
-    e.preventDefault();
-    items[next]?.focus();
-  }
-  // WebKit doesn't focus clicked buttons, so close on outside clicks, not on blur.
-  useEffect(() => {
-    if (!shareMenu) return;
-    const outside = (e: PointerEvent) => {
-      if (!shareBox.current?.contains(e.target as Node)) setShareMenu(false);
-    };
-    document.addEventListener("pointerdown", outside);
-    return () => document.removeEventListener("pointerdown", outside);
-  }, [shareMenu]);
+  useCloseOnOutsideClick(shareMenu, shareBox, () => setShareMenu(false));
   const [seconds, setSeconds] = useState(0);
   const [topic, setTopic] = useState(0);
   const [notes, setNotes] = useState("");
@@ -805,7 +767,7 @@ export function ConferenceRoom({ onClose }: { onClose: () => void }) {
                     className="room-share__menu"
                     role="menu"
                     aria-label={t("Share")}
-                    onKeyDown={moveInMenu}
+                    onKeyDown={(e) => moveInMenu(e, () => setShareMenu(false))}
                   >
                     <button role="menuitem" autoFocus onClick={shareScreen}>
                       <RoomGlyph name="screen" size={18} />

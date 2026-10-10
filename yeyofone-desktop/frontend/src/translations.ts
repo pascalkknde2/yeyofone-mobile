@@ -105,10 +105,70 @@ export const translations: Record<
     de: "Unbekannter Anrufer",
   },
   "Answering…": { fr: "Réponse…", es: "Respondiendo…", de: "Wird angenommen…" },
-  "Hide call": {
-    fr: "Masquer l’appel",
-    es: "Ocultar llamada",
-    de: "Anruf ausblenden",
+  Conference: {
+    fr: "Conférence",
+    es: "Conferencia",
+    de: "Konferenz",
+  },
+  "2 people": {
+    fr: "2 personnes",
+    es: "2 personas",
+    de: "2 Personen",
+  },
+  "2 calls": {
+    fr: "2 appels",
+    es: "2 llamadas",
+    de: "2 Anrufe",
+  },
+  End: {
+    fr: "Terminer",
+    es: "Finalizar",
+    de: "Beenden",
+  },
+  "Merge calls": {
+    fr: "Fusionner les appels",
+    es: "Unir llamadas",
+    de: "Anrufe zusammenführen",
+  },
+  "Add call": {
+    fr: "Ajouter un appel",
+    es: "Añadir llamada",
+    de: "Anruf hinzufügen",
+  },
+  "Transfer to": {
+    fr: "Transférer à",
+    es: "Transferir a",
+    de: "Weiterleiten an",
+  },
+  More: {
+    fr: "Plus",
+    es: "Más",
+    de: "Mehr",
+  },
+  "Hang up all": {
+    fr: "Raccrocher tout",
+    es: "Colgar todo",
+    de: "Alle auflegen",
+  },
+  "End added call": {
+    fr: "Terminer l’appel ajouté",
+    es: "Finalizar la llamada añadida",
+    de: "Hinzugefügten Anruf beenden",
+  },
+  "The current call waits on hold while you call.": {
+    fr: "L’appel en cours est mis en attente pendant que vous appelez.",
+    es: "La llamada actual queda en espera mientras llamas.",
+    de: "Der aktuelle Anruf wird gehalten, während Sie anrufen.",
+  },
+  Added: {
+    fr: "Ajouté",
+    es: "Añadida",
+    de: "Hinzugefügt",
+  },
+  "Minimize call": {
+    fr: "Réduire l’appel",
+    es: "Minimizar llamada",
+    de: "Anruf minimieren",
   },
   Dismiss: { fr: "Fermer", es: "Descartar", de: "Schließen" },
   "Missed call.": {

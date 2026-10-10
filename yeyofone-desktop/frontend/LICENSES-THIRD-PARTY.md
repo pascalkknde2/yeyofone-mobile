@@ -2,7 +2,7 @@
 
 ## Lucide icons
 
-The SVG icon paths in `src/main.tsx` (`Icon`), `src/Voicemail.tsx` (`VoicemailIcon`) and `src/ConferenceRoom.tsx` (`RoomGlyph`) come from Lucide, https://lucide.dev.
+The SVG icon paths in `src/main.tsx` (`Icon`), `src/Voicemail.tsx` (`VoicemailIcon`), `src/ConferenceRoom.tsx` (`RoomGlyph`) and `src/CallPanel.tsx` (`AddCallIcon`, `MoreIcon`) come from Lucide, https://lucide.dev.
 
 ISC License
 

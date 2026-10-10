@@ -429,6 +429,7 @@ pub enum CallAction {
     ConsultStart,
     ConsultComplete,
     ConsultCancel,
+    ConsultMerge,
 }
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
@@ -461,7 +462,10 @@ pub fn validate_call_request(value: serde_json::Value) -> Result<CallRequest, Ip
     };
     let consultation_action = matches!(
         req.action,
-        CallAction::ConsultStart | CallAction::ConsultComplete | CallAction::ConsultCancel
+        CallAction::ConsultStart
+            | CallAction::ConsultComplete
+            | CallAction::ConsultCancel
+            | CallAction::ConsultMerge
     );
     if req.consult_id.is_some() && !consultation_action {
         return Err(error(ErrorCode::InvalidRequest, Some(req.request_id)));
@@ -486,7 +490,7 @@ pub fn validate_call_request(value: serde_json::Value) -> Result<CallRequest, Ip
                 && (!consultation_action
                     || (identifier(&req.consult_id) && req.consult_id != req.id))
         }
-        CallAction::ConsultComplete | CallAction::ConsultCancel => {
+        CallAction::ConsultComplete | CallAction::ConsultCancel | CallAction::ConsultMerge => {
             identifier(&req.id)
                 && identifier(&req.consult_id)
                 && req.consult_id != req.id
@@ -579,6 +583,7 @@ mod call_wire_tests {
             "consult_start",
             "consult_complete",
             "consult_cancel",
+            "consult_merge",
         ] {
             let mut v =
                 json!({"schemaVersion":1,"requestId":"test","action":action,"id":"original"});
@@ -597,6 +602,9 @@ mod call_wire_tests {
             json!({"schemaVersion":1,"requestId":"test","action":"transfer","id":"one","destination":"sip:a:secret@host"}),
             json!({"schemaVersion":1,"requestId":"test","action":"resume","id":"one","consultId":"two"}),
             json!({"schemaVersion":1,"requestId":"test","action":"consult_complete","id":"one"}),
+            json!({"schemaVersion":1,"requestId":"test","action":"consult_merge","id":"one"}),
+            json!({"schemaVersion":1,"requestId":"test","action":"consult_merge","id":"one","consultId":"one"}),
+            json!({"schemaVersion":1,"requestId":"test","action":"consult_merge","id":"one","consultId":"two","destination":"1001"}),
         ] {
             assert!(validate_call_request(v).is_err());
         }

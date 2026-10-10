@@ -22,6 +22,8 @@ pub struct CallStatus {
     pub transfer_pending: bool,
     pub transfer_code: i32,
     pub consult_parent_id: Option<String>,
+    /// The other call this one is merged with into a three-way call.
+    pub merged_with: Option<String>,
 }
 #[derive(Clone, Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -89,6 +91,7 @@ impl CallMachine {
                 transfer_pending: false,
                 transfer_code: 0,
                 consult_parent_id: None,
+                merged_with: None,
             },
             connected: None,
             ended: None,
