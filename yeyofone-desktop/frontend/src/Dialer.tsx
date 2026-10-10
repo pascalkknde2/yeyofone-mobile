@@ -9,6 +9,7 @@ import { AccountPicker } from "./AccountPicker";
 import { Keypad } from "./Keypad";
 import { DialInput } from "./DialInput";
 import { useDialSession } from "./useDialSession";
+import { useRecentNumbers } from "./recentCalls";
 import { isTauri } from "@tauri-apps/api/core";
 
 import "./dialer.css";
@@ -31,6 +32,7 @@ export function Dialer({
   const [selected, setSelected] = useState("");
   const [destination, setDestination] = useState(initialDestination);
   const dialSession = useDialSession();
+  const recent = useRecentNumbers(4);
   const { busy, intent, error } = dialSession;
 
   const { accounts, statuses, available, loading } = useAccounts();
@@ -207,6 +209,28 @@ export function Dialer({
             invalid={!!error}
             errorId={error ? "dialer-error" : undefined}
           />
+
+          {!destination && recent.length > 0 && (
+            <div
+              className="dialer__recent"
+              role="group"
+              aria-label={t("Recent numbers")}
+            >
+              {recent.map((number) => (
+                <button
+                  type="button"
+                  key={number}
+                  title={t("Call again")}
+                  onClick={() => {
+                    changeDestination(number);
+                    inputRef.current?.focus();
+                  }}
+                >
+                  {number}
+                </button>
+              ))}
+            </div>
+          )}
 
           {busy && (
             <p className="calling-screen__status" role="status">

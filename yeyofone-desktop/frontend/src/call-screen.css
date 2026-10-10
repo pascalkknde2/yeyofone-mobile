@@ -120,6 +120,34 @@ dialog.incoming-call-dialog .incoming-dismiss {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+.call-screen__name-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  max-width: 100%;
+  min-width: 0;
+}
+.call-screen__copy {
+  display: grid;
+  flex-shrink: 0;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  color: #a1a7b3;
+  background: #26282e;
+}
+.call-screen__copy:hover {
+  color: #f1f5f9;
+  background: #34373e;
+}
+.call-screen__number {
+  margin: 0;
+  color: #cbd5e1;
+  font-size: 15px;
+  font-variant-numeric: tabular-nums;
+}
 .call-screen__account {
   margin: 0;
   color: #a1a7b3;

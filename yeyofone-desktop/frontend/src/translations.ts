@@ -219,6 +219,21 @@ export const translations: Record<
     es: "Finalizando llamada…",
     de: "Anruf wird beendet…",
   },
+  "Copy number": {
+    fr: "Copier le numéro",
+    es: "Copiar número",
+    de: "Nummer kopieren",
+  },
+  Copied: {
+    fr: "Copié",
+    es: "Copiado",
+    de: "Kopiert",
+  },
+  "Recent numbers": {
+    fr: "Numéros récents",
+    es: "Números recientes",
+    de: "Letzte Nummern",
+  },
   "Call again": {
     fr: "Rappeler",
     es: "Volver a llamar",

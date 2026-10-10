@@ -6,6 +6,8 @@ import { useLanguage } from "./i18n";
 import { callLabel, reasonLabel, callTime } from "./calls";
 import { callGroup, callName, initials } from "./callGroup";
 import { moveInMenu, useCloseOnOutsideClick } from "./menuKeys";
+import { useHeldSeconds } from "./holdTimer";
+import { useRecentNumbers } from "./recentCalls";
 import type { Account } from "./useAccounts";
 import type { CallStatus as Call } from "./calls";
 type CallRequest = (
@@ -128,14 +130,37 @@ export function CallPanel({
     for (const call of merged ?? [talking])
       await onRequest(action, { id: call.id, ...extra });
   }
-  const status = (call: Call) =>
-    !callsAvailable
-      ? "Call status unavailable"
-      : call.state === "connected" && call.held
-        ? "On hold"
-        : call.state === "connected"
-          ? callTime(call.durationSeconds)
-          : callLabel(call.state);
+  const heldFor = useHeldSeconds(sessions);
+  const recent = useRecentNumbers();
+  const [copied, setCopied] = useState(false);
+  async function copyNumber() {
+    const text = main.destination;
+    try {
+      await navigator.clipboard.writeText(text);
+    } catch {
+      // Older WebViews: fall back to a temporary text field.
+      const field = document.createElement("textarea");
+      field.value = text;
+      document.body.append(field);
+      field.select();
+      document.execCommand("copy");
+      field.remove();
+    }
+    setCopied(true);
+    window.setTimeout(() => setCopied(false), 1500);
+  }
+  const status = (call: Call) => {
+    if (!callsAvailable) return t("Call status unavailable");
+    if (call.state === "connected" && call.held) {
+      const seconds = heldFor(call);
+      return seconds === null
+        ? t("On hold")
+        : `${t("On hold")} · ${callTime(seconds)}`;
+    }
+    return call.state === "connected"
+      ? callTime(call.durationSeconds)
+      : t(callLabel(call.state));
+  };
 
   return (
     <section
@@ -148,12 +173,26 @@ export function CallPanel({
           <span className="call-screen__avatar" aria-hidden="true">
             {initials(callName(main))}
           </span>
-          <h3 className="call-screen__name">{callName(main)}</h3>
+          <div className="call-screen__name-row">
+            <h3 className="call-screen__name">{callName(main)}</h3>
+            <button
+              type="button"
+              className="call-screen__copy"
+              aria-label={t(copied ? "Copied" : "Copy number")}
+              title={t(copied ? "Copied" : "Copy number")}
+              onClick={() => void copyNumber()}
+            >
+              {copied ? <CheckIcon /> : <CopyIcon />}
+            </button>
+          </div>
+          {main.caller && main.caller !== main.destination && (
+            <p className="call-screen__number">{main.destination}</p>
+          )}
           <p className="call-screen__account">
             {account?.label ?? main.accountId}
           </p>
           <p className="call-screen__status" role="status">
-            {t(status(main))}
+            {status(main)}
             {muted && <span className="call-screen__muted">{t("Muted")}</span>}
             {main.recording && (
               <span className="call-screen__rec">● {t("Recording")}</span>
@@ -191,7 +230,7 @@ export function CallPanel({
                 </span>
                 <span className="call-screen__who">
                   <strong>{callName(call)}</strong>
-                  <small role="status">{t(status(call))}</small>
+                  <small role="status">{status(call)}</small>
                 </span>
                 {group.kind === "merged" ? (
                   <button
@@ -273,6 +312,13 @@ export function CallPanel({
             <label htmlFor={inputId}>
               {t(tool === "consult" ? "Add call" : "Transfer")}
             </label>
+            {recent.length > 0 && (
+              <datalist id={`${inputId}-recent`}>
+                {recent.map((number) => (
+                  <option key={number} value={number} />
+                ))}
+              </datalist>
+            )}
             <div className="call-screen__destination">
               <input
                 id={inputId}
@@ -281,6 +327,7 @@ export function CallPanel({
                 placeholder={t("Extension or SIP address")}
                 maxLength={512}
                 disabled={disabled}
+                list={recent.length ? `${inputId}-recent` : undefined}
                 onChange={(e) => setDestination(e.target.value)}
               />
               <button
@@ -559,6 +606,41 @@ function MoreIcon() {
       <circle cx="12" cy="12" r="1" />
       <circle cx="19" cy="12" r="1" />
       <circle cx="5" cy="12" r="1" />
+    </svg>
+  );
+}
+function CopyIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      width="16"
+      height="16"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <rect width="14" height="14" x="8" y="8" rx="2" ry="2" />
+      <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" />
+    </svg>
+  );
+}
+function CheckIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      width="16"
+      height="16"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M20 6 9 17l-5-5" />
     </svg>
   );
 }
