@@ -202,7 +202,7 @@ struct PrimaryCallActionButton: View {
     }
 }
 
-/// Small white circle with a caption underneath: Message, Remind Me, Return to caller…
+/// Small card-colored circle with a caption underneath: Message, Remind Me, Return to caller…
 struct SecondaryCallActionButton: View {
     let icon: String
     let label: LocalizedStringKey
@@ -215,7 +215,7 @@ struct SecondaryCallActionButton: View {
                     .font(.system(size: 20))
                     .foregroundStyle(Palette.textPrimary)
                     .frame(width: 56, height: 56)
-                    .background(Circle().fill(Color.white))
+                    .background(Circle().fill(Palette.cardWhite))
                     .shadow(color: .black.opacity(0.1), radius: 4, y: 2)
                 Text(label)
                     .font(.system(size: 11, weight: .medium))
@@ -226,7 +226,7 @@ struct SecondaryCallActionButton: View {
     }
 }
 
-/// White tray with rounded top corners holding a call screen's main actions.
+/// Card-colored tray with rounded top corners holding a call screen's main actions.
 struct CallTray<Content: View>: View {
     var background: Color = Palette.backgroundGray
     @ViewBuilder let content: Content
@@ -529,7 +529,7 @@ struct ToastModifier: ViewModifier {
             if let message {
                 Text(message)
                     .font(.system(size: 14, weight: .medium))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(Palette.textOnPrimary)
                     .padding(.horizontal, 18)
                     .padding(.vertical, 12)
                     .background(Capsule().fill(Palette.textPrimary.opacity(0.92)))

@@ -112,7 +112,7 @@ private struct CallerIdentity: View {
                     .font(.system(size: 48, weight: .semibold))
                     .foregroundStyle(Palette.textPrimary)
                     .frame(width: 120, height: 120)
-                    .background(Circle().fill(Color.white))
+                    .background(Circle().fill(Palette.cardWhite))
                     .overlay(Circle().stroke(Palette.accentGreen.opacity(0.2), lineWidth: 1))
             }
             .frame(width: 150, height: 150)
@@ -149,8 +149,8 @@ private struct CallActionButton: View {
     let action: () -> Void
 
     var body: some View {
-        let background: Color = destructive ? Palette.accentRed : (active ? Palette.primaryLight : .white)
-        let border: Color = destructive ? Palette.accentRed : (active ? Color(hex: 0xBFDBFE) : Palette.borderLight)
+        let background: Color = destructive ? Palette.accentRed : (active ? Palette.primaryLight : Palette.cardWhite)
+        let border: Color = destructive ? Palette.accentRed : (active ? Palette.primaryBorder : Palette.borderLight)
         let tint: Color = destructive ? .white : (active ? Palette.accentBlue : Palette.textPrimary)
         Button(action: action) {
             VStack(spacing: 12) {
@@ -200,7 +200,7 @@ struct IncomingCallScreen: View {
             .shadow(color: .black.opacity(0.06), radius: 2, y: 1)
             .padding(.vertical, 16)
             .frame(maxWidth: .infinity)
-            .background(Color.white)
+            .background(Palette.cardWhite)
 
             VStack(spacing: 0) {
                 Spacer()
@@ -213,7 +213,7 @@ struct IncomingCallScreen: View {
                         .font(.system(size: 56, weight: .bold))
                         .foregroundStyle(Palette.textPrimary)
                         .frame(width: 140, height: 140)
-                        .background(Circle().fill(Color.white))
+                        .background(Circle().fill(Palette.cardWhite))
                         .overlay(Circle().stroke(Palette.accentBlue.opacity(0.1), lineWidth: 1))
                         .padding(8)
                         .background(Circle().fill(Palette.primaryLight))
@@ -237,7 +237,7 @@ struct IncomingCallScreen: View {
             .frame(maxWidth: .infinity)
             .background(Palette.keypadBackground)
 
-            CallTray(background: .white) {
+            CallTray(background: Palette.cardWhite) {
                 HStack {
                     PrimaryCallActionButton(icon: "phone.down.fill", label: "Decline", color: Palette.accentRed) {
                         store.declineIncoming()
@@ -251,7 +251,7 @@ struct IncomingCallScreen: View {
             }
             .background(Palette.keypadBackground)
         }
-        .background(Color.white)
+        .background(Palette.cardWhite)
     }
 }
 
@@ -294,7 +294,7 @@ struct CallEndedScreen: View {
                         .font(.system(size: 48, weight: .bold))
                         .foregroundStyle(Palette.textPrimary)
                         .frame(width: 136, height: 136)
-                        .background(Circle().fill(Color.white))
+                        .background(Circle().fill(Palette.cardWhite))
                         .overlay(Circle().stroke(accent.opacity(0.25), lineWidth: 2))
                     Text(summary.callerName)
                         .font(.system(size: 32, weight: .bold))
@@ -323,7 +323,7 @@ struct CallEndedScreen: View {
                     }
                     .padding(.horizontal, 28)
                     .padding(.vertical, 16)
-                    .background(RoundedRectangle(cornerRadius: 20).fill(Color.white))
+                    .background(RoundedRectangle(cornerRadius: 20).fill(Palette.cardWhite))
                     .overlay(RoundedRectangle(cornerRadius: 20).stroke(Palette.borderLight, lineWidth: 1))
                     .padding(.top, 28)
                 }
@@ -333,7 +333,7 @@ struct CallEndedScreen: View {
             .scrollBounceBehavior(.basedOnSize)
             .defaultScrollAnchor(.center)
 
-            CallTray(background: .white) {
+            CallTray(background: Palette.cardWhite) {
                 PrimaryCallActionButton(icon: "phone.fill", label: "Call Again", color: Palette.accentGreen) {
                     store.callAgain()
                 }
@@ -442,7 +442,7 @@ struct CallOptionsScreen: View {
                             }
                         }
                     }
-                    .background(RoundedRectangle(cornerRadius: 20).fill(Color.white))
+                    .background(RoundedRectangle(cornerRadius: 20).fill(Palette.cardWhite))
                     .padding(.horizontal, 24)
                     .padding(.vertical, 16)
                 }

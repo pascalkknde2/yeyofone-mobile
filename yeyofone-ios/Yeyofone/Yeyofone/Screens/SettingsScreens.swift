@@ -25,6 +25,8 @@ struct SettingsScreen: View {
     @State private var searching = false
     @State private var query = ""
     @State private var toast: String?
+    @State private var showAppearance = false
+    @AppStorage("appearance") private var appearance = Appearance.system
 
     private var sections: [(String, [SettingEntry])] {
         let accountCount = store.accounts.filter(\.enabled).count
@@ -51,6 +53,8 @@ struct SettingsScreen: View {
                              action: debugOnly { store.screen = .recordings }),
             ]),
             (String(localized: "More"), [
+                SettingEntry(icon: "circle.lefthalf.filled", color: Palette.purple, title: String(localized: "Appearance"),
+                             subtitle: appearance.title) { showAppearance = true },
                 SettingEntry(icon: "globe", color: Palette.accentBlue, title: String(localized: "Language"),
                              subtitle: String(localized: "App language and voice preferences")) { store.screen = .languageSettings },
                 SettingEntry(icon: "gearshape.fill", color: Palette.accentBlue, title: String(localized: "Advanced"), subtitle: String(localized: "Network, Codecs, Debugging")),
@@ -146,6 +150,11 @@ struct SettingsScreen: View {
         }
         .background(Palette.backgroundGray)
         .toast($toast)
+        .confirmationDialog("Appearance", isPresented: $showAppearance, titleVisibility: .visible) {
+            ForEach(Appearance.allCases) { option in
+                Button(option.title) { appearance = option }
+            }
+        }
     }
 
     private var premiumBanner: some View {
@@ -392,7 +401,7 @@ private struct RadioDot: View {
     var body: some View {
         Circle()
             .fill(selected ? Palette.accentBlue : .clear)
-            .overlay(Circle().stroke(selected ? Palette.accentBlue : Color(hex: 0xCBD5E1), lineWidth: 2))
+            .overlay(Circle().stroke(selected ? Palette.accentBlue : Palette.radioBorder, lineWidth: 2))
             .overlay { if selected { Circle().fill(.white).frame(width: 8, height: 8) } }
             .frame(width: 20, height: 20)
     }
