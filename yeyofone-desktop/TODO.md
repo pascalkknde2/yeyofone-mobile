@@ -42,8 +42,8 @@ These run on your own device only; nothing is sent to other people.
 
 ## Calls
 
-- [x] **12. Merge calls.** Add call, then Merge joins you and two other people in one call (native `yv_call_merge`, engine action `consult_merge`). — done 2026-10-10 (branch `feat/desktop-call-bar`). Tested against the local SIP fixture; not yet tried with real phones (see item 9).
-- [x] **13. Improve the in-call screen.** Dark look matching the call bar, bigger caller info, labelled main buttons (Mute, Keypad, Hold, Add call, More, Hang up), a two-calls view with Merge, and a conference view with per-person End. — done 2026-10-10 (branch `feat/desktop-call-bar`).
+- [x] **12. Merge calls.** Add call, then Merge joins you and two other people in one call (native `yv_call_merge`, engine action `consult_merge`). — done 2026-10-10 (#41). Tested against the local SIP fixture; not yet tried with real phones (see item 9).
+- [x] **13. Improve the in-call screen.** Dark look matching the call bar, bigger caller info, labelled main buttons (Mute, Keypad, Hold, Add call, More, Hang up), a two-calls view with Merge, and a conference view with per-person End. — done 2026-10-10 (#41).
 - [ ] **14. Rebuild the iOS framework** with `yeyofone-ios/tools/build-pjsip-ios.sh --bridge-only` so iOS also gets the shared bridge's new merge function (the change is additive; nothing in iOS uses it yet).
 
 ## Bigger projects (plan first)
