@@ -1,7 +1,9 @@
 import { useEffect, useRef } from "react";
 import { listen } from "@tauri-apps/api/event";
 import { useCalls } from "./useCalls";
-import { callLabel, callTime, reasonLabel } from "./calls";
+import { callLabel } from "./calls";
+import { callName, initials } from "./callGroup";
+import { BigButton } from "./CallingScreen";
 import { useLanguage } from "./i18n";
 import "./incoming-call.css";
 import "./android-call.css";
@@ -78,34 +80,46 @@ export function IncomingCall({
         </h2>
       )}
       {ringing ? (
-        <>
-          <div className="incoming-caller-avatar" aria-hidden="true">
-            {(call.caller || call.destination || "?")
-              .split(/[\s.\-_]+/)
-              .filter(Boolean)
-              .slice(0, 2)
-              .map((part) => part[0])
-              .join("")
-              .toUpperCase()}
+        <section className="call-screen" aria-label={t("Incoming call")}>
+          <header className="call-screen__hero">
+            <span className="call-screen__avatar is-pulsing" aria-hidden="true">
+              {initials(callName(call))}
+            </span>
+            <h2 id="incoming-call-title" className="call-screen__name">
+              {call.caller ?? t("Unknown caller")}
+            </h2>
+            <p className="call-screen__account">
+              {t("Incoming on")} {call.accountId}
+            </p>
+            <p className="call-screen__status" role="status">
+              {t(available ? callLabel(call.state) : "Call status unavailable")}
+            </p>
+            {error && (
+              <p className="call-screen__alert" role="alert">
+                {t(error)}
+              </p>
+            )}
+          </header>
+          <div className="call-screen__big-row">
+            <BigButton
+              label="Decline"
+              tone="end"
+              disabled={busy || !available}
+              onClick={() => void request("reject", { id: call.id })}
+            >
+              <CallIcon name="hangup" />
+            </BigButton>
+            <BigButton
+              label={busy ? "Answering…" : "Answer"}
+              tone="answer"
+              buttonRef={answer}
+              disabled={busy || !available}
+              onClick={() => void request("answer", { id: call.id })}
+            >
+              <CallIcon name="phone" />
+            </BigButton>
           </div>
-          <h2 id="incoming-call-title">{call.caller ?? t("Unknown caller")}</h2>
-          <p className="incoming-account">
-            {t("Incoming on")} {call.accountId}
-          </p>
-          <p className="incoming-state" role="status">
-            {t(available ? callLabel(call.state) : "Call status unavailable")}
-          </p>
-          {call.state === "connected" && (
-            <strong className="incoming-duration">
-              {callTime(call.durationSeconds)}
-            </strong>
-          )}
-          {call.reason && <p>{t(reasonLabel(call.reason))}</p>}
-          {call.sipCode !== null && call.state === "ended" && (
-            <small>SIP {call.sipCode}</small>
-          )}
-          {error && <p role="alert">{t(error)}</p>}
-        </>
+        </section>
       ) : (
         <CallPanel
           session={call}
@@ -117,33 +131,7 @@ export function IncomingCall({
           initialTool={initialTool}
         />
       )}
-      {ringing ? (
-        <div className="incoming-actions">
-          <button
-            type="button"
-            className="incoming-reject"
-            disabled={busy || !available}
-            onClick={() => void request("reject", { id: call.id })}
-          >
-            <span>
-              <CallIcon name="hangup" />
-            </span>
-            {t("Decline")}
-          </button>
-          <button
-            ref={answer}
-            type="button"
-            className="incoming-answer"
-            disabled={busy || !available}
-            onClick={() => void request("answer", { id: call.id })}
-          >
-            <span>
-              <CallIcon name="phone" />
-            </span>
-            {t(busy ? "Answering…" : "Answer")}
-          </button>
-        </div>
-      ) : call.state === "ended" ? (
+      {call.state === "ended" ? (
         <button className="incoming-dismiss" onClick={close}>
           {t("Dismiss")}
         </button>

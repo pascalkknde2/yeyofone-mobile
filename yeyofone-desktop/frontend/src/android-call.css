@@ -3,7 +3,7 @@
   padding: 24px 0 0;
   color: var(--c-0f172a-t);
 }
-.incoming-call-dialog header {
+.incoming-call-dialog > header {
   padding: 0 24px 24px;
 }
 .incoming-brand {
@@ -29,7 +29,7 @@
   box-shadow: 0 0 0 10px #10b9811a;
   margin: 48px auto 32px;
 }
-.incoming-call-dialog h2 {
+.incoming-call-dialog > h2 {
   font-size: 36px;
   letter-spacing: -0.5px;
   padding: 0 24px;
