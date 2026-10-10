@@ -21,8 +21,11 @@ int main() {
         YvCallControls controls{};
         require(yv_call_controls(handle,123,&controls)==-6);
         require(yv_call_hold(handle,123,1)==-6);
+        require(yv_call_merge(handle,123,124)==-6);
+        require(yv_call_merge(handle,123,123)==-6);
         require(yv_call_transfer(handle,123,nullptr,0,0)==-6);
         std::thread control_thread([&]{result=yv_call_hold(handle,123,1);});control_thread.join();require(result==-4);
+        std::thread merge_thread([&]{result=yv_call_merge(handle,123,124);});merge_thread.join();require(result==-4);
         YvEvent output{};
         while (yv_next_event(handle, &output) == 1) {}
         // Exercise the real transport callback on another thread, copying only numeric fields.

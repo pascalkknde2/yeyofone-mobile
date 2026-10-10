@@ -17,6 +17,8 @@ export type CallStatus = {
   transferPending: boolean;
   transferCode: number;
   consultParentId: string | null;
+  // The other call this one is merged with into a three-way call.
+  mergedWith: string | null;
 };
 const states = [
   "incoming",
@@ -101,7 +103,11 @@ export function parseCalls(value: unknown, requestId: string): CallStatus[] {
       (r.consultParentId !== null &&
         (typeof r.consultParentId !== "string" ||
           !/^[a-zA-Z0-9-]{1,64}$/.test(r.consultParentId) ||
-          r.consultParentId === r.id))
+          r.consultParentId === r.id)) ||
+      (r.mergedWith !== null &&
+        (typeof r.mergedWith !== "string" ||
+          !/^[a-zA-Z0-9-]{1,64}$/.test(r.mergedWith) ||
+          r.mergedWith === r.id))
     )
       throw Error();
     ids.add(r.id);

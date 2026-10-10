@@ -134,3 +134,11 @@
     height: 42px;
   }
 }
+.call-bar__btn--merge {
+  width: 64px;
+  border-radius: 24px;
+  background: #2563eb;
+}
+.call-bar__btn--merge:hover:not(:disabled) {
+  background: #1d4ed8;
+}

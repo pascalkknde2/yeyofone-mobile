@@ -1,0 +1,396 @@
+/* In-call screen: same dark look as the minimized call bar (call-bar.css). */
+dialog.dialer.dialer--in-call,
+dialog.incoming-call-dialog.incoming-call-dialog--active {
+  width: min(520px, calc(100vw - 32px));
+  max-height: 92dvh;
+  padding: 0;
+  border-radius: 28px;
+  color: #f1f5f9;
+  background: #18191d;
+}
+dialog.dialer.dialer--in-call .dialer__header {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  z-index: 1;
+}
+dialog.dialer.dialer--in-call .dialer__close {
+  color: #a1a7b3;
+  background: #26282e;
+}
+dialog.incoming-call-dialog.incoming-call-dialog--active header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 18px 20px 0;
+}
+dialog.incoming-call-dialog.incoming-call-dialog--active .incoming-brand {
+  margin: 0;
+  color: #86efac;
+  border-color: #22c55e44;
+  background: #22c55e14;
+}
+dialog.incoming-call-dialog.incoming-call-dialog--active .incoming-hide {
+  color: #e2e8f0;
+  background: #26282e;
+}
+
+.call-screen {
+  display: grid;
+  gap: 18px;
+  padding: 36px 28px 28px;
+  color: #f1f5f9;
+  text-align: center;
+}
+
+/* One call: big caller info. */
+.call-screen__hero {
+  display: grid;
+  justify-items: center;
+  gap: 6px;
+}
+.call-screen__avatar {
+  display: grid;
+  flex-shrink: 0;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border: 2px solid #22d3ee;
+  border-radius: 50%;
+  color: white;
+  background: #3b5b7d;
+  font-size: 15px;
+  font-weight: 600;
+}
+.call-screen__hero .call-screen__avatar {
+  width: 104px;
+  height: 104px;
+  margin-bottom: 10px;
+  border-width: 3px;
+  font-size: 36px;
+  box-shadow: 0 0 0 10px #22d3ee14;
+}
+.call-screen__name {
+  margin: 0;
+  max-width: 100%;
+  overflow: hidden;
+  font-size: 28px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.call-screen__account {
+  margin: 0;
+  color: #a1a7b3;
+  font-size: 14px;
+}
+.call-screen__status {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 6px 0 0;
+  color: #e2e8f0;
+  font-size: 18px;
+  font-variant-numeric: tabular-nums;
+}
+.call-screen__rec {
+  padding: 2px 8px;
+  border-radius: 999px;
+  color: #fecaca;
+  background: #e5484d33;
+  font-size: 12px;
+  font-weight: 600;
+}
+.call-screen__note {
+  margin: 0;
+  color: #a1a7b3;
+  font-size: 14px;
+}
+.call-screen__alert {
+  margin: 0;
+  padding: 10px 14px;
+  border-radius: 12px;
+  color: #fecaca;
+  background: #e5484d26;
+  font-size: 14px;
+}
+
+/* Two calls, or a merged conference. */
+.call-screen__people {
+  display: grid;
+  gap: 14px;
+  text-align: left;
+}
+.call-screen__title {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin: 0;
+  padding-right: 48px;
+  font-size: 20px;
+  font-weight: 600;
+}
+.call-screen__title span {
+  color: #a1a7b3;
+  font-size: 15px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+.call-screen__people ul {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.call-screen__people li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 16px;
+  background: #26282e;
+}
+.call-screen__people li.is-held {
+  opacity: 0.75;
+}
+.call-screen__who {
+  display: grid;
+  flex: 1;
+  min-width: 0;
+  gap: 2px;
+}
+.call-screen__who strong {
+  overflow: hidden;
+  font-size: 16px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.call-screen__who small {
+  color: #a1a7b3;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+.call-screen__end-one {
+  padding: 7px 14px;
+  border-radius: 999px;
+  color: white;
+  background: #e5484d;
+  font-size: 13px;
+  font-weight: 600;
+}
+.call-screen__end-one:hover:not(:disabled) {
+  background: #cf3a3f;
+}
+.call-screen__merge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 48px;
+  border-radius: 14px;
+  color: white;
+  background: #2563eb;
+  font-size: 15px;
+  font-weight: 600;
+}
+.call-screen__merge:hover:not(:disabled) {
+  background: #1d4ed8;
+}
+.call-screen__merge svg {
+  width: 20px;
+  height: 20px;
+}
+
+/* Add call / transfer form and keypad. */
+.call-screen__tool {
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+  border-radius: 18px;
+  background: #26282e;
+  text-align: left;
+}
+.call-screen__tool label {
+  color: #e2e8f0;
+  font-size: 14px;
+  font-weight: 600;
+}
+.call-screen__tool small {
+  color: #a1a7b3;
+  font-size: 13px;
+}
+.call-screen__destination {
+  display: flex;
+  gap: 8px;
+}
+.call-screen__destination input {
+  flex: 1;
+  min-width: 0;
+  height: 44px;
+  padding: 0 14px;
+  border: 1px solid #3a3d44;
+  border-radius: 12px;
+  color: #f8fafc;
+  background: #18191d;
+  font: inherit;
+}
+.call-screen__destination input:focus-visible {
+  outline: none;
+  border-color: #60a5fa;
+}
+.call-screen__destination button[type="submit"] {
+  padding: 0 18px;
+  border-radius: 12px;
+  color: white;
+  background: #22b14c;
+  font-weight: 600;
+}
+.call-screen__icon {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  border-radius: 12px;
+  color: #e2e8f0;
+  background: #34373e;
+}
+.call-screen__digits {
+  min-height: 28px;
+  color: #f8fafc;
+  font-size: 22px;
+  letter-spacing: 0.15em;
+  text-align: center;
+}
+.call-screen__keypad {
+  display: grid;
+  grid-template-columns: repeat(3, 56px);
+  gap: 10px 22px;
+  justify-content: center;
+}
+.call-screen__keypad button {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  color: #f1f5f9;
+  background: #34373e;
+  font-size: 22px;
+}
+.call-screen__keypad button:hover:not(:disabled) {
+  background: #2563eb;
+}
+
+/* Main controls: labelled round buttons. */
+.call-screen__controls {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px 6px;
+  padding-top: 6px;
+}
+.call-screen__control {
+  display: grid;
+  justify-items: center;
+  gap: 6px;
+  width: 72px;
+  color: #e2e8f0;
+  background: none;
+}
+.call-screen__control-icon {
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  color: #f1f5f9;
+  background: #34373e;
+  transition: background 0.15s;
+}
+.call-screen__control-icon svg {
+  width: 24px;
+  height: 24px;
+}
+.call-screen__control-label {
+  font-size: 12px;
+  line-height: 1.2;
+}
+.call-screen__control:hover:not(:disabled) .call-screen__control-icon {
+  background: #43474f;
+}
+.call-screen__control[aria-pressed="true"] .call-screen__control-icon,
+.call-screen__control[aria-expanded="true"] .call-screen__control-icon {
+  color: #18191d;
+  background: #f1f5f9;
+}
+.call-screen__control--end .call-screen__control-icon {
+  background: #e5484d;
+}
+.call-screen__control--end:hover:not(:disabled) .call-screen__control-icon {
+  background: #cf3a3f;
+}
+.call-screen__control:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* More menu, opening upwards. */
+.call-screen__more {
+  position: relative;
+  display: flex;
+}
+.call-screen__menu {
+  position: absolute;
+  z-index: 2;
+  left: 50%;
+  bottom: calc(100% + 8px);
+  display: grid;
+  gap: 2px;
+  width: 240px;
+  padding: 6px;
+  border-radius: 14px;
+  background: #26282e;
+  box-shadow: 0 16px 40px #0008;
+  transform: translateX(-50%);
+  text-align: left;
+}
+.call-screen__menu button {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  color: #f1f5f9;
+  font-size: 14px;
+}
+.call-screen__menu button svg {
+  width: 20px;
+  height: 20px;
+}
+.call-screen__menu button:hover:not(:disabled),
+.call-screen__menu button:focus-visible {
+  outline: none;
+  background: #34373e;
+}
+.call-screen__menu button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.call-screen__rec-dot {
+  width: 12px;
+  height: 12px;
+  margin: 0 4px;
+  border-radius: 50%;
+  background: #e5484d;
+}
+.call-screen button:focus-visible {
+  outline: 2px solid #60a5fa;
+  outline-offset: 2px;
+}
+@media (max-width: 520px) {
+  .call-screen {
+    padding: 32px 16px 20px;
+  }
+  .call-screen__control {
+    width: 62px;
+  }
+}

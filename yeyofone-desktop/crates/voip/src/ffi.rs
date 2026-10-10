@@ -105,6 +105,7 @@ unsafe extern "C" {
     fn yv_call_hangup(handle: *mut Opaque, token: u64) -> i32;
     fn yv_call_controls(handle: *mut Opaque, token: u64, out: *mut NativeCallControls) -> i32;
     fn yv_call_hold(handle: *mut Opaque, token: u64, held: i32) -> i32;
+    fn yv_call_merge(handle: *mut Opaque, first: u64, second: u64) -> i32;
     fn yv_call_transfer(
         handle: *mut Opaque,
         token: u64,
@@ -233,6 +234,11 @@ impl Native {
     pub fn hold(&mut self, token: u64, held: bool) -> Result<(), i32> {
         // SAFETY: live owner-thread handle; bridge checks thread affinity.
         checked(unsafe { yv_call_hold(self.handle.as_ptr(), token, i32::from(held)) })
+    }
+    /// Joins two connected calls into one three-way call; any held call is resumed.
+    pub fn merge(&mut self, first: u64, second: u64) -> Result<(), i32> {
+        // SAFETY: live owner-thread handle; bridge checks thread affinity.
+        checked(unsafe { yv_call_merge(self.handle.as_ptr(), first, second) })
     }
     pub fn transfer(&mut self, token: u64, uri: &str, consultation: u64) -> Result<(), i32> {
         // SAFETY: live owner-thread handle; bridge checks thread affinity.

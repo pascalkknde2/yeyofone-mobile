@@ -29,6 +29,8 @@ int32_t yv_call_hangup(struct YvHandle*, uint64_t token) YV_NOEXCEPT;
 struct YvCallControls { int32_t held; int32_t transfer_pending; int32_t transfer_code; };
 int32_t yv_call_controls(struct YvHandle*, uint64_t token, struct YvCallControls*) YV_NOEXCEPT;
 int32_t yv_call_hold(struct YvHandle*, uint64_t token, int32_t held) YV_NOEXCEPT;
+/* Joins two connected calls into one three-way call; any held call is resumed. */
+int32_t yv_call_merge(struct YvHandle*, uint64_t first, uint64_t second) YV_NOEXCEPT;
 int32_t yv_call_transfer(struct YvHandle*, uint64_t token, const uint8_t* uri, uint32_t len, uint64_t consultation) YV_NOEXCEPT;
 int32_t yv_call_mute(struct YvHandle*, uint64_t token, int32_t muted) YV_NOEXCEPT;
 int32_t yv_call_record_start(struct YvHandle*, uint64_t token, const uint8_t* path, uint32_t len) YV_NOEXCEPT;

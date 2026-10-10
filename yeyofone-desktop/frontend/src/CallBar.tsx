@@ -1,5 +1,7 @@
+import type { ReactNode } from "react";
 import { useCalls } from "./useCalls";
 import { callLabel, callTime, type CallStatus } from "./calls";
+import { callGroup, callName, initials } from "./callGroup";
 import { useLanguage } from "./i18n";
 import { CallIcon } from "./CallIcon";
 import { CallControlIcon } from "./CallControlIcon";
@@ -7,74 +9,77 @@ import "./call-bar.css";
 
 export type CallTool = "transfer" | "consult" | "keypad";
 
-// The current call: an outgoing call (not a consultation leg) first, then an incoming one.
-export function currentCall(rows: CallStatus[]) {
-  return (
-    rows.find(
-      (c) =>
-        c.direction === "outgoing" &&
-        c.state !== "ended" &&
-        c.consultParentId === null,
-    ) ?? rows.find((c) => c.direction === "incoming" && c.state !== "ended")
-  );
-}
-
 // Compact controls shown at the bottom of the window while the full call
-// screen is minimized. Tools that need more room (keypad, transfer) reopen
-// the full screen with that tool open.
+// screen is minimized. Tools that need more room (keypad, add call,
+// transfer) reopen the full screen with that tool open.
 export function CallBar({
   hidden,
   onExpand,
 }: {
-  // True while a full call screen for this call is on screen.
-  hidden: (call: CallStatus) => boolean;
-  onExpand: (call: CallStatus, tool?: CallTool) => void;
+  // True while a full call screen for these calls is on screen.
+  hidden: (calls: CallStatus[]) => boolean;
+  onExpand: (calls: CallStatus[], tool?: CallTool) => void;
 }) {
   const { rows, available, busy, request } = useCalls();
   const { t } = useLanguage();
-  const call = currentCall(rows);
-  if (!call || hidden(call)) return null;
+  const group = callGroup(rows);
+  if (!group) return null;
+  const calls =
+    group.kind === "single"
+      ? [group.call]
+      : group.kind === "consult"
+        ? [group.held, group.active]
+        : group.calls;
+  if (hidden(calls)) return null;
 
-  const ringing = call.direction === "incoming" && call.state === "incoming";
-  const connected = call.state === "connected";
-  const consultation = rows.find(
-    (c) => c.consultParentId === call.id && c.state !== "ended",
-  );
-  const speaking = consultation ?? call;
-  const disabled = busy || !available || call.transferPending;
-  const name = call.caller || call.destination;
-  const initials =
-    name
-      .split(/[\s.\-_]+/)
-      .filter(Boolean)
-      .slice(0, 2)
-      .map((part) => part[0])
-      .join("")
-      .toUpperCase() || "?";
+  const main = calls[0]!;
+  const talking = group.kind === "consult" ? group.active : main;
+  const merged = group.kind === "merged";
+  const ringing = main.direction === "incoming" && main.state === "incoming";
+  const connected = talking.state === "connected";
+  const disabled = busy || !available || main.transferPending;
+  const muted = merged ? calls.every((c) => c.muted) : talking.muted;
+  const single = group.kind === "single";
+  const name =
+    group.kind === "merged"
+      ? t("Conference")
+      : group.kind === "consult"
+        ? t("2 calls")
+        : callName(main);
   const status = !available
-    ? "Call status unavailable"
+    ? t("Call status unavailable")
     : ringing
-      ? "Incoming call"
-      : connected && call.held
-        ? "On hold"
-        : connected
-          ? callTime(call.durationSeconds)
-          : callLabel(call.state);
+      ? t("Incoming call")
+      : group.kind === "consult"
+        ? `${t("Added")}: ${callName(talking)} · ${t(
+            connected
+              ? callTime(talking.durationSeconds)
+              : callLabel(talking.state),
+          )}`
+        : connected && main.held
+          ? t("On hold")
+          : connected
+            ? callTime(Math.max(...calls.map((c) => c.durationSeconds)))
+            : t(callLabel(main.state));
+  const each = (action: string, extra: Record<string, unknown> = {}) => {
+    for (const call of merged ? calls : [talking])
+      void request(action, { id: call.id, ...extra });
+  };
 
   return (
     <section className="call-bar" aria-label={t("Current call")}>
       <button
         type="button"
         className="call-bar__who"
-        onClick={() => onExpand(call)}
+        onClick={() => onExpand(calls)}
         title={t("Open call")}
       >
         <span className="call-bar__avatar" aria-hidden="true">
-          {initials}
+          {single ? initials(name) : calls.length}
         </span>
         <span className="call-bar__text">
           <strong>{name}</strong>
-          <small role="status">{t(status)}</small>
+          <small role="status">{status}</small>
         </span>
       </button>
 
@@ -85,17 +90,34 @@ export function CallBar({
       >
         <BarButton
           label="Keypad"
-          disabled={disabled || speaking.state !== "connected" || speaking.held}
-          onClick={() => onExpand(call, "keypad")}
+          disabled={disabled || !connected || talking.held}
+          onClick={() => onExpand(calls, "keypad")}
         >
           <CallIcon name="keypad" />
         </BarButton>
         <BarButton
-          label={ringing ? "Decline" : connected ? "Hang up" : "Cancel call"}
+          label={
+            ringing
+              ? "Decline"
+              : merged
+                ? "Hang up all"
+                : group.kind === "consult"
+                  ? "End added call"
+                  : connected
+                    ? "Hang up"
+                    : "Cancel call"
+          }
           tone="end"
-          disabled={busy || !available || call.state === "ending"}
+          disabled={busy || !available || talking.state === "ending"}
           onClick={() =>
-            void request(ringing ? "reject" : "hangup", { id: call.id })
+            group.kind === "consult"
+              ? void request("consult_cancel", {
+                  id: group.held.id,
+                  consultId: group.active.id,
+                })
+              : ringing
+                ? void request("reject", { id: main.id })
+                : each("hangup")
           }
         >
           <CallIcon name="hangup" />
@@ -105,61 +127,65 @@ export function CallBar({
             label="Answer"
             tone="answer"
             disabled={busy || !available}
-            onClick={() => void request("answer", { id: call.id })}
+            onClick={() => void request("answer", { id: main.id })}
           >
             <CallIcon name="phone" />
           </BarButton>
         )}
-        <BarButton
-          label={
-            consultation
-              ? "Cancel consultation and resume"
-              : call.held
-                ? "Resume"
-                : "Hold"
-          }
-          pressed={call.held}
-          disabled={disabled || !connected || consultation?.state === "ending"}
-          onClick={() =>
-            void request(
-              consultation ? "consult_cancel" : call.held ? "resume" : "hold",
-              {
-                id: call.id,
-                ...(consultation ? { consultId: consultation.id } : {}),
-              },
-            )
-          }
-        >
-          <CallControlIcon name={call.held ? "resume" : "hold"} />
-        </BarButton>
-        <BarButton
-          label="Consult transfer"
-          disabled={disabled || !connected || !!consultation}
-          onClick={() => onExpand(call, "consult")}
-        >
-          <CallControlIcon name="consult" />
-        </BarButton>
-        <BarButton
-          label="Transfer"
-          disabled={disabled || !connected || !!consultation}
-          onClick={() => onExpand(call, "transfer")}
-        >
-          <CallControlIcon name="transfer" />
-        </BarButton>
+        {group.kind === "consult" ? (
+          <BarButton
+            label="Merge calls"
+            tone="merge"
+            disabled={disabled || group.active.state !== "connected"}
+            onClick={() =>
+              void request("consult_merge", {
+                id: group.held.id,
+                consultId: group.active.id,
+              })
+            }
+          >
+            <CallControlIcon name="consult" />
+          </BarButton>
+        ) : (
+          <>
+            <BarButton
+              label={main.held ? "Resume" : "Hold"}
+              pressed={main.held}
+              disabled={disabled || !single || main.state !== "connected"}
+              onClick={() =>
+                void request(main.held ? "resume" : "hold", { id: main.id })
+              }
+            >
+              <CallControlIcon name={main.held ? "resume" : "hold"} />
+            </BarButton>
+            <BarButton
+              label="Add call"
+              disabled={disabled || !single || !connected || main.held}
+              onClick={() => onExpand(calls, "consult")}
+            >
+              <CallControlIcon name="consult" />
+            </BarButton>
+            <BarButton
+              label="Transfer"
+              disabled={disabled || !single || !connected}
+              onClick={() => onExpand(calls, "transfer")}
+            >
+              <CallControlIcon name="transfer" />
+            </BarButton>
+          </>
+        )}
       </div>
 
       <div className="call-bar__group">
         <BarButton
-          label={speaking.muted ? "Unmute" : "Mute"}
-          pressed={speaking.muted}
-          disabled={disabled || speaking.state !== "connected"}
-          onClick={() =>
-            void request("mute", { id: speaking.id, muted: !speaking.muted })
-          }
+          label={muted ? "Unmute" : "Mute"}
+          pressed={muted}
+          disabled={disabled || !connected}
+          onClick={() => each("mute", { muted: !muted })}
         >
-          <CallIcon name="mic" off={speaking.muted} />
+          <CallIcon name="mic" off={muted} />
         </BarButton>
-        <BarButton label="Open call" onClick={() => onExpand(call)}>
+        <BarButton label="Open call" onClick={() => onExpand(calls)}>
           <CallIcon name="expand" />
         </BarButton>
       </div>
@@ -176,11 +202,11 @@ function BarButton({
   children,
 }: {
   label: string;
-  tone?: "end" | "answer";
+  tone?: "end" | "answer" | "merge";
   pressed?: boolean;
   disabled?: boolean;
   onClick: () => void;
-  children: React.ReactNode;
+  children: ReactNode;
 }) {
   const { t } = useLanguage();
   return (

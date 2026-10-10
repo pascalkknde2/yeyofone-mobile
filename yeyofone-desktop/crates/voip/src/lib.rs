@@ -1538,4 +1538,109 @@ mod tests {
         stop.store(true, Ordering::Relaxed);
         worker.join().unwrap();
     }
+    #[test]
+    fn local_consult_merge_then_one_side_hangs_up() {
+        use std::sync::atomic::Ordering;
+        let _serial = SERIAL.lock().unwrap();
+        let (port, stop, _, worker) = call_fixture();
+        let mut native = ffi::Native::create().unwrap();
+        native.start(0).unwrap();
+        let mut registrations = Registrations::new();
+        registrations
+            .command(
+                &mut native,
+                Operation::Configure {
+                    account: test_account("one", port),
+                    credentials: SipCredentials::new(b"synthetic-call-password".to_vec()).unwrap(),
+                },
+            )
+            .unwrap();
+        let until = Instant::now() + Duration::from_secs(5);
+        while registrations.snapshot()[0].state != "registered" {
+            native.pump().unwrap();
+            registrations.poll(&mut native);
+            assert!(Instant::now() < until);
+            thread::sleep(Duration::from_millis(10));
+        }
+        let mut calls = calls::Calls::new();
+        calls.audio = false;
+        calls
+            .command(
+                &mut native,
+                &registrations,
+                Operation::Dial("original".into(), "one".into(), "1002".into()),
+            )
+            .unwrap();
+        wait_call(
+            &mut calls,
+            &mut native,
+            &registrations,
+            "original",
+            "connected",
+        );
+        let control = |calls: &mut calls::Calls,
+                       native: &mut ffi::Native,
+                       action: &str,
+                       dest: &str,
+                       child: &str| {
+            calls.command(
+                native,
+                &registrations,
+                Operation::Control("original".into(), action.into(), dest.into(), child.into()),
+            )
+        };
+        let settle = |calls: &mut calls::Calls, native: &mut ffi::Native| {
+            for _ in 0..30 {
+                native.pump().unwrap();
+                calls.poll(native, &registrations);
+                thread::sleep(Duration::from_millis(10));
+            }
+        };
+        let find = |calls: &mut calls::Calls, id: &str| {
+            calls.snapshot().into_iter().find(|s| s.id == id).unwrap()
+        };
+        // Merging needs a connected consultation.
+        assert!(control(&mut calls, &mut native, "consult_merge", "", "added").is_err());
+        control(&mut calls, &mut native, "consult_start", "1002", "added").unwrap();
+        wait_call(
+            &mut calls,
+            &mut native,
+            &registrations,
+            "added",
+            "connected",
+        );
+        assert!(find(&mut calls, "original").held);
+
+        control(&mut calls, &mut native, "consult_merge", "", "added").unwrap();
+        settle(&mut calls, &mut native);
+        let original = find(&mut calls, "original");
+        let added = find(&mut calls, "added");
+        assert!(!original.held);
+        assert_eq!(original.state, "connected");
+        assert_eq!(added.state, "connected");
+        assert_eq!(original.merged_with.as_deref(), Some("added"));
+        assert_eq!(added.merged_with.as_deref(), Some("original"));
+        assert_eq!(added.consult_parent_id, None);
+        // A merged call can't be put on hold or start another consultation.
+        assert!(control(&mut calls, &mut native, "hold", "", "").is_err());
+        assert!(control(&mut calls, &mut native, "consult_start", "1002", "third").is_err());
+
+        // One side leaves; the other carries on as an ordinary call.
+        calls
+            .command(
+                &mut native,
+                &registrations,
+                Operation::Hangup("added".into()),
+            )
+            .unwrap();
+        wait_call(&mut calls, &mut native, &registrations, "added", "ended");
+        settle(&mut calls, &mut native);
+        let original = find(&mut calls, "original");
+        assert_eq!(original.state, "connected");
+        assert_eq!(original.merged_with, None);
+        control(&mut calls, &mut native, "hold", "", "").unwrap();
+        native.stop().unwrap();
+        stop.store(true, Ordering::Relaxed);
+        worker.join().unwrap();
+    }
 }

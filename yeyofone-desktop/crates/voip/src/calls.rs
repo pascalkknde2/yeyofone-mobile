@@ -53,6 +53,19 @@ impl Calls {
                 }
                 let token = s.token;
                 let account = s.machine.status.account_id.clone();
+                // A merged three-way call can only be muted, keyed or hung up.
+                if s.machine.status.merged_with.is_some()
+                    && [
+                        "hold",
+                        "resume",
+                        "transfer",
+                        "consult_start",
+                        "consult_merge",
+                    ]
+                    .contains(&action.as_str())
+                {
+                    return Err(EngineError::InvalidTransition);
+                }
                 match action.as_str() {
                     "hold" | "resume" => {
                         if self.sessions.values().any(|x| {
@@ -131,6 +144,29 @@ impl Calls {
                                 },
                             );
                         }
+                    }
+                    "consult_merge" => {
+                        let child = self
+                            .sessions
+                            .get(&consult_id)
+                            .ok_or(EngineError::Unavailable)?;
+                        if child.machine.status.consult_parent_id.as_deref() != Some(&id)
+                            || child.machine.terminal()
+                            || child.machine.status.state != "connected"
+                        {
+                            return Err(EngineError::InvalidTransition);
+                        }
+                        native
+                            .merge(token, child.token)
+                            .map_err(EngineError::Native)?;
+                        // No longer a consultation: reconcile_consultations would hang
+                        // the child up now that the parent is off hold.
+                        let child = &mut self.sessions.get_mut(&consult_id).unwrap().machine.status;
+                        child.consult_parent_id = None;
+                        child.merged_with = Some(id.clone());
+                        let parent = &mut self.sessions.get_mut(&id).unwrap().machine.status;
+                        parent.held = false;
+                        parent.merged_with = Some(consult_id);
                     }
                     "consult_complete" | "consult_cancel" => {
                         let child = self
@@ -409,6 +445,32 @@ impl Calls {
             }
         }
         self.reconcile_consultations(native, now);
+        self.reconcile_merges();
+    }
+    // When one side of a merged call ends, the other becomes an ordinary call.
+    fn reconcile_merges(&mut self) {
+        let ended: Vec<_> = self
+            .sessions
+            .iter()
+            .filter(|(_, s)| s.machine.status.merged_with.is_some())
+            .filter(|(_, s)| {
+                let partner = s.machine.status.merged_with.as_deref().unwrap();
+                s.machine.terminal()
+                    || self
+                        .sessions
+                        .get(partner)
+                        .is_none_or(|p| p.machine.terminal())
+            })
+            .map(|(id, _)| id.clone())
+            .collect();
+        for id in ended {
+            self.sessions
+                .get_mut(&id)
+                .unwrap()
+                .machine
+                .status
+                .merged_with = None;
+        }
     }
     fn reconcile_consultations(&mut self, native: &mut ffi::Native, now: u64) {
         let pairs: Vec<_> = self

@@ -931,13 +931,17 @@ function App() {
         <ConferenceRoom onClose={() => setConferenceOpen(false)} />
       )}
       <CallBar
-        hidden={(call) =>
+        hidden={(calls) =>
           dialer !== null ||
-          (call.direction === "incoming" && hiddenIncoming !== call.id)
+          calls.some(
+            (c) => c.direction === "incoming" && hiddenIncoming !== c.id,
+          )
         }
-        onExpand={(call, tool) => {
+        onExpand={(calls, tool) => {
           setCallTool(tool);
-          if (call.direction === "incoming") setHiddenIncoming(null);
+          // An answered incoming call reopens in its own screen; others in the dialer.
+          if (calls.some((c) => c.direction === "incoming"))
+            setHiddenIncoming(null);
           else setDialer("");
         }}
       />
