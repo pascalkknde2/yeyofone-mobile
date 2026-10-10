@@ -3,7 +3,7 @@ import type { CallTool } from "./CallBar";
 import { useLanguage } from "./i18n";
 import { useAccounts } from "./useAccounts";
 import { useCalls } from "./useCalls";
-import { CallingScreen } from "./CallingScreen";
+import { CallEnded, CallingScreen } from "./CallingScreen";
 import { CallPanel } from "./CallPanel";
 import { AccountPicker } from "./AccountPicker";
 import { Keypad } from "./Keypad";
@@ -95,6 +95,20 @@ export function Dialer({
     await dialSession.dial(selected, destination, calls.request);
   }
 
+  // After our own outgoing call ends, show how it ended until the user moves on.
+  const ended =
+    !active &&
+    !!intent &&
+    session?.id === intent.id &&
+    session.state === "ended" &&
+    !busy;
+  async function callAgain() {
+    if (!session) return;
+    const again = session.destination;
+    dialSession.reset();
+    setDestination(again);
+    await dialSession.dial(selected, again, calls.request);
+  }
   const calling =
     session?.direction === "outgoing" &&
     ["dialing", "ringing", "early_media", "connecting"].includes(session.state);
@@ -103,7 +117,7 @@ export function Dialer({
   return (
     <dialog
       ref={dialogRef}
-      className={`dialer ${calling ? "dialer--calling" : session && session.state !== "ended" ? "dialer--in-call" : "dialer--number-entry"}`}
+      className={`dialer ${calling ? "dialer--calling" : ended ? "dialer--ended" : session && session.state !== "ended" ? "dialer--in-call" : "dialer--number-entry"}`}
       role="dialog"
       aria-modal="true"
       aria-labelledby="dialer-title"
@@ -137,9 +151,18 @@ export function Dialer({
       {calling && session ? (
         <CallingScreen
           session={session}
+          account={accounts.find((a) => a.id === session.accountId)?.label}
           busy={calls.busy}
           available={calls.available}
           onCancel={() => void calls.request("hangup", { id: session.id })}
+        />
+      ) : ended && session ? (
+        <CallEnded
+          session={session}
+          account={accounts.find((a) => a.id === session.accountId)?.label}
+          busy={calls.busy || !ready}
+          onCallAgain={() => void callAgain()}
+          onClose={() => dialSession.reset()}
         />
       ) : session && session.state !== "ended" ? (
         <CallPanel

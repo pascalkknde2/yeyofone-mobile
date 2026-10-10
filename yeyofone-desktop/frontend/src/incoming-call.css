@@ -20,7 +20,7 @@
   background: var(--c-152b4977-s);
   backdrop-filter: blur(8px);
 }
-.incoming-call-dialog header {
+.incoming-call-dialog > header {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -58,7 +58,7 @@
   font-size: 38px;
   box-shadow: 0 0 0 12px #6abda21c;
 }
-.incoming-call-dialog h2 {
+.incoming-call-dialog > h2 {
   font-size: 27px;
   overflow-wrap: anywhere;
   margin: 12px 0;

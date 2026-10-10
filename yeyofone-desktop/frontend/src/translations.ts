@@ -219,6 +219,11 @@ export const translations: Record<
     es: "Finalizando llamada…",
     de: "Anruf wird beendet…",
   },
+  "Call again": {
+    fr: "Rappeler",
+    es: "Volver a llamar",
+    de: "Erneut anrufen",
+  },
   "Call ended": {
     fr: "Appel terminé",
     es: "Llamada finalizada",

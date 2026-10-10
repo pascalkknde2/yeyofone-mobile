@@ -1,36 +1,44 @@
 /* In-call screen: same dark look as the minimized call bar (call-bar.css). */
 dialog.dialer.dialer--in-call,
-dialog.incoming-call-dialog.incoming-call-dialog--active {
+dialog.dialer.dialer--calling,
+dialog.dialer.dialer--ended,
+dialog.incoming-call-dialog {
   width: min(520px, calc(100vw - 32px));
   max-height: 92dvh;
   padding: 0;
+  min-height: 0;
   border-radius: 28px;
   color: #f1f5f9;
   background: #18191d;
 }
-dialog.dialer.dialer--in-call .dialer__header {
+dialog.dialer.dialer--in-call .dialer__header,
+dialog.dialer.dialer--calling .dialer__header,
+dialog.dialer.dialer--ended .dialer__header {
   position: absolute;
   top: 14px;
   right: 14px;
   z-index: 1;
 }
-dialog.dialer.dialer--in-call .dialer__close {
+dialog.dialer.dialer--in-call .dialer__close,
+dialog.dialer.dialer--calling .dialer__close,
+dialog.dialer.dialer--ended .dialer__close {
   color: #a1a7b3;
   background: #26282e;
 }
-dialog.incoming-call-dialog.incoming-call-dialog--active header {
+dialog.incoming-call-dialog > header {
   display: flex;
   justify-content: space-between;
   align-items: center;
   padding: 18px 20px 0;
 }
-dialog.incoming-call-dialog.incoming-call-dialog--active .incoming-brand {
+dialog.incoming-call-dialog .incoming-brand {
   margin: 0;
   color: #86efac;
   border-color: #22c55e44;
   background: #22c55e14;
 }
-dialog.incoming-call-dialog.incoming-call-dialog--active .incoming-hide {
+dialog.incoming-call-dialog .incoming-hide,
+dialog.incoming-call-dialog .incoming-dismiss {
   color: #e2e8f0;
   background: #26282e;
 }
@@ -70,8 +78,41 @@ dialog.incoming-call-dialog.incoming-call-dialog--active .incoming-hide {
   font-size: 36px;
   box-shadow: 0 0 0 10px #22d3ee14;
 }
+/* Ringing (in or out): a soft ring pulses around the avatar. */
+.call-screen__avatar.is-pulsing {
+  position: relative;
+}
+.call-screen__avatar.is-pulsing::after {
+  content: "";
+  position: absolute;
+  inset: -3px;
+  border: 2px solid #22d3ee;
+  border-radius: 50%;
+  animation: call-screen-pulse 1.6s ease-out infinite;
+}
+@keyframes call-screen-pulse {
+  from {
+    transform: scale(1);
+    opacity: 0.8;
+  }
+  to {
+    transform: scale(1.35);
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .call-screen__avatar.is-pulsing::after {
+    animation: none;
+  }
+}
+.call-screen__avatar.is-ended {
+  border-color: #4b5160;
+  background: #2f3540;
+  box-shadow: none;
+}
 .call-screen__name {
   margin: 0;
+  color: #f8fafc;
   max-width: 100%;
   overflow: hidden;
   font-size: 28px;
@@ -92,6 +133,14 @@ dialog.incoming-call-dialog.incoming-call-dialog--active .incoming-hide {
   color: #e2e8f0;
   font-size: 18px;
   font-variant-numeric: tabular-nums;
+}
+.call-screen__muted {
+  padding: 2px 8px;
+  border-radius: 999px;
+  color: #fde68a;
+  background: #f59e0b2e;
+  font-size: 12px;
+  font-weight: 600;
 }
 .call-screen__rec {
   padding: 2px 8px;
@@ -393,4 +442,53 @@ dialog.incoming-call-dialog.incoming-call-dialog--active .incoming-hide {
   .call-screen__control {
     width: 62px;
   }
+}
+
+/* Large labelled buttons: ringing (Decline / Answer), calling (Cancel) and call ended. */
+.call-screen__big-row {
+  display: flex;
+  justify-content: center;
+  gap: 56px;
+  padding: 8px 0 4px;
+}
+.call-screen__big {
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+  color: #e2e8f0;
+  background: none;
+  font-size: 13px;
+}
+.call-screen__big-icon {
+  display: grid;
+  place-items: center;
+  width: 68px;
+  height: 68px;
+  border-radius: 50%;
+  color: white;
+  background: #34373e;
+  transition: background 0.15s;
+}
+.call-screen__big-icon svg {
+  width: 28px;
+  height: 28px;
+}
+.call-screen__big:hover:not(:disabled) .call-screen__big-icon {
+  background: #43474f;
+}
+.call-screen__big--end .call-screen__big-icon {
+  background: #e5484d;
+}
+.call-screen__big--end:hover:not(:disabled) .call-screen__big-icon {
+  background: #cf3a3f;
+}
+.call-screen__big--answer .call-screen__big-icon {
+  background: #22b14c;
+}
+.call-screen__big--answer:hover:not(:disabled) .call-screen__big-icon {
+  background: #1c9a41;
+}
+.call-screen__big:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
 }

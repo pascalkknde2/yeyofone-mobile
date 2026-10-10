@@ -1,4 +1,4 @@
-import { useId, useRef, useState, type ReactNode } from "react";
+import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { CallControlIcon } from "./CallControlIcon";
 import { CallIcon } from "./CallIcon";
 import "./call-screen.css";
@@ -80,6 +80,47 @@ export function CallPanel({
       setDestination("");
     }
   }
+  async function sendDigit(digit: string) {
+    if (await onRequest("dtmf", { id: talking.id, digits: digit }))
+      setDigits((current) => (current + digit).slice(-32));
+  }
+  // Keyboard shortcuts while the call screen is open: M mute, H hold,
+  // K keypad, and digits / * / # send keypad tones.
+  const onKey = useRef<(e: KeyboardEvent) => void>(() => {});
+  onKey.current = (e) => {
+    if (ended || e.repeat || e.metaKey || e.ctrlKey || e.altKey) return;
+    if (
+      (e.target as HTMLElement)?.closest?.(
+        "input, textarea, select, [role='menu']",
+      )
+    )
+      return;
+    const key = e.key.toLowerCase();
+    const canTalk = !disabled && connected && !talking.held;
+    if (key === "m" && !disabled && connected) {
+      e.preventDefault();
+      void forEachCall("mute", { muted: !muted });
+    } else if (
+      key === "h" &&
+      !disabled &&
+      group.kind === "single" &&
+      main.state === "connected"
+    ) {
+      e.preventDefault();
+      void onRequest(main.held ? "resume" : "hold", { id: main.id });
+    } else if (key === "k" && canTalk) {
+      e.preventDefault();
+      toggle("keypad");
+    } else if (/^[0-9*#]$/.test(e.key) && canTalk) {
+      e.preventDefault();
+      void sendDigit(e.key);
+    }
+  };
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => onKey.current(e);
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, []);
   async function forEachCall(
     action: string,
     extra: Record<string, unknown> = {},
@@ -113,6 +154,7 @@ export function CallPanel({
           </p>
           <p className="call-screen__status" role="status">
             {t(status(main))}
+            {muted && <span className="call-screen__muted">{t("Muted")}</span>}
             {main.recording && (
               <span className="call-screen__rec">● {t("Recording")}</span>
             )}
@@ -277,12 +319,7 @@ export function CallPanel({
                   key={digit}
                   type="button"
                   disabled={disabled || !connected || talking.held}
-                  onClick={async () => {
-                    if (
-                      await onRequest("dtmf", { id: talking.id, digits: digit })
-                    )
-                      setDigits((current) => (current + digit).slice(-32));
-                  }}
+                  onClick={() => void sendDigit(digit)}
                 >
                   {digit}
                 </button>
@@ -300,6 +337,7 @@ export function CallPanel({
         >
           <Control
             label={muted ? "Unmute" : "Mute"}
+            shortcut="M"
             pressed={muted}
             disabled={disabled || !connected}
             onClick={() => void forEachCall("mute", { muted: !muted })}
@@ -308,6 +346,7 @@ export function CallPanel({
           </Control>
           <Control
             label="Keypad"
+            shortcut="K"
             pressed={tool === "keypad"}
             disabled={disabled || !connected || talking.held}
             onClick={() => toggle("keypad")}
@@ -316,6 +355,7 @@ export function CallPanel({
           </Control>
           <Control
             label={main.held && group.kind === "single" ? "Resume" : "Hold"}
+            shortcut="H"
             pressed={main.held && group.kind === "single"}
             disabled={
               disabled || group.kind !== "single" || main.state !== "connected"
@@ -447,6 +487,7 @@ function Control({
   pressed,
   disabled,
   popup,
+  shortcut,
   buttonRef,
   onClick,
   children,
@@ -456,6 +497,8 @@ function Control({
   pressed?: boolean;
   disabled?: boolean;
   popup?: boolean;
+  // Keyboard shortcut, shown in the tooltip.
+  shortcut?: string;
   buttonRef?: React.Ref<HTMLButtonElement>;
   onClick: () => void;
   children: ReactNode;
@@ -466,6 +509,8 @@ function Control({
       type="button"
       ref={buttonRef}
       className={`call-screen__control${tone ? ` call-screen__control--${tone}` : ""}`}
+      title={shortcut ? `${t(label)} (${shortcut})` : t(label)}
+      aria-keyshortcuts={shortcut}
       aria-pressed={popup ? undefined : pressed}
       aria-haspopup={popup ? "menu" : undefined}
       aria-expanded={popup ? pressed : undefined}
