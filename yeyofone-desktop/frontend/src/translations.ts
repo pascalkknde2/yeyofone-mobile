@@ -1506,6 +1506,17 @@ export const translations: Record<
     es: "Desvío de llamadas",
     de: "Anrufweiterleitung",
   },
+  "Call group": {
+    fr: "Appeler le groupe",
+    es: "Llamar al grupo",
+    de: "Gruppe anrufen",
+  },
+  "Call group dials this extension on your phone system. This preview doesn’t create the group there.":
+    {
+      fr: "« Appeler le groupe » compose ce poste sur votre système téléphonique. Cet aperçu n’y crée pas le groupe.",
+      es: "«Llamar al grupo» marca esta extensión en tu centralita. Esta vista previa no crea el grupo allí.",
+      de: "„Gruppe anrufen“ wählt diese Durchwahl in Ihrer Telefonanlage. Diese Vorschau legt die Gruppe dort nicht an.",
+    },
   "Ring groups": {
     fr: "Groupes d’appel",
     es: "Grupos de llamada",

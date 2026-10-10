@@ -31,6 +31,7 @@ These run on your own device only; nothing is sent to other people.
   - [ ] Voicemail call: dial *97, enter the PIN with the keypad, hang up.
   - [ ] Incoming call after the event-permission fix (#34): the call screen should appear without the half-second delay.
   - [ ] Share screen with a real click, including the macOS Screen Recording prompt and a release build.
+  - [ ] Ring groups → Call group with a real ring group. A native test call to 2000 on 2026-10-10 got SIP 480 (nobody available), so the PBX needs a real group first.
   - [ ] Team room camera and mic: macOS asks once for each, your video appears, the speaking badge follows your voice, and Mute/Camera off release the devices.
 
 ## Housekeeping
