@@ -477,3 +477,28 @@
     bottom: -72px;
   }
 }
+
+/* Recent numbers under an empty number field: one tap fills the number in. */
+.dialer__recent {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 12px;
+}
+.dialer__recent button {
+  max-width: 160px;
+  overflow: hidden;
+  padding: 6px 14px;
+  border: 1px solid var(--dialer-border);
+  border-radius: 999px;
+  color: var(--dialer-fg);
+  background: var(--dialer-surface);
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.dialer__recent button:hover {
+  background: var(--dialer-surface-2);
+}

@@ -6,6 +6,7 @@ import { useLanguage } from "./i18n";
 import { CallIcon } from "./CallIcon";
 import { CallControlIcon } from "./CallControlIcon";
 import "./call-bar.css";
+import { useHeldSeconds } from "./holdTimer";
 
 export type CallTool = "transfer" | "consult" | "keypad";
 
@@ -23,6 +24,7 @@ export function CallBar({
   const { rows, available, busy, request } = useCalls();
   const { t } = useLanguage();
   const group = callGroup(rows);
+  const heldFor = useHeldSeconds(rows);
   if (!group) return null;
   const calls =
     group.kind === "single"
@@ -57,7 +59,9 @@ export function CallBar({
               : callLabel(talking.state),
           )}`
         : connected && main.held
-          ? t("On hold")
+          ? heldFor(main) === null
+            ? t("On hold")
+            : `${t("On hold")} · ${callTime(heldFor(main)!)}`
           : connected
             ? callTime(Math.max(...calls.map((c) => c.durationSeconds)))
             : t(callLabel(main.state));
