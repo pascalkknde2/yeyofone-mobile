@@ -35,7 +35,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -52,6 +51,8 @@ import com.yeyofone.app.ui.theme.SuccessLight
 import com.yeyofone.app.ui.theme.CallTextPrimary
 import com.yeyofone.app.ui.theme.CallTextSecondary
 import com.yeyofone.app.ui.theme.PrimaryLight
+import com.yeyofone.app.ui.theme.CardWhite
+import com.yeyofone.app.ui.theme.AccentBlue
 
 @Composable
 fun IncomingCallScreen(
@@ -68,7 +69,7 @@ fun IncomingCallScreen(
     // number (see CALL-FEATURES-AUDIT.md CONT-05).
     val caller = remoteUri.toSipIdentity().let { it.copy(displayName = contactName ?: it.displayName) }
     Column(
-        Modifier.fillMaxSize().background(Color.White).systemBarsPadding(),
+        Modifier.fillMaxSize().background(CardWhite).systemBarsPadding(),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Column(
@@ -102,8 +103,8 @@ fun IncomingCallScreen(
                 PulsingRings()
                 Box(
                     Modifier.size(156.dp).background(PrimaryLight, CircleShape).padding(8.dp)
-                        .clip(CircleShape).background(Color.White)
-                        .border(1.dp, Color(0xFF2563EB).copy(alpha = 0.1f), CircleShape),
+                        .clip(CircleShape).background(CardWhite)
+                        .border(1.dp, AccentBlue.copy(alpha = 0.1f), CircleShape),
                     contentAlignment = Alignment.Center,
                 ) {
                     Text(callerInitials(caller.displayName), fontSize = 56.sp, fontWeight = FontWeight.Bold, color = CallTextPrimary)
@@ -140,7 +141,7 @@ fun IncomingCallScreen(
         Column(
             Modifier.fillMaxWidth().background(KeypadBackground)
                 .shadow(4.dp, RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp))
-                .background(Color.White, RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp))
+                .background(CardWhite, RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp))
                 .padding(start = 24.dp, top = 32.dp, end = 24.dp, bottom = 48.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {

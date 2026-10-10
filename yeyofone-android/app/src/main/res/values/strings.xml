@@ -302,6 +302,10 @@
     <string name="call_announce_subtitle">Speak caller name when ringing</string>
     <string name="forward_to_number">Forward to number</string>
     <string name="settings_language">Language</string>
+    <string name="settings_appearance">Appearance</string>
+    <string name="appearance_system">System</string>
+    <string name="appearance_light">Light</string>
+    <string name="appearance_dark">Dark</string>
     <string name="settings_language_subtitle">App language and voice preferences</string>
     <string name="language_title">Language</string>
     <string name="language_app_section">App Language</string>

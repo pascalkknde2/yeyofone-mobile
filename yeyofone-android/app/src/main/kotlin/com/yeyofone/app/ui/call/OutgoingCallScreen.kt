@@ -69,6 +69,9 @@ import com.yeyofone.app.ui.theme.CallBackground
 import com.yeyofone.app.ui.theme.CallTextPrimary
 import com.yeyofone.app.ui.theme.CallTextSecondary
 import com.yeyofone.app.ui.theme.PrimaryLight
+import com.yeyofone.app.ui.theme.CardWhite
+import com.yeyofone.app.ui.theme.PrimaryBorder
+import com.yeyofone.app.ui.theme.BorderLight
 import com.yeyofone.core.model.CallSession
 import com.yeyofone.core.model.CallState
 import com.yeyofone.core.model.MediaState
@@ -195,7 +198,7 @@ private fun CallerIdentity(name: String, status: String) {
         ) {
             Box(Modifier.size(136.dp).scale(pulseScale).background(AccentGreen.copy(alpha = pulseAlpha), CircleShape))
             Box(
-                Modifier.size(120.dp).clip(CircleShape).background(Color.White)
+                Modifier.size(120.dp).clip(CircleShape).background(CardWhite)
                     .border(1.dp, AccentGreen.copy(alpha = 0.2f), CircleShape),
                 contentAlignment = Alignment.Center,
             ) {
@@ -224,7 +227,7 @@ private fun CallActionButton(
     val background = when {
         destructive -> AccentRed
         active -> PrimaryLight
-        else -> Color.White
+        else -> CardWhite
     }
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -238,7 +241,7 @@ private fun CallActionButton(
                     spotColor = if (destructive) AccentRed.copy(alpha = 0.4f) else Color.Black.copy(alpha = 0.05f))
                 .clip(CircleShape)
                 .background(if (enabled) background else background.copy(alpha = 0.45f))
-                .border(1.dp, if (destructive) AccentRed else if (active) Color(0xFFBFDBFE) else Color(0xFFE2E8F0), CircleShape),
+                .border(1.dp, if (destructive) AccentRed else if (active) PrimaryBorder else BorderLight, CircleShape),
             contentAlignment = Alignment.Center,
         ) {
             Icon(

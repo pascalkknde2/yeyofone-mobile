@@ -1,6 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="settings_language">Idioma</string>
+    <string name="settings_appearance">Apariencia</string>
+    <string name="appearance_system">Sistema</string>
+    <string name="appearance_light">Claro</string>
+    <string name="appearance_dark">Oscuro</string>
     <string name="settings_language_subtitle">Idioma de la aplicación y preferencias de voz</string>
     <string name="language_title">Idioma</string>
     <string name="language_app_section">Idioma de la aplicación</string>

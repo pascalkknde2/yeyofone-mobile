@@ -42,7 +42,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -64,6 +63,7 @@ import com.yeyofone.app.ui.theme.CallTextPrimary
 import com.yeyofone.app.ui.theme.CallTextSecondary
 import com.yeyofone.app.ui.theme.InactiveGray
 import com.yeyofone.app.ui.theme.PrimaryLight
+import com.yeyofone.app.ui.theme.CardWhite
 import com.yeyofone.core.model.AudioRoute
 import com.yeyofone.core.model.CallSession
 import com.yeyofone.core.model.CallState
@@ -309,7 +309,7 @@ private fun ConsultationTray(session: CallSession, onCompleteTransfer: () -> Uni
 
 @Composable
 private fun CallOptionsGroup(content: @Composable () -> Unit) {
-    Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp)).background(Color.White)) { content() }
+    Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp)).background(CardWhite)) { content() }
 }
 
 @Composable

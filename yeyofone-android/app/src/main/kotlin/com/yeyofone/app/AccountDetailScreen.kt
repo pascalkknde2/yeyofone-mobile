@@ -35,7 +35,6 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -61,6 +60,8 @@ import com.yeyofone.app.ui.theme.InactiveGray
 import com.yeyofone.app.ui.theme.PrimaryLight
 import com.yeyofone.app.ui.theme.TextPrimary
 import com.yeyofone.app.ui.theme.TextSecondary
+import com.yeyofone.app.ui.theme.CardWhite
+import com.yeyofone.app.ui.theme.TextOnPrimary
 import com.yeyofone.core.account.PushCredentialStore
 import com.yeyofone.core.model.AccountPreferences
 import com.yeyofone.core.model.PreferenceToggle
@@ -70,15 +71,15 @@ import com.yeyofone.core.model.VoipError
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
-private val Ink = TextPrimary
-private val Gray = TextSecondary
-private val GrayMid = InactiveGray
-private val PageBackground = BackgroundGray
-private val Success = AccentGreen
-private val Warning = AccentOrange
-private val Danger = AccentRed
-private val SwitchTrackOff = BorderLight
-private val Hairline = BorderLight
+private val Ink get() = TextPrimary
+private val Gray get() = TextSecondary
+private val GrayMid get() = InactiveGray
+private val PageBackground get() = BackgroundGray
+private val Success get() = AccentGreen
+private val Warning get() = AccentOrange
+private val Danger get() = AccentRed
+private val SwitchTrackOff get() = BorderLight
+private val Hairline get() = BorderLight
 
 @Composable
 fun AccountDetail(account: SipAccount, viewModel: YeyoFoneViewModel) {
@@ -92,11 +93,11 @@ fun AccountDetail(account: SipAccount, viewModel: YeyoFoneViewModel) {
     }
 
     MaterialTheme(
-        colorScheme = lightColorScheme(
+        colorScheme = MaterialTheme.colorScheme.copy(
             primary = Ink,
-            onPrimary = Color.White,
+            onPrimary = TextOnPrimary,
             background = PageBackground,
-            surface = Color.White,
+            surface = CardWhite,
             surfaceVariant = SwitchTrackOff,
             error = Danger,
         ),
@@ -212,7 +213,7 @@ private fun ProfileHeader(account: SipAccount, registrationState: RegistrationSt
             contentAlignment = Alignment.Center,
         ) {
             Box(
-                Modifier.size(84.dp).background(Ink, CircleShape).border(3.dp, Color.White, CircleShape),
+                Modifier.size(84.dp).background(Ink, CircleShape).border(3.dp, CardWhite, CircleShape),
                 contentAlignment = Alignment.Center,
             ) {
                 Box(
@@ -221,7 +222,7 @@ private fun ProfileHeader(account: SipAccount, registrationState: RegistrationSt
                     Text(
                         account.displayName.initials(),
                         modifier = Modifier.align(Alignment.Center),
-                        color = Color.White,
+                        color = TextOnPrimary,
                         fontSize = 30.sp,
                         fontWeight = FontWeight.SemiBold,
                     )
@@ -264,7 +265,7 @@ private fun Section(titleRes: Int, content: @Composable () -> Unit) {
         )
         Surface(
             shape = RoundedCornerShape(16.dp),
-            color = Color.White,
+            color = CardWhite,
             shadowElevation = 2.dp,
             modifier = Modifier.fillMaxWidth(),
         ) {
@@ -341,7 +342,7 @@ private fun ActionButtons(
             },
             modifier = Modifier.fillMaxWidth().height(56.dp),
             shape = RoundedCornerShape(16.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = Ink, contentColor = Color.White),
+            colors = ButtonDefaults.buttonColors(containerColor = Ink, contentColor = TextOnPrimary),
             enabled = !registrationBusy,
         ) {
             Row(

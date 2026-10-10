@@ -67,7 +67,7 @@ fun LanguageSettingsScreen(onBack: () -> Unit) {
     Scaffold(containerColor = BackgroundGray) { insets ->
         Column(Modifier.fillMaxSize().padding(bottom = insets.calculateBottomPadding())) {
             Row(
-                Modifier.fillMaxWidth().background(Color.White).statusBarsPadding()
+                Modifier.fillMaxWidth().background(CardWhite).statusBarsPadding()
                     .padding(start = 12.dp, top = 8.dp, end = 20.dp, bottom = 8.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
@@ -99,8 +99,8 @@ fun LanguageSettingsScreen(onBack: () -> Unit) {
                     LanguageSection(stringResource(R.string.language_voice_section)) {
                         LanguageSettingRow(
                             icon = Icons.Default.Language,
-                            iconTint = Color(0xFF8B5CF6),
-                            iconBackground = Color(0xFFF5F3FF),
+                            iconTint = Purple,
+                            iconBackground = PurpleLight,
                             title = stringResource(R.string.language_auto_translate),
                             subtitle = stringResource(R.string.language_auto_translate_subtitle),
                             trailing = {
@@ -120,8 +120,8 @@ fun LanguageSettingsScreen(onBack: () -> Unit) {
                         LanguageDivider()
                         LanguageSettingRow(
                             icon = Icons.Default.Mic,
-                            iconTint = Color(0xFFDB2777),
-                            iconBackground = Color(0xFFFDF2F8),
+                            iconTint = Pink,
+                            iconBackground = PinkLight,
                             title = stringResource(R.string.language_voice_accent),
                             subtitle = stringResource(accentLabel(accentTag)),
                             trailing = { Icon(Icons.Default.ChevronRight, null, tint = InactiveGray) },
@@ -172,7 +172,7 @@ private fun LanguageSection(title: String, content: @Composable ColumnScope.() -
             letterSpacing = 1.sp,
         )
         Column(
-            Modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp)).background(Color.White)
+            Modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp)).background(CardWhite)
                 .border(1.dp, BorderLight.copy(alpha = .55f), RoundedCornerShape(20.dp)),
             content = content,
         )
@@ -229,7 +229,7 @@ private fun LanguageOptionRow(flag: String, label: String, selected: Boolean, on
     ) {
         Text(flag, fontSize = 20.sp)
         Text(label, Modifier.weight(1f).padding(start = 12.dp), fontSize = 15.sp, fontWeight = FontWeight.Medium, color = TextPrimary)
-        if (selected) Icon(Icons.Default.Check, contentDescription = null, tint = Color(0xFF22C55E), modifier = Modifier.size(20.dp))
+        if (selected) Icon(Icons.Default.Check, contentDescription = null, tint = CheckGreen, modifier = Modifier.size(20.dp))
     }
 }
 
@@ -248,7 +248,7 @@ private fun LanguageChoice(label: String, selected: Boolean, meta: String?, onCl
 @Composable
 private fun LanguageRadio(selected: Boolean) {
     Box(
-        Modifier.size(20.dp).border(2.dp, if (selected) AccentBlue else Color(0xFFCBD5E1), CircleShape)
+        Modifier.size(20.dp).border(2.dp, if (selected) AccentBlue else RadioBorder, CircleShape)
             .background(if (selected) AccentBlue else Color.Transparent, CircleShape),
         contentAlignment = Alignment.Center,
     ) {

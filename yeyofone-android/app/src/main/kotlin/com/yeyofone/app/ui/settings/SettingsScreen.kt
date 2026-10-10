@@ -23,6 +23,7 @@ import androidx.compose.material.icons.automirrored.filled.PhoneCallback
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Business
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Contrast
 import androidx.compose.material.icons.filled.FiberManualRecord
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Language
@@ -33,13 +34,16 @@ import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.Translate
 import androidx.compose.material.icons.filled.Videocam
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.RadioButton
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
@@ -55,6 +59,7 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -78,6 +83,10 @@ import com.yeyofone.app.ui.theme.PrimaryLight
 import com.yeyofone.app.ui.theme.SuccessLight
 import com.yeyofone.app.ui.theme.TextPrimary
 import com.yeyofone.app.ui.theme.TextSecondary
+import com.yeyofone.app.ui.theme.CardWhite
+import com.yeyofone.app.ui.theme.Appearance
+import com.yeyofone.app.ui.theme.AppearancePreferences
+import com.yeyofone.app.ui.theme.Purple
 import kotlinx.coroutines.launch
 
 private data class SettingEntry(
@@ -106,6 +115,7 @@ fun SettingsScreen(
     var searching by remember { mutableStateOf(false) }
     var query by remember { mutableStateOf("") }
     val unavailable: () -> Unit = { scope.launch { snackbar.showSnackbar(comingSoon) } }
+    var showAppearance by remember { mutableStateOf(false) }
 
     val sections = listOf(
         stringResource(R.string.settings_section_account) to listOf(
@@ -137,6 +147,7 @@ fun SettingsScreen(
             SettingEntry(Icons.Default.FiberManualRecord, AccentBlue, stringResource(R.string.settings_recording), stringResource(R.string.settings_recording_subtitle), action = onRecordingsClick.takeIf { BuildConfig.DEBUG }),
         ),
         stringResource(R.string.settings_section_more) to listOf(
+            SettingEntry(Icons.Default.Contrast, Purple, stringResource(R.string.settings_appearance), stringResource(AppearancePreferences.current.label), action = { showAppearance = true }),
             SettingEntry(Icons.Default.Language, AccentBlue, stringResource(R.string.settings_language), stringResource(R.string.settings_language_subtitle), action = onLanguageClick),
             SettingEntry(Icons.Default.Settings, AccentBlue, stringResource(R.string.settings_advanced), stringResource(R.string.settings_advanced_subtitle)),
             SettingEntry(Icons.Default.Share, AccentGreen, stringResource(R.string.settings_social), stringResource(R.string.settings_social_subtitle)),
@@ -198,6 +209,34 @@ fun SettingsScreen(
             }
         }
     }
+    if (showAppearance) AppearanceDialog(onDismiss = { showAppearance = false })
+}
+
+@Composable
+private fun AppearanceDialog(onDismiss: () -> Unit) {
+    val context = LocalContext.current
+    val choose: (Appearance) -> Unit = {
+        AppearancePreferences.set(context, it)
+        onDismiss()
+    }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.settings_appearance)) },
+        text = {
+            Column {
+                Appearance.entries.forEach { option ->
+                    Row(
+                        Modifier.fillMaxWidth().clickable { choose(option) }.padding(vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        RadioButton(selected = option == AppearancePreferences.current, onClick = { choose(option) })
+                        Text(stringResource(option.label), color = TextPrimary)
+                    }
+                }
+            }
+        },
+        confirmButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) } },
+    )
 }
 
 @Composable
@@ -208,7 +247,7 @@ private fun SettingsHeader(
     onSearchToggle: () -> Unit,
 ) {
     Row(
-        Modifier.fillMaxWidth().background(Color.White).statusBarsPadding()
+        Modifier.fillMaxWidth().background(CardWhite).statusBarsPadding()
             .padding(start = 24.dp, top = 14.dp, end = 12.dp, bottom = 14.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -277,7 +316,7 @@ private fun SettingsSection(title: String, entries: List<SettingEntry>, unavaila
             fontWeight = FontWeight.SemiBold,
             letterSpacing = 0.5.sp,
         )
-        Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(Color.White)) {
+        Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(CardWhite)) {
             entries.forEachIndexed { index, entry ->
                 SettingRow(entry, entry.action ?: unavailable)
                 if (index < entries.lastIndex) {
