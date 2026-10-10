@@ -3,10 +3,10 @@
 }
 .accounts-panel p,
 .accounts-panel small {
-  color: #77859d;
+  color: var(--c-77859d-t);
 }
 .account-list article {
-  background: white;
+  background: var(--c-ffffff-s);
   border-radius: 14px;
   padding: 22px;
   margin: 16px 0;
@@ -21,25 +21,25 @@
   gap: 12px;
 }
 .accounts-panel button {
-  border: 1px solid #dce6f0;
+  border: 1px solid var(--c-dce6f0-b);
   border-radius: 10px;
   padding: 10px 16px;
-  background: white;
-  color: #287bc0;
+  background: var(--c-ffffff-s);
+  color: var(--c-287bc0-t);
   font: inherit;
   cursor: pointer;
 }
 .accounts-panel .account-primary {
-  background: #2988d3;
+  background: var(--c-2988d3-s);
   color: white;
-  border-color: #2988d3;
+  border-color: var(--c-2988d3-b);
 }
 .accounts-panel button:disabled {
   opacity: 0.55;
   cursor: wait;
 }
 .account-form {
-  background: white;
+  background: var(--c-ffffff-s);
   padding: 28px;
   border-radius: 16px;
   display: grid;
@@ -59,8 +59,8 @@
 .account-form input,
 .account-form select {
   font: inherit;
-  border: 1px solid #d8e3ee;
-  background: #f8fafd;
+  border: 1px solid var(--c-d8e3ee-b);
+  background: var(--c-f8fafd-s);
   border-radius: 8px;
   padding: 12px;
   min-width: 0;
@@ -75,7 +75,7 @@
 .accounts-panel button:focus-visible,
 .account-form input:focus-visible,
 .account-form select:focus-visible {
-  outline: 3px solid #72baf0;
+  outline: 3px solid var(--c-72baf0-b);
   outline-offset: 2px;
 }
 @media (max-width: 800px) {
@@ -94,22 +94,22 @@
   padding: 7px 12px;
   font-size: 16px;
   font-weight: 600;
-  background: #e9f2ff;
-  color: #347fbf;
+  background: var(--c-e9f2ff-s);
+  color: var(--c-347fbf-t);
 }
 .registration-badge.connected {
-  background: #e2f6eb;
-  color: #247648;
+  background: var(--c-e2f6eb-s);
+  color: var(--c-247648-t);
 }
 .registration-badge.failed {
-  background: #ffebec;
-  color: #b4414e;
+  background: var(--c-ffebec-s);
+  color: var(--c-b4414e-t);
 }
 .registration-badge.offline {
-  background: #fff3d9;
-  color: #946a20;
+  background: var(--c-fff3d9-s);
+  color: var(--c-946a20-t);
 }
 .accounts-panel .registration-error {
-  color: #b4414e;
+  color: var(--c-b4414e-t);
   max-width: 540px;
 }

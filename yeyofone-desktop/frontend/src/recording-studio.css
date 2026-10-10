@@ -2,9 +2,9 @@
   display: grid;
   grid-template-columns: 220px minmax(0, 1fr);
   gap: 32px;
-  background: #100d38;
+  background: var(--c-100d38-s);
   color: #f5f3ff;
-  border: 1px solid #373062;
+  border: 1px solid var(--c-373062-b);
   border-radius: 24px;
   padding: 32px;
   margin: 24px 0;
@@ -16,8 +16,8 @@
   align-self: center;
   aspect-ratio: 1;
   border-radius: 50%;
-  background: linear-gradient(155deg, #d40599, #6746ed);
-  color: #100d38;
+  background: linear-gradient(155deg, var(--c-d40599-s), var(--c-6746ed-s));
+  color: var(--c-100d38-t);
   width: 100%;
   max-width: 220px;
 }
@@ -33,7 +33,7 @@
   gap: 16px;
 }
 .recording-studio__heading small {
-  color: #aaa2d2;
+  color: var(--c-aaa2d2-t);
   font-size: 12px;
   text-transform: uppercase;
   letter-spacing: 1.8px;
@@ -42,7 +42,7 @@
   font-size: 24px;
   margin: 8px 0 0;
   overflow-wrap: anywhere;
-  color: #eeeaff;
+  color: var(--c-eeeaff-t);
 }
 .recording-studio button {
   cursor: pointer;
@@ -51,7 +51,7 @@
   color: white;
 }
 .recording-studio__close {
-  background: #ffffff0c;
+  background: var(--c-ffffff0c-s);
   padding: 8px;
   border-radius: 50%;
   display: grid;
@@ -70,21 +70,21 @@
   max-width: 7px;
   min-width: 2px;
   border-radius: 20px;
-  background: linear-gradient(#d609a4, #6055ed);
+  background: linear-gradient(var(--c-d609a4-s), var(--c-6055ed-s));
   opacity: 0.75;
 }
 .recording-wave i:nth-child(-n + 12) {
-  background: #5556ed;
+  background: var(--c-5556ed-s);
 }
 .recording-wave i:nth-child(n + 24) {
-  background: #d609a4;
+  background: var(--c-d609a4-s);
 }
 .recording-wave.is-active i {
   animation: recording-wave-pulse 900ms ease-in-out infinite alternate;
 }
 .recording-studio__seek {
   width: 100%;
-  accent-color: #b727d2;
+  accent-color: var(--c-b727d2);
   cursor: pointer;
 }
 .recording-studio__time {
@@ -92,7 +92,7 @@
   justify-content: space-between;
   font-size: 13px;
   font-variant-numeric: tabular-nums;
-  color: #b7b0d4;
+  color: var(--c-b7b0d4-t);
   margin-top: 8px;
 }
 .recording-studio__controls {
@@ -106,7 +106,7 @@
   width: 64px;
   height: 64px;
   border-radius: 50%;
-  background: #4648e9;
+  background: var(--c-4648e9-s);
   display: grid;
   place-items: center;
 }
@@ -115,13 +115,13 @@
   height: 28px;
 }
 .recording-studio__stop {
-  background: linear-gradient(100deg, #d609a4, #753bce);
+  background: linear-gradient(100deg, var(--c-d609a4-s), var(--c-753bce-s));
   border-radius: 30px;
   padding: 12px 36px;
   font-weight: 600;
 }
 .recording-studio button:focus-visible {
-  outline: 3px solid #e9b8ff;
+  outline: 3px solid var(--c-e9b8ff-b);
   outline-offset: 4px;
 }
 .recording-studio button:disabled {
@@ -167,12 +167,12 @@
   opacity: 1;
 }
 .recording-wave-status {
-  color: #b7b0d4;
+  color: var(--c-b7b0d4-t);
 }
 
 .recording-studio__delete {
   background: transparent;
-  color: #fda4af !important;
+  color: var(--c-fda4af-t) !important;
   padding: 10px;
   font-size: 13px !important;
 }

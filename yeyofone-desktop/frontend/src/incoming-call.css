@@ -5,8 +5,8 @@
   border: 0;
   border-radius: 28px;
   padding: 28px;
-  background: #fff;
-  color: #25354d;
+  background: var(--c-ffffff-s);
+  color: var(--c-25354d-t);
   text-align: center;
   box-shadow: 0 25px 90px #172c4a55;
   font-size: 16px;
@@ -17,7 +17,7 @@
   display: none;
 }
 .incoming-call-dialog::backdrop {
-  background: #152b4977;
+  background: var(--c-152b4977-s);
   backdrop-filter: blur(8px);
 }
 .incoming-call-dialog header {
@@ -27,14 +27,14 @@
 }
 .incoming-brand {
   font-size: 17px;
-  color: #258a70;
+  color: var(--c-258a70-t);
 }
 .incoming-brand i {
   display: inline-block;
   width: 10px;
   height: 10px;
   border-radius: 50%;
-  background: #42bb8e;
+  background: var(--c-42bb8e-s);
   animation: incoming-blink 1.1s infinite;
 }
 .incoming-hide,
@@ -42,8 +42,8 @@
   border: 0;
   border-radius: 12px;
   padding: 12px 16px;
-  background: #eff3f8;
-  color: #60718a;
+  background: var(--c-eff3f8-s);
+  color: var(--c-60718a-t);
   font-size: 16px;
 }
 .incoming-caller-avatar {
@@ -54,7 +54,7 @@
   height: 96px;
   border-radius: 50%;
   color: white;
-  background: linear-gradient(145deg, #51b8ed, #4ebd98);
+  background: linear-gradient(145deg, var(--c-51b8ed-s), var(--c-4ebd98-s));
   font-size: 38px;
   box-shadow: 0 0 0 12px #6abda21c;
 }
@@ -66,7 +66,7 @@
 .incoming-account,
 .incoming-state {
   font-size: 17px;
-  color: #72829a;
+  color: var(--c-72829a-t);
   line-height: 1.5;
 }
 .incoming-duration {
@@ -88,28 +88,28 @@
   font-size: 17px;
 }
 .incoming-answer {
-  background: #278c70;
+  background: var(--c-278c70-s);
   color: #fff;
 }
 .incoming-answer:hover {
-  background: #207b63;
+  background: var(--c-207b63-s);
 }
 .incoming-reject {
-  background: #e65b6a;
+  background: var(--c-e65b6a-s);
   color: #fff;
 }
 .incoming-reject:hover {
-  background: #ce4757;
+  background: var(--c-ce4757-s);
 }
 .incoming-mute {
-  background: #ebe7f8;
-  color: #765bb1;
+  background: var(--c-ebe7f8-s);
+  color: var(--c-765bb1-t);
 }
 .incoming-call-dialog button:disabled {
   opacity: 0.55;
 }
 .incoming-call-dialog :focus-visible {
-  outline: 3px solid #378ed2;
+  outline: 3px solid var(--c-378ed2-b);
   outline-offset: 3px;
 }
 .incoming-call-dialog[open] .incoming-caller-avatar {

@@ -1023,10 +1023,45 @@ export const translations: Record<
     es: "Apariencia",
     de: "Darstellung",
   },
-  "Light theme · Compact sidebar · Desktop dashboard": {
-    fr: "Thème clair · Barre latérale compacte · Tableau de bord",
-    es: "Tema claro · Barra lateral compacta · Panel de escritorio",
-    de: "Helles Design · Kompakte Seitenleiste · Desktop-Übersicht",
+  "Switch to light mode": {
+    fr: "Passer en mode clair",
+    es: "Cambiar al modo claro",
+    de: "Zum hellen Modus wechseln",
+  },
+  "Switch to dark mode": {
+    fr: "Passer en mode sombre",
+    es: "Cambiar al modo oscuro",
+    de: "Zum dunklen Modus wechseln",
+  },
+  Theme: {
+    fr: "Thème",
+    es: "Tema",
+    de: "Design",
+  },
+  Light: {
+    fr: "Clair",
+    es: "Claro",
+    de: "Hell",
+  },
+  Dark: {
+    fr: "Sombre",
+    es: "Oscuro",
+    de: "Dunkel",
+  },
+  System: {
+    fr: "Système",
+    es: "Sistema",
+    de: "System",
+  },
+  "Follows your computer’s light or dark setting.": {
+    fr: "Suit le réglage clair ou sombre de votre ordinateur.",
+    es: "Sigue el ajuste claro u oscuro de tu ordenador.",
+    de: "Folgt der hellen oder dunklen Einstellung Ihres Computers.",
+  },
+  "Stays the same whatever your computer uses.": {
+    fr: "Reste identique quel que soit le réglage de votre ordinateur.",
+    es: "Se mantiene igual sea cual sea el ajuste de tu ordenador.",
+    de: "Bleibt gleich, egal was Ihr Computer verwendet.",
   },
   "The desktop SIP engine is not connected yet. Account setup and calling will be added in a future build.":
     {

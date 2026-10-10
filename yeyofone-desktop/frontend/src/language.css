@@ -1,7 +1,7 @@
 .language-picker {
   position: relative;
   flex-shrink: 0;
-  color: #536984;
+  color: var(--c-536984-t);
 }
 .language-trigger {
   display: flex;
@@ -9,11 +9,11 @@
   gap: 12px;
   min-width: 177px;
   padding: 12px 14px;
-  border: 1px solid #e7edf5;
+  border: 1px solid var(--c-e7edf5-b);
   border-radius: 12px;
-  background: linear-gradient(135deg, #f6f9fd, #eff4fa);
+  background: linear-gradient(135deg, var(--c-f6f9fd-s), var(--c-eff4fa-s));
   box-shadow: 0 3px 10px #dce5f32b;
-  color: #62748f;
+  color: var(--c-62748f-t);
   font-size: 16px;
   text-align: left;
   transition:
@@ -22,7 +22,7 @@
 }
 .language-trigger:hover,
 .language-trigger.is-open {
-  background: #edf3fb;
+  background: var(--c-edf3fb-s);
   box-shadow: 0 5px 15px #cddbea44;
 }
 .language-trigger > span:not(.language-flag) {
@@ -30,7 +30,7 @@
 }
 .language-chevron {
   margin-left: auto;
-  color: #7d90aa;
+  color: var(--c-7d90aa-t);
   transition: transform 0.18s;
 }
 .language-trigger.is-open .language-chevron {
@@ -55,20 +55,24 @@
 .flag-fr {
   background: linear-gradient(
     90deg,
-    #245caa 0 33.333%,
-    #fff 33.333% 66.666%,
-    #e24e58 66.666%
+    var(--c-245caa-s) 0 33.333%,
+    var(--c-ffffff-s) 33.333% 66.666%,
+    var(--c-e24e58-s) 66.666%
   );
 }
 .flag-de {
   background: linear-gradient(
-    #30333a 0 33.333%,
-    #dd4654 33.333% 66.666%,
-    #f4c951 66.666%
+    var(--c-30333a-s) 0 33.333%,
+    var(--c-dd4654-s) 33.333% 66.666%,
+    var(--c-f4c951-s) 66.666%
   );
 }
 .flag-es {
-  background: linear-gradient(#df4753 0 25%, #f7cd55 25% 75%, #df4753 75%);
+  background: linear-gradient(
+    var(--c-df4753-s) 0 25%,
+    var(--c-f7cd55-s) 25% 75%,
+    var(--c-df4753-s) 75%
+  );
 }
 .language-menu {
   position: absolute;
@@ -76,9 +80,9 @@
   top: calc(100% + 12px);
   width: 235px;
   padding: 9px 0;
-  border: 1px solid #e7edf6;
+  border: 1px solid var(--c-e7edf6-b);
   border-radius: 13px;
-  background: linear-gradient(135deg, #f9fbfe, #edf3fa);
+  background: linear-gradient(135deg, var(--c-f9fbfe-s), var(--c-edf3fa-s));
   box-shadow: 0 18px 45px #546c9830;
   overflow: hidden;
   z-index: 40;
@@ -95,7 +99,7 @@
   text-align: left;
   font-size: 16px;
   letter-spacing: 0.2px;
-  color: #566983;
+  color: var(--c-566983-t);
   position: relative;
 }
 .language-option > span:not(.language-flag) {
@@ -103,26 +107,26 @@
 }
 .language-option:hover,
 .language-option:focus-visible {
-  background: #e8f0fa;
+  background: var(--c-e8f0fa-s);
   outline: none;
 }
 .language-option:focus-visible:after {
   content: "";
   position: absolute;
   inset: 3px 5px;
-  border: 2px solid #79a9d3;
+  border: 2px solid var(--c-79a9d3-b);
   border-radius: 8px;
   pointer-events: none;
 }
 .language-option.is-selected {
-  background: #fff;
-  color: #354f70;
+  background: var(--c-ffffff-s);
+  color: var(--c-354f70-t);
 }
 .language-option.is-selected:focus-visible {
-  background: #fafdff;
+  background: var(--c-fafdff-s);
 }
 .language-check {
-  color: #6ab87b;
+  color: var(--c-6ab87b-t);
   margin-left: auto;
   flex-shrink: 0;
 }
@@ -216,7 +220,8 @@
   }
 }
 
-.topbar .notification {
+.topbar .notification,
+.topbar .theme-toggle {
   display: inline-flex;
   flex-shrink: 0;
   align-items: center;
@@ -225,29 +230,32 @@
   height: 48px;
   padding: 10px;
   border-radius: 14px;
-  background: #eef4fc;
-  color: #7896bd;
-  border: 1px solid #e5edf8;
+  background: var(--c-eef4fc-s);
+  color: var(--c-7896bd-t);
+  border: 1px solid var(--c-e5edf8-b);
 }
-.topbar .notification:hover {
-  background: #e3effc;
-  color: #4a91cc;
+.topbar .notification:hover,
+.topbar .theme-toggle:hover {
+  background: var(--c-e3effc-s);
+  color: var(--c-4a91cc-t);
 }
 .topbar .notification i {
   width: 10px;
   height: 10px;
   top: 9px;
   right: 9px;
-  border: 2px solid white;
-  background: #ec729b;
+  border: 2px solid var(--c-ffffff-b);
+  background: var(--c-ec729b-s);
   box-shadow: 0 1px 3px #ec729b33;
 }
-.topbar .notification svg {
+.topbar .notification svg,
+.topbar .theme-toggle svg {
   width: 28px;
   height: 28px;
 }
 @media (max-width: 600px) {
-  .topbar .notification {
+  .topbar .notification,
+  .topbar .theme-toggle {
     order: 1;
     width: 42px;
     height: 42px;
