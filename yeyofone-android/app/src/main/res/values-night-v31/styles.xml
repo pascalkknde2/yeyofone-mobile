@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- API 31+ splash screen in the dark palette; the rest matches values-night-v27. -->
+    <style name="Theme.YeyoFone" parent="Theme.YeyoFone.Base">
+        <item name="android:navigationBarColor">#0B1120</item>
+        <item name="android:windowLightNavigationBar">false</item>
+        <item name="android:windowSplashScreenBackground">#0B1120</item>
+    </style>
+</resources>

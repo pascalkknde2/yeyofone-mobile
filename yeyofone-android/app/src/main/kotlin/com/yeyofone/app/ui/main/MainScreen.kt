@@ -160,7 +160,7 @@ fun MainScreen(
 @Composable
 private fun MainHeader(name: String, online: Boolean) {
     Row(
-        Modifier.fillMaxWidth().background(Color.White).padding(start = 20.dp, end = 20.dp, top = 24.dp),
+        Modifier.fillMaxWidth().background(CardWhite).padding(start = 20.dp, end = 20.dp, top = 24.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -214,7 +214,7 @@ private fun AccountStatusCard(account: SipAccount?, onManage: () -> Unit) {
         }
         Column(Modifier.padding(24.dp)) {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                Text(stringResource(R.string.primary_account).uppercase(), Modifier.weight(1f), fontSize = 11.sp, letterSpacing = 1.5.sp, fontWeight = FontWeight.SemiBold, color = CardWhite.copy(alpha = 0.6f))
+                Text(stringResource(R.string.primary_account).uppercase(), Modifier.weight(1f), fontSize = 11.sp, letterSpacing = 1.5.sp, fontWeight = FontWeight.SemiBold, color = Color.White.copy(alpha = 0.6f))
                 Box(
                     Modifier.size(width = 32.dp, height = 24.dp)
                         .background(Brush.linearGradient(listOf(Color(0xFFFBBF24), Color(0xFFD97706))), RoundedCornerShape(4.dp)),
@@ -226,22 +226,22 @@ private fun AccountStatusCard(account: SipAccount?, onManage: () -> Unit) {
             Column(Modifier.padding(vertical = 20.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text(
                     account?.displayName ?: stringResource(R.string.no_accounts),
-                    fontSize = 22.sp, fontWeight = FontWeight.SemiBold, color = CardWhite,
+                    fontSize = 22.sp, fontWeight = FontWeight.SemiBold, color = Color.White,
                     letterSpacing = (-0.5).sp, maxLines = 2, overflow = TextOverflow.Ellipsis,
                 )
                 if (account != null) {
                     Text(
                         stringResource(R.string.dashboard_extension, account.username),
                         fontSize = 14.sp, fontWeight = FontWeight.Medium,
-                        color = CardWhite.copy(alpha = 0.7f),
+                        color = Color.White.copy(alpha = 0.7f),
                         maxLines = 1, overflow = TextOverflow.Ellipsis,
                     )
                 }
             }
-            HorizontalDivider(color = CardWhite.copy(alpha = 0.1f))
+            HorizontalDivider(color = Color.White.copy(alpha = 0.1f))
             TextButton(onClick = onManage, contentPadding = PaddingValues(top = 12.dp, bottom = 0.dp)) {
-                Text(stringResource(if (account == null) R.string.add_account else R.string.dashboard_manage_account), color = CardWhite.copy(alpha = 0.7f), fontSize = 13.sp)
-                Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null, tint = CardWhite.copy(alpha = 0.7f), modifier = Modifier.size(16.dp))
+                Text(stringResource(if (account == null) R.string.add_account else R.string.dashboard_manage_account), color = Color.White.copy(alpha = 0.7f), fontSize = 13.sp)
+                Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null, tint = Color.White.copy(alpha = 0.7f), modifier = Modifier.size(16.dp))
             }
         }
     }

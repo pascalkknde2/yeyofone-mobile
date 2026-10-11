@@ -46,6 +46,7 @@ import com.yeyofone.app.ui.theme.InactiveGray
 import com.yeyofone.app.ui.theme.PrimaryLight
 import com.yeyofone.app.ui.theme.TextPrimary
 import com.yeyofone.app.ui.theme.TextSecondary
+import com.yeyofone.app.ui.theme.CardWhite
 import com.yeyofone.core.model.SipAccount
 
 @Composable
@@ -68,7 +69,7 @@ fun AccountsScreen(
         bottomBar = { BottomNavigationBar(SETTINGS_NAVIGATION, onNavigationItemSelected) },
     ) { padding ->
         Column(Modifier.fillMaxSize().padding(bottom = padding.calculateBottomPadding())) {
-            Column(Modifier.fillMaxWidth().background(Color.White).statusBarsPadding()) {
+            Column(Modifier.fillMaxWidth().background(CardWhite).statusBarsPadding()) {
                 Row(
                     Modifier.fillMaxWidth().padding(start = 24.dp, top = 14.dp, end = 12.dp, bottom = 14.dp),
                     verticalAlignment = Alignment.CenterVertically,

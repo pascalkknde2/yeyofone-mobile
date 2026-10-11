@@ -49,6 +49,7 @@ import com.yeyofone.app.ui.theme.BorderLight
 import com.yeyofone.app.ui.theme.CallBackground
 import com.yeyofone.app.ui.theme.CallTextPrimary
 import com.yeyofone.app.ui.theme.CallTextSecondary
+import com.yeyofone.app.ui.theme.CardWhite
 import com.yeyofone.core.model.CallDirection
 
 @Composable
@@ -81,7 +82,7 @@ fun CallEndedScreen(
             verticalArrangement = Arrangement.Center,
         ) {
             Box(
-                Modifier.size(136.dp).clip(CircleShape).background(Color.White)
+                Modifier.size(136.dp).clip(CircleShape).background(CardWhite)
                     .border(2.dp, accent.copy(alpha = 0.25f), CircleShape),
                 contentAlignment = Alignment.Center,
             ) {
@@ -116,7 +117,7 @@ fun CallEndedScreen(
             }
             Spacer(Modifier.height(28.dp))
             Row(
-                Modifier.clip(RoundedCornerShape(20.dp)).background(Color.White)
+                Modifier.clip(RoundedCornerShape(20.dp)).background(CardWhite)
                     .border(1.dp, BorderLight, RoundedCornerShape(20.dp))
                     .padding(horizontal = 28.dp, vertical = 16.dp),
                 verticalAlignment = Alignment.CenterVertically,
@@ -132,7 +133,7 @@ fun CallEndedScreen(
         Column(
             Modifier.fillMaxWidth()
                 .shadow(4.dp, RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp))
-                .background(Color.White, RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp))
+                .background(CardWhite, RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp))
                 .padding(start = 24.dp, top = 32.dp, end = 24.dp, bottom = 48.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {

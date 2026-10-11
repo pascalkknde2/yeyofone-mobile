@@ -35,12 +35,10 @@ import com.yeyofone.app.R
 import com.yeyofone.app.RingtonePreference
 import com.yeyofone.app.ui.theme.*
 
-private val Purple = Color(0xFF8B5CF6)
-private val PurpleLight = Color(0xFFF5F3FF)
-private val RingtoneOrange = Color(0xFFF97316)
-private val RingtoneOrangeLight = Color(0xFFFFF7ED)
-private val SettingPink = Color(0xFFDB2777)
-private val SettingPinkLight = Color(0xFFFDF2F8)
+private val RingtoneOrange get() = AccentOrange
+private val RingtoneOrangeLight get() = OrangeLight
+private val SettingPink get() = Pink
+private val SettingPinkLight get() = PinkLight
 
 @Composable
 fun IncomingCallsSettingsScreen(

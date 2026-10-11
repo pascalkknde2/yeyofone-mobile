@@ -140,7 +140,7 @@ fun RecordingsScreen(onBack: () -> Unit) {
                                 Text(stringResource(R.string.recording_storage_used), fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = TextPrimary)
                                 Text("${formatBytes(usedBytes)} / ${formatBytes(totalBytes)}", fontSize = 13.sp, color = TextSecondary)
                             }
-                            Box(Modifier.fillMaxWidth().padding(top = 12.dp).height(8.dp).clip(CircleShape).background(Color(0xFFE2E8F0))) {
+                            Box(Modifier.fillMaxWidth().padding(top = 12.dp).height(8.dp).clip(CircleShape).background(BorderLight)) {
                                 val progress = if (totalBytes > 0) (usedBytes.toFloat() / totalBytes).coerceIn(0f, 1f) else 0f
                                 Box(Modifier.fillMaxWidth(progress).fillMaxHeight().background(AccentBlue))
                             }
@@ -215,8 +215,8 @@ private fun RecordingRow(recording: RecordingFile, playing: Boolean, onPlay: () 
         Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 14.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Box(Modifier.size(44.dp).clip(CircleShape).background(Color(0xFFFDF2F8)), contentAlignment = Alignment.Center) {
-            Icon(Icons.Default.Mic, null, tint = Color(0xFFDB2777), modifier = Modifier.size(21.dp))
+        Box(Modifier.size(44.dp).clip(CircleShape).background(PinkLight), contentAlignment = Alignment.Center) {
+            Icon(Icons.Default.Mic, null, tint = Pink, modifier = Modifier.size(21.dp))
         }
         Column(Modifier.weight(1f).padding(start = 14.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text(recording.title, maxLines = 1, fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = TextPrimary)

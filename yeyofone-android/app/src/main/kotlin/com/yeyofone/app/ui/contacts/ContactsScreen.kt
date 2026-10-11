@@ -44,7 +44,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -62,6 +61,7 @@ import com.yeyofone.app.ui.theme.PrimaryLight
 import com.yeyofone.app.ui.theme.SuccessLight
 import com.yeyofone.app.ui.theme.TextPrimary
 import com.yeyofone.app.ui.theme.TextSecondary
+import com.yeyofone.app.ui.theme.CardWhite
 import com.yeyofone.core.account.ContactDraft
 import com.yeyofone.core.model.Contact
 import com.yeyofone.core.model.ContactId
@@ -87,7 +87,7 @@ fun ContactsScreen(
         bottomBar = { BottomNavigationBar(CONTACTS_NAVIGATION, onNavigationItemSelected) },
     ) { padding ->
         Column(Modifier.fillMaxSize().padding(bottom = padding.calculateBottomPadding())) {
-            Column(Modifier.fillMaxWidth().background(Color.White).statusBarsPadding()) {
+            Column(Modifier.fillMaxWidth().background(CardWhite).statusBarsPadding()) {
                 Row(
                     Modifier.fillMaxWidth().padding(start = 24.dp, top = 14.dp, end = 12.dp, bottom = 14.dp),
                     verticalAlignment = Alignment.CenterVertically,
@@ -168,7 +168,7 @@ private fun EmptyState(title: String, subtitle: String) {
 private fun ContactCard(contact: Contact, onCall: () -> Unit, onToggleFavorite: () -> Unit, onEdit: () -> Unit) {
     Row(
         Modifier.fillMaxWidth().shadow(2.dp, RoundedCornerShape(16.dp))
-            .clip(RoundedCornerShape(16.dp)).background(Color.White)
+            .clip(RoundedCornerShape(16.dp)).background(CardWhite)
             .clickable(onClick = onCall).padding(16.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(14.dp),

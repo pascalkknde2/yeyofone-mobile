@@ -44,8 +44,8 @@ import com.yeyofone.app.BuildConfig
 import com.yeyofone.app.R
 import com.yeyofone.app.ui.theme.AccentBlue
 import com.yeyofone.app.ui.theme.BorderLight
-import com.yeyofone.app.ui.theme.InactiveGray
 import com.yeyofone.app.ui.theme.NavBackground
+import com.yeyofone.app.ui.theme.NavInactive
 
 const val HOME_NAVIGATION = 0
 const val KEYPAD_NAVIGATION = 1
@@ -79,7 +79,7 @@ fun BottomNavigationBar(selectedIndex: Int, onItemSelected: (Int) -> Unit) {
         items.forEach { item ->
             val selected = selectedIndex == item.navIndex
             val background by animateColorAsState(if (selected) AccentBlue else Color.Transparent, label = "tab background")
-            val foreground by animateColorAsState(if (selected) Color.White else InactiveGray, label = "tab icon")
+            val foreground by animateColorAsState(if (selected) Color.White else NavInactive, label = "tab icon")
             Box(
                 contentAlignment = Alignment.Center,
                 modifier = Modifier.weight(1f).height(48.dp)

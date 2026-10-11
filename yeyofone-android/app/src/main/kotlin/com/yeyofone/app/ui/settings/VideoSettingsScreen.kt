@@ -27,8 +27,8 @@ import androidx.compose.ui.unit.sp
 import com.yeyofone.app.R
 import com.yeyofone.app.ui.theme.*
 
-private val VideoOrange = Color(0xFFF97316)
-private val VideoOrangeLight = Color(0xFFFFF7ED)
+private val VideoOrange get() = AccentOrange
+private val VideoOrangeLight get() = OrangeLight
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -76,7 +76,7 @@ fun VideoSettingsScreen(onBack: () -> Unit) {
                             }
                             Icon(Icons.Default.Videocam, null, tint = Color.White.copy(alpha = .2f), modifier = Modifier.size(48.dp))
                             IconButton(onClick = { frontCamera = !frontCamera }, modifier = Modifier.align(Alignment.BottomEnd).padding(12.dp).size(40.dp).clip(CircleShape).background(Color.White.copy(alpha = .2f))) {
-                                Icon(Icons.Default.Cameraswitch, stringResource(R.string.flip_camera), tint = CardWhite)
+                                Icon(Icons.Default.Cameraswitch, stringResource(R.string.flip_camera), tint = Color.White)
                             }
                         }
                     }

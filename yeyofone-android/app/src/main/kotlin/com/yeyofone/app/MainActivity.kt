@@ -5,6 +5,8 @@ package com.yeyofone.app
 import android.Manifest
 import android.app.NotificationManager
 import android.content.Intent
+import android.content.res.Configuration
+import android.graphics.drawable.ColorDrawable
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.delay
 import android.content.pm.PackageManager
@@ -110,6 +112,10 @@ import com.yeyofone.app.ui.theme.PrimaryLight
 import com.yeyofone.app.ui.theme.TextPrimary
 import com.yeyofone.app.ui.theme.TextSecondary
 import com.yeyofone.app.ui.theme.YeyoFoneTheme
+import com.yeyofone.app.ui.theme.CardWhite
+import com.yeyofone.app.ui.theme.AppearancePreferences
+import com.yeyofone.app.ui.theme.Appearance
+import com.yeyofone.app.ui.theme.isAppInDarkTheme
 import com.yeyofone.app.ui.settings.LanguagePreferences
 import com.yeyofone.core.account.AccountDraft
 import com.yeyofone.core.account.ContactDraft
@@ -154,19 +160,35 @@ class MainActivity : ComponentActivity() {
         super.onStop()
     }
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        // API 35+ enforces edge-to-edge for this target; opt in everywhere so every API level
-        // lays out the same way and screens own their insets. The light palette needs dark
-        // icons; API 26 cannot draw dark navigation icons, so it keeps a dark scrim.
+    /** The Appearance setting resolved against the device's night mode, before Compose starts. */
+    private fun startsDark(): Boolean = when (AppearancePreferences.current) {
+        Appearance.SYSTEM -> (resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES
+        Appearance.LIGHT -> false
+        Appearance.DARK -> true
+    }
+
+    /**
+     * API 35+ enforces edge-to-edge for this target; opt in everywhere so every API level lays out
+     * the same way and screens own their insets. The light palette needs dark icons and the dark
+     * palette light ones; API 26 cannot draw dark navigation icons, so it keeps a dark scrim.
+     */
+    private fun applySystemBars(dark: Boolean) {
         val transparent = android.graphics.Color.TRANSPARENT
+        val style = if (dark) SystemBarStyle.dark(transparent) else SystemBarStyle.light(transparent, transparent)
         enableEdgeToEdge(
-            statusBarStyle = SystemBarStyle.light(transparent, transparent),
-            navigationBarStyle = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
-                SystemBarStyle.light(transparent, transparent)
+            statusBarStyle = style,
+            navigationBarStyle = if (dark || Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
+                style
             } else {
                 SystemBarStyle.dark(NAVIGATION_SCRIM_API_26)
             },
         )
+        window.setBackgroundDrawable(ColorDrawable(if (dark) WINDOW_BACKGROUND_DARK else WINDOW_BACKGROUND_LIGHT))
+    }
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        AppearancePreferences.load(this)
+        applySystemBars(dark = startsDark())
         super.onCreate(savedInstanceState)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
             setShowWhenLocked(true)
@@ -184,6 +206,8 @@ class MainActivity : ComponentActivity() {
         setContent {
             RequestBackgroundCallPermissions()
             YeyoFoneTheme {
+                val dark = isAppInDarkTheme()
+                LaunchedEffect(dark) { applySystemBars(dark) }
                 val viewModel: YeyoFoneViewModel = viewModel(factory = YeyoFoneViewModel.Factory(app))
                 val callHistoryViewModel: CallHistoryViewModel = viewModel(
                     factory = CallHistoryViewModel.Factory(CallRepository(app.callHistory)),
@@ -1068,6 +1092,8 @@ private fun android.content.Context.hasMicrophone() =
 
 // Matches the legacy theme navigation bar so white API 26 navigation icons stay legible.
 private const val NAVIGATION_SCRIM_API_26 = 0xFF0F172A.toInt()
+private const val WINDOW_BACKGROUND_LIGHT = 0xFFF4F7F9.toInt()
+private const val WINDOW_BACKGROUND_DARK = 0xFF0B1120.toInt()
 
 @Composable
 internal fun AudioRoute.label(): String = when (this) {
@@ -1272,7 +1298,7 @@ private fun CheckRow(
 @Composable
 private fun EditorCard(content: @Composable ColumnScope.() -> Unit) {
     Column(
-        Modifier.fillMaxWidth().background(Color.White, RoundedCornerShape(20.dp)).padding(16.dp),
+        Modifier.fillMaxWidth().background(CardWhite, RoundedCornerShape(20.dp)).padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
         content = content,
     )

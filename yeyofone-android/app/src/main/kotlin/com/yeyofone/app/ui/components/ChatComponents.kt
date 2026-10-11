@@ -68,11 +68,12 @@ import com.yeyofone.app.ui.theme.InactiveGray
 import com.yeyofone.app.ui.theme.PrimaryLight
 import com.yeyofone.app.ui.theme.TextPrimary
 import com.yeyofone.app.ui.theme.TextSecondary
+import com.yeyofone.app.ui.theme.CardWhite
 
 @Composable
 fun ChatHeader(contact: ChatContact, onBack: () -> Unit, onVoiceCall: () -> Unit, onVideoCall: () -> Unit) {
     Row(
-        Modifier.fillMaxWidth().background(Color.White).statusBarsPadding().padding(horizontal = 8.dp, vertical = 10.dp),
+        Modifier.fillMaxWidth().background(CardWhite).statusBarsPadding().padding(horizontal = 8.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         IconButton(onClick = onBack) {
@@ -85,7 +86,7 @@ fun ChatHeader(contact: ChatContact, onBack: () -> Unit, onVoiceCall: () -> Unit
             if (contact.isOnline) {
                 Box(
                     Modifier.align(Alignment.BottomEnd).size(12.dp).clip(CircleShape)
-                        .background(AccentGreen).border(2.dp, Color.White, CircleShape),
+                        .background(AccentGreen).border(2.dp, CardWhite, CircleShape),
                 )
             }
         }
@@ -102,7 +103,7 @@ fun ChatHeader(contact: ChatContact, onBack: () -> Unit, onVoiceCall: () -> Unit
 @Composable
 fun MessageBubble(message: ChatMessage, onPlayVoice: () -> Unit) {
     val outgoing = message.isOutgoing
-    val bubble = if (outgoing) AccentBlue else Color.White
+    val bubble = if (outgoing) AccentBlue else CardWhite
     val foreground = if (outgoing) Color.White else TextPrimary
     val meta = if (outgoing) Color.White.copy(alpha = 0.78f) else InactiveGray
     val shape = if (outgoing) RoundedCornerShape(18.dp, 18.dp, 4.dp, 18.dp)
@@ -170,7 +171,7 @@ fun TypingIndicator() {
     Row(Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
         Row(
             Modifier.shadow(2.dp, RoundedCornerShape(18.dp, 18.dp, 18.dp, 4.dp))
-                .clip(RoundedCornerShape(18.dp, 18.dp, 18.dp, 4.dp)).background(Color.White)
+                .clip(RoundedCornerShape(18.dp, 18.dp, 18.dp, 4.dp)).background(CardWhite)
                 .padding(horizontal = 16.dp, vertical = 12.dp),
             horizontalArrangement = Arrangement.spacedBy(4.dp),
         ) {
@@ -197,7 +198,7 @@ private fun TypingDot(delay: Int) {
 @Composable
 fun ChatInputBar(text: String, onTextChange: (String) -> Unit, onSend: () -> Unit, onAttach: () -> Unit) {
     Row(
-        Modifier.fillMaxWidth().background(Color.White).padding(horizontal = 12.dp, vertical = 10.dp),
+        Modifier.fillMaxWidth().background(CardWhite).padding(horizontal = 12.dp, vertical = 10.dp),
         verticalAlignment = Alignment.Bottom,
         horizontalArrangement = Arrangement.spacedBy(10.dp),
     ) {

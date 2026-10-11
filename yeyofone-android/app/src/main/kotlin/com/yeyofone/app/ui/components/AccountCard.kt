@@ -32,6 +32,7 @@ import com.yeyofone.app.ui.theme.InactiveGray
 import com.yeyofone.app.ui.theme.PrimaryLight
 import com.yeyofone.app.ui.theme.TextPrimary
 import com.yeyofone.app.ui.theme.TextSecondary
+import com.yeyofone.app.ui.theme.CardWhite
 import com.yeyofone.core.model.SipAccount
 
 @Composable
@@ -42,7 +43,7 @@ fun AccountCard(
 ) {
     Row(
         Modifier.fillMaxWidth().shadow(2.dp, RoundedCornerShape(16.dp))
-            .clip(RoundedCornerShape(16.dp)).background(Color.White)
+            .clip(RoundedCornerShape(16.dp)).background(CardWhite)
             .clickable(onClick = onClick).padding(16.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(14.dp),
