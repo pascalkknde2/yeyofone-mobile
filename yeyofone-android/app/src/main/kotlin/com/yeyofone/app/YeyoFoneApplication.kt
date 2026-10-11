@@ -13,6 +13,7 @@ import com.yeyofone.core.model.SipAccount
 import com.yeyofone.core.model.SipAccountId
 import com.yeyofone.core.registration.AndroidNetworkStatus
 import com.yeyofone.core.registration.RegistrationCoordinator
+import com.yeyofone.core.voip.pjsip.AudioCodecInfo
 import com.yeyofone.core.voip.pjsip.PjsipEngine
 import com.yeyofone.core.voip.pjsip.PjsipEngineConfiguration
 import com.yeyofone.core.voip.pjsip.SipTransport
@@ -32,13 +33,20 @@ class YeyoFoneApplication : Application() {
     val forwardingState by lazy { RoomForwardingStateRepository.create(this) }
     internal val forwardingCoordinator by lazy { AndroidForwardingCoordinator(this, forwardingState) }
     val contacts by lazy { RoomContactRepository.create(this) }
+    /**
+     * Whether this process runs the engine with detailed logs: always in debug builds, and in
+     * release builds when Settings › Advanced › Debug log was on at startup. Read once, because
+     * PJSIP's log settings only apply when the engine starts.
+     */
+    val debugLogActive by lazy { BuildConfig.DEBUG || DebugLog.isEnabled(this) }
     private val engine by lazy {
         PjsipEngine.create(
             PjsipEngineConfiguration(
                 transports = setOf(SipTransport.UDP, SipTransport.TCP, SipTransport.TLS),
-                // Release: PJSIP errors only and no network identifiers in media logs (SEC-08).
-                logLevel = if (BuildConfig.DEBUG) 3 else 1,
-                verboseDiagnostics = BuildConfig.DEBUG,
+                // Release: PJSIP errors only and no network identifiers in media logs (SEC-08),
+                // unless the user turned on the debug log.
+                logLevel = if (debugLogActive) 3 else 1,
+                verboseDiagnostics = debugLogActive,
             ),
         )
     }
@@ -51,6 +59,8 @@ class YeyoFoneApplication : Application() {
             applicationScope,
         )
     }
+    /** The engine's enabled audio codecs in the order they are offered, for Settings › Advanced. */
+    suspend fun audioCodecs(): List<AudioCodecInfo> = engine.audioCodecs()
     val callManager by lazy { CallCoordinator(accountRepository, engine, applicationScope, callHistory, accountPreferences) }
     val audioRouteManager by lazy { AndroidAudioRouteManager(this) }
     internal val pushRegistrar by lazy { PushRegistrar(this, applicationScope) }

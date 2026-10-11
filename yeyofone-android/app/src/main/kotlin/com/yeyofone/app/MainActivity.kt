@@ -100,6 +100,10 @@ import com.yeyofone.app.ui.dialpad.DialPadViewModel
 import com.yeyofone.app.ui.incomingcall.IncomingCallScreen as IncomingCallContent
 import com.yeyofone.app.ui.main.MainScreen
 import com.yeyofone.app.ui.settings.SettingsScreen
+import com.yeyofone.app.ui.settings.AboutScreen
+import com.yeyofone.app.ui.settings.AdvancedSettingsScreen
+import com.yeyofone.app.ui.settings.LicensesScreen
+import com.yeyofone.app.ui.settings.SocialScreen
 import com.yeyofone.app.ui.settings.AudioSettingsScreen
 import com.yeyofone.app.ui.settings.LanguageSettingsScreen
 import com.yeyofone.app.ui.settings.RecordingsScreen
@@ -489,6 +493,9 @@ private fun AccountsApp(
             onIncomingCallsClick = viewModel::showIncomingCallsSettings,
             onLanguageClick = viewModel::showLanguageSettings,
             onRecordingsClick = viewModel::showRecordings,
+            onAdvancedClick = viewModel::showAdvancedSettings,
+            onSocialClick = viewModel::showSocial,
+            onAboutClick = viewModel::showAbout,
             onNavigationItemSelected = navigateFromMenu,
         )
         AppScreen.AudioSettings -> AudioSettingsScreen(
@@ -516,6 +523,15 @@ private fun AccountsApp(
         }
         AppScreen.LanguageSettings -> LanguageSettingsScreen(onBack = viewModel::showSettings)
         AppScreen.Recordings -> RecordingsScreen(onBack = viewModel::showSettings)
+        AppScreen.AdvancedSettings -> AdvancedSettingsScreen(
+            accounts = state.accounts,
+            observeRegistration = viewModel::observeRegistration,
+            inCall = state.sessions.isNotEmpty(),
+            onBack = viewModel::showSettings,
+        )
+        AppScreen.Social -> SocialScreen(account = state.accounts.firstOrNull(), onBack = viewModel::showSettings)
+        AppScreen.About -> AboutScreen(onLicenses = viewModel::showLicenses, onBack = viewModel::showSettings)
+        AppScreen.Licenses -> LicensesScreen(onBack = viewModel::showAbout)
     }
     }
     if (waitingCall != null) {

@@ -57,10 +57,12 @@ struct SettingsScreen: View {
                              subtitle: appearance.title) { showAppearance = true },
                 SettingEntry(icon: "globe", color: Palette.accentBlue, title: String(localized: "Language"),
                              subtitle: String(localized: "App language and voice preferences")) { store.screen = .languageSettings },
-                SettingEntry(icon: "gearshape.fill", color: Palette.accentBlue, title: String(localized: "Advanced"), subtitle: String(localized: "Network, Codecs, Debugging")),
-                SettingEntry(icon: "square.and.arrow.up", color: Palette.accentGreen, title: String(localized: "Social"), subtitle: String(localized: "Share, Invite friends, Community")),
+                SettingEntry(icon: "gearshape.fill", color: Palette.accentBlue, title: String(localized: "Advanced"),
+                             subtitle: String(localized: "Network, Codecs, Debugging")) { store.screen = .advancedSettings },
+                SettingEntry(icon: "square.and.arrow.up", color: Palette.accentGreen, title: String(localized: "Social"),
+                             subtitle: String(localized: "Invite friends, share your contact")) { store.screen = .socialSettings },
                 SettingEntry(icon: "info.circle.fill", color: Palette.inactiveGray, title: String(localized: "About"),
-                             subtitle: String(localized: "Version \(AppInfo.version) • Terms • Privacy")),
+                             subtitle: String(localized: "Version \(AppInfo.version) • Licenses")) { store.screen = .about },
             ]),
         ]
         let trimmed = query.trimmingCharacters(in: .whitespaces)

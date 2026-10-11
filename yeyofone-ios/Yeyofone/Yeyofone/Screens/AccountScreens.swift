@@ -235,7 +235,14 @@ struct AccountDetailScreen: View {
     }
 
     private func status(_ account: SipAccount, _ state: RegistrationState) -> (String, Color) {
-        guard account.enabled else { return (String(localized: "Disabled"), Palette.inactiveGray) }
+        account.status(state)
+    }
+}
+
+extension SipAccount {
+    /// Registration label and color, shared by the account page and Settings › Advanced.
+    func status(_ state: RegistrationState) -> (String, Color) {
+        guard enabled else { return (String(localized: "Disabled"), Palette.inactiveGray) }
         switch state {
         case .registered: return (String(localized: "Registered"), Palette.accentGreen)
         case .registering: return (String(localized: "Registering…"), Palette.accentOrange)

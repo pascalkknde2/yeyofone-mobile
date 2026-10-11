@@ -22,6 +22,7 @@ enum AppScreen: Equatable {
     case accountDetail(UUID)
     case accountEditor(UUID?)
     case audioSettings, videoSettings, incomingCallsSettings, languageSettings, recordings
+    case advancedSettings, socialSettings, about, licenses
 }
 
 enum Tab: Int, CaseIterable {
@@ -737,6 +738,10 @@ final class AppStore {
         case "incomingSettings": screen = .incomingCallsSettings
         case "language": screen = .languageSettings
         case "recordings": screen = .recordings
+        case "advanced": screen = .advancedSettings
+        case "social": screen = .socialSettings
+        case "about": screen = .about
+        case "licenses": screen = .licenses
         case "incoming":
             incomingCall = CallSession(remoteName: "Noah Anderson", remoteNumber: "1001", direction: .incoming, state: .ringing)
         case "call":

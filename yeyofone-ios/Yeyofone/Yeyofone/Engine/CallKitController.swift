@@ -65,9 +65,7 @@ final class CallKitController: NSObject {
         AudioController.configureSession()
         provider.reportNewIncomingCall(with: id, update: update) { error in
             Task { @MainActor in
-                #if DEBUG
                 EngineLog.note("CallKit report \(id): \(error.map { "\(($0 as NSError).domain) \(($0 as NSError).code) \($0.localizedDescription)" } ?? "accepted")")
-                #endif
                 guard let error else {
                     self.managed.insert(id)
                     completion(.reported)
@@ -91,13 +89,9 @@ final class CallKitController: NSObject {
     func requestHold(_ id: UUID, _ held: Bool) { request(CXSetHeldCallAction(call: id, onHold: held)) }
 
     private func request(_ action: CXCallAction) {
-        #if DEBUG
         EngineLog.note("CallKit request \(type(of: action)) \(action.callUUID)")
-        #endif
         callController.request(CXTransaction(action: action)) { error in
-            #if DEBUG
             if let error { EngineLog.note("CallKit request failed: \((error as NSError).domain) \((error as NSError).code)") }
-            #endif
             guard error != nil else { return }
             // CallKit refused (for example the call already ended there); apply the request directly.
             Task { @MainActor in self.performDirectly(action) }
@@ -120,9 +114,7 @@ final class CallKitController: NSObject {
 extension CallKitController: CXProviderDelegate {
     nonisolated func providerDidReset(_ provider: CXProvider) {
         MainActor.assumeIsolated {
-            #if DEBUG
             EngineLog.note("CallKit reset")
-            #endif
             managed.removeAll()
             handlers.reset()
         }
@@ -130,9 +122,7 @@ extension CallKitController: CXProviderDelegate {
 
     nonisolated func provider(_ provider: CXProvider, perform action: CXAnswerCallAction) {
         MainActor.assumeIsolated {
-            #if DEBUG
             EngineLog.note("CallKit answer action")
-            #endif
             AudioController.configureSession()
             handlers.answer(action.callUUID) { answered in
                 if answered { action.fulfill() } else { action.fail() }
@@ -142,9 +132,7 @@ extension CallKitController: CXProviderDelegate {
 
     nonisolated func provider(_ provider: CXProvider, perform action: CXEndCallAction) {
         MainActor.assumeIsolated {
-            #if DEBUG
             EngineLog.note("CallKit end action")
-            #endif
             managed.remove(action.callUUID)
             handlers.end(action.callUUID)
             action.fulfill()
@@ -175,18 +163,14 @@ extension CallKitController: CXProviderDelegate {
 
     nonisolated func provider(_ provider: CXProvider, didActivate audioSession: AVAudioSession) {
         MainActor.assumeIsolated {
-            #if DEBUG
             EngineLog.note("CallKit audio activated")
-            #endif
             handlers.audioSession(true)
         }
     }
 
     nonisolated func provider(_ provider: CXProvider, didDeactivate audioSession: AVAudioSession) {
         MainActor.assumeIsolated {
-            #if DEBUG
             EngineLog.note("CallKit audio deactivated")
-            #endif
             handlers.audioSession(false)
         }
     }

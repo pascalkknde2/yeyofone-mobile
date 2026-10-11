@@ -56,6 +56,10 @@ struct RootView: View {
                 case .incomingCallsSettings: IncomingCallsSettingsScreen()
                 case .languageSettings: LanguageSettingsScreen()
                 case .recordings: RecordingsScreen()
+                case .advancedSettings: AdvancedSettingsScreen()
+                case .socialSettings: SocialScreen()
+                case .about: AboutScreen()
+                case .licenses: LicensesScreen()
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)

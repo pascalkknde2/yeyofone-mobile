@@ -140,6 +140,18 @@ internal class Pjsua2EndpointBackend : EndpointBackend {
         }
     }
 
+    override fun audioCodecs(): List<AudioCodecInfo> {
+        val codecs = requireEndpoint().codecEnum2()
+        try {
+            // Priority 0 means disabled.
+            return codecs.map { AudioCodecInfo(it.codecId, it.priority.toInt()) }
+                .filter { it.priority > 0 }
+                .sortedByDescending { it.priority }
+        } finally {
+            codecs.delete()
+        }
+    }
+
     override fun createTransports(transports: Set<SipTransport>) {
         transports.forEach { transport ->
             val config = TransportConfig()
