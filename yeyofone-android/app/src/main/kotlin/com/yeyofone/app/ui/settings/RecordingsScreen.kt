@@ -170,7 +170,7 @@ fun RecordingsScreen(onBack: () -> Unit) {
                     )
                 }
                 item {
-                    Text(stringResource(R.string.recording_recent_title).uppercase(), Modifier.padding(start = 4.dp, bottom = (-12).dp), fontSize = 12.sp, fontWeight = FontWeight.Bold, color = InactiveGray, letterSpacing = 1.sp)
+                    Text(stringResource(R.string.recording_recent_title).uppercase(), Modifier.padding(start = 4.dp).offset(y = 12.dp), fontSize = 12.sp, fontWeight = FontWeight.Bold, color = InactiveGray, letterSpacing = 1.sp)
                 }
                 if (filtered.isEmpty()) {
                     item {
