@@ -20,7 +20,7 @@ struct BottomNavigationBar: View {
                 Button { onSelect(tab) } label: {
                     Image(systemName: isSelected ? tab.selectedIcon : tab.icon)
                         .font(.system(size: 19, weight: .medium))
-                        .foregroundStyle(isSelected ? Color.white : Palette.inactiveGray)
+                        .foregroundStyle(isSelected ? Color.white : Palette.navInactive)
                         .frame(width: 44, height: 44)
                         .background(Circle().fill(isSelected ? Palette.accentBlue : .clear))
                         .shadow(color: isSelected ? Palette.accentBlue.opacity(0.3) : .clear, radius: 4, y: 2)
@@ -34,8 +34,8 @@ struct BottomNavigationBar: View {
         }
         .padding(.vertical, 8)
         .padding(.horizontal, 6)
-        .background(Capsule().fill(Palette.cardWhite))
-        .overlay(Capsule().stroke(Palette.borderLight.opacity(0.6), lineWidth: 1))
+        .background(Capsule().fill(Palette.navBackground))
+        .overlay(Capsule().stroke(Palette.navBorder.opacity(0.6), lineWidth: 1))
         .shadow(color: .black.opacity(0.08), radius: 10, y: 4)
         .padding(.horizontal, 20)
         .padding(.top, 12)
