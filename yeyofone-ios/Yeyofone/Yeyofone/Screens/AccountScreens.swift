@@ -169,11 +169,11 @@ struct AccountDetailScreen: View {
         return VStack(spacing: 0) {
             Text(account.displayName.initials)
                 .font(.system(size: 30, weight: .semibold))
-                .foregroundStyle(.white)
+                .foregroundStyle(Palette.textOnPrimary)
                 .frame(width: 84, height: 84)
                 .background(Circle().fill(Palette.textPrimary))
                 .overlay(Circle().stroke(.white.opacity(0.12), lineWidth: 1).padding(4))
-                .overlay(Circle().stroke(.white, lineWidth: 3))
+                .overlay(Circle().stroke(Palette.cardWhite, lineWidth: 3))
                 .frame(width: 96, height: 96)
                 .background(Circle().fill(Palette.primaryLight))
             Text(account.displayName)
@@ -214,7 +214,7 @@ struct AccountDetailScreen: View {
                     account.enabled ? Text("Re-register Account") : Text("Sign In")
                 }
                 .font(.system(size: 16, weight: .semibold))
-                .foregroundStyle(.white)
+                .foregroundStyle(Palette.textOnPrimary)
                 .frame(maxWidth: .infinity, minHeight: 56)
                 .background(RoundedRectangle(cornerRadius: 16).fill(Palette.textPrimary))
             }

@@ -61,7 +61,7 @@ struct ChatScreen: View {
                 .overlay(alignment: .bottomTrailing) {
                     if store.chatContactOnline {
                         Circle().fill(Palette.accentGreen).frame(width: 12, height: 12)
-                            .overlay(Circle().stroke(.white, lineWidth: 2))
+                            .overlay(Circle().stroke(Palette.cardWhite, lineWidth: 2))
                     }
                 }
             VStack(alignment: .leading, spacing: 1) {
@@ -86,7 +86,7 @@ struct ChatScreen: View {
         .foregroundStyle(Palette.textPrimary)
         .padding(.horizontal, 8)
         .padding(.vertical, 8)
-        .background(Color.white)
+        .background(Palette.cardWhite)
     }
 
     private var inputBar: some View {
@@ -118,7 +118,7 @@ struct ChatScreen: View {
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 10)
-        .background(Color.white)
+        .background(Palette.cardWhite)
     }
 
     private func send() {
@@ -165,7 +165,7 @@ private struct MessageBubble: View {
             .fixedSize(horizontal: false, vertical: true)
             .padding(.horizontal, 14)
             .padding(.vertical, 10)
-            .background(shape.fill(outgoing ? Palette.accentBlue : .white))
+            .background(shape.fill(outgoing ? Palette.accentBlue : Palette.cardWhite))
             .shadow(color: .black.opacity(outgoing ? 0.12 : 0.06), radius: outgoing ? 4 : 2, y: 1)
             .frame(maxWidth: 280, alignment: outgoing ? .trailing : .leading)
             if !outgoing { Spacer(minLength: 60) }
@@ -215,7 +215,7 @@ private struct TypingIndicator: View {
             }
             .padding(.horizontal, 16)
             .padding(.vertical, 12)
-            .background(UnevenRoundedRectangle(topLeadingRadius: 18, bottomLeadingRadius: 4, bottomTrailingRadius: 18, topTrailingRadius: 18).fill(.white))
+            .background(UnevenRoundedRectangle(topLeadingRadius: 18, bottomLeadingRadius: 4, bottomTrailingRadius: 18, topTrailingRadius: 18).fill(Palette.cardWhite))
             .shadow(color: .black.opacity(0.06), radius: 2, y: 1)
             Spacer()
         }

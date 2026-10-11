@@ -10,6 +10,7 @@ import SwiftUI
 @main
 struct YeyofoneApp: App {
     @State private var store: AppStore
+    @AppStorage("appearance") private var appearance = Appearance.system
 
     init() {
         #if DEBUG
@@ -30,8 +31,8 @@ struct YeyofoneApp: App {
             RootView()
                 .environment(store)
                 .tint(Palette.accentBlue)
-                // The design is light-only, like Android's YeyoFoneTheme.
-                .preferredColorScheme(.light)
+                // System follows the device setting; Light/Dark are picked in Settings › Appearance.
+                .preferredColorScheme(appearance.colorScheme)
         }
     }
 }
