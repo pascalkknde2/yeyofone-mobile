@@ -475,7 +475,9 @@ fn owner_loop(mut native: ffi::Native, receiver: mpsc::Receiver<Message>, port: 
         if owner.application.engine() == EngineState::Running {
             owner.calls.poll(&mut native, &owner.registrations);
             owner.registrations.poll(&mut native);
-            owner.handoffs.poll(&mut native, &owner.registrations);
+            owner
+                .handoffs
+                .poll(&mut native, &owner.registrations, &owner.calls);
             if native.pump().is_err() {
                 owner.calls.shutdown(&mut native, &owner.registrations);
                 let _ = owner.transition(EngineState::Failed);

@@ -19,6 +19,7 @@ import android.os.Build
 import android.util.Log
 import androidx.core.content.ContextCompat
 import com.yeyofone.core.model.CallDirection
+import com.yeyofone.core.model.CallEndReason
 import com.yeyofone.core.model.CallId
 import com.yeyofone.core.model.CallSession
 import com.yeyofone.core.model.CallState
@@ -350,4 +351,6 @@ class BootReceiver : BroadcastReceiver() {
 private fun CallState.isTerminal(): Boolean = this is CallState.Disconnected || this is CallState.Failed
 
 private fun CallSession.isMissedCall(): Boolean =
-    direction == CallDirection.INCOMING && connectedAt == null && state.isTerminal()
+    direction == CallDirection.INCOMING && connectedAt == null && state.isTerminal() &&
+        // Answered on another device of this account: not missed.
+        state != CallState.Disconnected(CallEndReason.ELSEWHERE)

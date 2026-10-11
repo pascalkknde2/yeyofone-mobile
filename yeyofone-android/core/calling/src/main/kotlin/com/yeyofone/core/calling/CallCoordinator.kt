@@ -13,12 +13,14 @@ import com.yeyofone.core.model.MediaState
 import com.yeyofone.core.model.SipAccountId
 import com.yeyofone.core.model.TransferState
 import com.yeyofone.core.model.VoipError
+import com.yeyofone.core.voip.CallDialog
 import com.yeyofone.core.voip.CallManager
 import com.yeyofone.core.voip.CallHistoryRepository
 import com.yeyofone.core.voip.MediaManager
 import com.yeyofone.core.voip.NativeCallEvent
 import com.yeyofone.core.voip.NativeTransferEvent
 import com.yeyofone.core.voip.SipCallGateway
+import com.yeyofone.core.voip.SipHandoffGateway
 import java.time.Instant
 import java.util.concurrent.ConcurrentHashMap
 import kotlinx.coroutines.CoroutineScope
@@ -37,6 +39,7 @@ class CallCoordinator(
     scope: CoroutineScope,
     private val history: CallHistoryRepository? = null,
     private val preferences: AccountPreferencesRepository? = null,
+    private val handoff: SipHandoffGateway? = null,
 ) : CallManager, MediaManager {
     private val mutableSessions = MutableStateFlow<List<CallSession>>(emptyList())
     override val sessions: StateFlow<List<CallSession>> = mutableSessions.asStateFlow()
@@ -77,6 +80,37 @@ class CallCoordinator(
         history?.upsert(session.toHistoryEntry())
         return id
     }
+
+    /**
+     * Takes over [offer], a call announced by another device of the same account: the INVITE
+     * replaces that device's dialog, so the PBX moves the call here without the other party noticing.
+     */
+    suspend fun takeOver(offer: HandoffOffer): CallId {
+        val gateway = checkNotNull(handoff) { "Call handoff is not available" }
+        val account = accounts.observeAccount(offer.accountId).first()
+            ?: error("Account does not exist")
+        val uri = offer.remote.toSipUri(account.server.domain)
+        val nativeId = gateway.makeReplacingCall(
+            offer.accountId,
+            uri,
+            CallDialog(offer.callId, offer.localTag, offer.remoteTag, offer.remote),
+        )
+        val id = CallId(nativeId)
+        val session = CallSession(
+            id = id,
+            accountId = offer.accountId,
+            remoteUri = uri,
+            direction = CallDirection.OUTGOING,
+            state = CallState.Preparing,
+            createdAt = Instant.now(),
+        )
+        mutableSessions.update { it + session }
+        history?.upsert(session.toHistoryEntry())
+        return id
+    }
+
+    /** The SIP dialog of a live call, for offering it to the account's other devices. */
+    suspend fun dialog(callId: CallId): CallDialog? = handoff?.callDialog(callId.value)
 
     override suspend fun answer(callId: CallId) {
         commandMutex.withLock {
@@ -243,6 +277,8 @@ class CallCoordinator(
         val nativeState = event.toCallState()
         val state = if (event.invState == PJSIP_INV_STATE_DISCONNECTED && locallyEndedCalls.remove(id)) {
             CallState.Disconnected(CallEndReason.LOCAL_HANGUP)
+        } else if (event.invState == PJSIP_INV_STATE_DISCONNECTED && event.endedElsewhere) {
+            CallState.Disconnected(CallEndReason.ELSEWHERE)
         } else {
             nativeState
         }

@@ -32,6 +32,14 @@ struct RootView: View {
         .animation(.easeInOut(duration: 0.2), value: store.incomingCall?.id)
         .animation(.easeInOut(duration: 0.2), value: store.activeCall?.id)
         .animation(.easeInOut(duration: 0.2), value: store.endedSummary)
+        .overlay(alignment: .top) {
+            if let offer = store.handoffOffer, store.activeCall == nil, store.incomingCall == nil {
+                HandoffBanner(offer: offer)
+                    .padding(.top, 8)
+                    .transition(.move(edge: .top).combined(with: .opacity))
+            }
+        }
+        .animation(.easeInOut(duration: 0.2), value: store.handoffOffer?.id)
         .toast(Bindable(store).notice)
         .onChange(of: scenePhase) { _, phase in
             if phase == .active { store.refreshRegistrations() }

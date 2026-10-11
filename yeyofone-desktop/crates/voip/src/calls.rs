@@ -322,6 +322,37 @@ impl Calls {
         self.poll(native, registrations);
         Ok(self.snapshot())
     }
+    /// The single connected call another device of the account could take over; none while a
+    /// consultation or a merged call is in progress.
+    pub fn handoff_candidate(&self) -> Option<handoff::Candidate> {
+        let mut connected = self
+            .sessions
+            .values()
+            .filter(|s| !s.machine.terminal() && s.machine.status.state == "connected");
+        let session = connected.next()?;
+        let status = &session.machine.status;
+        if connected.next().is_some()
+            || status.consult_parent_id.is_some()
+            || status.merged_with.is_some()
+            || status.transfer_pending
+        {
+            return None;
+        }
+        let now_ms = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap_or_default()
+            .as_millis()
+            .min(i64::MAX as u128) as i64;
+        Some(handoff::Candidate {
+            token: session.token,
+            account_id: status.account_id.clone(),
+            remote: status
+                .caller
+                .clone()
+                .unwrap_or_else(|| status.destination.clone()),
+            connected_at_ms: (now_ms - status.duration_seconds as i64 * 1000).max(0),
+        })
+    }
     /// Takes over a call announced by another device of the same account: the INVITE carries
     /// Replaces for that device's dialog, so the PBX moves the call here without the other
     /// party noticing.

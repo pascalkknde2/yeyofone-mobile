@@ -47,7 +47,7 @@ These run on your own device only; nothing is sent to other people.
 - [x] **17. More call screen polish.** Dark calling (outgoing) and ringing (incoming) screens with a pulsing avatar and big labelled buttons; a "Call ended" summary with Call again / Close; keyboard shortcuts during a call (M mute, H hold, K keypad, digits send tones); a Muted badge. — done 2026-10-10 (#46).
 - [x] **18. Call screen: recent numbers, hold time, copy number.** Recent numbers from call history as one-tap buttons in the dialer and suggestions in Add call / Transfer; "On hold · 01:20" on the call screen and bar; a Copy number button with "Copied" feedback. — done 2026-10-10 (#47).
 - [x] **14. Rebuild the iOS framework** with `yeyofone-ios/tools/build-pjsip-ios.sh --bridge-only` so iOS also gets the shared bridge's new merge function (the change is additive; nothing in iOS uses it yet). — done 2026-10-11 (#52), rebuilt with the call handoff bridge functions.
-- [x] **19. Call handoff, iPhone → Mac.** A call on the iPhone shows "Continue call on this device?" on the Mac; one click moves it there with an INVITE carrying Replaces, and the other party notices nothing. Needs `multiple-registrations` on the PBX. — done 2026-10-11 (#52). Still to do: Mac → iPhone and Android in both directions.
+- [x] **19. Call handoff between the Mac, iPhone and Android, in every direction.** A call on one device shows "Continue call on this device?" on the account's other devices; one tap moves it there with an INVITE carrying Replaces, and the other party notices nothing. Needs `multiple-registrations` on the PBX. — done 2026-10-11 (#52).
 
 ## Appearance
 

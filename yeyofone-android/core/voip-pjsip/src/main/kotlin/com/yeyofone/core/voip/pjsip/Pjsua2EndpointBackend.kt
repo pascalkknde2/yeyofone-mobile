@@ -12,6 +12,8 @@ import com.yeyofone.core.model.SipAccountId
 import com.yeyofone.core.model.SignalingPolicyException
 import com.yeyofone.core.model.TransportProtocol
 import com.yeyofone.core.model.signalingPolicyViolation
+import com.yeyofone.core.voip.CallDialog
+import com.yeyofone.core.voip.HandoffMessage
 import com.yeyofone.core.voip.NativeCallEvent
 import com.yeyofone.core.voip.NativeMediaEvent
 import com.yeyofone.core.voip.NativeRegistrationEvent
@@ -23,6 +25,12 @@ import org.pjsip.pjsua2.CallOpParam
 import org.pjsip.pjsua2.CallSendDtmfParam
 import org.pjsip.pjsua2.OnCallMediaStateParam
 import org.pjsip.pjsua2.OnCallStateParam
+import org.pjsip.pjsua2.OnInstantMessageParam
+import org.pjsip.pjsua2.Buddy
+import org.pjsip.pjsua2.BuddyConfig
+import org.pjsip.pjsua2.SendInstantMessageParam
+import org.pjsip.pjsua2.SipEvent
+import org.pjsip.pjsua2.SipHeader
 import org.pjsip.pjsua2.OnCallTsxStateParam
 import org.pjsip.pjsua2.OnIncomingCallParam
 import org.pjsip.pjsua2.OnCallTransferStatusParam
@@ -62,6 +70,40 @@ internal class Pjsua2EndpointBackend : EndpointBackend {
     private var callEventCallback: ((NativeCallEvent) -> Unit)? = null
     private var mediaEventCallback: ((NativeMediaEvent) -> Unit)? = null
     private var transferEventCallback: ((NativeTransferEvent) -> Unit)? = null
+    private var handoffCallback: ((HandoffMessage) -> Unit)? = null
+    // Dialog identifiers of live calls, kept here because a NativeCall is deleted when it ends.
+    private val callDialogs = ConcurrentHashMap<String, CallDialog>()
+
+    override fun setHandoffListener(callback: (HandoffMessage) -> Unit) {
+        handoffCallback = callback
+    }
+
+    override fun sendHandoff(accountId: SipAccountId, body: String) {
+        require(body.isNotEmpty() && body.toByteArray().size <= HANDOFF_MAX_BYTES) { "Handoff message too large" }
+        checkNotNull(accounts[accountId]) { "Native account does not exist" }.sendHandoff(body)
+    }
+
+    override fun callDialog(callId: String): CallDialog? = callDialogs[callId]
+
+    override fun makeReplacingCall(
+        accountId: SipAccountId,
+        destination: String,
+        replaces: CallDialog,
+        callback: (NativeCallEvent) -> Unit,
+    ): String {
+        require(
+            isSipToken(replaces.callId, 128, callId = true) &&
+                isSipToken(replaces.localTag, 64) &&
+                isSipToken(replaces.remoteTag, 64),
+        ) { "Invalid dialog to replace" }
+        // to-tag is the PBX's tag in the other device's dialog, from-tag that device's own tag.
+        return placeCall(
+            accountId,
+            destination,
+            callback,
+            "${replaces.callId};to-tag=${replaces.remoteTag};from-tag=${replaces.localTag}",
+        )
+    }
 
     override fun setCallEventListener(callback: (NativeCallEvent) -> Unit) {
         callEventCallback = callback
@@ -285,7 +327,7 @@ internal class Pjsua2EndpointBackend : EndpointBackend {
                 srtpSecureSignaling = SRTP_SECURE_SIGNALING_TLS_HOP
                 srtpOpt.keyings = srtpKeyings
             }
-            NativeAccount(account.id, callback).also { native ->
+            NativeAccount(account.id, account.username, account.server.domain, callback).also { native ->
                 native.create(config)
                 accounts[account.id] = native
             }
@@ -303,7 +345,7 @@ internal class Pjsua2EndpointBackend : EndpointBackend {
     }
 
     override fun removeAccount(accountId: SipAccountId) {
-        accounts.remove(accountId)?.let { it.shutdown(); it.delete() }
+        accounts.remove(accountId)?.let { it.releaseBuddy(); it.shutdown(); it.delete() }
     }
 
     /** PJSIP 2.17 defaults include RTT; this app implements voice calls only. */
@@ -317,13 +359,28 @@ internal class Pjsua2EndpointBackend : EndpointBackend {
         accountId: SipAccountId,
         destination: String,
         callback: (NativeCallEvent) -> Unit,
+    ): String = placeCall(accountId, destination, callback, replaces = null)
+
+    private fun placeCall(
+        accountId: SipAccountId,
+        destination: String,
+        callback: (NativeCallEvent) -> Unit,
+        replaces: String?,
     ): String {
         val account = checkNotNull(accounts[accountId]) { "Native account does not exist" }
         val id = UUID.randomUUID().toString()
         val call = NativeCall(id, accountId, destination, CallDirection.OUTGOING, account, -1, callback)
         calls[id] = call
         val prm = voiceCallOpParam()
+        val header = replaces?.let { SipHeader().apply { hName = "Replaces"; hValue = it } }
         try {
+            if (header != null) {
+                val option = prm.txOption
+                val headers = option.headers
+                headers.add(header)
+                option.headers = headers
+                prm.txOption = option
+            }
             call.makeCall(destination, prm)
         } catch (e: Exception) {
             calls.remove(id)
@@ -340,6 +397,7 @@ internal class Pjsua2EndpointBackend : EndpointBackend {
                 ),
             )
         } finally {
+            header?.delete()
             prm.delete()
         }
         return id
@@ -487,8 +545,52 @@ internal class Pjsua2EndpointBackend : EndpointBackend {
 
     private inner class NativeAccount(
         private val id: SipAccountId,
+        private val username: String,
+        private val domain: String,
         private val callback: (NativeRegistrationEvent) -> Unit,
     ) : org.pjsip.pjsua2.Account() {
+        // The account's own address; the PBX delivers MESSAGEs to it to every registered device.
+        private var self: Buddy? = null
+
+        fun sendHandoff(body: String) {
+            val buddy = self ?: Buddy().also { buddy ->
+                val config = BuddyConfig().apply { uri = "sip:$username@$domain"; subscribe = false }
+                try {
+                    buddy.create(this, config)
+                } finally {
+                    config.delete()
+                }
+                self = buddy
+            }
+            val prm = SendInstantMessageParam().apply {
+                contentType = HANDOFF_CONTENT_TYPE
+                content = body
+            }
+            try {
+                buddy.sendInstantMessage(prm)
+            } finally {
+                prm.delete()
+            }
+        }
+
+        fun releaseBuddy() {
+            self?.delete()
+            self = null
+        }
+
+        // Keeps call-handoff messages from this account's own address; other messages are ignored.
+        override fun onInstantMessage(prm: OnInstantMessageParam) {
+            val listener = handoffCallback ?: return
+            if (!prm.contentType.equals(HANDOFF_CONTENT_TYPE, ignoreCase = true)) return
+            val body = prm.msgBody ?: return
+            if (body.isEmpty() || body.toByteArray().size > HANDOFF_MAX_BYTES) return
+            val sender = Regex("sips?:([^@;>\\s]+)@([^;>:\\s]+)", RegexOption.IGNORE_CASE).find(prm.fromUri.orEmpty())
+            if (sender == null ||
+                !sender.groupValues[1].equals(username, ignoreCase = true) ||
+                !sender.groupValues[2].equals(domain, ignoreCase = true)
+            ) return
+            listener(HandoffMessage(id, body))
+        }
         override fun onRegState(prm: OnRegStateParam) {
             // Status code and reason only: no URIs, usernames or credentials (SEC-08).
             Log.i(REGISTRATION_LOG_TAG, "account=${id.value} code=${prm.code} reason=${prm.reason?.take(60)}")
@@ -545,6 +647,14 @@ internal class Pjsua2EndpointBackend : EndpointBackend {
     ) : org.pjsip.pjsua2.Call(account, nativeCallId) {
         var muted: Boolean = false
         var relayCallId: String? = null
+        private var endedElsewhere = false
+
+        /** Records dialog identifiers and "Call completed elsewhere" from a received message. */
+        fun observe(event: SipEvent) {
+            val message = event.receivedMessage() ?: return
+            if (completedElsewhere(message)) endedElsewhere = true
+            dialogFromReceived(message)?.let { callDialogs[id] = it }
+        }
 
         fun reportState() {
             val info = runCatching { getInfo() }.getOrNull()
@@ -561,18 +671,24 @@ internal class Pjsua2EndpointBackend : EndpointBackend {
                     info?.lastStatusCode ?: 0,
                     info?.lastReason?.replace(Regex("[\\r\\n]"), " ")?.take(120),
                     relayCallId,
+                    endedElsewhere,
                 ),
             )
             if (invState == pjsip_inv_state.PJSIP_INV_STATE_DISCONNECTED) {
+                callDialogs.remove(id)
                 calls.remove(id)
                 locallyHeldCallIds.remove(id)
                 delete()
             }
         }
 
-        override fun onCallState(prm: OnCallStateParam) = reportState()
+        override fun onCallState(prm: OnCallStateParam) {
+            observe(prm.e)
+            reportState()
+        }
 
         override fun onCallTsxState(prm: OnCallTsxStateParam) {
+            observe(prm.e)
             if (!verboseDiagnostics) return
             val event = prm.e.body.tsxState
             val transaction = event.tsx
@@ -763,6 +879,16 @@ internal class Pjsua2EndpointBackend : EndpointBackend {
  * searched; a missing, repeated or malformed header yields null. The value only correlates relay
  * pushes with this call and is never treated as authentication.
  */
+/** The SIP message a call event received, if any. */
+private fun SipEvent.receivedMessage(): String? = runCatching {
+    when (type) {
+        pjsip_event_id_e.PJSIP_EVENT_TSX_STATE ->
+            body.tsxState.takeIf { it.type == pjsip_event_id_e.PJSIP_EVENT_RX_MSG }?.src?.rdata?.wholeMsg
+        pjsip_event_id_e.PJSIP_EVENT_RX_MSG -> body.rxMsg.rdata.wholeMsg
+        else -> null
+    }
+}.getOrNull()?.takeIf { it.isNotEmpty() }
+
 internal fun relayCallIdFromInvite(message: String): String? {
     val headerSection = message.replace("\r\n", "\n").substringBefore("\n\n")
     val values = headerSection.lineSequence().drop(1).mapNotNull { line ->

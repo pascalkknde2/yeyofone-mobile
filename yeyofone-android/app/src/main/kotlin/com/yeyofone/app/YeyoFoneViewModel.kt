@@ -1,5 +1,7 @@
 package com.yeyofone.app
 
+import com.yeyofone.core.calling.HandoffCoordinator
+import com.yeyofone.core.calling.HandoffOffer
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
@@ -86,7 +88,23 @@ class YeyoFoneViewModel(
     private val forwardingStateRepo: ForwardingStateRepository,
     private val forwarding: ForwardingCoordinator,
     private val contactsRepo: ContactRepository,
+    private val handoff: HandoffCoordinator? = null,
 ) : ViewModel() {
+    /** Calls on this account's other devices that can be continued here. */
+    val handoffOffers: StateFlow<List<HandoffOffer>> = handoff?.offers ?: MutableStateFlow(emptyList())
+
+    /** Moves an offered call here; the call screen opens as for a dialed call. */
+    fun continueHandoff(offer: HandoffOffer) = launch {
+        val coordinator = handoff ?: return@launch
+        screen.value = AppScreen.Dial(offer.accountId, "")
+        audioRoutes.prepareForCall()
+        activeCallId.value = runCatching { coordinator.takeOver(offer) }.getOrNull()
+    }
+
+    fun dismissHandoff(offer: HandoffOffer) {
+        handoff?.dismiss(offer)
+    }
+
     private val screen = MutableStateFlow<AppScreen>(AppScreen.Home)
     private val activeCallId = MutableStateFlow<CallId?>(null)
     private val consultationCallId = MutableStateFlow<CallId?>(null)
@@ -313,6 +331,7 @@ class YeyoFoneViewModel(
                 app.forwardingState,
                 app.forwardingCoordinator,
                 app.contacts,
+                app.handoff,
             ) as T
         }
     }

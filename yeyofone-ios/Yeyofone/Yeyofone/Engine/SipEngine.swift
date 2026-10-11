@@ -191,6 +191,26 @@ nonisolated final class SipEngine: Thread, @unchecked Sendable {
         }
     }
 
+    /// Places a call that takes over another device's call: the INVITE carries Replaces for that
+    /// device's dialog (its call id, the PBX's tag as to-tag and its own tag as from-tag).
+    func startCallReplacing(account: UInt64, token: UInt64, uri: String, callId: String, toTag: String, fromTag: String,
+                            completion: Completion? = nil) {
+        run(completion) { handle in
+            let parts = [uri, callId, toTag, fromTag].map { Array($0.utf8) }
+            return parts[0].withUnsafeBufferPointer { u in
+                parts[1].withUnsafeBufferPointer { c in
+                    parts[2].withUnsafeBufferPointer { t in
+                        parts[3].withUnsafeBufferPointer { f in
+                            yv_call_start_replacing(handle, account, token, u.baseAddress, UInt32(u.count),
+                                                    c.baseAddress, UInt32(c.count), t.baseAddress, UInt32(t.count),
+                                                    f.baseAddress, UInt32(f.count))
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     func answer(token: UInt64, completion: Completion? = nil) {
         run(completion) { yv_call_answer($0, token) }
     }

@@ -404,4 +404,9 @@
     <string name="licenses_coroutines">Tâches en arrière-plan</string>
     <string name="licenses_coil">Chargement d\'images</string>
     <string name="licenses_firebase">Notifications push des appels entrants</string>
+    <string name="handoff_title">Continuer l’appel sur cet appareil ?</string>
+    <string name="handoff_on_device">Sur votre %1$s</string>
+    <string name="handoff_not_now">Plus tard</string>
+    <string name="handoff_continue_here">Continuer ici</string>
+    <string name="call_continued_elsewhere">Appel poursuivi sur un autre appareil</string>
 </resources>

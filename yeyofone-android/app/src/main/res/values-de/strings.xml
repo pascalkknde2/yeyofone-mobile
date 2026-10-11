@@ -402,4 +402,9 @@
     <string name="licenses_coroutines">Hintergrundaufgaben</string>
     <string name="licenses_coil">Laden von Bildern</string>
     <string name="licenses_firebase">Push-Benachrichtigungen für eingehende Anrufe</string>
+    <string name="handoff_title">Anruf auf diesem Gerät fortsetzen?</string>
+    <string name="handoff_on_device">Auf deinem %1$s</string>
+    <string name="handoff_not_now">Nicht jetzt</string>
+    <string name="handoff_continue_here">Hier fortsetzen</string>
+    <string name="call_continued_elsewhere">Anruf auf einem anderen Gerät fortgesetzt</string>
 </resources>

@@ -129,6 +129,7 @@ import com.yeyofone.core.model.AudioRoute
 import com.yeyofone.core.model.CallDirection
 import com.yeyofone.core.model.CallId
 import com.yeyofone.core.model.CallSession
+import com.yeyofone.core.model.CallEndReason
 import com.yeyofone.core.model.CallState
 import com.yeyofone.core.model.Contact
 import com.yeyofone.core.model.ForwardingState
@@ -304,6 +305,21 @@ private fun AccountsApp(
     // the original caller visible while consulting. CallCoordinator caps concurrent calls at two,
     // so at most one "waiting" call can exist at a time.
     val nonTerminal = state.sessions.filter { !it.state.isTerminal() && it.id !in state.dismissedIncomingCalls }
+    val handoffOffers by viewModel.handoffOffers.collectAsStateWithLifecycle()
+    // A call that moved to (or was answered on) another device of this account ends without a
+    // summary screen; a short message says where it went instead.
+    val movedElsewhere = state.sessions.filter {
+        it.state == CallState.Disconnected(CallEndReason.ELSEWHERE) && it.id !in state.dismissedIncomingCalls
+    }
+    val context = androidx.compose.ui.platform.LocalContext.current
+    LaunchedEffect(movedElsewhere.map { it.id }) {
+        movedElsewhere.forEach { session ->
+            if (session.connectedAt != null) {
+                android.widget.Toast.makeText(context, R.string.call_continued_elsewhere, android.widget.Toast.LENGTH_SHORT).show()
+            }
+            viewModel.dismissCallSummary(session.id)
+        }
+    }
     val activeCall = nonTerminal.firstOrNull { it.id == state.activeCallId }
     // Nothing has been answered/dialed yet: the sole (or first-arriving) ringing call takes the
     // full incoming-call screen, exactly as before this feature existed.
@@ -336,6 +352,7 @@ private fun AccountsApp(
     val endedCall = if (activeCall == null) {
         state.sessions.lastOrNull { session ->
             session.state.isTerminal() && session.id !in state.dismissedIncomingCalls &&
+                session.state != CallState.Disconnected(CallEndReason.ELSEWHERE) &&
                 (session.id == state.activeCallId || session.direction == CallDirection.INCOMING)
         }
     } else null
@@ -533,6 +550,15 @@ private fun AccountsApp(
         AppScreen.About -> AboutScreen(onLicenses = viewModel::showLicenses, onBack = viewModel::showSettings)
         AppScreen.Licenses -> LicensesScreen(onBack = viewModel::showAbout)
     }
+    }
+    val handoffOffer = handoffOffers.lastOrNull()
+    if (handoffOffer != null && nonTerminal.isEmpty()) {
+        com.yeyofone.app.ui.components.HandoffBanner(
+            offer = handoffOffer,
+            onContinue = { viewModel.continueHandoff(handoffOffer) },
+            onDismiss = { viewModel.dismissHandoff(handoffOffer) },
+            modifier = Modifier.align(Alignment.TopCenter),
+        )
     }
     if (waitingCall != null) {
         CallWaitingBanner(

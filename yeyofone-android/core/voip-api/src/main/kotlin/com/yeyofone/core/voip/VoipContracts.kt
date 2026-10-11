@@ -58,7 +58,36 @@ data class NativeCallEvent(
     val lastReason: String?,
     /** Relay call ID from the PBX's `X-Yeyo-Call-ID` INVITE header; correlation only, never trust. */
     val relayCallId: String? = null,
+    /**
+     * The PBX ended the call with "Reason: SIP;cause=200" ("Call completed elsewhere"): another
+     * device of the account took it over or answered it.
+     */
+    val endedElsewhere: Boolean = false,
 )
+
+/** A call's SIP dialog as the PBX sees it, which another device needs to take the call over. */
+data class CallDialog(
+    val callId: String,
+    val localTag: String,
+    val remoteTag: String,
+    /** The other party's user part, such as an extension; empty when unknown. */
+    val remoteUser: String,
+)
+
+/** A call-handoff message (JSON) from a device of [accountId], delivered through the PBX. */
+data class HandoffMessage(val accountId: SipAccountId, val body: String)
+
+/**
+ * Call handoff between devices of the same account: messages are SIP MESSAGEs to the account's
+ * own address, and a takeover is a call whose INVITE carries Replaces for another device's dialog.
+ */
+interface SipHandoffGateway {
+    val handoffMessages: Flow<HandoffMessage>
+    suspend fun sendHandoff(accountId: SipAccountId, body: String)
+    suspend fun callDialog(callId: String): CallDialog?
+    /** Places a call that replaces [replaces], a dialog announced by another device; returns the call ID. */
+    suspend fun makeReplacingCall(accountId: SipAccountId, destination: String, replaces: CallDialog): String
+}
 
 data class NativeMediaEvent(
     val callId: String,

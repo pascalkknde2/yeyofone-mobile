@@ -61,6 +61,8 @@ final class AppStore {
     var forwardingDestination: String?
 
     var activeCall: CallSession?
+    /// A call on another device of the account that can be continued here ("Continue call on this device?").
+    var handoffOffer: HandoffOffer?
     var incomingCall: CallSession?
     var consultationCall: CallSession?
     var callPage: CallPage = .main
@@ -93,6 +95,9 @@ final class AppStore {
     @ObservationIgnored private var announced: (token: UInt64, account: UInt64, callId: String)?
     @ObservationIgnored private var announceTask: Task<Void, Never>?
     @ObservationIgnored private var engineCalls: [UInt64: EngineCall] = [:]
+    @ObservationIgnored private var handoffOffers: [String: HandoffOffer] = [:]
+    @ObservationIgnored private var dismissedOffers: Set<String> = []
+    @ObservationIgnored private var offerExpiry: Task<Void, Never>?
     /// True while a call that CallKit doesn't manage has activated the audio session itself.
     @ObservationIgnored private var ownsAudioSession = false
 
@@ -605,10 +610,80 @@ final class AppStore {
 
     private func receiveHandoff(account: UInt64, data: Data) {
         guard let message = CallHandoff.decode(data), message.device != handoffDevice else { return }
-        // Another device just registered and asks for calls it could take over.
-        if message.type == "query", let current = announced, current.account == account,
-           let latest = engineCalls[current.token] {
-            announce(latest, force: true)
+        switch message.type {
+        case "query":
+            // Another device just registered and asks for calls it could take over.
+            if let current = announced, current.account == account, let latest = engineCalls[current.token] {
+                announce(latest, force: true)
+            }
+        case "call":
+            guard let offer = CallHandoff.offer(from: message, account: account) else { return }
+            handoffOffers[offer.id] = offer
+            refreshHandoffOffer()
+        case "ended":
+            if let callId = message.callId { handoffOffers[callId] = nil }
+            refreshHandoffOffer()
+        default:
+            break
+        }
+    }
+
+    /// Shows the newest live offer that wasn't dismissed, and drops offers that stopped being refreshed.
+    private func refreshHandoffOffer() {
+        let now = Date()
+        handoffOffers = handoffOffers.filter { now.timeIntervalSince($0.value.seen) < CallHandoff.offerLifetime }
+        let next = handoffOffers.values.filter { !dismissedOffers.contains($0.id) }.max { $0.seen < $1.seen }
+        if next?.id != handoffOffer?.id || (next == nil) != (handoffOffer == nil) { handoffOffer = next }
+        if handoffOffers.isEmpty {
+            offerExpiry?.cancel()
+            offerExpiry = nil
+        } else if offerExpiry == nil {
+            offerExpiry = Task { [weak self] in
+                while !Task.isCancelled {
+                    try? await Task.sleep(for: .seconds(5))
+                    guard !Task.isCancelled, let self else { return }
+                    refreshHandoffOffer()
+                }
+            }
+        }
+    }
+
+    func dismissHandoff() {
+        guard let offer = handoffOffer else { return }
+        dismissedOffers.insert(offer.id)
+        refreshHandoffOffer()
+    }
+
+    /// Moves the offered call here with an INVITE that replaces the other device's dialog; the
+    /// other party stays connected and the other device's leg ends.
+    func continueHandoff() {
+        guard let offer = handoffOffer, activeCall == nil, incomingCall == nil, let engine,
+              let account = accounts.first(where: { accountTokens[$0.id] == offer.accountToken }) else { return }
+        handoffOffers[offer.id] = nil
+        refreshHandoffOffer()
+        Task {
+            guard await AudioController.requestMicrophone() else {
+                notice = String(localized: "Microphone permission is required to place a call")
+                return
+            }
+            guard activeCall == nil else { return }
+            let token = newCallToken()
+            var session = CallSession(token: token,
+                                      remoteName: offer.remoteName ?? contactName(for: offer.remote) ?? offer.remote,
+                                      remoteNumber: offer.remote, direction: .outgoing, state: .connecting)
+            session.connectedAt = offer.connectedAt
+            activeCall = session
+            callPage = .main
+            AudioController.activateSession()
+            ownsAudioSession = true
+            prepareAudioRoutes()
+            engine.startCallReplacing(account: offer.accountToken, token: token, uri: sipUri(offer.remote, account: account),
+                                      callId: offer.id, toTag: offer.remoteTag, fromTag: offer.localTag) { [weak self] code in
+                log.info("Call \(token) handoff start: \(code)")
+                guard let self, code != 0, activeCall?.token == token else { return }
+                activeCall = nil
+                notice = String(localized: "The call could not be moved to this device.")
+            }
         }
     }
 
@@ -664,6 +739,10 @@ final class AppStore {
                   let account = accounts.first(where: { $0.id == id }) else { continue }
             let state = Self.registrationState(update, enabled: account.enabled)
             if registration[id] != state {
+                // Ask the account's other devices for calls that could be continued here.
+                if state == .registered, let body = CallHandoff.query(device: handoffDevice) {
+                    engine?.sendHandoff(account: token, body: body)
+                }
                 log.info("Account \(token): \(String(describing: state)) (status \(update.status), SIP \(update.sipCode), expires \(update.expires)s, failure kind \(update.failureKind))")
                 registration[id] = state
             }
@@ -800,6 +879,10 @@ final class AppStore {
         case "social": screen = .socialSettings
         case "about": screen = .about
         case "licenses": screen = .licenses
+        case "handoff":
+            handoffOffer = HandoffOffer(id: "demo", accountToken: 0, remote: "1002", remoteName: "Noah Anderson",
+                                        deviceName: "Mac", connectedAt: Date().addingTimeInterval(-65),
+                                        localTag: "a", remoteTag: "b", seen: Date())
         case "incoming":
             incomingCall = CallSession(remoteName: "Noah Anderson", remoteNumber: "1001", direction: .incoming, state: .ringing)
         case "call":

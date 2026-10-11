@@ -12,6 +12,7 @@ use yeyofone_application::handoff::HandoffOffer;
 
 /// Offering devices re-announce every 15 s; an offer not refreshed in this long is dropped.
 const OFFER_TTL_MS: u64 = 45_000;
+const ANNOUNCE_EVERY_MS: u64 = 15_000;
 
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -39,11 +40,30 @@ pub(super) struct Offer {
     seen: u64,
 }
 
+/// A connected local call that this device can offer to the account's other devices.
+pub(super) struct Candidate {
+    pub token: u64,
+    pub account_id: String,
+    pub remote: String,
+    pub connected_at_ms: i64,
+}
+
+/// The local call this device is announcing to the account's other devices.
+struct Announced {
+    token: u64,
+    account_token: u64,
+    call_id: String,
+    sent: u64,
+}
+
 pub(super) struct Handoffs {
     device: String,
     offers: BTreeMap<String, Offer>,
     queried: BTreeSet<String>,
     origin: Instant,
+    announced: Option<Announced>,
+    /// Another device asked for current calls; announce again now.
+    query_pending: bool,
 }
 
 fn sip_token(value: &str, max: usize, call_id: bool) -> bool {
@@ -86,6 +106,8 @@ impl Handoffs {
             offers: BTreeMap::new(),
             queried: BTreeSet::new(),
             origin: Instant::now(),
+            announced: None,
+            query_pending: false,
         }
     }
 
@@ -110,7 +132,12 @@ impl Handoffs {
         self.offers.remove(id)
     }
 
-    pub fn poll(&mut self, native: &mut ffi::Native, registrations: &Registrations) {
+    pub fn poll(
+        &mut self,
+        native: &mut ffi::Native,
+        registrations: &Registrations,
+        calls: &calls::Calls,
+    ) {
         let now = registrations.now();
         for (id, registration) in &registrations.accounts {
             let registered = registration.token != 0
@@ -135,6 +162,92 @@ impl Handoffs {
             }
         }
         self.expire();
+        self.announce(native, registrations, calls);
+    }
+
+    /// Tells the account's other devices about this device's connected call, so one of them can
+    /// take it over: when it connects, every 15 s, when asked, and "ended" when it stops.
+    fn announce(
+        &mut self,
+        native: &mut ffi::Native,
+        registrations: &Registrations,
+        calls: &calls::Calls,
+    ) {
+        let now = self.now();
+        let candidate = calls.handoff_candidate();
+        if let Some(current) = &self.announced
+            && candidate.as_ref().is_none_or(|c| c.token != current.token)
+        {
+            let ended = serde_json::json!({"v":1,"type":"ended","device":self.device,"callId":current.call_id});
+            let _ = native.handoff_send(current.account_token, &ended.to_string());
+            self.announced = None;
+        }
+        let Some(candidate) = candidate else {
+            self.query_pending = false;
+            return;
+        };
+        let due = match &self.announced {
+            Some(current) => {
+                self.query_pending || now.saturating_sub(current.sent) >= ANNOUNCE_EVERY_MS
+            }
+            None => true,
+        };
+        if !due {
+            return;
+        }
+        let Some(account_token) = registrations
+            .accounts
+            .get(&candidate.account_id)
+            .map(|r| r.token)
+            .filter(|t| *t != 0)
+        else {
+            return;
+        };
+        let Ok(dialog) = native.call_dialog(candidate.token) else {
+            return;
+        };
+        let text = |bytes: &[u8], len: u32| {
+            String::from_utf8_lossy(&bytes[..(len as usize).min(bytes.len())]).into_owned()
+        };
+        let call_id = text(&dialog.call_id, dialog.call_id_len);
+        let local_tag = text(&dialog.local_tag, dialog.local_tag_len);
+        let remote_tag = text(&dialog.remote_tag, dialog.remote_tag_len);
+        let remote_user = text(&dialog.remote_user, dialog.remote_user_len);
+        let remote = if remote_party(&remote_user) {
+            remote_user
+        } else {
+            candidate.remote.clone()
+        };
+        if !sip_token(&call_id, 128, true)
+            || !sip_token(&local_tag, 64, false)
+            || !sip_token(&remote_tag, 64, false)
+            || !remote_party(&remote)
+        {
+            return;
+        }
+        let message = serde_json::json!({
+            "v": 1,
+            "type": "call",
+            "device": self.device,
+            "name": if cfg!(target_os = "macos") { "Mac" } else { "computer" },
+            "callId": call_id,
+            "localTag": local_tag,
+            "remoteTag": remote_tag,
+            "remote": remote,
+            "connectedAt": candidate.connected_at_ms,
+        });
+        if native
+            .handoff_send(account_token, &message.to_string())
+            .is_ok()
+        {
+            self.query_pending = false;
+            self.announced = Some(Announced {
+                token: candidate.token,
+                account_token,
+                call_id,
+                sent: now,
+            });
+        }
     }
 
     fn receive(&mut self, token: u64, body: &[u8], registrations: &Registrations) {
@@ -189,6 +302,7 @@ impl Handoffs {
                     },
                 );
             }
+            "query" => self.query_pending = true,
             "ended" => {
                 if let Some(call_id) = wire.call_id {
                     self.offers.retain(|_, o| {
