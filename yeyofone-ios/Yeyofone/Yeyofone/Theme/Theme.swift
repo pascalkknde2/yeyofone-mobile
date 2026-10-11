@@ -58,10 +58,8 @@ enum Palette {
     static let cardGradientStart = Color(light: 0x1E293B, dark: 0x334155)
     static let cardGradientEnd = Color(light: 0x0F172A, dark: 0x1E293B)
     static let cardAccent = Color(hex: 0x3B82F6)
-    /// The bottom navigation bar stays white with its light-mode border and icons in both modes.
-    static let navBackground = Color.white
-    static let navBorder = Color(hex: 0xE2E8F0)
-    static let navInactive = Color(hex: 0x94A3B8)
+    /// Unselected bottom navigation icons: gray in light mode, white in dark mode.
+    static let navInactive = Color(light: 0x94A3B8, dark: 0xFFFFFF)
     static let purple = Color(light: 0x8B5CF6, dark: 0xA78BFA)
     static let purpleLight = Color(light: 0xF5F3FF, dark: 0x2E1065)
     static let pink = Color(light: 0xDB2777, dark: 0xF472B6)
