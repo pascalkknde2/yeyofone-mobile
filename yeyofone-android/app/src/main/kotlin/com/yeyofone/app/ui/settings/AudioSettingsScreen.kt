@@ -192,7 +192,11 @@ private fun AudioSliderRow(title: String, icon: ImageVector, value: Float, chang
             Text(title, Modifier.padding(bottom = 4.dp), fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = TextPrimary)
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(Icons.AutoMirrored.Filled.VolumeDown, null, tint = TextSecondary, modifier = Modifier.size(18.dp))
-                Slider(value, change, modifier = Modifier.weight(1f).padding(horizontal = 8.dp))
+                Slider(
+                    value, change,
+                    modifier = Modifier.weight(1f).padding(horizontal = 8.dp),
+                    colors = SliderDefaults.colors(inactiveTrackColor = BorderLight),
+                )
                 Icon(Icons.AutoMirrored.Filled.VolumeUp, null, tint = TextSecondary, modifier = Modifier.size(18.dp))
             }
         }

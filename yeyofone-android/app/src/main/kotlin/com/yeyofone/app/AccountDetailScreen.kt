@@ -317,6 +317,7 @@ private fun SwitchRow(labelRes: Int, checked: Boolean, onChecked: (Boolean) -> U
             checked = checked,
             onCheckedChange = onChecked,
             colors = SwitchDefaults.colors(
+                checkedThumbColor = Color.White,
                 checkedTrackColor = Success,
                 uncheckedTrackColor = SwitchTrackOff,
                 uncheckedBorderColor = Color.Transparent,
