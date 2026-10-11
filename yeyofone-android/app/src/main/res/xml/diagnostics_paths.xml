@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Files DebugLog shares through its FileProvider: only the exported debug log. -->
+<paths>
+    <cache-path name="diagnostics" path="diagnostics/" />
+</paths>

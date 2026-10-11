@@ -512,6 +512,50 @@
         }
       }
     },
+    "Add a SIP account first" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Füge zuerst ein SIP-Konto hinzu"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Añade primero una cuenta SIP"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajoutez d'abord un compte SIP"
+          }
+        }
+      }
+    },
+    "Add a SIP account in Settings › Accounts" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Füge unter Einstellungen › Konten ein SIP-Konto hinzu"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Añade una cuenta SIP en Ajustes › Cuentas"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajoutez un compte SIP dans Réglages › Comptes"
+          }
+        }
+      }
+    },
     "Add a SIP account to make calls" : {
       "localizations" : {
         "de" : {
@@ -666,6 +710,28 @@
         }
       }
     },
+    "App" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "App"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "App"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "App"
+          }
+        }
+      }
+    },
     "App Language" : {
       "localizations" : {
         "de" : {
@@ -800,6 +866,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Audio et vidéo"
+          }
+        }
+      }
+    },
+    "Audio codecs" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Audio-Codecs"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Códecs de audio"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Codecs audio"
           }
         }
       }
@@ -960,6 +1048,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Bluetooth"
+          }
+        }
+      }
+    },
+    "Build" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Build"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Compilación"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Build"
           }
         }
       }
@@ -1268,6 +1378,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Identifiant de l’appelant (facultatif)"
+          }
+        }
+      }
+    },
+    "Calling engine" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Anruf-Engine"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Motor de llamadas"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Moteur d'appel"
           }
         }
       }
@@ -1830,6 +1962,50 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Sombre"
+          }
+        }
+      }
+    },
+    "Debug log" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Debug-Protokoll"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Registro de depuración"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Journal de débogage"
+          }
+        }
+      }
+    },
+    "Debugging" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fehlersuche"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Depuración"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Débogage"
           }
         }
       }
@@ -2418,6 +2594,28 @@
         }
       }
     },
+    "Ethernet" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ethernet"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ethernet"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ethernet"
+          }
+        }
+      }
+    },
     "Ext. %@" : {
       "localizations" : {
         "de" : {
@@ -2832,6 +3030,50 @@
         }
       }
     },
+    "I'm using YeyoFone for calls." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ich telefoniere mit YeyoFone."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Uso YeyoFone para llamar."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "J'utilise YeyoFone pour mes appels."
+          }
+        }
+      }
+    },
+    "I'm using YeyoFone for calls. You can reach me on extension %@." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ich telefoniere mit YeyoFone. Du erreichst mich unter der Durchwahl %@."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Uso YeyoFone para llamar. Puedes contactarme en la extensión %@."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "J'utilise YeyoFone pour mes appels. Vous pouvez me joindre au poste %@."
+          }
+        }
+      }
+    },
     "ICE needs a STUN server" : {
       "localizations" : {
         "de" : {
@@ -2920,6 +3162,50 @@
         }
       }
     },
+    "Invite a friend" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Freund einladen"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Invitar a un amigo"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Inviter un ami"
+          }
+        }
+      }
+    },
+    "Invite friends, share your contact" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Freunde einladen, Kontakt teilen"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Invita a amigos, comparte tu contacto"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Inviter des amis, partager votre contact"
+          }
+        }
+      }
+    },
     "Keypad" : {
       "localizations" : {
         "de" : {
@@ -2982,6 +3268,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Disposition"
+          }
+        }
+      }
+    },
+    "Legal" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rechtliches"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Legal"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mentions légales"
           }
         }
       }
@@ -3092,6 +3400,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Manqué"
+          }
+        }
+      }
+    },
+    "Mobile data" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mobile Daten"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Datos móviles"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Données mobiles"
           }
         }
       }
@@ -3228,6 +3558,50 @@
         }
       }
     },
+    "Narrowband, 8 kHz" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Schmalband, 8 kHz"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Banda estrecha, 8 kHz"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bande étroite, 8 kHz"
+          }
+        }
+      }
+    },
+    "Network" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Netzwerk"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Red"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Réseau"
+          }
+        }
+      }
+    },
     "Network & security" : {
       "localizations" : {
         "de" : {
@@ -3356,6 +3730,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Aucun compte SIP configuré"
+          }
+        }
+      }
+    },
+    "No accounts" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Keine Konten"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No hay cuentas"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aucun compte"
           }
         }
       }
@@ -3598,6 +3994,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "En ligne"
+          }
+        }
+      }
+    },
+    "Open-source licenses" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open-Source-Lizenzen"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Licencias de código abierto"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Licences open source"
           }
         }
       }
@@ -4092,6 +4510,28 @@
         }
       }
     },
+    "Record calling engine activity" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aktivität der Anruf-Engine aufzeichnen"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Registrar la actividad del motor de llamadas"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enregistrer l'activité du moteur d'appel"
+          }
+        }
+      }
+    },
     "Recording Calls" : {
       "localizations" : {
         "de" : {
@@ -4554,6 +4994,28 @@
         }
       }
     },
+    "SIP signalling and audio. Includes third-party components under their own licenses, listed at pjsip.org." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "SIP-Signalisierung und Audio. Enthält Komponenten Dritter unter eigenen Lizenzen, aufgeführt auf pjsip.org."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Señalización SIP y audio. Incluye componentes de terceros con sus propias licencias, indicadas en pjsip.org."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Signalisation SIP et audio. Inclut des composants tiers sous leurs propres licences, listés sur pjsip.org."
+          }
+        }
+      }
+    },
     "SIP username" : {
       "localizations" : {
         "de" : {
@@ -4774,6 +5236,72 @@
         }
       }
     },
+    "Share" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Teilen"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Compartir"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Partager"
+          }
+        }
+      }
+    },
+    "Share debug log" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Debug-Protokoll teilen"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Compartir registro de depuración"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Partager le journal de débogage"
+          }
+        }
+      }
+    },
+    "Share my contact" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Meinen Kontakt teilen"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Compartir mi contacto"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Partager mon contact"
+          }
+        }
+      }
+    },
     "Share, Invite friends, Community" : {
       "localizations" : {
         "de" : {
@@ -4924,6 +5452,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Social"
+          }
+        }
+      }
+    },
+    "Software YeyoFone is built with" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Software, mit der YeyoFone entwickelt wurde"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Software con el que se ha creado YeyoFone"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Logiciels utilisés pour créer YeyoFone"
           }
         }
       }
@@ -5258,6 +5808,28 @@
         }
       }
     },
+    "Tell people how to reach you on YeyoFone" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sag anderen, wie sie dich über YeyoFone erreichen"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cuenta a otros cómo contactarte en YeyoFone"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Indiquez comment vous joindre sur YeyoFone"
+          }
+        }
+      }
+    },
     "The account stays on this device but goes offline." : {
       "localizations" : {
         "de" : {
@@ -5298,6 +5870,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Le moteur d’appel n’a pas pu démarrer (%lld)."
+          }
+        }
+      }
+    },
+    "The log can contain phone numbers and server addresses. It stays on this device unless you share it." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Das Protokoll kann Telefonnummern und Serveradressen enthalten. Es bleibt auf diesem Gerät, solange du es nicht teilst."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El registro puede contener números de teléfono y direcciones de servidor. Se queda en este dispositivo a menos que lo compartas."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le journal peut contenir des numéros de téléphone et des adresses de serveur. Il reste sur cet appareil sauf si vous le partagez."
           }
         }
       }
@@ -5654,6 +6248,72 @@
         }
       }
     },
+    "Version" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Version"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Versión"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Version"
+          }
+        }
+      }
+    },
+    "Version %@ (%@)" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Version %1$@ (%2$@)"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Versión %1$@ (%2$@)"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Version %1$@ (%2$@)"
+          }
+        }
+      }
+    },
+    "Version %@ • Licenses" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Version %@ • Lizenzen"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Versión %@ • Licencias"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Version %@ • Licences"
+          }
+        }
+      }
+    },
     "Version %@ • Terms • Privacy" : {
       "localizations" : {
         "de" : {
@@ -5930,6 +6590,50 @@
         }
       }
     },
+    "Wi-Fi" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "WLAN"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wi-Fi"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wi-Fi"
+          }
+        }
+      }
+    },
+    "Wideband, 16 kHz" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Breitband, 16 kHz"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Banda ancha, 16 kHz"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Large bande, 16 kHz"
+          }
+        }
+      }
+    },
     "YeyoFone • Version %@" : {
       "localizations" : {
         "de" : {
@@ -5948,6 +6652,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "YeyoFone • Version %@"
+          }
+        }
+      }
+    },
+    "Your name, extension and SIP address" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dein Name, deine Durchwahl und SIP-Adresse"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tu nombre, extensión y dirección SIP"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Votre nom, poste et adresse SIP"
           }
         }
       }
@@ -6050,6 +6776,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Messagerie"
+          }
+        }
+      }
+    },
+    "iOS" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "iOS"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "iOS"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "iOS"
           }
         }
       }

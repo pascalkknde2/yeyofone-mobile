@@ -38,7 +38,11 @@ internal interface EndpointBackend {
     fun setCallEventListener(callback: (NativeCallEvent) -> Unit) = Unit
     fun setMediaEventListener(callback: (NativeMediaEvent) -> Unit) = Unit
     fun setTransferEventListener(callback: (NativeTransferEvent) -> Unit) = Unit
+    fun audioCodecs(): List<AudioCodecInfo> = emptyList()
 }
+
+/** An audio codec the engine offers, such as `G722/16000/1`; higher priority is offered first. */
+data class AudioCodecInfo(val id: String, val priority: Int)
 
 enum class SipTransport { UDP, TCP, TLS }
 

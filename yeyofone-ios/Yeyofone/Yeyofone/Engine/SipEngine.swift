@@ -93,9 +93,7 @@ nonisolated final class SipEngine: Thread, @unchecked Sendable {
             onStartFailure(started)
             return
         }
-        #if DEBUG
-        if CommandLine.arguments.contains("-YFEngineLog") { EngineLog.start() }
-        #endif
+        if EngineLog.isRequested { EngineLog.start() }
         var lastPoll = Date.distantPast
         var event = YvEvent()
         while !isCancelled {
@@ -292,36 +290,59 @@ nonisolated final class SipEngine: Thread, @unchecked Sendable {
     }
 }
 
-#if DEBUG
 // PJSIP's logging API, from the linked static library. The bridge turns PJSIP logging off;
-// debug builds can turn it back on to diagnose media problems.
+// the debug log in Settings › Advanced turns it back on to diagnose call problems.
 @_silgen_name("pj_log_set_level")
 nonisolated private func pj_log_set_level(_ level: Int32)
 @_silgen_name("pj_log_set_log_func")
 nonisolated private func pj_log_set_log_func(_ function: @convention(c) (Int32, UnsafePointer<CChar>?, Int32) -> Void)
 
-/// Writes PJSIP's log (level 5, without SIP messages) to Documents/pjsip.log. Debug builds only,
-/// enabled with the -YFEngineLog launch argument; copy it off a device with
-/// `xcrun devicectl device copy from --domain-type appDataContainer ...`.
+/// Writes PJSIP's log (level 5, without SIP messages) and app notes to Documents/pjsip.log while
+/// Settings › Advanced › Debug log is on, or with the -YFEngineLog launch argument. The file can
+/// hold phone numbers and server addresses, so it only leaves the device when the user shares it.
 nonisolated enum EngineLog {
+    /// UserDefaults key for the Settings switch.
+    static let settingKey = "debugLog"
+    static var url: URL { URL.documentsDirectory.appending(path: "pjsip.log") }
+
+    private static let lock = NSLock()
     nonisolated(unsafe) private static var file: FileHandle?
 
+    static var isRequested: Bool {
+        UserDefaults.standard.bool(forKey: settingKey) || CommandLine.arguments.contains("-YFEngineLog")
+    }
+
+    /// Starts a new log, replacing the previous one. Safe to call while the engine is running.
     static func start() {
-        let url = URL.documentsDirectory.appending(path: "pjsip.log")
-        FileManager.default.createFile(atPath: url.path(), contents: nil)
-        file = try? FileHandle(forWritingTo: url)
+        lock.withLock {
+            try? file?.close()
+            FileManager.default.createFile(atPath: url.path(), contents: nil)
+            file = try? FileHandle(forWritingTo: url)
+        }
         pj_log_set_log_func { _, data, length in
             guard let data, length > 0 else { return }
-            let bytes = UnsafeRawBufferPointer(start: data, count: Int(length))
-            EngineLog.file?.write(Data(bytes))
+            EngineLog.write(Data(UnsafeRawBufferPointer(start: data, count: Int(length))))
         }
         pj_log_set_level(5)
+        note("Debug log started, YeyoFone \(AppInfo.version)")
+    }
+
+    /// Stops writing; the file stays so it can still be shared.
+    static func stop() {
+        pj_log_set_level(0)
+        lock.withLock {
+            try? file?.close()
+            file = nil
+        }
     }
 
     /// Adds an app-level line (CallKit, audio session) to the same log, for ordering against PJSIP's lines.
     static func note(_ message: String) {
         let time = Date().formatted(.dateTime.hour(.twoDigits(amPM: .omitted)).minute(.twoDigits).second(.twoDigits).secondFraction(.fractional(3)))
-        file?.write(Data("\(time)  app  \(message)\n".utf8))
+        write(Data("\(time)  app  \(message)\n".utf8))
+    }
+
+    private static func write(_ data: Data) {
+        lock.withLock { file?.write(data) }
     }
 }
-#endif

@@ -95,6 +95,12 @@ class PjsipEngine internal constructor(
         withContext(dispatcher) { backend.setHeld(callId, held) }
     }
 
+    /** Enabled audio codecs in the order they are offered, for diagnostics. Empty until the engine runs. */
+    suspend fun audioCodecs(): List<AudioCodecInfo> {
+        if (state.value != EngineState.Running) return emptyList()
+        return withContext(dispatcher) { backend.audioCodecs() }
+    }
+
     override suspend fun start() = lifecycleMutex.withLock {
         if (state.value == EngineState.Running || state.value == EngineState.Initializing) return
 

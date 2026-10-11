@@ -245,7 +245,7 @@ private fun ProfileHeader(account: SipAccount, registrationState: RegistrationSt
             color = Gray,
             letterSpacing = 0.2.sp,
         )
-        val (label, statusColor) = status(account, registrationState)
+        val (label, statusColor) = registrationStatus(account, registrationState)
         Box(Modifier.padding(top = 12.dp)) {
             StatusBadge(label, statusColor)
         }
@@ -395,8 +395,9 @@ private fun StatusBadge(label: String, statusColor: Color) {
     }
 }
 
+/** Registration label and color, shared by the account page and Settings › Advanced. */
 @Composable
-private fun status(account: SipAccount, registrationState: RegistrationState): Pair<String, Color> = when {
+internal fun registrationStatus(account: SipAccount, registrationState: RegistrationState): Pair<String, Color> = when {
     !account.enabled -> stringResource(R.string.status_disabled) to GrayMid
     registrationState is RegistrationState.Registered || registrationState is RegistrationState.Refreshing ->
         stringResource(R.string.status_registered) to Success

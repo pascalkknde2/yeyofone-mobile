@@ -107,6 +107,9 @@ fun SettingsScreen(
     onIncomingCallsClick: () -> Unit,
     onLanguageClick: () -> Unit,
     onRecordingsClick: () -> Unit,
+    onAdvancedClick: () -> Unit,
+    onSocialClick: () -> Unit,
+    onAboutClick: () -> Unit,
     onNavigationItemSelected: (Int) -> Unit,
 ) {
     val snackbar = remember { SnackbarHostState() }
@@ -149,9 +152,9 @@ fun SettingsScreen(
         stringResource(R.string.settings_section_more) to listOf(
             SettingEntry(Icons.Default.Contrast, Purple, stringResource(R.string.settings_appearance), stringResource(AppearancePreferences.current.label), action = { showAppearance = true }),
             SettingEntry(Icons.Default.Language, AccentBlue, stringResource(R.string.settings_language), stringResource(R.string.settings_language_subtitle), action = onLanguageClick),
-            SettingEntry(Icons.Default.Settings, AccentBlue, stringResource(R.string.settings_advanced), stringResource(R.string.settings_advanced_subtitle)),
-            SettingEntry(Icons.Default.Share, AccentGreen, stringResource(R.string.settings_social), stringResource(R.string.settings_social_subtitle)),
-            SettingEntry(Icons.Default.Info, InactiveGray, stringResource(R.string.settings_about), stringResource(R.string.settings_about_subtitle, BuildConfig.VERSION_NAME)),
+            SettingEntry(Icons.Default.Settings, AccentBlue, stringResource(R.string.settings_advanced), stringResource(R.string.settings_advanced_subtitle), action = onAdvancedClick),
+            SettingEntry(Icons.Default.Share, AccentGreen, stringResource(R.string.settings_social), stringResource(R.string.settings_social_subtitle), action = onSocialClick),
+            SettingEntry(Icons.Default.Info, InactiveGray, stringResource(R.string.settings_about), stringResource(R.string.settings_about_subtitle, BuildConfig.VERSION_NAME), action = onAboutClick),
         ),
     )
     val visibleSections = sections.mapNotNull { (title, entries) ->
