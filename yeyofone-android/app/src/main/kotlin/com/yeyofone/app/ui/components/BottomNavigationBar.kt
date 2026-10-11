@@ -43,9 +43,9 @@ import androidx.compose.ui.unit.dp
 import com.yeyofone.app.BuildConfig
 import com.yeyofone.app.R
 import com.yeyofone.app.ui.theme.AccentBlue
-import com.yeyofone.app.ui.theme.BorderLight
-import com.yeyofone.app.ui.theme.InactiveGray
 import com.yeyofone.app.ui.theme.NavBackground
+import com.yeyofone.app.ui.theme.NavBorder
+import com.yeyofone.app.ui.theme.NavInactive
 
 const val HOME_NAVIGATION = 0
 const val KEYPAD_NAVIGATION = 1
@@ -71,7 +71,7 @@ fun BottomNavigationBar(selectedIndex: Int, onItemSelected: (Int) -> Unit) {
     Row(
         Modifier.fillMaxWidth().navigationBarsPadding().padding(horizontal = 20.dp, vertical = 20.dp)
             .shadow(8.dp, RoundedCornerShape(30.dp)).clip(RoundedCornerShape(30.dp))
-            .background(NavBackground).border(1.dp, BorderLight.copy(alpha = 0.6f), RoundedCornerShape(30.dp))
+            .background(NavBackground).border(1.dp, NavBorder.copy(alpha = 0.6f), RoundedCornerShape(30.dp))
             .selectableGroup().padding(vertical = 8.dp, horizontal = 6.dp),
         horizontalArrangement = Arrangement.SpaceAround,
         verticalAlignment = Alignment.CenterVertically,
@@ -79,7 +79,7 @@ fun BottomNavigationBar(selectedIndex: Int, onItemSelected: (Int) -> Unit) {
         items.forEach { item ->
             val selected = selectedIndex == item.navIndex
             val background by animateColorAsState(if (selected) AccentBlue else Color.Transparent, label = "tab background")
-            val foreground by animateColorAsState(if (selected) Color.White else InactiveGray, label = "tab icon")
+            val foreground by animateColorAsState(if (selected) Color.White else NavInactive, label = "tab icon")
             Box(
                 contentAlignment = Alignment.Center,
                 modifier = Modifier.weight(1f).height(48.dp)
