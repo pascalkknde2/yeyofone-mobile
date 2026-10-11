@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- API 31+ splash screen in the light palette; the rest matches values-v27. -->
+    <style name="Theme.YeyoFone" parent="Theme.YeyoFone.Base">
+        <item name="android:navigationBarColor">#F4F7F9</item>
+        <item name="android:windowLightNavigationBar">true</item>
+        <item name="android:windowSplashScreenBackground">#F4F7F9</item>
+    </style>
+</resources>

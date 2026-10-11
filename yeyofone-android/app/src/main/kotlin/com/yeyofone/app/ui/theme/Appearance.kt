@@ -1,6 +1,8 @@
 package com.yeyofone.app.ui.theme
 
+import android.app.UiModeManager
 import android.content.Context
+import android.os.Build
 import androidx.annotation.StringRes
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -31,5 +33,15 @@ object AppearancePreferences {
     fun set(context: Context, appearance: Appearance) {
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit { putString(KEY_APPEARANCE, appearance.name) }
         current = appearance
+        // API 31+: tell the system too, so the splash screen, drawn before the app runs, matches.
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            context.getSystemService(UiModeManager::class.java).setApplicationNightMode(
+                when (appearance) {
+                    Appearance.SYSTEM -> UiModeManager.MODE_NIGHT_AUTO
+                    Appearance.LIGHT -> UiModeManager.MODE_NIGHT_NO
+                    Appearance.DARK -> UiModeManager.MODE_NIGHT_YES
+                },
+            )
+        }
     }
 }
