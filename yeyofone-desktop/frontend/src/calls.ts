@@ -52,6 +52,7 @@ const reasons = [
   "tls",
   "transport",
   "offline",
+  "elsewhere",
 ];
 export function parseCalls(value: unknown, requestId: string): CallStatus[] {
   if (!value || typeof value !== "object") throw Error();
@@ -156,6 +157,7 @@ export function reasonLabel(reason: string | null): string {
         tls: "The secure SIP connection failed.",
         transport: "The SIP connection failed.",
         offline: "The network is offline.",
+        elsewhere: "Continued on another device.",
       } as Record<string, string>
     )[reason ?? ""] ?? ""
   );

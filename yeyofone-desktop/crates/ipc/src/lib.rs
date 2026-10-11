@@ -557,6 +557,71 @@ pub fn validate_call_request(value: serde_json::Value) -> Result<CallRequest, Ip
     }
     Ok(req)
 }
+/// Call handoff: list calls on the account's other devices, or take one over here.
+#[derive(Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+pub enum HandoffAction {
+    List,
+    TakeOver,
+}
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct HandoffRequest {
+    pub schema_version: u8,
+    pub request_id: String,
+    pub action: HandoffAction,
+    pub offer_id: Option<String>,
+    /// Id for the new local call.
+    pub id: Option<String>,
+}
+pub fn validate_handoff_request(value: serde_json::Value) -> Result<HandoffRequest, IpcError> {
+    if value.to_string().len() > 1024 {
+        return Err(error(ErrorCode::InvalidRequest, None));
+    }
+    let req: HandoffRequest =
+        serde_json::from_value(value).map_err(|_| error(ErrorCode::InvalidRequest, None))?;
+    validate_request(
+        serde_json::json!({"schemaVersion":req.schema_version,"requestId":req.request_id}),
+    )?;
+    let identifier = |s: &Option<String>| {
+        s.as_ref().is_some_and(|s| {
+            !s.is_empty()
+                && s.len() <= 64
+                && s.bytes().all(|b| b.is_ascii_alphanumeric() || b == b'-')
+        })
+    };
+    let valid = match req.action {
+        HandoffAction::List => req.offer_id.is_none() && req.id.is_none(),
+        HandoffAction::TakeOver => identifier(&req.offer_id) && identifier(&req.id),
+    };
+    if !valid {
+        return Err(error(ErrorCode::InvalidRequest, Some(req.request_id)));
+    }
+    Ok(req)
+}
+#[cfg(test)]
+mod handoff_wire_tests {
+    use super::*;
+    use serde_json::json;
+    #[test]
+    fn handoff_requests_are_bounded_and_exact() {
+        for v in [
+            json!({"schemaVersion":1,"requestId":"test","action":"list"}),
+            json!({"schemaVersion":1,"requestId":"test","action":"take_over","offerId":"handoff-0123456789abcdef","id":"call-1"}),
+        ] {
+            assert!(validate_handoff_request(v).is_ok());
+        }
+        for v in [
+            json!({"schemaVersion":1,"requestId":"test","action":"list","offerId":"x"}),
+            json!({"schemaVersion":1,"requestId":"test","action":"take_over","offerId":"x"}),
+            json!({"schemaVersion":1,"requestId":"test","action":"take_over","offerId":"../x","id":"one"}),
+            json!({"schemaVersion":1,"requestId":"test","action":"take_over","offerId":"x","id":"one","destination":"1002"}),
+            json!({"schemaVersion":1,"requestId":"test","action":"delete"}),
+        ] {
+            assert!(validate_handoff_request(v).is_err());
+        }
+    }
+}
 #[cfg(test)]
 mod call_wire_tests {
     use super::*;

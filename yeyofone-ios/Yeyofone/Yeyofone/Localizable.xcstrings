@@ -1294,6 +1294,28 @@
         }
       }
     },
+    "Call continued on another device" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Anruf auf einem anderen Gerät fortgesetzt"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Llamada continuada en otro dispositivo"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Appel poursuivi sur un autre appareil"
+          }
+        }
+      }
+    },
     "Call ended" : {
       "localizations" : {
         "de" : {

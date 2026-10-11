@@ -2,6 +2,41 @@ export const translations: Record<
   string,
   Record<"fr" | "es" | "de", string>
 > = {
+  "Continue call on this device?": {
+    fr: "Continuer l’appel sur cet appareil ?",
+    es: "¿Continuar la llamada en este dispositivo?",
+    de: "Anruf auf diesem Gerät fortsetzen?",
+  },
+  "On your {device}": {
+    fr: "Sur votre {device}",
+    es: "En tu {device}",
+    de: "Auf deinem {device}",
+  },
+  "Not now": {
+    fr: "Plus tard",
+    es: "Ahora no",
+    de: "Nicht jetzt",
+  },
+  "Continue here": {
+    fr: "Continuer ici",
+    es: "Continuar aquí",
+    de: "Hier fortsetzen",
+  },
+  "Moving call…": {
+    fr: "Transfert de l’appel…",
+    es: "Moviendo la llamada…",
+    de: "Anruf wird verschoben…",
+  },
+  "The call could not be moved to this device.": {
+    fr: "Impossible de transférer l’appel sur cet appareil.",
+    es: "No se pudo mover la llamada a este dispositivo.",
+    de: "Der Anruf konnte nicht auf dieses Gerät verschoben werden.",
+  },
+  "Continued on another device.": {
+    fr: "Poursuivi sur un autre appareil.",
+    es: "Continuada en otro dispositivo.",
+    de: "Auf einem anderen Gerät fortgesetzt.",
+  },
   "Sent digits": {
     fr: "Chiffres envoyés",
     es: "Dígitos enviados",

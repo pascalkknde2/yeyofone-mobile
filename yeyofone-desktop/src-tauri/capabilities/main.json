@@ -10,6 +10,7 @@
     "allow-registration-command",
     "allow-validate-destination",
     "allow-calls-command",
+    "allow-handoff-command",
     "allow-call-history-command",
     "allow-recording-file-command",
     "allow-recording-cloud-command",

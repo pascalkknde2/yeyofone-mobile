@@ -322,6 +322,70 @@ impl Calls {
         self.poll(native, registrations);
         Ok(self.snapshot())
     }
+    /// Takes over a call announced by another device of the same account: the INVITE carries
+    /// Replaces for that device's dialog, so the PBX moves the call here without the other
+    /// party noticing.
+    pub fn take_over(
+        &mut self,
+        native: &mut ffi::Native,
+        registrations: &Registrations,
+        id: String,
+        offer: &handoff::Offer,
+    ) -> Result<Vec<CallStatus>, EngineError> {
+        let now = self.now();
+        if id.is_empty()
+            || id.len() > 64
+            || !id.bytes().all(|b| b.is_ascii_alphanumeric() || b == b'-')
+            || self.sessions.contains_key(&id)
+        {
+            return Err(EngineError::Native(-6));
+        }
+        if self.sessions.values().any(|s| !s.machine.terminal()) || self.sessions.len() >= 128 {
+            return Err(EngineError::Busy);
+        }
+        let account = offer.public.account_id.clone();
+        let registration = registrations
+            .accounts
+            .get(&account)
+            .ok_or(EngineError::Unavailable)?;
+        if registration.token == 0
+            || registration
+                .machine
+                .snapshot(&account, registrations.now())
+                .state
+                != "registered"
+        {
+            return Err(EngineError::Unavailable);
+        }
+        let config = registration
+            .account
+            .as_ref()
+            .ok_or(EngineError::Unavailable)?;
+        let uri =
+            call_destination(config, &offer.public.remote).map_err(|_| EngineError::Native(-6))?;
+        let token = self.next;
+        self.next = self.next.checked_add(1).ok_or(EngineError::Unavailable)?;
+        let mut machine = CallMachine::new(id.clone(), account, offer.public.remote.clone(), now);
+        if let Err(code) = native.dial_replacing(
+            registration.token,
+            token,
+            &uri,
+            &offer.call_id,
+            &offer.remote_tag,
+            &offer.local_tag,
+        ) {
+            machine.finish(
+                if code == -11 {
+                    "audio_unavailable"
+                } else {
+                    "native_failure"
+                },
+                now,
+            );
+        }
+        self.sessions.insert(id, Session { token, machine });
+        Ok(self.snapshot())
+    }
     pub fn poll(&mut self, native: &mut ffi::Native, registrations: &Registrations) {
         let now = self.now();
         let seen = self
@@ -441,6 +505,14 @@ impl Calls {
                 s.machine.finish("termination_timeout", now);
             }
             if s.machine.terminal() {
+                // The PBX ends a call with "Call completed elsewhere" when another device of
+                // this account takes it over, or answers it while it rings here too.
+                if native
+                    .call_dialog(s.token)
+                    .is_ok_and(|d| d.ended_elsewhere != 0)
+                {
+                    s.machine.status.reason = Some("elsewhere".into());
+                }
                 let _ = native.release_call(s.token);
             }
         }

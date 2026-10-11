@@ -2,6 +2,7 @@
 mod calls;
 #[allow(unsafe_code)]
 mod ffi;
+mod handoff;
 use std::collections::BTreeMap;
 use std::time::Instant;
 use std::{
@@ -63,11 +64,15 @@ enum Operation {
     RecordStop(String),
     Dtmf(String, char),
     Control(String, String, String, String),
+    Handoffs,
+    /// Take over offer (first) as a new local call (second).
+    TakeOver(String, String),
 }
 enum Reply {
     Engine(Snapshot),
     Registrations(Vec<RegistrationStatus>),
     Calls(Vec<yeyofone_application::calls::CallStatus>),
+    Handoffs(Vec<yeyofone_application::handoff::HandoffOffer>),
 }
 struct Message {
     operation: Operation,
@@ -180,6 +185,23 @@ impl PjsipEngine {
     }
     pub fn calls(&self) -> Result<Vec<yeyofone_application::calls::CallStatus>, EngineError> {
         self.call_request(Operation::Calls)
+    }
+    /// Calls on other devices of this app's accounts that can be continued here.
+    pub fn handoffs(
+        &self,
+    ) -> Result<Vec<yeyofone_application::handoff::HandoffOffer>, EngineError> {
+        match self.request(Operation::Handoffs)? {
+            Reply::Handoffs(offers) => Ok(offers),
+            _ => Err(EngineError::Unavailable),
+        }
+    }
+    /// Moves an offered call to this device as call `id`.
+    pub fn take_over(
+        &self,
+        offer: &str,
+        id: &str,
+    ) -> Result<Vec<yeyofone_application::calls::CallStatus>, EngineError> {
+        self.call_request(Operation::TakeOver(offer.into(), id.into()))
     }
     pub fn dial(
         &self,
@@ -314,6 +336,7 @@ struct Owner {
     last_transport: Option<TransportEvent>,
     registrations: Registrations,
     calls: calls::Calls,
+    handoffs: handoff::Handoffs,
 }
 impl Owner {
     fn transition(&mut self, next: EngineState) -> Result<(), EngineError> {
@@ -355,6 +378,7 @@ fn owner_loop(mut native: ffi::Native, receiver: mpsc::Receiver<Message>, port: 
         last_transport: None,
         registrations: Registrations::new(),
         calls: calls::Calls::new(),
+        handoffs: handoff::Handoffs::new(),
     };
     loop {
         match receiver.recv_timeout(Duration::from_millis(20)) {
@@ -384,6 +408,20 @@ fn owner_loop(mut native: ffi::Native, receiver: mpsc::Receiver<Message>, port: 
                     }
                     Operation::Stop | Operation::Shutdown => {
                         owner.stop(&mut native).map(Reply::Engine)
+                    }
+                    Operation::Handoffs => Ok(Reply::Handoffs(owner.handoffs.list())),
+                    Operation::TakeOver(offer, id) => {
+                        if owner.application.engine() != EngineState::Running {
+                            Err(EngineError::Unavailable)
+                        } else {
+                            match owner.handoffs.take(&offer) {
+                                Some(offer) => owner
+                                    .calls
+                                    .take_over(&mut native, &owner.registrations, id, &offer)
+                                    .map(Reply::Calls),
+                                None => Err(EngineError::InvalidTransition),
+                            }
+                        }
                     }
                     op @ (Operation::Calls
                     | Operation::Dial(..)
@@ -437,6 +475,7 @@ fn owner_loop(mut native: ffi::Native, receiver: mpsc::Receiver<Message>, port: 
         if owner.application.engine() == EngineState::Running {
             owner.calls.poll(&mut native, &owner.registrations);
             owner.registrations.poll(&mut native);
+            owner.handoffs.poll(&mut native, &owner.registrations);
             if native.pump().is_err() {
                 owner.calls.shutdown(&mut native, &owner.registrations);
                 let _ = owner.transition(EngineState::Failed);
