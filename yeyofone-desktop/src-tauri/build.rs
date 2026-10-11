@@ -6,6 +6,7 @@ fn main() {
             "registration_command",
             "validate_destination",
             "calls_command",
+            "handoff_command",
             "call_history_command",
             "recording_file_command",
             "recording_cloud_command",

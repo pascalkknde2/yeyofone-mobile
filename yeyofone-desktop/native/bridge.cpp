@@ -12,8 +12,11 @@
 #include <algorithm>
 #include <filesystem>
 #include <cctype>
+#include <cstring>
+#include <deque>
 #include <pjlib-util/errno.h>
 #include <pjsip/sip_errno.h>
+#include <pjsua-lib/pjsua_internal.h>
 #ifndef _WIN32
 #include <ifaddrs.h>
 #include <net/if.h>
@@ -23,6 +26,28 @@
 namespace {
 std::atomic_bool occupied{false};
 std::atomic<uint64_t> incoming_serial{1};
+const char* const HANDOFF_TYPE="application/vnd.yeyofone.handoff+json";
+constexpr size_t HANDOFF_MAX=1024;
+// SIP token characters (RFC 3261) that are safe inside a Replaces header value.
+bool token_char(unsigned char c){return std::isalnum(c)||std::strchr("-.!%*_+`'~",c)!=nullptr;}
+bool valid_token(const uint8_t* p,uint32_t len,uint32_t max,bool call_id){
+    if(!p||len==0||len>max)return false;
+    for(uint32_t i=0;i<len;++i){unsigned char c=p[i];if(c==0||!(token_char(c)||(call_id&&(c=='@'||c==':'||c=='/'))))return false;}
+    return true;
+}
+std::string lower(std::string v){std::transform(v.begin(),v.end(),v.begin(),[](unsigned char c){return static_cast<char>(std::tolower(c));});return v;}
+// True for a BYE or CANCEL carrying "Reason: SIP;cause=200", which FreeSWITCH sends with
+// "Call completed elsewhere" when another device takes over or answers the call.
+bool completed_elsewhere(const std::string& message){
+    if(message.rfind("BYE ",0)!=0&&message.rfind("CANCEL ",0)!=0)return false;
+    const auto text=lower(message);
+    for(size_t at=text.find("\nreason:");at!=std::string::npos;at=text.find("\nreason:",at+1)){
+        const auto end=text.find('\n',at+1);
+        const auto line=text.substr(at,end==std::string::npos?std::string::npos:end-at);
+        if(line.find("sip")!=std::string::npos&&line.find("cause=200")!=std::string::npos)return true;
+    }
+    return false;
+}
 class EngineEndpoint;
 class NativeCall;
 }
@@ -35,8 +60,9 @@ class NativeAccount final : public pj::Account {
 public:
     EngineEndpoint* endpoint;
     YvHandle* owner;
-    std::string target_host;
+    std::string target_host,username,own_uri;
     int target_port=0,target_transport=0;
+    std::deque<std::string> handoff;
     const uint64_t token;
     pj::TransportId transport = PJSUA_INVALID_ID;
     NativeAccount(uint64_t t,EngineEndpoint* e,YvHandle* h) : endpoint(e), owner(h), token(t) { latest.token = t; }
@@ -46,6 +72,22 @@ public:
     }
     void onRegState(pj::OnRegStateParam& event) noexcept override;
     void onIncomingCall(pj::OnIncomingCallParam& event) noexcept override;
+    // Keeps handoff messages from this account's own address; everything else is ignored.
+    void onInstantMessage(pj::OnInstantMessageParam& event) noexcept override {
+        try {
+            if(lower(event.contentType)!=HANDOFF_TYPE||event.msgBody.empty()||event.msgBody.size()>HANDOFF_MAX)return;
+            const auto from=lower(event.fromUri);
+            const auto at=from.find("sip:"+lower(username)+"@");
+            if(at==std::string::npos)return;
+            const auto host_start=at+4+username.size()+1;
+            const auto host=from.substr(host_start,from.find_first_of(">;:",host_start)-host_start);
+            if(host!=lower(target_host))return;
+            std::lock_guard<std::mutex> lock(mutex);
+            if(handoff.size()>=16)handoff.pop_front();
+            handoff.push_back(event.msgBody);
+        } catch (...) {}
+    }
+    bool next_handoff(std::string& out){std::lock_guard<std::mutex> lock(mutex);if(handoff.empty())return false;out=std::move(handoff.front());handoff.pop_front();return true;}
     YvRegistration snapshot() { std::lock_guard<std::mutex> lock(mutex); return latest; }
 };
 class EngineEndpoint final : public pj::Endpoint {
@@ -140,12 +182,47 @@ public:
     YvCallControls controls{};
     bool cancelled=false;
     bool is_incoming=false;
+    std::string dialog_call_id,dialog_local_tag,dialog_remote_tag,dialog_remote_user;
+    bool ended_elsewhere=false;
     NativeCall(NativeAccount& account,uint64_t token,pj::Endpoint& ep,bool use_audio,int call_id=PJSUA_INVALID_ID,bool incoming=false):pj::Call(account,call_id),endpoint(ep),audio(use_audio),account_token(account.token),is_incoming(incoming){latest.token=token;latest.account_token=account.token;latest.incoming=incoming?1:0;if(incoming){latest.state=PJSIP_INV_STATE_INCOMING;capture_caller();}}
     ~NativeCall() override { unlink_peer(); stop_recording(); stop_ringtone(); stop_ringback(); }
     void capture_caller() noexcept {try{auto info=getInfo();auto* pool=pjsua_pool_create("caller-check",512,512);if(!pool)return;struct Guard{pj_pool_t*p;~Guard(){pj_pool_release(p);}}guard{pool};std::string uri=info.remoteUri;auto* parsed=pjsip_parse_uri(pool,uri.data(),uri.size(),0);if(!parsed||(!PJSIP_URI_SCHEME_IS_SIP(parsed)&&!PJSIP_URI_SCHEME_IS_SIPS(parsed)))return;auto* sip=static_cast<pjsip_sip_uri*>(pjsip_uri_get_uri(parsed));if(sip->user.slen<1||sip->user.slen>64)return;for(pj_ssize_t i=0;i<sip->user.slen;++i){unsigned char c=static_cast<unsigned char>(sip->user.ptr[i]);if(!(std::isalnum(c)||c=='+'||c=='*'||c=='#'||c=='-'||c=='_'||c=='.'))return;}std::lock_guard<std::mutex> lock(mutex);latest.caller_len=static_cast<int32_t>(sip->user.slen);std::copy(sip->user.ptr,sip->user.ptr+sip->user.slen,latest.caller);}catch(...){} }
+    // Copies the dialog identifiers while PJSUA still has the dialog; they outlive the call.
+    void capture_dialog() noexcept {
+        try{
+            const int id=getId();
+            if(id<0||id>=static_cast<int>(PJSUA_MAX_CALLS))return;
+            auto* inv=pjsua_var.calls[id].inv;
+            if(!inv||!inv->dlg||inv->dlg->remote.info->tag.slen==0)return;
+            auto* dlg=inv->dlg;
+            dialog_call_id.assign(dlg->call_id->id.ptr,dlg->call_id->id.slen);
+            dialog_local_tag.assign(dlg->local.info->tag.ptr,dlg->local.info->tag.slen);
+            dialog_remote_tag.assign(dlg->remote.info->tag.ptr,dlg->remote.info->tag.slen);
+            auto* uri=pjsip_uri_get_uri(dlg->remote.info->uri);
+            if(uri&&(PJSIP_URI_SCHEME_IS_SIP(uri)||PJSIP_URI_SCHEME_IS_SIPS(uri))){
+                auto* sip=static_cast<pjsip_sip_uri*>(uri);
+                std::string user(sip->user.ptr,sip->user.slen);
+                if(user.size()<=64&&std::all_of(user.begin(),user.end(),[](unsigned char c){return std::isalnum(c)||c=='+'||c=='*'||c=='#'||c=='-'||c=='_'||c=='.';}))dialog_remote_user=user;
+            }
+        }catch(...){}
+    }
+    void capture_elsewhere(const pj::SipEvent& event) noexcept {
+        try{if(event.type==PJSIP_EVENT_TSX_STATE&&event.body.tsxState.type==PJSIP_EVENT_RX_MSG&&completed_elsewhere(event.body.tsxState.src.rdata.wholeMsg))ended_elsewhere=true;}catch(...){}
+    }
+    YvCallDialog dialog() noexcept {
+        YvCallDialog out{};
+        out.ended_elsewhere=ended_elsewhere?1:0;
+        auto copy=[](const std::string& v,uint8_t* dst,uint32_t& len,size_t cap){len=static_cast<uint32_t>(std::min(v.size(),cap-1));std::copy(v.begin(),v.begin()+len,dst);};
+        copy(dialog_call_id,out.call_id,out.call_id_len,sizeof(out.call_id));
+        copy(dialog_local_tag,out.local_tag,out.local_tag_len,sizeof(out.local_tag));
+        copy(dialog_remote_tag,out.remote_tag,out.remote_tag_len,sizeof(out.remote_tag));
+        copy(dialog_remote_user,out.remote_user,out.remote_user_len,sizeof(out.remote_user));
+        return out;
+    }
     void update() noexcept {
         try {
             auto info=getInfo();
+            if(info.state==PJSIP_INV_STATE_CONFIRMED)capture_dialog();
             std::lock_guard<std::mutex> lock(mutex);
             ++latest.sequence;latest.state=info.state;latest.sip_code=info.lastStatusCode;
             latest.connected_ms=static_cast<uint64_t>(info.connectDuration.sec)*1000+info.connectDuration.msec;
@@ -210,7 +287,7 @@ public:
     void onCallTransferStatus(pj::OnCallTransferStatusParam& p) noexcept override {controls.transfer_code=p.statusCode;if(p.finalNotify||(p.statusCode>=200&&p.statusCode<300)){controls.transfer_pending=0;p.cont=false;}}
     void capture_error(const pj::SipEvent& event) noexcept {try{if(event.type==PJSIP_EVENT_TSX_STATE && event.body.tsxState.type==PJSIP_EVENT_TRANSPORT_ERROR){std::lock_guard<std::mutex> lock(mutex);latest.native_code=event.body.tsxState.src.status;latest.failure_kind=yv_failure_kind(latest.native_code,0);}}catch(...){} }
     void onCallTsxState(pj::OnCallTsxStateParam& event) noexcept override {
-        capture_error(event.e);
+        capture_error(event.e);capture_elsewhere(event.e);
         if(event.e.type!=PJSIP_EVENT_TSX_STATE)return;
         auto& tsx=event.e.body.tsxState.tsx;
         if(hold_pending&&tsx.role==PJSIP_ROLE_UAC&&tsx.method=="INVITE"&&tsx.statusCode>=200){
@@ -219,7 +296,7 @@ public:
         }
     }
     void onCallMediaTransportState(pj::OnCallMediaTransportStateParam& event) noexcept override {if(event.status){try{std::lock_guard<std::mutex> lock(mutex);latest.audio_error=event.status;latest.audio_active=0;}catch(...){}}}
-    void onCallState(pj::OnCallStateParam& event) noexcept override {capture_error(event.e);update();route();}
+    void onCallState(pj::OnCallStateParam& event) noexcept override {capture_error(event.e);capture_elsewhere(event.e);update();route();}
     void onCallMediaState(pj::OnCallMediaStateParam&) noexcept override {update();route();if(peer)peer->route();}
     // Takes any held call off hold, then links the two calls' audio both ways.
     void merge_with(NativeCall& other){
@@ -436,6 +513,7 @@ extern "C" int32_t yv_account_add(YvHandle* h, const YvAccountConfig* c) noexcep
         config.sipConfig.authCreds.emplace_back("digest","*",std::string(reinterpret_cast<const char*>(c->username),c->username_len),0,std::string(reinterpret_cast<const char*>(c->password),c->password_len));
         auto account=std::make_unique<NativeAccount>(c->token,h->endpoint.get(),h);account->transport=transport;
         account->target_host=std::string(reinterpret_cast<const char*>(c->host),c->host_len);account->target_port=c->port;account->target_transport=type;
+        account->username=std::string(reinterpret_cast<const char*>(c->username),c->username_len);account->own_uri=config.idUri;
         account->create(config,false);
         // Erase this transient C++ config copy; PJSUA keeps its own credential pool.
         auto& secret=config.sipConfig.authCreds.front().data;
@@ -464,8 +542,8 @@ extern "C" int32_t yv_registration(YvHandle* h,uint64_t token,YvRegistration* ou
     try {*output=found->second->snapshot();return 0;} catch (...) {return -1;}
 }
 
-extern "C" int32_t yv_call_start(YvHandle* h,uint64_t account,uint64_t token,const uint8_t* uri,uint32_t len,int32_t audio) noexcept {
-    if(auto code=check(h))return code;
+namespace {
+int32_t start_call(YvHandle* h,uint64_t account,uint64_t token,const uint8_t* uri,uint32_t len,int32_t audio,const std::string& replaces) noexcept {
     if(!h->running||!token||!uri||len==0||len>512||(audio!=0&&audio!=1)||h->calls.size()>=2||h->calls.count(token)||std::any_of(h->calls.begin(),h->calls.end(),[](const auto& x){return x.second->isActive()&&!x.second->controls.held;}))return -6;
     auto found=h->accounts.find(account);if(found==h->accounts.end())return -6;
     try {
@@ -486,10 +564,59 @@ extern "C" int32_t yv_call_start(YvHandle* h,uint64_t account,uint64_t token,con
         if(audio){try{auto& devices=h->endpoint->audDevManager();devices.setCaptureDev(PJMEDIA_AUD_DEFAULT_CAPTURE_DEV);devices.setPlaybackDev(PJMEDIA_AUD_DEFAULT_PLAYBACK_DEV);}catch(...){h->endpoint->audDevManager().setNoDev();return -11;}}
         auto call=std::make_unique<NativeCall>(acc,token,*h->endpoint,audio!=0);
         auto* pointer=call.get();h->calls.emplace(token,std::move(call));
-        try{pj::CallOpParam options(true);options.opt.audioCount=1;options.opt.videoCount=0;options.opt.textCount=0;pointer->makeCall(destination,options);pointer->update();}
+        try{pj::CallOpParam options(true);options.opt.audioCount=1;options.opt.videoCount=0;options.opt.textCount=0;
+            if(!replaces.empty()){pj::SipHeader header;header.hName="Replaces";header.hValue=replaces;options.txOption.headers.push_back(header);}
+            pointer->makeCall(destination,options);pointer->update();}
         catch(...){h->calls.erase(token);if(audio&&h->calls.empty())h->endpoint->audDevManager().setNoDev();throw;}
         return 0;
     }catch(const pj::Error& e){return e.status;}catch(...){return -1;}
+}
+}
+extern "C" int32_t yv_call_start(YvHandle* h,uint64_t account,uint64_t token,const uint8_t* uri,uint32_t len,int32_t audio) noexcept {
+    if(auto code=check(h))return code;
+    return start_call(h,account,token,uri,len,audio,std::string());
+}
+extern "C" int32_t yv_call_start_replacing(YvHandle* h,uint64_t account,uint64_t token,const uint8_t* uri,uint32_t len,
+                                           const uint8_t* call_id,uint32_t call_id_len,const uint8_t* to_tag,uint32_t to_tag_len,
+                                           const uint8_t* from_tag,uint32_t from_tag_len) noexcept {
+    if(auto code=check(h))return code;
+    if(!valid_token(call_id,call_id_len,128,true)||!valid_token(to_tag,to_tag_len,64,false)||!valid_token(from_tag,from_tag_len,64,false))return -6;
+    try{
+        const std::string replaces=std::string(reinterpret_cast<const char*>(call_id),call_id_len)+
+            ";to-tag="+std::string(reinterpret_cast<const char*>(to_tag),to_tag_len)+
+            ";from-tag="+std::string(reinterpret_cast<const char*>(from_tag),from_tag_len);
+        return start_call(h,account,token,uri,len,1,replaces);
+    }catch(...){return -1;}
+}
+extern "C" int32_t yv_call_dialog(YvHandle* h,uint64_t token,YvCallDialog* out) noexcept {
+    if(auto code=check(h))return code;if(!out)return -3;
+    auto found=h->calls.find(token);if(found==h->calls.end())return -6;
+    try{found->second->capture_dialog();*out=found->second->dialog();return 0;}catch(...){return -1;}
+}
+extern "C" int32_t yv_handoff_send(YvHandle* h,uint64_t account,const uint8_t* body,uint32_t len) noexcept {
+    if(auto code=check(h))return code;
+    if(!h->running||!body||len==0||len>HANDOFF_MAX)return -6;
+    for(uint32_t i=0;i<len;++i)if(body[i]==0)return -6;
+    auto found=h->accounts.find(account);if(found==h->accounts.end())return -6;
+    try{
+        std::string to=found->second->own_uri,text(reinterpret_cast<const char*>(body),len);
+        pj_str_t to_str=pj_str(&to[0]),mime=pj_str(const_cast<char*>(HANDOFF_TYPE)),content=pj_str(&text[0]);
+        return pjsua_im_send(found->second->getId(),&to_str,&mime,&content,nullptr,nullptr);
+    }catch(const pj::Error& e){return e.status;}catch(...){return -1;}
+}
+extern "C" int32_t yv_handoff_next(YvHandle* h,YvHandoffMessage* out) noexcept {
+    if(auto code=check(h))return code;if(!out)return -3;
+    try{
+        std::string body;
+        for(auto& item:h->accounts){
+            if(!item.second->next_handoff(body))continue;
+            *out=YvHandoffMessage{};out->account_token=item.first;
+            out->len=static_cast<uint32_t>(std::min(body.size(),sizeof(out->body)));
+            std::copy(body.begin(),body.begin()+out->len,out->body);
+            return 1;
+        }
+        return 0;
+    }catch(...){return -1;}
 }
 extern "C" int32_t yv_call_snapshot(YvHandle* h,uint64_t token,YvCall* out) noexcept {
     if(auto code=check(h))return code;if(!out)return -3;

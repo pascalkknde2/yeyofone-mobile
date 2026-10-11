@@ -2,6 +2,8 @@ package com.yeyofone.core.voip.pjsip
 
 import com.yeyofone.core.model.SipAccount
 import com.yeyofone.core.model.SipAccountId
+import com.yeyofone.core.voip.CallDialog
+import com.yeyofone.core.voip.HandoffMessage
 import com.yeyofone.core.voip.NativeCallEvent
 import com.yeyofone.core.voip.NativeMediaEvent
 import com.yeyofone.core.voip.NativeRegistrationEvent
@@ -39,6 +41,15 @@ internal interface EndpointBackend {
     fun setMediaEventListener(callback: (NativeMediaEvent) -> Unit) = Unit
     fun setTransferEventListener(callback: (NativeTransferEvent) -> Unit) = Unit
     fun audioCodecs(): List<AudioCodecInfo> = emptyList()
+    fun setHandoffListener(callback: (HandoffMessage) -> Unit) = Unit
+    fun sendHandoff(accountId: SipAccountId, body: String): Unit = error("Call handoff is not supported")
+    fun callDialog(callId: String): CallDialog? = null
+    fun makeReplacingCall(
+        accountId: SipAccountId,
+        destination: String,
+        replaces: CallDialog,
+        callback: (NativeCallEvent) -> Unit,
+    ): String = error("Call handoff is not supported")
 }
 
 /** An audio codec the engine offers, such as `G722/16000/1`; higher priority is offered first. */

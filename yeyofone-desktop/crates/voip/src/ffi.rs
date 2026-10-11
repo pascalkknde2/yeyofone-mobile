@@ -62,6 +62,40 @@ pub(crate) struct NativeCallControls {
     pub transfer_pending: i32,
     pub transfer_code: i32,
 }
+/// A call's SIP dialog, for another device's INVITE with Replaces. Matches bridge.h.
+#[repr(C)]
+pub(crate) struct NativeCallDialog {
+    pub ended_elsewhere: i32,
+    pub call_id_len: u32,
+    pub call_id: [u8; 129],
+    pub local_tag_len: u32,
+    pub local_tag: [u8; 65],
+    pub remote_tag_len: u32,
+    pub remote_tag: [u8; 65],
+    pub remote_user_len: u32,
+    pub remote_user: [u8; 65],
+}
+impl Default for NativeCallDialog {
+    fn default() -> Self {
+        Self {
+            ended_elsewhere: 0,
+            call_id_len: 0,
+            call_id: [0; 129],
+            local_tag_len: 0,
+            local_tag: [0; 65],
+            remote_tag_len: 0,
+            remote_tag: [0; 65],
+            remote_user_len: 0,
+            remote_user: [0; 65],
+        }
+    }
+}
+#[repr(C)]
+struct NativeHandoffMessage {
+    account_token: u64,
+    len: u32,
+    body: [u8; 1024],
+}
 impl Default for NativeCall {
     fn default() -> Self {
         Self {
@@ -118,6 +152,23 @@ unsafe extern "C" {
     fn yv_call_record_stop(handle: *mut Opaque, token: u64) -> i32;
     fn yv_call_dtmf(handle: *mut Opaque, token: u64, digits: *const u8, len: u32) -> i32;
     fn yv_call_release(handle: *mut Opaque, token: u64) -> i32;
+    fn yv_call_dialog(handle: *mut Opaque, token: u64, out: *mut NativeCallDialog) -> i32;
+    #[allow(clippy::too_many_arguments)]
+    fn yv_call_start_replacing(
+        handle: *mut Opaque,
+        account: u64,
+        token: u64,
+        uri: *const u8,
+        len: u32,
+        call_id: *const u8,
+        call_id_len: u32,
+        to_tag: *const u8,
+        to_tag_len: u32,
+        from_tag: *const u8,
+        from_tag_len: u32,
+    ) -> i32;
+    fn yv_handoff_send(handle: *mut Opaque, account: u64, body: *const u8, len: u32) -> i32;
+    fn yv_handoff_next(handle: *mut Opaque, out: *mut NativeHandoffMessage) -> i32;
 
     fn yv_account_add(handle: *mut Opaque, config: *const NativeAccountConfig) -> i32;
     fn yv_account_remove(handle: *mut Opaque, token: u64) -> i32;
@@ -183,6 +234,73 @@ impl Native {
                 i32::from(audio),
             )
         })
+    }
+    /// Places a call whose INVITE replaces another device's dialog (call handoff).
+    pub fn dial_replacing(
+        &mut self,
+        account: u64,
+        token: u64,
+        uri: &str,
+        call_id: &str,
+        to_tag: &str,
+        from_tag: &str,
+    ) -> Result<(), i32> {
+        if uri.len() > 512 || call_id.len() > 128 || to_tag.len() > 64 || from_tag.len() > 64 {
+            return Err(-6);
+        }
+        // SAFETY: bounded buffers stay alive through the synchronous native copy; owner-only handle.
+        checked(unsafe {
+            yv_call_start_replacing(
+                self.handle.as_ptr(),
+                account,
+                token,
+                uri.as_ptr(),
+                uri.len() as u32,
+                call_id.as_ptr(),
+                call_id.len() as u32,
+                to_tag.as_ptr(),
+                to_tag.len() as u32,
+                from_tag.as_ptr(),
+                from_tag.len() as u32,
+            )
+        })
+    }
+    pub fn call_dialog(&mut self, token: u64) -> Result<NativeCallDialog, i32> {
+        let mut out = NativeCallDialog::default();
+        // SAFETY: repr(C) output matches bridge.h and is writable on the owner thread.
+        checked(unsafe { yv_call_dialog(self.handle.as_ptr(), token, &mut out) })?;
+        Ok(out)
+    }
+    pub fn handoff_send(&mut self, account: u64, body: &str) -> Result<(), i32> {
+        if body.is_empty() || body.len() > 1024 || body.as_bytes().contains(&0) {
+            return Err(-6);
+        }
+        // SAFETY: bounded UTF-8 buffer stays alive through the synchronous native copy.
+        checked(unsafe {
+            yv_handoff_send(
+                self.handle.as_ptr(),
+                account,
+                body.as_ptr(),
+                body.len() as u32,
+            )
+        })
+    }
+    /// Next handoff message as (account token, body), if any.
+    pub fn handoff_next(&mut self) -> Result<Option<(u64, Vec<u8>)>, i32> {
+        let mut out = NativeHandoffMessage {
+            account_token: 0,
+            len: 0,
+            body: [0; 1024],
+        };
+        // SAFETY: repr(C) output matches bridge.h and is writable on the owner thread.
+        match unsafe { yv_handoff_next(self.handle.as_ptr(), &mut out) } {
+            0 => Ok(None),
+            1 => {
+                let len = (out.len as usize).min(out.body.len());
+                Ok(Some((out.account_token, out.body[..len].to_vec())))
+            }
+            code => Err(code),
+        }
     }
     pub fn call(&mut self, token: u64) -> Result<NativeCall, i32> {
         let mut out = NativeCall::default();

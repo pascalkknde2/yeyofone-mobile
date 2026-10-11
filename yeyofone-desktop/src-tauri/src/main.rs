@@ -140,6 +140,7 @@ fn main() {
             registration_command,
             validate_destination,
             calls_command,
+            handoff_command,
             call_history_command,
             recording_file_command,
             recording_cloud_command
@@ -452,6 +453,57 @@ async fn calls_command(
                 ),
             };
             drop(guard);
+            result.map_err(|error| {
+                registration_error(
+                    req.request_id,
+                    match error {
+                        yeyofone_voip::EngineError::Busy => ErrorCode::Busy,
+                        yeyofone_voip::EngineError::Native(-6) => ErrorCode::InvalidRequest,
+                        _ => ErrorCode::CallUnavailable,
+                    },
+                )
+            })
+        })
+        .await
+        .map_err(|_| yeyofone_ipc::engine_unavailable(request_id.clone()))??;
+        Ok(yeyofone_ipc::Response {
+            schema_version: 1,
+            request_id,
+            sequence: 0,
+            data,
+        })
+    }
+    #[cfg(not(feature = "native-voip"))]
+    {
+        Err(yeyofone_ipc::engine_unavailable(req.request_id))
+    }
+}
+
+/// Calls on the account's other devices that can be continued here, and taking one over.
+#[tauri::command]
+async fn handoff_command(
+    request: serde_json::Value,
+    _runtime: tauri::State<'_, Runtime>,
+) -> Result<
+    yeyofone_ipc::Response<Vec<yeyofone_application::handoff::HandoffOffer>>,
+    yeyofone_ipc::IpcError,
+> {
+    let req = yeyofone_ipc::validate_handoff_request(request)?;
+    #[cfg(feature = "native-voip")]
+    {
+        let engine = _runtime.engine.clone();
+        let request_id = req.request_id.clone();
+        let data = tauri::async_runtime::spawn_blocking(move || {
+            use yeyofone_ipc::{ErrorCode, HandoffAction, registration_error};
+            let result = match req.action {
+                HandoffAction::List => engine.handoffs(),
+                HandoffAction::TakeOver => engine
+                    .take_over(
+                        req.offer_id.as_deref().unwrap_or_default(),
+                        req.id.as_deref().unwrap_or_default(),
+                    )
+                    .and_then(|_| engine.handoffs()),
+            };
             result.map_err(|error| {
                 registration_error(
                     req.request_id,

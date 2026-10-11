@@ -9,6 +9,7 @@ import com.yeyofone.core.account.RoomCallHistoryRepository
 import com.yeyofone.core.account.RoomContactRepository
 import com.yeyofone.core.account.RoomForwardingStateRepository
 import com.yeyofone.core.calling.CallCoordinator
+import com.yeyofone.core.calling.HandoffCoordinator
 import com.yeyofone.core.model.SipAccount
 import com.yeyofone.core.model.SipAccountId
 import com.yeyofone.core.registration.AndroidNetworkStatus
@@ -61,7 +62,13 @@ class YeyoFoneApplication : Application() {
     }
     /** The engine's enabled audio codecs in the order they are offered, for Settings › Advanced. */
     suspend fun audioCodecs(): List<AudioCodecInfo> = engine.audioCodecs()
-    val callManager by lazy { CallCoordinator(accountRepository, engine, applicationScope, callHistory, accountPreferences) }
+    val callManager by lazy {
+        CallCoordinator(accountRepository, engine, applicationScope, callHistory, accountPreferences, handoff = engine)
+    }
+    /** Continue calls across this account's devices (see HandoffCoordinator). */
+    val handoff by lazy {
+        HandoffCoordinator(accountRepository, registration, callManager, engine, applicationScope, android.os.Build.MODEL)
+    }
     val audioRouteManager by lazy { AndroidAudioRouteManager(this) }
     internal val pushRegistrar by lazy { PushRegistrar(this, applicationScope) }
     internal val relayPushHandler by lazy { RelayPushHandler(this, applicationScope, callManager) }
@@ -74,6 +81,7 @@ class YeyoFoneApplication : Application() {
         IncomingCallService.start(this)
         pushRegistrar.resumePendingRevocations()
         relayPushHandler.start()
+        handoff.start()
         // onNewToken is only guaranteed when Firebase creates or rotates a token. Fetch the
         // existing token too, so accounts added after the initial FCM registration can enroll.
         runCatching { FirebaseMessaging.getInstance().token }

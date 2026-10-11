@@ -11,6 +11,7 @@ import "./sidebar.css";
 import { Dialer } from "./Dialer";
 import { CallBar, type CallTool } from "./CallBar";
 import { IncomingCall } from "./IncomingCall";
+import { HandoffBanner } from "./HandoffBanner";
 import { CallHistory } from "./CallHistory";
 import { Voicemail } from "./Voicemail";
 import { ConferenceRoom } from "./ConferenceRoom";
@@ -1035,6 +1036,7 @@ function App() {
           else setDialer("");
         }}
       />
+      <HandoffBanner onTakenOver={() => setDialer("")} />
       <IncomingCall
         key={callTool ?? "screen"}
         hiddenId={hiddenIncoming}

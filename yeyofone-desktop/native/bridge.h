@@ -63,6 +63,29 @@ int32_t yv_set_ringtone(struct YvHandle* handle, int32_t enabled) YV_NOEXCEPT;
  * media connections. iOS CallKit hosts call this when the system activates or deactivates the
  * audio session, since audio must not start before activation. */
 int32_t yv_audio_device(struct YvHandle* handle, int32_t open) YV_NOEXCEPT;
+/* Call handoff between devices of the same account. */
+/* A call's SIP dialog as the PBX sees it, for another device's INVITE with Replaces (RFC 3891).
+ * Lengths are 0 until the dialog is known. ended_elsewhere is 1 once the PBX ended the call with
+ * "Reason: SIP;cause=200" (another device took it over, or answered it). */
+struct YvCallDialog {
+    int32_t ended_elsewhere;
+    uint32_t call_id_len; uint8_t call_id[129];
+    uint32_t local_tag_len; uint8_t local_tag[65];
+    uint32_t remote_tag_len; uint8_t remote_tag[65];
+    uint32_t remote_user_len; uint8_t remote_user[65];
+};
+int32_t yv_call_dialog(struct YvHandle*, uint64_t token, struct YvCallDialog*) YV_NOEXCEPT;
+/* Like yv_call_start, but the INVITE replaces another device's dialog: call_id, and that device's
+ * remote (to_tag) and local (from_tag) tags. */
+int32_t yv_call_start_replacing(struct YvHandle*, uint64_t account, uint64_t token, const uint8_t* uri, uint32_t len,
+                                const uint8_t* call_id, uint32_t call_id_len, const uint8_t* to_tag, uint32_t to_tag_len,
+                                const uint8_t* from_tag, uint32_t from_tag_len) YV_NOEXCEPT;
+/* Sends a device-to-device handoff message: a SIP MESSAGE to the account's own address, which the
+ * PBX delivers to every registered device (including this one). body is at most 1024 bytes. */
+int32_t yv_handoff_send(struct YvHandle*, uint64_t account, const uint8_t* body, uint32_t len) YV_NOEXCEPT;
+/* Next handoff message received from the same account (oldest first). Returns 1 with a message, 0 when none. */
+struct YvHandoffMessage { uint64_t account_token; uint32_t len; uint8_t body[1024]; };
+int32_t yv_handoff_next(struct YvHandle*, struct YvHandoffMessage*) YV_NOEXCEPT;
 #ifdef __cplusplus
 }
 #endif

@@ -44,4 +44,6 @@ sealed interface CallState {
 enum class CallEndReason {
     LOCAL_HANGUP, REMOTE_HANGUP, BUSY, DECLINED, CANCELLED, TIMEOUT, NETWORK_FAILURE,
     MEDIA_FAILURE, UNKNOWN,
+    /** Another device of the account took the call over, or answered it. */
+    ELSEWHERE,
 }

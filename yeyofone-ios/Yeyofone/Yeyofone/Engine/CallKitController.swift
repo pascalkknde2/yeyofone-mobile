@@ -78,9 +78,11 @@ final class CallKitController: NSObject {
     }
 
     /// Tells CallKit a call ended for a reason other than a CallKit action (remote hang-up, failure).
-    func reportEnded(id: UUID, answered: Bool) {
+    /// `elsewhere`: another device of the account took the call over or answered it.
+    func reportEnded(id: UUID, answered: Bool, elsewhere: Bool = false) {
         guard managed.remove(id) != nil else { return }
-        provider.reportCall(with: id, endedAt: Date(), reason: answered ? .remoteEnded : .unanswered)
+        let reason: CXCallEndedReason = elsewhere ? .answeredElsewhere : (answered ? .remoteEnded : .unanswered)
+        provider.reportCall(with: id, endedAt: Date(), reason: reason)
     }
 
     func requestAnswer(_ id: UUID) { request(CXAnswerCallAction(call: id)) }

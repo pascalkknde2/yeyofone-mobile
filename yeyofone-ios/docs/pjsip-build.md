@@ -6,7 +6,7 @@ The iOS app calls PJSIP through the same C bridge as the desktop app (`yeyofone-
 
 - PJPROJECT 2.17, archive `https://codeload.github.com/pjsip/pjproject/tar.gz/refs/tags/2.17`
 - Archive SHA-256: `065fe06c06788d97c35f563796d59f00ce52fe9558a52d7b490a042a966facce` (the same archive as `yeyofone-desktop/native/sources.lock.json`)
-- Bridge: `bridge.cpp` SHA-256 `6cecebe76917e6c5376fb6aac611fcb04327664d7ef43601373642af192b0b88`, `bridge.h` SHA-256 `18717c225d917e8762e562a284963bace038b99e7fa174b20b4081c25c85e0df`
+- Bridge: `bridge.cpp` SHA-256 `31077788c5b20a87fb5faf8d146005fe7698e422bf87548588b908d679e6652e`, `bridge.h` SHA-256 `1168a5678bca8816afdd27394937cdaf038a70d897344d3a5d17179bea9a7b79`
 - Toolchain: Xcode 26.4.1, iOS SDK 26.4, minimum iOS 17.0
 - Built: 9 October 2026 on macOS (Intel)
 
@@ -28,8 +28,8 @@ The app links `-lc++` and the AudioToolbox, AVFoundation, CFNetwork and CoreAudi
 
 | Slice | Size | SHA-256 |
 | --- | --- | --- |
-| `ios-arm64/libyeyofone-voip.a` | 12.1 MB | `ca199017ae7963716f7d73e066758e6b833197e2018bcd8a8c7e51dc67d1438a` |
-| `ios-arm64_x86_64-simulator/libyeyofone-voip.a` | 23.6 MB | `730fa7c13de6eb8ee512822c283703cf1f6210a15e3763a9eb4e64332878752e` |
+| `ios-arm64/libyeyofone-voip.a` | 12.3 MB | `d13545e6649ac4cc2c3450243b918acc28a96efdca85cae95641aaf105bacfb1` |
+| `ios-arm64_x86_64-simulator/libyeyofone-voip.a` | 24.1 MB | `a49ab0d706cd02714751696ade22921e194b31f4684b565e9b412dc8c737d38e` |
 
 ## Verified
 

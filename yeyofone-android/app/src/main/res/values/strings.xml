@@ -402,4 +402,9 @@
     <string name="licenses_coroutines">Background work</string>
     <string name="licenses_coil">Image loading</string>
     <string name="licenses_firebase">Push notifications for incoming calls</string>
+    <string name="handoff_title">Continue call on this device?</string>
+    <string name="handoff_on_device">On your %1$s</string>
+    <string name="handoff_not_now">Not now</string>
+    <string name="handoff_continue_here">Continue here</string>
+    <string name="call_continued_elsewhere">Call continued on another device</string>
 </resources>

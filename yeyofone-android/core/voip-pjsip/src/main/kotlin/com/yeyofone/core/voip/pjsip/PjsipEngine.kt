@@ -2,7 +2,10 @@ package com.yeyofone.core.voip.pjsip
 
 import com.yeyofone.core.model.VoipError
 import com.yeyofone.core.voip.EngineState
+import com.yeyofone.core.voip.CallDialog
+import com.yeyofone.core.voip.HandoffMessage
 import com.yeyofone.core.voip.SipEngine
+import com.yeyofone.core.voip.SipHandoffGateway
 import com.yeyofone.core.voip.SipCallGateway
 import com.yeyofone.core.voip.SipRegistrationGateway
 import com.yeyofone.core.voip.NativeCallEvent
@@ -31,7 +34,7 @@ class PjsipEngine internal constructor(
     private val configuration: PjsipEngineConfiguration,
     private val dispatcher: CoroutineDispatcher,
     private val dispatcherOwner: Closeable? = null,
-) : SipEngine, SipRegistrationGateway, SipCallGateway, Closeable {
+) : SipEngine, SipRegistrationGateway, SipCallGateway, SipHandoffGateway, Closeable {
     private val lifecycleMutex = Mutex()
     private val mutableState = MutableStateFlow<EngineState>(EngineState.Uninitialized)
 
@@ -44,6 +47,22 @@ class PjsipEngine internal constructor(
     override val mediaEvents: SharedFlow<NativeMediaEvent> = mutableMediaEvents.asSharedFlow()
     private val mutableTransferEvents = MutableSharedFlow<NativeTransferEvent>(extraBufferCapacity = 32)
     override val transferEvents: SharedFlow<NativeTransferEvent> = mutableTransferEvents.asSharedFlow()
+    private val mutableHandoffMessages = MutableSharedFlow<HandoffMessage>(extraBufferCapacity = 32)
+    override val handoffMessages: SharedFlow<HandoffMessage> = mutableHandoffMessages.asSharedFlow()
+
+    override suspend fun sendHandoff(accountId: SipAccountId, body: String) {
+        check(state.value == EngineState.Running) { "PJSIP engine is not running" }
+        withContext(dispatcher) { backend.sendHandoff(accountId, body) }
+    }
+
+    override suspend fun callDialog(callId: String): CallDialog? = withContext(dispatcher) { backend.callDialog(callId) }
+
+    override suspend fun makeReplacingCall(accountId: SipAccountId, destination: String, replaces: CallDialog): String {
+        check(state.value == EngineState.Running) { "PJSIP engine is not running" }
+        return withContext(dispatcher) {
+            backend.makeReplacingCall(accountId, destination, replaces) { mutableCallEvents.tryEmit(it) }
+        }
+    }
 
     override suspend fun createOrUpdate(account: SipAccount, password: CharArray) {
         check(state.value == EngineState.Running) { "PJSIP engine is not running" }
@@ -114,6 +133,7 @@ class PjsipEngine internal constructor(
                 backend.setCallEventListener { mutableCallEvents.tryEmit(it) }
                 backend.setMediaEventListener { mutableMediaEvents.tryEmit(it) }
                 backend.setTransferEventListener { mutableTransferEvents.tryEmit(it) }
+                backend.setHandoffListener { mutableHandoffMessages.tryEmit(it) }
             }
             mutableState.value = EngineState.Running
         } catch (cancellation: CancellationException) {

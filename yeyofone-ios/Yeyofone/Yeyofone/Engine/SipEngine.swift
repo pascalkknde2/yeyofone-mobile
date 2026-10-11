@@ -22,6 +22,14 @@ nonisolated struct EngineRegistration: Equatable, Sendable {
     var failureKind: Int32 = 0
 }
 
+/// A call's SIP dialog as the PBX sees it, which another device needs to take the call over.
+nonisolated struct EngineDialog: Equatable, Sendable {
+    var callId: String
+    var localTag: String
+    var remoteTag: String
+    var remoteUser: String
+}
+
 nonisolated struct EngineCall: Equatable, Sendable {
     var token: UInt64
     var accountToken: UInt64
@@ -39,6 +47,10 @@ nonisolated struct EngineCall: Equatable, Sendable {
     var audioError: Int32
     var transferPending: Bool
     var transferCode: Int32
+    /// Known once the call is connected.
+    var dialog: EngineDialog?
+    /// The PBX ended the call because another device of the account took it over or answered it.
+    var endedElsewhere = false
 }
 
 nonisolated struct EngineSnapshot: Equatable, Sendable {
@@ -67,15 +79,18 @@ nonisolated final class SipEngine: Thread, @unchecked Sendable {
     private var jobs: [(OpaquePointer) -> Void] = []
     private let onSnapshot: @Sendable (EngineSnapshot) -> Void
     private let onStartFailure: @Sendable (Int32) -> Void
+    private let onHandoff: @Sendable (UInt64, Data) -> Void
 
     // Owned by the engine thread only.
     private var accountTokens: Set<UInt64> = []
     private var published = EngineSnapshot()
     private var callBuffer = [YvCall](repeating: YvCall(), count: 16)
 
-    init(onSnapshot: @escaping @Sendable (EngineSnapshot) -> Void, onStartFailure: @escaping @Sendable (Int32) -> Void) {
+    init(onSnapshot: @escaping @Sendable (EngineSnapshot) -> Void, onStartFailure: @escaping @Sendable (Int32) -> Void,
+         onHandoff: @escaping @Sendable (UInt64, Data) -> Void) {
         self.onSnapshot = onSnapshot
         self.onStartFailure = onStartFailure
+        self.onHandoff = onHandoff
         super.init()
         name = "YeyoFone SIP"
         qualityOfService = .userInteractive
@@ -96,6 +111,7 @@ nonisolated final class SipEngine: Thread, @unchecked Sendable {
         if EngineLog.isRequested { EngineLog.start() }
         var lastPoll = Date.distantPast
         var event = YvEvent()
+        var message = YvHandoffMessage()
         while !isCancelled {
             let pending = lock.withLock {
                 let current = jobs
@@ -105,6 +121,10 @@ nonisolated final class SipEngine: Thread, @unchecked Sendable {
             pending.forEach { $0(handle) }
             _ = yv_pump(handle)
             while yv_next_event(handle, &event) == 1 {}
+            while yv_handoff_next(handle, &message) == 1 {
+                let length = min(Int(message.len), 1024)
+                onHandoff(message.account_token, withUnsafeBytes(of: message.body) { Data($0.prefix(length)) })
+            }
             if Date().timeIntervalSince(lastPoll) >= 0.1 || !pending.isEmpty {
                 publish(handle)
                 lastPoll = Date()
@@ -171,6 +191,26 @@ nonisolated final class SipEngine: Thread, @unchecked Sendable {
         }
     }
 
+    /// Places a call that takes over another device's call: the INVITE carries Replaces for that
+    /// device's dialog (its call id, the PBX's tag as to-tag and its own tag as from-tag).
+    func startCallReplacing(account: UInt64, token: UInt64, uri: String, callId: String, toTag: String, fromTag: String,
+                            completion: Completion? = nil) {
+        run(completion) { handle in
+            let parts = [uri, callId, toTag, fromTag].map { Array($0.utf8) }
+            return parts[0].withUnsafeBufferPointer { u in
+                parts[1].withUnsafeBufferPointer { c in
+                    parts[2].withUnsafeBufferPointer { t in
+                        parts[3].withUnsafeBufferPointer { f in
+                            yv_call_start_replacing(handle, account, token, u.baseAddress, UInt32(u.count),
+                                                    c.baseAddress, UInt32(c.count), t.baseAddress, UInt32(t.count),
+                                                    f.baseAddress, UInt32(f.count))
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     func answer(token: UInt64, completion: Completion? = nil) {
         run(completion) { yv_call_answer($0, token) }
     }
@@ -205,6 +245,15 @@ nonisolated final class SipEngine: Thread, @unchecked Sendable {
         run(completion) { handle in
             Array((uri ?? "").utf8).withUnsafeBufferPointer { bytes in
                 yv_call_transfer(handle, token, bytes.count > 0 ? bytes.baseAddress : nil, UInt32(bytes.count), consultation)
+            }
+        }
+    }
+
+    /// Sends a handoff message to every device registered with this account (see CallHandoff).
+    func sendHandoff(account: UInt64, body: Data) {
+        run(nil) { handle in
+            body.withUnsafeBytes { bytes in
+                yv_handoff_send(handle, account, bytes.bindMemory(to: UInt8.self).baseAddress, UInt32(bytes.count))
             }
         }
     }
@@ -259,6 +308,8 @@ nonisolated final class SipEngine: Thread, @unchecked Sendable {
             for call in callBuffer.prefix(Int(count)) {
                 var controls = YvCallControls()
                 _ = yv_call_controls(handle, call.token, &controls)
+                var dialog = YvCallDialog()
+                let hasDialog = yv_call_dialog(handle, call.token, &dialog) == 0
                 snapshot.calls.append(EngineCall(
                     token: call.token,
                     accountToken: call.account_token,
@@ -273,13 +324,28 @@ nonisolated final class SipEngine: Thread, @unchecked Sendable {
                     audioActive: call.audio_active != 0,
                     audioError: call.audio_error,
                     transferPending: controls.transfer_pending != 0,
-                    transferCode: controls.transfer_code
+                    transferCode: controls.transfer_code,
+                    dialog: hasDialog ? Self.dialog(of: dialog) : nil,
+                    endedElsewhere: hasDialog && dialog.ended_elsewhere != 0
                 ))
             }
         }
         guard snapshot != published else { return }
         published = snapshot
         onSnapshot(snapshot)
+    }
+
+    private static func dialog(of dialog: YvCallDialog) -> EngineDialog? {
+        func text<T>(_ tuple: T, _ length: UInt32) -> String {
+            withUnsafeBytes(of: tuple) { String(decoding: $0.prefix(Int(length)), as: UTF8.self) }
+        }
+        guard dialog.call_id_len > 0, dialog.local_tag_len > 0, dialog.remote_tag_len > 0 else { return nil }
+        return EngineDialog(
+            callId: text(dialog.call_id, min(dialog.call_id_len, 128)),
+            localTag: text(dialog.local_tag, min(dialog.local_tag_len, 64)),
+            remoteTag: text(dialog.remote_tag, min(dialog.remote_tag_len, 64)),
+            remoteUser: text(dialog.remote_user, min(dialog.remote_user_len, 64))
+        )
     }
 
     private static func caller(of call: YvCall) -> String {

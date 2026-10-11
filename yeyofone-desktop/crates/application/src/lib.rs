@@ -37,3 +37,4 @@ pub mod accounts;
 pub mod registration;
 
 pub mod calls;
+pub mod handoff;

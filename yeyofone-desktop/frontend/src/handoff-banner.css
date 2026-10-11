@@ -1,0 +1,93 @@
+/* Call handoff offer: a dark bar floating at the top of the window, like the call bar below. */
+.handoff-banner {
+  position: fixed;
+  z-index: 95;
+  left: 0;
+  right: 0;
+  top: 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: max-content;
+  max-width: calc(100vw - 32px);
+  margin: 0 auto;
+  padding: 10px 10px 10px 12px;
+  border-radius: 18px;
+  color: #f8fafc;
+  background: #18191d;
+  box-shadow: 0 18px 50px #0f172a59;
+  animation: handoff-in 0.2s ease-out;
+}
+@keyframes handoff-in {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .handoff-banner {
+    animation: none;
+  }
+}
+.handoff-banner__icon {
+  display: grid;
+  flex-shrink: 0;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  color: #93c5fd;
+  background: #1e3a5f;
+}
+.handoff-banner__text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.handoff-banner__text strong {
+  font-size: 14px;
+  font-weight: 600;
+}
+.handoff-banner__text span {
+  overflow: hidden;
+  font-size: 13px;
+  color: #cbd5e1;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.handoff-banner__text .handoff-banner__error {
+  color: #fca5a5;
+}
+.handoff-banner button {
+  flex-shrink: 0;
+  padding: 9px 16px;
+  border: 0;
+  border-radius: 999px;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.handoff-banner__dismiss {
+  color: #e2e8f0;
+  background: #26282e;
+}
+.handoff-banner__dismiss:hover {
+  background: #2e3138;
+}
+.handoff-banner__continue {
+  color: #fff;
+  background: #10b981;
+}
+.handoff-banner__continue:hover {
+  background: #059669;
+}
+.handoff-banner__continue:disabled {
+  cursor: progress;
+  opacity: 0.7;
+}
+.handoff-banner button:focus-visible {
+  outline: 2px solid #93c5fd;
+  outline-offset: 2px;
+}
