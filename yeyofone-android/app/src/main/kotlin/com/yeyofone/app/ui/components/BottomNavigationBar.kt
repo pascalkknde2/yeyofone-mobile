@@ -43,8 +43,8 @@ import androidx.compose.ui.unit.dp
 import com.yeyofone.app.BuildConfig
 import com.yeyofone.app.R
 import com.yeyofone.app.ui.theme.AccentBlue
+import com.yeyofone.app.ui.theme.BorderLight
 import com.yeyofone.app.ui.theme.NavBackground
-import com.yeyofone.app.ui.theme.NavBorder
 import com.yeyofone.app.ui.theme.NavInactive
 
 const val HOME_NAVIGATION = 0
@@ -71,7 +71,7 @@ fun BottomNavigationBar(selectedIndex: Int, onItemSelected: (Int) -> Unit) {
     Row(
         Modifier.fillMaxWidth().navigationBarsPadding().padding(horizontal = 20.dp, vertical = 20.dp)
             .shadow(8.dp, RoundedCornerShape(30.dp)).clip(RoundedCornerShape(30.dp))
-            .background(NavBackground).border(1.dp, NavBorder.copy(alpha = 0.6f), RoundedCornerShape(30.dp))
+            .background(NavBackground).border(1.dp, BorderLight.copy(alpha = 0.6f), RoundedCornerShape(30.dp))
             .selectableGroup().padding(vertical = 8.dp, horizontal = 6.dp),
         horizontalArrangement = Arrangement.SpaceAround,
         verticalAlignment = Alignment.CenterVertically,

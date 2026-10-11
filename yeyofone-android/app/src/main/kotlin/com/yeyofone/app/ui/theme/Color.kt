@@ -43,10 +43,9 @@ val PurpleLight get() = pick(0xFFF5F3FF, 0xFF2E1065)
 val Pink get() = pick(0xFFDB2777, 0xFFF472B6)
 val PinkLight get() = pick(0xFFFDF2F8, 0xFF500724)
 val CheckGreen get() = pick(0xFF22C55E, 0xFF4ADE80)
-// The bottom navigation bar stays white with its light-mode border and icons in both modes.
-val NavBackground = Color(0xFFFFFFFF)
-val NavBorder = Color(0xFFE2E8F0)
-val NavInactive = Color(0xFF94A3B8)
+val NavBackground get() = CardWhite
+/** Unselected bottom navigation icons: gray in light mode, white in dark mode. */
+val NavInactive get() = pick(0xFF94A3B8, 0xFFFFFFFF)
 val CallBackground get() = BackgroundGray
 val CallTextPrimary get() = TextPrimary
 val CallTextSecondary get() = TextSecondary
