@@ -363,6 +363,7 @@
     <string name="advanced_no_accounts_hint">Add a SIP account in Settings › Accounts</string>
     <string name="advanced_codecs">Audio codecs</string>
     <string name="advanced_codecs_unavailable">Shown once the calling engine has started</string>
+    <string name="advanced_engine_unsupported">Calling isn\'t supported on this device\'s processor</string>
     <string name="codec_wideband">Wideband, %1$d kHz</string>
     <string name="codec_narrowband">Narrowband, %1$d kHz</string>
     <string name="advanced_debugging">Debugging</string>

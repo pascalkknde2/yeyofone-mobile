@@ -9,7 +9,7 @@
 - Upstream: `https://github.com/pjsip/pjproject`
 - Native toolchain: Android NDK r28c (`28.2.13676358`)
 - Minimum API: 26
-- Intended ABIs: `arm64-v8a`, `x86_64`
+- Intended ABIs: `arm64-v8a`, `armeabi-v7a`, `x86_64`
 
 The source commit is immutable. The verified archive and generated-artifact checksums are recorded in `core/voip-pjsip/third_party/pjproject/SOURCE.md`; a tag alone is not sufficient supply-chain verification.
 
@@ -23,7 +23,7 @@ Generated Java belongs under `core/voip-pjsip/src/pjsip/java/org/pjsip/pjsua2`. 
 
 TLS, SRTP, Opus, G.722, PCMA and PCMU must be confirmed from configure/build output before being advertised. OpenSSL and Oboe are not yet integrated, so Phase 2 cannot claim those optional features. NDK r28 provides flexible 16 KiB page-size linking support required for modern Android delivery.
 
-This build enables SRTP, G.711 (PCMA/PCMU), G.722, Speex AEC, WebRTC AEC, and Android audio. TLS and Opus are disabled because OpenSSL and Opus were not supplied. The app packages `arm64-v8a` for devices and `x86_64` for emulators.
+This build enables SRTP, G.711 (PCMA/PCMU), G.722, Speex AEC, WebRTC AEC, and Android audio. TLS and Opus are disabled because OpenSSL and Opus were not supplied. The app packages `arm64-v8a` and `armeabi-v7a` (32-bit phones such as the moto g pure) for devices and `x86_64` for emulators. `tools/build-pjsip-android.sh` builds all three; set `ABIS` (for example `ABIS=armeabi-v7a`) to build only some of them.
 
 ## License gate
 
@@ -40,7 +40,7 @@ The production adapter registers its executor thread with PJSIP, disables SIP me
 Run `./gradlew --no-daemon test assembleDebug lint`. Then inspect the APK with:
 
 ```sh
-unzip -l app/build/outputs/apk/debug/app-debug.apk | rg 'lib/(arm64-v8a|x86_64)/(libpjsua2|libc\+\+_shared)'
+unzip -l app/build/outputs/apk/debug/app-debug.apk | rg 'lib/(arm64-v8a|armeabi-v7a|x86_64)/(libpjsua2|libc\+\+_shared)'
 ```
 
 The JVM suite verifies lifecycle ordering, idempotency, cleanup, and failure states through the internal backend seam. A connected Android device or emulator is still required to execute the real native lifecycle; this environment has none available.

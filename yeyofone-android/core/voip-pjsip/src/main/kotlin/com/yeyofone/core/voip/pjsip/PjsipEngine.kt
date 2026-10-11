@@ -143,7 +143,7 @@ class PjsipEngine internal constructor(
             // A sideloaded universal APK may reach an ABI without a bundled PJSIP library.
             // Keep the application process alive and expose the failure through engine.state.
             mutableState.value = EngineState.Failed(
-                VoipError.Native("PJSIP native library is unavailable for this device"),
+                VoipError.Native(NATIVE_LIBRARY_UNAVAILABLE),
             )
         } catch (_: Exception) {
             tryDestroy()
@@ -183,6 +183,9 @@ class PjsipEngine internal constructor(
     }
 
     companion object {
+        /** [VoipError.Native] message when no PJSIP library is bundled for this device's ABI. */
+        const val NATIVE_LIBRARY_UNAVAILABLE = "PJSIP native library is unavailable for this device"
+
         /** Creates the production engine backed by the bundled PJSUA2 native library. */
         fun create(
             configuration: PjsipEngineConfiguration = PjsipEngineConfiguration(),

@@ -17,6 +17,7 @@ import com.yeyofone.core.registration.RegistrationCoordinator
 import com.yeyofone.core.voip.pjsip.AudioCodecInfo
 import com.yeyofone.core.voip.pjsip.PjsipEngine
 import com.yeyofone.core.voip.pjsip.PjsipEngineConfiguration
+import com.yeyofone.core.voip.EngineState
 import com.yeyofone.core.voip.pjsip.SipTransport
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -62,6 +63,9 @@ class YeyoFoneApplication : Application() {
     }
     /** The engine's enabled audio codecs in the order they are offered, for Settings › Advanced. */
     suspend fun audioCodecs(): List<AudioCodecInfo> = engine.audioCodecs()
+    /** True when PJSIP has no native library for this device's ABI, so calling can't work here. */
+    val engineUnsupported: Boolean
+        get() = (engine.state.value as? EngineState.Failed)?.error?.safeMessage == PjsipEngine.NATIVE_LIBRARY_UNAVAILABLE
     val callManager by lazy {
         CallCoordinator(accountRepository, engine, applicationScope, callHistory, accountPreferences, handoff = engine)
     }
@@ -94,6 +98,7 @@ class YeyoFoneApplication : Application() {
             .onFailure { error -> Log.w(TAG, "Firebase Messaging is unavailable", error) }
         applicationScope.launch {
             engine.start()
+            (engine.state.value as? EngineState.Failed)?.let { Log.e("YeyoFoneEngine", "Calling engine failed: ${it.error.safeMessage}") }
             var previous = emptyMap<SipAccountId, SipAccount>()
             accountRepository.observeAccounts().collectLatest { accounts ->
                 val current = accounts.associateBy { it.id }

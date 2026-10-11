@@ -363,6 +363,7 @@
     <string name="advanced_no_accounts_hint">Füge unter Einstellungen › Konten ein SIP-Konto hinzu</string>
     <string name="advanced_codecs">Audio-Codecs</string>
     <string name="advanced_codecs_unavailable">Wird angezeigt, sobald die Anruf-Engine gestartet ist</string>
+    <string name="advanced_engine_unsupported">Anrufe werden vom Prozessor dieses Geräts nicht unterstützt</string>
     <string name="codec_wideband">Breitband, %1$d kHz</string>
     <string name="codec_narrowband">Schmalband, %1$d kHz</string>
     <string name="advanced_debugging">Fehlersuche</string>

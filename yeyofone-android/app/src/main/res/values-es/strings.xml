@@ -365,6 +365,7 @@
     <string name="advanced_no_accounts_hint">Añade una cuenta SIP en Ajustes › Cuentas</string>
     <string name="advanced_codecs">Códecs de audio</string>
     <string name="advanced_codecs_unavailable">Se muestran cuando se inicia el motor de llamadas</string>
+    <string name="advanced_engine_unsupported">Las llamadas no son compatibles con el procesador de este dispositivo</string>
     <string name="codec_wideband">Banda ancha, %1$d kHz</string>
     <string name="codec_narrowband">Banda estrecha, %1$d kHz</string>
     <string name="advanced_debugging">Depuración</string>
