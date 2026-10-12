@@ -97,7 +97,21 @@ struct AccountDetailScreen: View {
 
     var body: some View {
         if let account = store.accounts.first(where: { $0.id == accountId }) {
-            content(account)
+            if confirmSignOut {
+                ConfirmPage(
+                    title: "Sign Out",
+                    heading: String(localized: "Sign out of \(account.displayName)?"),
+                    message: String(localized: "The account stays on this device but goes offline: you won't receive calls on it until you sign in again."),
+                    actionTitle: "Sign Out",
+                    onConfirm: {
+                        confirmSignOut = false
+                        store.setEnabled(account.id, false)
+                    },
+                    onCancel: { confirmSignOut = false }
+                )
+            } else {
+                content(account)
+            }
         } else {
             Color.clear.onAppear { store.screen = .accounts }
         }
@@ -156,12 +170,6 @@ struct AccountDetailScreen: View {
             }
         }
         .background(Palette.backgroundGray)
-        .alert("Sign out of \(account.displayName)?", isPresented: $confirmSignOut) {
-            Button("Sign Out", role: .destructive) { store.setEnabled(account.id, false) }
-            Button("Cancel", role: .cancel) {}
-        } message: {
-            Text("The account stays on this device but goes offline.")
-        }
     }
 
     private func profileHeader(_ account: SipAccount, state: RegistrationState) -> some View {
@@ -340,8 +348,27 @@ struct AccountEditorScreen: View {
     @State private var callerId = ""
     @State private var error: String?
     @State private var confirmDelete = false
+    @State private var loaded = false
 
     var body: some View {
+        if confirmDelete, let existing {
+            ConfirmPage(
+                title: "Delete",
+                heading: String(localized: "Delete this account and its stored secret?"),
+                message: String(localized: "\(existing.displayName) and its saved password are removed from this device. Its call history stays."),
+                actionTitle: "Delete",
+                onConfirm: {
+                    confirmDelete = false
+                    store.deleteAccount(existing.id)
+                },
+                onCancel: { confirmDelete = false }
+            )
+        } else {
+            form
+        }
+    }
+
+    private var form: some View {
         VStack(spacing: 0) {
             BackHeader(title: existing == nil ? "Add account" : "Edit account") { done() }
                 .background(Palette.backgroundGray)
@@ -414,11 +441,8 @@ struct AccountEditorScreen: View {
             .scrollDismissesKeyboard(.interactively)
         }
         .background(Palette.backgroundGray)
-        .alert("Delete this account and its stored secret?", isPresented: $confirmDelete) {
-            Button("Delete", role: .destructive) { if let existing { store.deleteAccount(existing.id) } }
-            Button("Cancel", role: .cancel) {}
-        }
-        .onAppear(perform: load)
+        // Load once: coming back from the Delete page mustn't reset unsaved edits.
+        .onAppear { if !loaded { loaded = true; load() } }
     }
 
     private func load() {
@@ -585,5 +609,36 @@ private struct CheckRow: View {
         .buttonStyle(.plain)
         .disabled(!enabled)
         .opacity(enabled ? 1 : 0.6)
+    }
+}
+
+/// A destructive action confirmed on its own page instead of an alert.
+private struct ConfirmPage: View {
+    let title: LocalizedStringKey
+    let heading: String
+    let message: String
+    let actionTitle: LocalizedStringKey
+    let onConfirm: () -> Void
+    let onCancel: () -> Void
+
+    var body: some View {
+        SettingsPageLayout(title: title, onBack: onCancel) {
+            VStack(alignment: .leading, spacing: 10) {
+                Text(verbatim: heading)
+                    .font(.system(size: 20, weight: .bold))
+                    .foregroundStyle(Palette.textPrimary)
+                Text(verbatim: message)
+                    .font(.system(size: 15))
+                    .foregroundStyle(Palette.textSecondary)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(22)
+            .background(RoundedRectangle(cornerRadius: 20).fill(Palette.cardWhite))
+            PageButton(title: actionTitle, color: Palette.accentRed, action: onConfirm)
+            Button("Cancel", action: onCancel)
+                .font(.system(size: 16, weight: .medium))
+                .foregroundStyle(Palette.textSecondary)
+                .frame(maxWidth: .infinity, minHeight: 44)
+        }
     }
 }

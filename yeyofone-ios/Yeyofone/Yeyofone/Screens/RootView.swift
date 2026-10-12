@@ -68,6 +68,11 @@ struct RootView: View {
                 case .socialSettings: SocialScreen()
                 case .about: AboutScreen()
                 case .licenses: LicensesScreen()
+                case .appearanceSettings: AppearanceScreen()
+                case .premium: PremiumScreen()
+                case .enterprise: EnterpriseScreen()
+                case .translate: TranslateScreen()
+                case .unavailable(let title): FeatureUnavailableScreen(title: title)
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)

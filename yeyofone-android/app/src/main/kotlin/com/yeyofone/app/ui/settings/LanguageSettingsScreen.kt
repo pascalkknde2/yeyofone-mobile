@@ -22,13 +22,11 @@ import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.ChevronRight
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
@@ -63,6 +61,27 @@ fun LanguageSettingsScreen(onBack: () -> Unit) {
     var autoTranslate by remember { mutableStateOf(LanguagePreferences.autoTranslate(context)) }
     var accentTag by remember { mutableStateOf(LanguagePreferences.voiceAccent(context)) }
     var accentDialog by remember { mutableStateOf(false) }
+
+    if (accentDialog) {
+        SettingsPage(stringResource(R.string.language_voice_accent), onBack = { accentDialog = false }) {
+            item {
+                MoreSection(stringResource(R.string.language_voice_accent)) {
+                    appLanguages.forEachIndexed { index, language ->
+                        if (index > 0) MoreDivider(start = 20.dp)
+                        OptionRow(
+                            title = stringResource(language.label),
+                            selected = accentTag.equals(language.tag, ignoreCase = true),
+                        ) {
+                            accentTag = language.tag
+                            LanguagePreferences.setVoiceAccent(context, language.tag)
+                        }
+                    }
+                }
+            }
+            item { PageNote(stringResource(R.string.voice_accent_note)) }
+        }
+        return
+    }
 
     Scaffold(containerColor = BackgroundGray) { insets ->
         Column(Modifier.fillMaxSize().padding(bottom = insets.calculateBottomPadding())) {
@@ -131,32 +150,6 @@ fun LanguageSettingsScreen(onBack: () -> Unit) {
                 }
             }
         }
-    }
-
-    if (accentDialog) {
-        AlertDialog(
-            onDismissRequest = { accentDialog = false },
-            title = { Text(stringResource(R.string.language_voice_accent)) },
-            text = {
-                Column {
-                    appLanguages.forEach { language ->
-                        val tag = language.tag
-                        Row(
-                            Modifier.fillMaxWidth().clickable {
-                                accentTag = tag
-                                LanguagePreferences.setVoiceAccent(context, tag)
-                                accentDialog = false
-                            }.padding(vertical = 12.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            LanguageRadio(selected = accentTag.equals(tag, ignoreCase = true))
-                            Text(stringResource(language.label), Modifier.padding(start = 12.dp), color = TextPrimary)
-                        }
-                    }
-                }
-            },
-            confirmButton = { TextButton(onClick = { accentDialog = false }) { Text(stringResource(R.string.cancel)) } },
-        )
     }
 }
 

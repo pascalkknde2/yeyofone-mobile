@@ -55,6 +55,12 @@ sealed interface AppScreen {
     data object Social : AppScreen
     data object About : AppScreen
     data object Licenses : AppScreen
+    data object Appearance : AppScreen
+    data object Premium : AppScreen
+    data object Enterprise : AppScreen
+    data object Translate : AppScreen
+    /** A setting release builds don't offer yet; [title] is its string resource. */
+    data class Unavailable(val title: Int) : AppScreen
     data class Detail(val accountId: SipAccountId) : AppScreen
     data class Edit(val accountId: SipAccountId?) : AppScreen
     data class Dial(val accountId: SipAccountId, val destination: String = "") : AppScreen
@@ -182,6 +188,11 @@ class YeyoFoneViewModel(
     fun showSocial() { screen.value = AppScreen.Social }
     fun showAbout() { screen.value = AppScreen.About }
     fun showLicenses() { screen.value = AppScreen.Licenses }
+    fun showAppearance() { screen.value = AppScreen.Appearance }
+    fun showPremium() { screen.value = AppScreen.Premium }
+    fun showEnterprise() { screen.value = AppScreen.Enterprise }
+    fun showTranslate() { screen.value = AppScreen.Translate }
+    fun showUnavailable(title: Int) { screen.value = AppScreen.Unavailable(title) }
     fun showAccount(accountId: SipAccountId) { screen.value = AppScreen.Detail(accountId) }
     fun editAccount(accountId: SipAccountId?) { screen.value = AppScreen.Edit(accountId) }
     fun dial(accountId: SipAccountId, destination: String = "") {

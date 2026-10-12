@@ -23,6 +23,9 @@ enum AppScreen: Equatable {
     case accountEditor(UUID?)
     case audioSettings, videoSettings, incomingCallsSettings, languageSettings, recordings
     case advancedSettings, socialSettings, about, licenses
+    case appearanceSettings, premium, enterprise, translate
+    /// A setting release builds don't offer yet; the value is its (localized) title.
+    case unavailable(String)
 }
 
 enum Tab: Int, CaseIterable {
@@ -879,6 +882,10 @@ final class AppStore {
         case "social": screen = .socialSettings
         case "about": screen = .about
         case "licenses": screen = .licenses
+        case "appearance": screen = .appearanceSettings
+        case "premium": screen = .premium
+        case "enterprise": screen = .enterprise
+        case "translate": screen = .translate
         case "handoff":
             handoffOffer = HandoffOffer(id: "demo", accountToken: 0, remote: "1002", remoteName: "Noah Anderson",
                                         deviceName: "Mac", connectedAt: Date().addingTimeInterval(-65),

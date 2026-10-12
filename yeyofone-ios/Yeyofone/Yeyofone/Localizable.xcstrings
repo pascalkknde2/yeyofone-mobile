@@ -2,6 +2,28 @@
   "sourceLanguage" : "en",
   "strings" : {
     "" : {},
+    "%@ and its saved password are removed from this device. Its call history stays." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ und das gespeicherte Passwort werden von diesem Gerät entfernt. Der Anrufverlauf bleibt."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ y su contraseña guardada se eliminan de este dispositivo. El historial de llamadas se conserva."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ et son mot de passe enregistré sont supprimés de cet appareil. L’historique des appels est conservé."
+          }
+        }
+      }
+    },
     "%@ is on hold" : {
       "localizations" : {
         "de" : {
@@ -314,6 +336,28 @@
         }
       }
     },
+    "AI call notes" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "KI-Anrufnotizen"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Notas de IA"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Notes IA"
+          }
+        }
+      }
+    },
     "About" : {
       "localizations" : {
         "de" : {
@@ -508,6 +552,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Ajouter un contact"
+          }
+        }
+      }
+    },
+    "Add SIP account" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "SIP-Konto hinzufügen"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Añadir cuenta SIP"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajouter un compte SIP"
           }
         }
       }
@@ -986,6 +1052,28 @@
         }
       }
     },
+    "Available devices" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Verfügbare Geräte"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dispositivos disponibles"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Appareils disponibles"
+          }
+        }
+      }
+    },
     "Back" : {
       "localizations" : {
         "de" : {
@@ -1026,6 +1114,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Retour arrière"
+          }
+        }
+      }
+    },
+    "Better calls and smart tools for busy teams." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bessere Anrufe und smarte Werkzeuge für Teams."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mejores llamadas y herramientas inteligentes para equipos."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "De meilleurs appels et des outils malins pour les équipes."
           }
         }
       }
@@ -1466,6 +1576,50 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Appels"
+          }
+        }
+      }
+    },
+    "Calls go to this number when forwarding is on. Your phone system saves the change." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bei aktiver Weiterleitung gehen Anrufe an diese Nummer. Die Telefonanlage speichert die Änderung."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Con el desvío activado, las llamadas van a este número. La centralita guarda el cambio."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quand le renvoi est activé, les appels vont vers ce numéro. Votre système téléphonique enregistre le changement."
+          }
+        }
+      }
+    },
+    "Calls play through the device you choose. Connect headphones or a Bluetooth headset to see them here." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Anrufe laufen über das gewählte Gerät. Verbinde Kopfhörer oder ein Bluetooth-Headset, um sie hier zu sehen."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Las llamadas suenan por el dispositivo elegido. Conecta auriculares o un manos libres Bluetooth para verlos aquí."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Les appels passent par l’appareil choisi. Branchez un casque ou une oreillette Bluetooth pour les voir ici."
           }
         }
       }
@@ -2010,6 +2164,28 @@
         }
       }
     },
+    "Current plan" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aktueller Tarif"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Plan actual"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Forfait actuel"
+          }
+        }
+      }
+    },
     "Dark" : {
       "localizations" : {
         "de" : {
@@ -2028,6 +2204,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Sombre"
+          }
+        }
+      }
+    },
+    "Dark backgrounds, easier at night" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dunkle Hintergründe, angenehmer bei Nacht"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fondos oscuros, más cómodo de noche"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fonds sombres, plus agréable la nuit"
           }
         }
       }
@@ -2610,6 +2808,28 @@
         }
       }
     },
+    "Enter your work email" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Arbeits-E-Mail eingeben"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Escribe tu correo del trabajo"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Saisissez votre e-mail professionnel"
+          }
+        }
+      }
+    },
     "Enterprise Sign In" : {
       "localizations" : {
         "de" : {
@@ -2722,6 +2942,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Poste %@"
+          }
+        }
+      }
+    },
+    "Faster answers from our team" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Schnellere Antworten von unserem Team"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Respuestas más rápidas de nuestro equipo"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Des réponses plus rapides de notre équipe"
           }
         }
       }
@@ -2920,6 +3162,28 @@
         }
       }
     },
+    "Free" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kostenlos"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gratis"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gratuit"
+          }
+        }
+      }
+    },
     "Front camera" : {
       "localizations" : {
         "de" : {
@@ -3008,6 +3272,28 @@
         }
       }
     },
+    "HD voice" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "HD-Sprache"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Voz HD"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Voix HD"
+          }
+        }
+      }
+    },
     "Hang up" : {
       "localizations" : {
         "de" : {
@@ -3026,6 +3312,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Raccrocher"
+          }
+        }
+      }
+    },
+    "Hear a translation as they speak" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Höre eine Übersetzung, während sie sprechen"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Escucha la traducción mientras hablan"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Entendez la traduction pendant qu’ils parlent"
           }
         }
       }
@@ -3092,6 +3400,50 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Défilement horizontal"
+          }
+        }
+      }
+    },
+    "How it will work" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "So wird es funktionieren"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cómo funcionará"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Comment ça fonctionnera"
+          }
+        }
+      }
+    },
+    "How it works" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "So funktioniert es"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cómo funciona"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Comment ça marche"
           }
         }
       }
@@ -3272,6 +3624,28 @@
         }
       }
     },
+    "It will appear here in a future update." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Es kommt mit einem zukünftigen Update."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Llegará en una próxima actualización."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cela arrivera dans une prochaine mise à jour."
+          }
+        }
+      }
+    },
     "Keypad" : {
       "localizations" : {
         "de" : {
@@ -3312,6 +3686,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Langue"
+          }
+        }
+      }
+    },
+    "Language settings" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Spracheinstellungen"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajustes de idioma"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Réglages de langue"
           }
         }
       }
@@ -3382,6 +3778,72 @@
         }
       }
     },
+    "Light backgrounds, dark text" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Helle Hintergründe, dunkler Text"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fondos claros, texto oscuro"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fonds clairs, texte foncé"
+          }
+        }
+      }
+    },
+    "Live captions" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Live-Untertitel"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Subtítulos en directo"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sous-titres en direct"
+          }
+        }
+      }
+    },
+    "Live translation is being built and isn't available yet." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Die Live-Übersetzung wird entwickelt und ist noch nicht verfügbar."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La traducción en directo está en desarrollo y aún no está disponible."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La traduction en direct est en cours de développement et pas encore disponible."
+          }
+        }
+      }
+    },
     "Manage Account" : {
       "localizations" : {
         "de" : {
@@ -3400,6 +3862,50 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Gérer le compte"
+          }
+        }
+      }
+    },
+    "Match your phone's setting" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wie die Einstellung deines Telefons"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Igual que el ajuste del teléfono"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Comme le réglage de votre téléphone"
+          }
+        }
+      }
+    },
+    "Meet face to face from any device" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Persönliche Treffen von jedem Gerät"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reúnete cara a cara desde cualquier dispositivo"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Réunissez-vous en face à face depuis n’importe quel appareil"
           }
         }
       }
@@ -4394,6 +4900,28 @@
         }
       }
     },
+    "Premium isn't available to buy yet. We'll let you know in the app when it is." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Premium kann noch nicht gekauft werden. Wir sagen dir in der App Bescheid."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Premium aún no está a la venta. Te avisaremos en la app."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Premium n’est pas encore disponible à l’achat. Nous vous préviendrons dans l’app."
+          }
+        }
+      }
+    },
     "Primary account" : {
       "localizations" : {
         "de" : {
@@ -4418,6 +4946,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "COMPTE PRINCIPAL"
+          }
+        }
+      }
+    },
+    "Priority support" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bevorzugter Support"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Soporte prioritario"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Assistance prioritaire"
           }
         }
       }
@@ -4638,6 +5188,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Enregistrer l'activité du moteur d'appel"
+          }
+        }
+      }
+    },
+    "Record every call and keep it backed up" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Jeden Anruf aufnehmen und sichern"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Graba todas las llamadas con copia de seguridad"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enregistrez chaque appel avec sauvegarde"
           }
         }
       }
@@ -5214,6 +5786,28 @@
         }
       }
     },
+    "Saving…" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wird gespeichert…"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Guardando…"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enregistrement…"
+          }
+        }
+      }
+    },
     "Search contacts" : {
       "localizations" : {
         "de" : {
@@ -5298,6 +5892,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Tout voir"
+          }
+        }
+      }
+    },
+    "See what the caller says in your language" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sieh, was der Anrufer sagt, in deiner Sprache"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lee lo que dice el interlocutor en tu idioma"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Voyez ce que dit l’appelant dans votre langue"
           }
         }
       }
@@ -5474,6 +6090,50 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Se déconnecter"
+          }
+        }
+      }
+    },
+    "Sign in with your company" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bei deiner Firma anmelden"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Inicia sesión con tu empresa"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Connectez-vous via votre entreprise"
+          }
+        }
+      }
+    },
+    "Sign in with your work account" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mit deinem Arbeitskonto anmelden"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Inicia sesión con tu cuenta de trabajo"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Connexion avec votre compte professionnel"
           }
         }
       }
@@ -5698,6 +6358,28 @@
         }
       }
     },
+    "Spoken translation" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gesprochene Übersetzung"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Traducción hablada"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Traduction vocale"
+          }
+        }
+      }
+    },
     "Start consultation" : {
       "localizations" : {
         "de" : {
@@ -5716,6 +6398,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Démarrer la consultation"
+          }
+        }
+      }
+    },
+    "Status" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Status"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Estado"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "État"
           }
         }
       }
@@ -5760,6 +6464,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Stockage utilisé"
+          }
+        }
+      }
+    },
+    "Summaries in the language you choose" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zusammenfassungen in deiner Sprache"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Resúmenes en el idioma que elijas"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Des résumés dans la langue de votre choix"
           }
         }
       }
@@ -5874,6 +6600,28 @@
         }
       }
     },
+    "Talk across languages" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sprachübergreifend telefonieren"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Habla en cualquier idioma"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Parlez toutes les langues"
+          }
+        }
+      }
+    },
     "Tap + to add your first contact" : {
       "localizations" : {
         "de" : {
@@ -5918,6 +6666,28 @@
         }
       }
     },
+    "Team video rooms" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Team-Videoräume"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Salas de vídeo"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Salles vidéo d’équipe"
+          }
+        }
+      }
+    },
     "Tell people how to reach you on YeyoFone" : {
       "localizations" : {
         "de" : {
@@ -5940,6 +6710,28 @@
         }
       }
     },
+    "The accent used for spoken announcements, such as the caller's name." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Der Akzent für Ansagen, zum Beispiel den Namen des Anrufers."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El acento de los anuncios hablados, como el nombre de quien llama."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "L’accent des annonces vocales, comme le nom de l’appelant."
+          }
+        }
+      }
+    },
     "The account stays on this device but goes offline." : {
       "localizations" : {
         "de" : {
@@ -5958,6 +6750,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Le compte reste sur cet appareil mais passe hors ligne."
+          }
+        }
+      }
+    },
+    "The account stays on this device but goes offline: you won't receive calls on it until you sign in again." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Das Konto bleibt auf diesem Gerät, ist aber offline: Du erhältst keine Anrufe, bis du dich wieder anmeldest."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La cuenta se queda en este dispositivo pero sin conexión: no recibirás llamadas hasta que vuelvas a iniciar sesión."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le compte reste sur cet appareil mais passe hors ligne : vous ne recevrez plus d’appels avant de vous reconnecter."
           }
         }
       }
@@ -6006,6 +6820,28 @@
         }
       }
     },
+    "The change applies straight away to every screen." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Die Änderung gilt sofort für alle Bildschirme."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El cambio se aplica al momento en todas las pantallas."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le changement s’applique immédiatement à tous les écrans."
+          }
+        }
+      }
+    },
     "The log can contain phone numbers and server addresses. It stays on this device unless you share it." : {
       "localizations" : {
         "de" : {
@@ -6024,6 +6860,50 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Le journal peut contenir des numéros de téléphone et des adresses de serveur. Il reste sur cet appareil sauf si vous le partagez."
+          }
+        }
+      }
+    },
+    "The same login you use for work" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dieselbe Anmeldung wie bei der Arbeit"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El mismo acceso que usas en el trabajo"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Les mêmes identifiants qu’au travail"
+          }
+        }
+      }
+    },
+    "Theme" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Design"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tema"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Thème"
           }
         }
       }
@@ -6050,6 +6930,28 @@
         }
       }
     },
+    "This isn't available in this version yet." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Das ist in dieser Version noch nicht verfügbar."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aún no está disponible en esta versión."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ce n’est pas encore disponible dans cette version."
+          }
+        }
+      }
+    },
     "Time" : {
       "localizations" : {
         "de" : {
@@ -6068,6 +6970,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Heure"
+          }
+        }
+      }
+    },
+    "Transcripts, summaries and follow-ups" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Transkripte, Zusammenfassungen und Nachrichten"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Transcripciones, resúmenes y seguimientos"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Transcriptions, résumés et suivis"
           }
         }
       }
@@ -6226,6 +7150,28 @@
         }
       }
     },
+    "Translated notes" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Übersetzte Notizen"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Notas traducidas"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Notes traduites"
+          }
+        }
+      }
+    },
     "Transport" : {
       "localizations" : {
         "de" : {
@@ -6292,6 +7238,28 @@
         }
       }
     },
+    "Understand callers who speak another language, live during the call." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Verstehe Anrufer in anderen Sprachen, live während des Gesprächs."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Entiende a quien habla otro idioma, en directo durante la llamada."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Comprenez les appelants qui parlent une autre langue, en direct pendant l’appel."
+          }
+        }
+      }
+    },
     "Unknown caller" : {
       "localizations" : {
         "de" : {
@@ -6310,6 +7278,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Appelant inconnu"
+          }
+        }
+      }
+    },
+    "Unlimited recording" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unbegrenzte Aufnahmen"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Grabación ilimitada"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enregistrement illimité"
           }
         }
       }
@@ -6700,6 +7690,28 @@
         }
       }
     },
+    "We find your company's phone system" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wir finden die Telefonanlage deiner Firma"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Encontramos la centralita de tu empresa"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nous trouvons le système téléphonique de votre entreprise"
+          }
+        }
+      }
+    },
     "Welcome back" : {
       "localizations" : {
         "de" : {
@@ -6718,6 +7730,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Bon retour"
+          }
+        }
+      }
+    },
+    "What's included" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enthalten"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Qué incluye"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Inclus"
           }
         }
       }
@@ -6744,6 +7778,28 @@
         }
       }
     },
+    "Wideband audio on supported calls" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Breitband-Audio bei unterstützten Anrufen"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Audio de banda ancha en llamadas compatibles"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Audio large bande sur les appels compatibles"
+          }
+        }
+      }
+    },
     "Wideband, 16 kHz" : {
       "localizations" : {
         "de" : {
@@ -6762,6 +7818,50 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Large bande, 16 kHz"
+          }
+        }
+      }
+    },
+    "Work-account sign-in isn't available yet. Until then, ask your administrator for your SIP account details and add them yourself." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Die Anmeldung mit Arbeitskonto ist noch nicht verfügbar. Frag bis dahin deine Administration nach den SIP-Kontodaten und füge sie selbst hinzu."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El inicio con cuenta de trabajo aún no está disponible. Mientras tanto, pide los datos de tu cuenta SIP a tu administrador y añádelos tú."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La connexion par compte professionnel n’est pas encore disponible. En attendant, demandez vos identifiants SIP à votre administrateur et ajoutez-les vous-même."
+          }
+        }
+      }
+    },
+    "YeyoFone Premium" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "YeyoFone Premium"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "YeyoFone Premium"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "YeyoFone Premium"
           }
         }
       }
@@ -6788,6 +7888,72 @@
         }
       }
     },
+    "You're ready to call" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bereit zum Telefonieren"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Listo para llamar"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Prêt à appeler"
+          }
+        }
+      }
+    },
+    "Your company's phone settings, set up for you in one step." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Die Telefoneinstellungen deiner Firma, in einem Schritt eingerichtet."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La configuración telefónica de tu empresa, lista en un paso."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Les réglages téléphoniques de votre entreprise, configurés en une étape."
+          }
+        }
+      }
+    },
+    "Your extension and settings are added" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Durchwahl und Einstellungen werden hinzugefügt"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Se añaden tu extensión y ajustes"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Votre poste et vos réglages sont ajoutés"
+          }
+        }
+      }
+    },
     "Your name, extension and SIP address" : {
       "localizations" : {
         "de" : {
@@ -6806,6 +7972,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Votre nom, poste et adresse SIP"
+          }
+        }
+      }
+    },
+    "Your plan" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dein Tarif"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tu plan"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Votre forfait"
           }
         }
       }
