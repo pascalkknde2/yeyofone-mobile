@@ -2,6 +2,7 @@
 
 package com.yeyofone.app
 
+import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -20,7 +21,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CenterAlignedTopAppBar
@@ -102,6 +102,32 @@ fun AccountDetail(account: SipAccount, viewModel: YeyoFoneViewModel) {
             error = Danger,
         ),
     ) {
+        if (showSignOutDialog) {
+            com.yeyofone.app.ui.settings.SettingsPage(stringResource(R.string.sign_out), onBack = { showSignOutDialog = false }) {
+                item {
+                    Column(
+                        Modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp)).background(CardWhite).padding(22.dp),
+                        verticalArrangement = Arrangement.spacedBy(10.dp),
+                    ) {
+                        Text(stringResource(R.string.sign_out_title, account.displayName), fontSize = 20.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
+                        Text(stringResource(R.string.sign_out_body), fontSize = 15.sp, color = TextSecondary)
+                        if (hasPushCredential) Text(stringResource(R.string.push_signout_note), fontSize = 14.sp, color = TextSecondary)
+                    }
+                }
+                item {
+                    com.yeyofone.app.ui.settings.PageButton(stringResource(R.string.sign_out), color = Danger) {
+                        showSignOutDialog = false
+                        viewModel.setAccountEnabled(account.id, false)
+                    }
+                }
+                item {
+                    TextButton(onClick = { showSignOutDialog = false }, modifier = Modifier.fillMaxWidth()) {
+                        Text(stringResource(R.string.cancel), color = TextSecondary)
+                    }
+                }
+            }
+            return@MaterialTheme
+        }
         Scaffold(
             containerColor = MaterialTheme.colorScheme.background,
             topBar = {
@@ -173,32 +199,6 @@ fun AccountDetail(account: SipAccount, viewModel: YeyoFoneViewModel) {
             }
         }
 
-        if (showSignOutDialog) {
-            AlertDialog(
-                onDismissRequest = { showSignOutDialog = false },
-                text = {
-                    Column {
-                        Text(stringResource(R.string.confirm_sign_out, account.displayName))
-                        if (hasPushCredential) {
-                            Text(stringResource(R.string.push_signout_note), Modifier.padding(top = 8.dp))
-                        }
-                    }
-                },
-                confirmButton = {
-                    TextButton(onClick = {
-                        showSignOutDialog = false
-                        viewModel.setAccountEnabled(account.id, false)
-                    }) {
-                        Text(stringResource(R.string.sign_out), color = Danger)
-                    }
-                },
-                dismissButton = {
-                    TextButton(onClick = { showSignOutDialog = false }) {
-                        Text(stringResource(R.string.cancel))
-                    }
-                },
-            )
-        }
     }
 }
 

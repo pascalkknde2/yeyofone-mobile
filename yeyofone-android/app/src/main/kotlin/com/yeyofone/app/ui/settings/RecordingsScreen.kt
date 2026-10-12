@@ -35,7 +35,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import android.widget.Toast
 import com.yeyofone.app.R
 import com.yeyofone.app.ui.theme.*
 import java.io.File
@@ -60,6 +59,7 @@ fun RecordingsScreen(onBack: () -> Unit) {
     var query by remember { mutableStateOf("") }
     var activePath by remember { mutableStateOf<String?>(null) }
     var isPlaying by remember { mutableStateOf(false) }
+    var playbackFailed by remember { mutableStateOf(false) }
     var isReady by remember { mutableStateOf(false) }
     val player = remember { mutableStateOf<MediaPlayer?>(null) }
     val recordings by produceState<List<RecordingFile>>(emptyList(), context) {
@@ -101,7 +101,7 @@ fun RecordingsScreen(onBack: () -> Unit) {
             }
         }.onFailure {
             stopPlayback()
-            Toast.makeText(context, R.string.recording_playback_failed, Toast.LENGTH_SHORT).show()
+            playbackFailed = true
         }
     }
 
@@ -130,6 +130,17 @@ fun RecordingsScreen(onBack: () -> Unit) {
                 contentPadding = PaddingValues(start = 20.dp, top = 24.dp, end = 20.dp, bottom = 32.dp),
                 verticalArrangement = Arrangement.spacedBy(20.dp),
             ) {
+                if (playbackFailed) {
+                    item {
+                        Text(
+                            stringResource(R.string.recording_playback_failed),
+                            Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(AccentRed.copy(alpha = .12f))
+                                .clickable { playbackFailed = false }.padding(14.dp),
+                            color = AccentRed,
+                            fontSize = 14.sp,
+                        )
+                    }
+                }
                 item {
                     Column {
                         Row(Modifier.fillMaxWidth().padding(bottom = 8.dp), horizontalArrangement = Arrangement.SpaceBetween) {

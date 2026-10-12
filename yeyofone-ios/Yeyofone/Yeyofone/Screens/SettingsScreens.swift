@@ -24,8 +24,6 @@ struct SettingsScreen: View {
     @Environment(AppStore.self) private var store
     @State private var searching = false
     @State private var query = ""
-    @State private var toast: String?
-    @State private var showAppearance = false
     @AppStorage("appearance") private var appearance = Appearance.system
 
     private var sections: [(String, [SettingEntry])] {
@@ -35,26 +33,26 @@ struct SettingsScreen: View {
                 SettingEntry(icon: "person.crop.circle.fill", color: Palette.accentBlue, title: String(localized: "Accounts"),
                              subtitle: String(localized: "\(accountCount) accounts connected")) { store.screen = .accounts },
                 SettingEntry(icon: "building.2.fill", color: Palette.textPrimary, title: String(localized: "Enterprise Sign In"),
-                             subtitle: String(localized: "Connect with your work account"), badge: String(localized: "New")),
+                             subtitle: String(localized: "Connect with your work account"), badge: String(localized: "New")) { store.screen = .enterprise },
             ]),
             (String(localized: "Audio & Video"), [
                 SettingEntry(icon: "music.note", color: Palette.accentOrange, title: String(localized: "Audio"),
                              subtitle: String(localized: "Speaker, Microphone, Ringtones")) { store.screen = .audioSettings },
                 // Video, chat and recording aren't implemented; debug builds only, as on Android.
                 SettingEntry(icon: "video.fill", color: Palette.accentRed, title: String(localized: "Video"), subtitle: String(localized: "Camera, Resolution, Layout"),
-                             action: debugOnly { store.screen = .videoSettings }),
+                             action: debugOnly(String(localized: "Video")) { store.screen = .videoSettings }),
                 SettingEntry(icon: "character.bubble.fill", color: Palette.accentRed, title: String(localized: "Translate"),
-                             subtitle: String(localized: "Real-time language translation")),
+                             subtitle: String(localized: "Real-time language translation")) { store.screen = .translate },
             ]),
             (String(localized: "Call Settings"), [
                 SettingEntry(icon: "phone.arrow.down.left.fill", color: Palette.accentGreen, title: String(localized: "Incoming Calls"),
                              subtitle: String(localized: "Ringtone, Call Waiting, Forwarding")) { store.screen = .incomingCallsSettings },
                 SettingEntry(icon: "record.circle", color: Palette.accentBlue, title: String(localized: "Recording Calls"), subtitle: String(localized: "Auto-record, Storage, Format"),
-                             action: debugOnly { store.screen = .recordings }),
+                             action: debugOnly(String(localized: "Recording Calls")) { store.screen = .recordings }),
             ]),
             (String(localized: "More"), [
                 SettingEntry(icon: "circle.lefthalf.filled", color: Palette.purple, title: String(localized: "Appearance"),
-                             subtitle: appearance.title) { showAppearance = true },
+                             subtitle: appearance.title) { store.screen = .appearanceSettings },
                 SettingEntry(icon: "globe", color: Palette.accentBlue, title: String(localized: "Language"),
                              subtitle: String(localized: "App language and voice preferences")) { store.screen = .languageSettings },
                 SettingEntry(icon: "gearshape.fill", color: Palette.accentBlue, title: String(localized: "Advanced"),
@@ -75,12 +73,12 @@ struct SettingsScreen: View {
         }
     }
 
-    /// Keeps an entry's action in debug builds only; release builds show "Coming soon" instead.
-    private func debugOnly(_ action: @escaping () -> Void) -> (() -> Void)? {
+    /// Keeps an entry's action in debug builds only; release builds open a "not available yet" page.
+    private func debugOnly(_ title: String, _ action: @escaping () -> Void) -> (() -> Void)? {
         #if DEBUG
         action
         #else
-        nil
+        { store.screen = .unavailable(title) }
         #endif
     }
 
@@ -127,7 +125,7 @@ struct SettingsScreen: View {
                                 .padding(.leading, 4)
                             VStack(spacing: 0) {
                                 ForEach(Array(entries.enumerated()), id: \.element.id) { index, entry in
-                                    Button { (entry.action ?? { toast = String(localized: "Coming soon") })() } label: { row(entry) }
+                                    Button { entry.action?() } label: { row(entry) }
                                         .buttonStyle(.plain)
                                     if index < entries.count - 1 { RowDivider(leading: 66) }
                                 }
@@ -151,16 +149,10 @@ struct SettingsScreen: View {
             }
         }
         .background(Palette.backgroundGray)
-        .toast($toast)
-        .confirmationDialog("Appearance", isPresented: $showAppearance, titleVisibility: .visible) {
-            ForEach(Appearance.allCases) { option in
-                Button(option.title) { appearance = option }
-            }
-        }
     }
 
     private var premiumBanner: some View {
-        Button { toast = String(localized: "Coming soon") } label: {
+        Button { store.screen = .premium } label: {
             HStack(spacing: 14) {
                 Image(systemName: "star.fill")
                     .font(.system(size: 20))
@@ -225,6 +217,31 @@ struct AudioSettingsScreen: View {
     @State private var showRingtones = false
 
     var body: some View {
+        if showDevices {
+            SettingsPageLayout(title: "Output device", onBack: { showDevices = false }) {
+                GroupSection(title: "Available devices") {
+                    ForEach(Array(store.availableRoutes.enumerated()), id: \.element.id) { index, route in
+                        if index > 0 { RowDivider(leading: 20) }
+                        ChoiceRow(title: route.label, selected: route == store.selectedRoute) { store.selectedRoute = route }
+                    }
+                }
+                PageNote(text: "Calls play through the device you choose. Connect headphones or a Bluetooth headset to see them here.")
+            }
+        } else if showRingtones {
+            SettingsPageLayout(title: "Ringtone", onBack: { showRingtones = false }) {
+                GroupSection(title: "Ringtones") {
+                    ForEach(Array(Ringtone.all.enumerated()), id: \.element) { index, name in
+                        if index > 0 { RowDivider(leading: 20) }
+                        ChoiceRow(title: Ringtone.label(name), selected: name == ringtone) { ringtone = name }
+                    }
+                }
+            }
+        } else {
+            main
+        }
+    }
+
+    private var main: some View {
         VStack(spacing: 0) {
             BackHeader(title: "Audio") { store.screen = .settings }
             ScrollView {
@@ -269,16 +286,6 @@ struct AudioSettingsScreen: View {
             }
         }
         .background(Palette.backgroundGray)
-        .confirmationDialog("Output device", isPresented: $showDevices, titleVisibility: .visible) {
-            ForEach(store.availableRoutes) { route in
-                Button(route == store.selectedRoute ? "\(route.label) ✓" : route.label) { store.selectedRoute = route }
-            }
-        }
-        .confirmationDialog("Ringtone", isPresented: $showRingtones, titleVisibility: .visible) {
-            ForEach(Ringtone.all, id: \.self) { name in
-                Button(name == ringtone ? "\(Ringtone.label(name)) ✓" : Ringtone.label(name)) { ringtone = name }
-            }
-        }
     }
 }
 
@@ -458,6 +465,16 @@ struct IncomingCallsSettingsScreen: View {
     @State private var showForwarding = false
 
     var body: some View {
+        if showForwarding {
+            ForwardingPage(current: store.forwardingDestination, onClose: { showForwarding = false }) {
+                store.forwardingDestination = $0
+            }
+        } else {
+            main
+        }
+    }
+
+    @ViewBuilder private var main: some View {
         let accountId = store.primaryAccount?.id
         let prefs = Binding(
             get: { accountId.map(store.preferences(for:)) ?? AccountPreferences() },
@@ -509,53 +526,55 @@ struct IncomingCallsSettingsScreen: View {
             }
         }
         .background(Palette.backgroundGray)
-        .sheet(isPresented: $showForwarding) {
-            ForwardingSheet(current: store.forwardingDestination) { store.forwardingDestination = $0 }
-        }
     }
 }
 
-private struct ForwardingSheet: View {
+/// Settings › Incoming Calls › Call Forwarding, as a page instead of a sheet.
+private struct ForwardingPage: View {
     let current: String?
+    let onClose: () -> Void
     let onSave: (String?) -> Void
-    @Environment(\.dismiss) private var dismiss
     @State private var enabled = false
     @State private var number = ""
     @State private var error: String?
 
     var body: some View {
-        NavigationStack {
-            Form {
-                Section {
-                    Toggle("Enable call forwarding", isOn: $enabled).tint(Palette.accentGreen)
-                    TextField("Forward to number", text: $number)
-                        .keyboardType(.phonePad)
-                        .disabled(!enabled)
-                } footer: {
-                    if let error { Text(error).foregroundStyle(Palette.accentRed) }
-                }
+        SettingsPageLayout(title: "Call Forwarding", onBack: onClose) {
+            GroupSection(title: "Call Forwarding") {
+                Toggle("Enable call forwarding", isOn: $enabled)
+                    .tint(Palette.accentGreen)
+                    .font(.system(size: 15, weight: .medium))
+                    .foregroundStyle(Palette.textPrimary)
+                    .padding(.horizontal, 20)
+                    .padding(.vertical, 12)
+                RowDivider(leading: 20)
+                TextField("Forward to number", text: $number)
+                    .keyboardType(.phonePad)
+                    .disabled(!enabled)
+                    .font(.system(size: 16))
+                    .padding(.horizontal, 20)
+                    .padding(.vertical, 14)
+                    .opacity(enabled ? 1 : 0.5)
             }
-            .navigationTitle("Call Forwarding")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Save") {
-                        let trimmed = number.trimmingCharacters(in: .whitespaces)
-                        let valid = trimmed.count >= 2 && trimmed.allSatisfy { $0.isNumber || $0 == "+" || $0 == "*" || $0 == "#" }
-                        if enabled && !valid {
-                            error = String(localized: "Enter a valid phone number or extension")
-                            return
-                        }
-                        onSave(enabled ? trimmed : nil)
-                        dismiss()
-                    }
-                    .fontWeight(.semibold)
+            if let error {
+                Text(verbatim: error)
+                    .font(.system(size: 13))
+                    .foregroundStyle(Palette.accentRed)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal, 4)
+            }
+            PageNote(text: "Calls go to this number when forwarding is on. Your phone system saves the change.")
+            PageButton(title: "Save") {
+                let trimmed = number.trimmingCharacters(in: .whitespaces)
+                let valid = trimmed.count >= 2 && trimmed.allSatisfy { $0.isNumber || $0 == "+" || $0 == "*" || $0 == "#" }
+                if enabled && !valid {
+                    error = String(localized: "Enter a valid phone number or extension")
+                    return
                 }
+                onSave(enabled ? trimmed : nil)
+                onClose()
             }
         }
-        .tint(Palette.accentBlue)
-        .presentationDetents([.medium])
         .onAppear {
             enabled = current != nil
             number = current ?? ""
@@ -605,6 +624,24 @@ struct LanguageSettingsScreen: View {
     @State private var showAccents = false
 
     var body: some View {
+        if showAccents {
+            SettingsPageLayout(title: "Voice Accent", onBack: { showAccents = false }) {
+                GroupSection(title: "Voice Accent") {
+                    ForEach(Array(appLanguages.enumerated()), id: \.element.id) { index, language in
+                        if index > 0 { RowDivider(leading: 20) }
+                        ChoiceRow(title: "\(language.flag)  \(language.label)", selected: language.tag == accentTag) {
+                            accentTag = language.tag
+                        }
+                    }
+                }
+                PageNote(text: "The accent used for spoken announcements, such as the caller's name.")
+            }
+        } else {
+            main
+        }
+    }
+
+    @ViewBuilder private var main: some View {
         let selected = appLanguages.first { $0.tag == languageTag } ?? appLanguages[0]
         VStack(spacing: 0) {
             BackHeader(title: "Language") { store.screen = .settings }
@@ -658,11 +695,6 @@ struct LanguageSettingsScreen: View {
             }
         }
         .background(Palette.backgroundGray)
-        .confirmationDialog("Voice Accent", isPresented: $showAccents, titleVisibility: .visible) {
-            ForEach(appLanguages) { language in
-                Button(language.tag == accentTag ? "\(language.label) ✓" : language.label) { accentTag = language.tag }
-            }
-        }
     }
 
     private var accentLabel: String {

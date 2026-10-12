@@ -63,6 +63,11 @@ fun AudioSettingsScreen(
         }
     }
 
+    if (showDevices) {
+        OutputDeviceScreen(availableRoutes, selectedRoute, onSelectRoute, onBack = { showDevices = false })
+        return
+    }
+
     Scaffold(containerColor = BackgroundGray) { insets ->
         Column(Modifier.fillMaxSize().padding(bottom = insets.calculateBottomPadding())) {
             AudioHeader(stringResource(R.string.audio_title), onBack)
@@ -123,26 +128,6 @@ fun AudioSettingsScreen(
                 }
             }
         }
-    }
-    if (showDevices) {
-        AlertDialog(
-            onDismissRequest = { showDevices = false },
-            title = { Text(stringResource(R.string.output_device)) },
-            text = {
-                Column {
-                    availableRoutes.forEach { route ->
-                        Row(
-                            Modifier.fillMaxWidth().clickable { onSelectRoute(route); showDevices = false }.padding(vertical = 10.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            RadioButton(selected = route == selectedRoute, onClick = { onSelectRoute(route); showDevices = false })
-                            Text(route.label(), color = TextPrimary)
-                        }
-                    }
-                }
-            },
-            confirmButton = { TextButton(onClick = { showDevices = false }) { Text(stringResource(R.string.cancel)) } },
-        )
     }
 }
 

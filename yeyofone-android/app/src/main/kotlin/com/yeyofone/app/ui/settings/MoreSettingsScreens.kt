@@ -1,5 +1,9 @@
 package com.yeyofone.app.ui.settings
 
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
 import android.content.Context
 import android.content.Intent
 import android.net.ConnectivityManager
@@ -108,7 +112,7 @@ fun AdvancedSettingsScreen(
     val context = LocalContext.current
     val app = context.applicationContext as YeyoFoneApplication
     val scope = rememberCoroutineScope()
-    val snackbar = remember { SnackbarHostState() }
+    var logEmpty by remember { mutableStateOf(false) }
     val network = rememberNetworkType()
     val codecs by produceState(emptyList<AudioCodecInfo>()) { value = app.audioCodecs() }
     var debugLogSetting by remember { mutableStateOf(DebugLog.isEnabled(context)) }
@@ -116,7 +120,7 @@ fun AdvancedSettingsScreen(
     // Release builds apply the setting when the engine starts; debug builds always log.
     val restartNeeded = !BuildConfig.DEBUG && debugLogSetting != app.debugLogActive
 
-    SettingsPage(stringResource(R.string.settings_advanced), onBack, snackbar) {
+    SettingsPage(stringResource(R.string.settings_advanced), onBack) {
         item {
             MoreSection(stringResource(R.string.advanced_network)) {
                 MoreRow(network.icon, AccentBlue, PrimaryLight, stringResource(R.string.advanced_connection), stringResource(network.label))
@@ -198,11 +202,13 @@ fun AdvancedSettingsScreen(
                     MoreDivider()
                     MoreRow(
                         Icons.Default.Share, AccentBlue, PrimaryLight,
-                        stringResource(R.string.debug_log_share), stringResource(R.string.debug_log_share_subtitle),
+                        stringResource(R.string.debug_log_share),
+                        if (logEmpty) emptyLog else stringResource(R.string.debug_log_share_subtitle),
                         onClick = {
                             scope.launch {
                                 val intent = withContext(Dispatchers.IO) { runCatching { DebugLog.shareIntent(context) }.getOrNull() }
-                                if (intent == null) snackbar.showSnackbar(emptyLog) else context.startActivity(intent)
+                                logEmpty = intent == null
+                                if (intent != null) context.startActivity(intent)
                             }
                         },
                     )
@@ -410,7 +416,7 @@ fun LicensesScreen(onBack: () -> Unit) {
 // MARK: Shared layout
 
 @Composable
-private fun SettingsPage(
+internal fun SettingsPage(
     title: String,
     onBack: () -> Unit,
     snackbar: SnackbarHostState? = null,
@@ -440,7 +446,7 @@ private fun SettingsPage(
 }
 
 @Composable
-private fun MoreSection(title: String, content: @Composable ColumnScope.() -> Unit) {
+internal fun MoreSection(title: String, content: @Composable ColumnScope.() -> Unit) {
     Column {
         Text(
             title.uppercase(),
@@ -460,7 +466,7 @@ private fun MoreSection(title: String, content: @Composable ColumnScope.() -> Un
 
 /** Icon tile, title and subtitle; a chevron shows when it's tappable and there is no trailing content. */
 @Composable
-private fun MoreRow(
+internal fun MoreRow(
     icon: ImageVector,
     iconTint: Color,
     iconBackground: Color,
@@ -490,7 +496,7 @@ private fun MoreRow(
 }
 
 @Composable
-private fun InfoRow(title: String, detail: String, trailing: (@Composable () -> Unit)? = null) {
+internal fun InfoRow(title: String, detail: String, trailing: (@Composable () -> Unit)? = null) {
     Row(Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 14.dp), verticalAlignment = Alignment.CenterVertically) {
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
             Text(title, fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = TextPrimary)
@@ -501,7 +507,7 @@ private fun InfoRow(title: String, detail: String, trailing: (@Composable () -> 
 }
 
 @Composable
-private fun ValueRow(title: String, value: String) {
+internal fun ValueRow(title: String, value: String) {
     Row(Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 14.dp), verticalAlignment = Alignment.CenterVertically) {
         Text(title, Modifier.weight(1f), fontSize = 15.sp, fontWeight = FontWeight.Medium, color = TextPrimary)
         Text(value, fontSize = 15.sp, color = TextSecondary)
@@ -509,6 +515,42 @@ private fun ValueRow(title: String, value: String) {
 }
 
 @Composable
-private fun MoreDivider(start: androidx.compose.ui.unit.Dp = 72.dp) {
+internal fun MoreDivider(start: androidx.compose.ui.unit.Dp = 72.dp) {
     Spacer(Modifier.fillMaxWidth().padding(start = start).height(1.dp).background(BorderLight.copy(alpha = .55f)))
+}
+
+/** One choice in a list of options; the chosen one shows a check mark. */
+@Composable
+internal fun OptionRow(title: String, selected: Boolean, subtitle: String? = null, enabled: Boolean = true, onClick: () -> Unit) {
+    Row(
+        Modifier.fillMaxWidth()
+            .clickable(enabled = enabled, role = androidx.compose.ui.semantics.Role.RadioButton, onClick = onClick)
+            .semantics { this.selected = selected }
+            .padding(horizontal = 20.dp, vertical = 15.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Text(title, fontSize = 15.sp, fontWeight = FontWeight.Medium, color = if (enabled) TextPrimary else InactiveGray)
+            if (subtitle != null) Text(subtitle, fontSize = 13.sp, color = TextSecondary)
+        }
+        if (selected) Icon(Icons.Default.Check, null, tint = AccentBlue)
+    }
+}
+
+/** A short explanatory paragraph under or between sections. */
+@Composable
+internal fun PageNote(text: String, modifier: Modifier = Modifier) {
+    Text(text, modifier.padding(horizontal = 4.dp), fontSize = 13.sp, lineHeight = 18.sp, color = TextSecondary)
+}
+
+/** The page's main action, full width. */
+@Composable
+internal fun PageButton(text: String, enabled: Boolean = true, color: Color = AccentBlue, onClick: () -> Unit) {
+    androidx.compose.material3.Button(
+        onClick = onClick,
+        enabled = enabled,
+        modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp),
+        shape = RoundedCornerShape(16.dp),
+        colors = androidx.compose.material3.ButtonDefaults.buttonColors(containerColor = color, contentColor = Color.White),
+    ) { Text(text, fontSize = 16.sp, fontWeight = FontWeight.SemiBold) }
 }

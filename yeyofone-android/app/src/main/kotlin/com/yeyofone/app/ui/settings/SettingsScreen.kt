@@ -34,23 +34,17 @@ import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.Translate
 import androidx.compose.material.icons.filled.Videocam
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.RadioButton
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -87,7 +81,6 @@ import com.yeyofone.app.ui.theme.CardWhite
 import com.yeyofone.app.ui.theme.Appearance
 import com.yeyofone.app.ui.theme.AppearancePreferences
 import com.yeyofone.app.ui.theme.Purple
-import kotlinx.coroutines.launch
 
 private data class SettingEntry(
     val icon: ImageVector,
@@ -110,15 +103,16 @@ fun SettingsScreen(
     onAdvancedClick: () -> Unit,
     onSocialClick: () -> Unit,
     onAboutClick: () -> Unit,
+    onAppearanceClick: () -> Unit,
+    onPremiumClick: () -> Unit,
+    onEnterpriseClick: () -> Unit,
+    onTranslateClick: () -> Unit,
+    /** Opens the "not in this version yet" page for a setting release builds don't offer. */
+    onUnavailable: (Int) -> Unit,
     onNavigationItemSelected: (Int) -> Unit,
 ) {
-    val snackbar = remember { SnackbarHostState() }
-    val scope = rememberCoroutineScope()
-    val comingSoon = stringResource(R.string.feature_coming_soon)
     var searching by remember { mutableStateOf(false) }
     var query by remember { mutableStateOf("") }
-    val unavailable: () -> Unit = { scope.launch { snackbar.showSnackbar(comingSoon) } }
-    var showAppearance by remember { mutableStateOf(false) }
 
     val sections = listOf(
         stringResource(R.string.settings_section_account) to listOf(
@@ -135,6 +129,7 @@ fun SettingsScreen(
                 stringResource(R.string.settings_enterprise),
                 stringResource(R.string.settings_enterprise_subtitle),
                 stringResource(R.string.new_badge),
+                action = onEnterpriseClick,
             ),
         ),
         stringResource(R.string.settings_section_audio_video) to listOf(
@@ -142,15 +137,15 @@ fun SettingsScreen(
             // VIDEO-02/CHAT-02/REC-02: video, chat and recording aren't implemented (CALL-FEATURES-AUDIT.md
             // Phase E) - gated behind BuildConfig.DEBUG like Translate/Enterprise below so a release
             // build never advertises a capability it doesn't have.
-            SettingEntry(Icons.Default.Videocam, AccentRed, stringResource(R.string.settings_video), stringResource(R.string.settings_video_subtitle), action = onVideoClick.takeIf { BuildConfig.DEBUG }),
-            SettingEntry(Icons.Default.Translate, AccentRed, stringResource(R.string.settings_translate), stringResource(R.string.settings_translate_subtitle)),
+            SettingEntry(Icons.Default.Videocam, AccentRed, stringResource(R.string.settings_video), stringResource(R.string.settings_video_subtitle), action = if (BuildConfig.DEBUG) onVideoClick else ({ onUnavailable(R.string.settings_video) })),
+            SettingEntry(Icons.Default.Translate, AccentRed, stringResource(R.string.settings_translate), stringResource(R.string.settings_translate_subtitle), action = onTranslateClick),
         ),
         stringResource(R.string.settings_section_calls) to listOf(
             SettingEntry(Icons.AutoMirrored.Filled.PhoneCallback, AccentGreen, stringResource(R.string.settings_incoming), stringResource(R.string.settings_incoming_subtitle), action = onIncomingCallsClick),
-            SettingEntry(Icons.Default.FiberManualRecord, AccentBlue, stringResource(R.string.settings_recording), stringResource(R.string.settings_recording_subtitle), action = onRecordingsClick.takeIf { BuildConfig.DEBUG }),
+            SettingEntry(Icons.Default.FiberManualRecord, AccentBlue, stringResource(R.string.settings_recording), stringResource(R.string.settings_recording_subtitle), action = if (BuildConfig.DEBUG) onRecordingsClick else ({ onUnavailable(R.string.settings_recording) })),
         ),
         stringResource(R.string.settings_section_more) to listOf(
-            SettingEntry(Icons.Default.Contrast, Purple, stringResource(R.string.settings_appearance), stringResource(AppearancePreferences.current.label), action = { showAppearance = true }),
+            SettingEntry(Icons.Default.Contrast, Purple, stringResource(R.string.settings_appearance), stringResource(AppearancePreferences.current.label), action = onAppearanceClick),
             SettingEntry(Icons.Default.Language, AccentBlue, stringResource(R.string.settings_language), stringResource(R.string.settings_language_subtitle), action = onLanguageClick),
             SettingEntry(Icons.Default.Settings, AccentBlue, stringResource(R.string.settings_advanced), stringResource(R.string.settings_advanced_subtitle), action = onAdvancedClick),
             SettingEntry(Icons.Default.Share, AccentGreen, stringResource(R.string.settings_social), stringResource(R.string.settings_social_subtitle), action = onSocialClick),
@@ -166,7 +161,6 @@ fun SettingsScreen(
 
     Scaffold(
         containerColor = BackgroundGray,
-        snackbarHost = { SnackbarHost(snackbar) },
         bottomBar = { BottomNavigationBar(SETTINGS_NAVIGATION, onNavigationItemSelected) },
     ) { padding ->
         Column(Modifier.fillMaxSize().padding(bottom = padding.calculateBottomPadding())) {
@@ -184,10 +178,10 @@ fun SettingsScreen(
                 contentPadding = PaddingValues(start = 24.dp, top = 16.dp, end = 24.dp, bottom = 32.dp),
                 verticalArrangement = Arrangement.spacedBy(20.dp),
             ) {
-                if (query.isBlank()) item { PremiumBanner(unavailable) }
+                if (query.isBlank()) item { PremiumBanner(onPremiumClick) }
                 visibleSections.forEach { (title, entries) ->
                     item(key = title) {
-                        SettingsSection(title, entries, unavailable)
+                        SettingsSection(title, entries)
                     }
                 }
                 if (visibleSections.isEmpty()) {
@@ -212,34 +206,6 @@ fun SettingsScreen(
             }
         }
     }
-    if (showAppearance) AppearanceDialog(onDismiss = { showAppearance = false })
-}
-
-@Composable
-private fun AppearanceDialog(onDismiss: () -> Unit) {
-    val context = LocalContext.current
-    val choose: (Appearance) -> Unit = {
-        AppearancePreferences.set(context, it)
-        onDismiss()
-    }
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(stringResource(R.string.settings_appearance)) },
-        text = {
-            Column {
-                Appearance.entries.forEach { option ->
-                    Row(
-                        Modifier.fillMaxWidth().clickable { choose(option) }.padding(vertical = 10.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        RadioButton(selected = option == AppearancePreferences.current, onClick = { choose(option) })
-                        Text(stringResource(option.label), color = TextPrimary)
-                    }
-                }
-            }
-        },
-        confirmButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) } },
-    )
 }
 
 @Composable
@@ -309,7 +275,7 @@ private fun PremiumBanner(onClick: () -> Unit) {
 }
 
 @Composable
-private fun SettingsSection(title: String, entries: List<SettingEntry>, unavailable: () -> Unit) {
+private fun SettingsSection(title: String, entries: List<SettingEntry>) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Text(
             title.uppercase(),
@@ -321,7 +287,7 @@ private fun SettingsSection(title: String, entries: List<SettingEntry>, unavaila
         )
         Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(CardWhite)) {
             entries.forEachIndexed { index, entry ->
-                SettingRow(entry, entry.action ?: unavailable)
+                SettingRow(entry, entry.action ?: {})
                 if (index < entries.lastIndex) {
                     HorizontalDivider(Modifier.padding(start = 66.dp), thickness = 0.5.dp, color = BorderLight)
                 }

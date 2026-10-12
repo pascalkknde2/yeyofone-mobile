@@ -517,7 +517,26 @@ private fun AccountsApp(
             onAdvancedClick = viewModel::showAdvancedSettings,
             onSocialClick = viewModel::showSocial,
             onAboutClick = viewModel::showAbout,
+            onAppearanceClick = viewModel::showAppearance,
+            onPremiumClick = viewModel::showPremium,
+            onEnterpriseClick = viewModel::showEnterprise,
+            onTranslateClick = viewModel::showTranslate,
+            onUnavailable = viewModel::showUnavailable,
             onNavigationItemSelected = navigateFromMenu,
+        )
+        AppScreen.Appearance -> com.yeyofone.app.ui.settings.AppearanceScreen(onBack = viewModel::showSettings)
+        AppScreen.Premium -> com.yeyofone.app.ui.settings.PremiumScreen(onBack = viewModel::showSettings)
+        AppScreen.Enterprise -> com.yeyofone.app.ui.settings.EnterpriseScreen(
+            onAddAccount = { viewModel.editAccount(null) },
+            onBack = viewModel::showSettings,
+        )
+        AppScreen.Translate -> com.yeyofone.app.ui.settings.TranslateScreen(
+            onLanguage = viewModel::showLanguageSettings,
+            onBack = viewModel::showSettings,
+        )
+        is AppScreen.Unavailable -> com.yeyofone.app.ui.settings.FeatureUnavailableScreen(
+            title = current.title,
+            onBack = viewModel::showSettings,
         )
         AppScreen.AudioSettings -> AudioSettingsScreen(
             availableRoutes = state.availableRoutes,
