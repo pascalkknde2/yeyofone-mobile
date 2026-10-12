@@ -50,6 +50,7 @@ fun ChatScreen(
     viewModel: ChatViewModel,
     onBack: () -> Unit,
     onVoiceCall: () -> Unit,
+    onVideoCall: () -> Unit,
     onNavigationItemSelected: (Int) -> Unit,
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
@@ -74,7 +75,7 @@ fun ChatScreen(
         Column(
             Modifier.fillMaxSize().padding(bottomPadding).consumeWindowInsets(bottomPadding).imePadding(),
         ) {
-            ChatHeader(state.contact, onBack, onVoiceCall, unavailable)
+            ChatHeader(state.contact, onBack, onVoiceCall, onVideoCall)
             HorizontalDivider(thickness = 0.5.dp, color = BorderLight)
             LazyColumn(
                 state = listState,

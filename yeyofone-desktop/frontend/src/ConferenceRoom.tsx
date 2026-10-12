@@ -2,6 +2,7 @@ import { useLanguage } from "./i18n";
 import { useEffect, useRef, useState, type CSSProperties } from "react";
 import "./conference-room.css";
 import { moveInMenu, useCloseOnOutsideClick } from "./menuKeys";
+import { useCalls } from "./useCalls";
 import {
   LocalCaptures,
   mediaFailure,
@@ -312,6 +313,13 @@ export function ConferenceRoom({ onClose }: { onClose: () => void }) {
       void document.exitFullscreen().catch(() => {});
     onClose();
   }
+  // A call takes over, as on the phones: the room closes when one rings or starts, and its
+  // cleanup releases the camera, mic and screen before the call needs the audio devices.
+  const { rows: calls } = useCalls();
+  const onCall = calls.some((call) => call.state !== "ended");
+  useEffect(() => {
+    if (onCall) closeRoom();
+  }, [onCall]);
   function stopSharing() {
     captures.stop("screen");
     setSharing(null);

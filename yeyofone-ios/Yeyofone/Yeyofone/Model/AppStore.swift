@@ -69,6 +69,8 @@ final class AppStore {
     var endedSummary: CallSummary?
     /// A short message shown over the current screen, such as a failed call.
     var notice: String?
+    /// The Team room video conference preview, shown over everything except calls.
+    var teamRoomOpen = false
 
     var availableRoutes: [AudioRoute] = [.earpiece, .speaker]
     var selectedRoute: AudioRoute = .earpiece {
@@ -879,6 +881,7 @@ final class AppStore {
         case "social": screen = .socialSettings
         case "about": screen = .about
         case "licenses": screen = .licenses
+        case "room": teamRoomOpen = true
         case "handoff":
             handoffOffer = HandoffOffer(id: "demo", accountToken: 0, remote: "1002", remoteName: "Noah Anderson",
                                         deviceName: "Mac", connectedAt: Date().addingTimeInterval(-65),

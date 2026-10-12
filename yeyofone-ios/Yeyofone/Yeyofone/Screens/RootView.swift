@@ -41,6 +41,10 @@ struct RootView: View {
         }
         .animation(.easeInOut(duration: 0.2), value: store.handoffOffer?.id)
         .toast(Bindable(store).notice)
+        .fullScreenCover(isPresented: Bindable(store).teamRoomOpen) { TeamRoomScreen() }
+        // A call takes over the screen, so the room closes (and releases the camera and mic).
+        .onChange(of: store.incomingCall?.id) { _, id in if id != nil { store.teamRoomOpen = false } }
+        .onChange(of: store.activeCall?.id) { _, id in if id != nil { store.teamRoomOpen = false } }
         .onChange(of: scenePhase) { _, phase in
             if phase == .active { store.refreshRegistrations() }
         }
