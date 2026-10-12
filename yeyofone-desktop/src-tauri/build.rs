@@ -10,6 +10,7 @@ fn main() {
             "call_history_command",
             "recording_file_command",
             "recording_cloud_command",
+            "ai_command",
         ]),
     ))
     .expect("Tauri build configuration failed");

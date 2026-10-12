@@ -15,6 +15,9 @@ import { HandoffBanner } from "./HandoffBanner";
 import { CallHistory } from "./CallHistory";
 import { Voicemail } from "./Voicemail";
 import { ConferenceRoom } from "./ConferenceRoom";
+import { AiInsights } from "./AiInsights";
+import { AiSettings } from "./AiSettings";
+import { AutoRecorder } from "./AutoRecorder";
 import {
   CallingFeatures,
   initialRoutingPreview,
@@ -40,7 +43,8 @@ type IconName =
   | "bell"
   | "download"
   | "arrow"
-  | "conference";
+  | "conference"
+  | "sparkles";
 // Icon paths from Lucide (https://lucide.dev, ISC License); see LICENSES-THIRD-PARTY.md.
 function Icon({ name, size = 20 }: { name: IconName; size?: number }) {
   const paths: Record<IconName, ReactNode> = {
@@ -95,6 +99,13 @@ function Icon({ name, size = 20 }: { name: IconName; size?: number }) {
       <>
         <path d="m22 8-6 4 6 4V8Z" />
         <rect x="2" y="6" width="14" height="12" rx="2" ry="2" />
+      </>
+    ),
+    sparkles: (
+      <>
+        <path d="M9.94 15.5A2 2 0 0 0 8.5 14.06l-6.14-1.58a.5.5 0 0 1 0-.96L8.5 9.94A2 2 0 0 0 9.94 8.5l1.58-6.14a.5.5 0 0 1 .96 0L14.06 8.5A2 2 0 0 0 15.5 9.94l6.14 1.58a.5.5 0 0 1 0 .96L15.5 14.06a2 2 0 0 0-1.44 1.44l-1.58 6.14a.5.5 0 0 1-.96 0Z" />
+        <path d="M20 3v4" />
+        <path d="M22 5h-4" />
       </>
     ),
     conference: (
@@ -436,6 +447,7 @@ function App() {
               ["Call history", "phone"],
               ["Voicemail", "voicemail"],
               ["Statistics", "chart"],
+              ["AI insights", "sparkles"],
               ["Settings", "settings"],
               ["Contacts", "users"],
             ] as const
@@ -518,6 +530,8 @@ function App() {
           <CallHistory search={search} />
         ) : page === "Voicemail" ? (
           <Voicemail />
+        ) : page === "AI insights" ? (
+          <AiInsights onSettings={() => setPage("Settings")} />
         ) : page === "Statistics" ? (
           <div className="dashboard-grid">
             <div className="left-column">
@@ -925,6 +939,8 @@ function App() {
           <section className="standalone settings-panel">
             <h1>{t("Settings")}</h1>
             <Accounts />
+            <h2>{t("AI assistant")}</h2>
+            <AiSettings />
             <h2>{t("Call recording storage")}</h2>
             {/* Call history reloads its list whenever it opens, so there's nothing to refresh here. */}
             <RecordingCloudSettings onChange={() => {}} />
@@ -1037,6 +1053,7 @@ function App() {
         }}
       />
       <HandoffBanner onTakenOver={() => setDialer("")} />
+      <AutoRecorder />
       <IncomingCall
         key={callTool ?? "screen"}
         hiddenId={hiddenIncoming}

@@ -2,6 +2,480 @@ export const translations: Record<
   string,
   Record<"fr" | "es" | "de", string>
 > = {
+  "AI features are available in the desktop app.": {
+    fr: "Les fonctions d’IA sont disponibles dans l’application de bureau.",
+    es: "Las funciones de IA están disponibles en la aplicación de escritorio.",
+    de: "KI-Funktionen sind in der Desktop-App verfügbar.",
+  },
+  "Loading AI settings…": {
+    fr: "Chargement des réglages IA…",
+    es: "Cargando los ajustes de IA…",
+    de: "KI-Einstellungen werden geladen…",
+  },
+  "Calls are transcribed on this Mac; audio never leaves it. Only the text transcript is sent to Anthropic's Claude to write notes.":
+    {
+      fr: "Les appels sont transcrits sur ce Mac ; l’audio ne le quitte jamais. Seule la transcription écrite est envoyée à Claude d’Anthropic pour rédiger les notes.",
+      es: "Las llamadas se transcriben en este Mac; el audio nunca sale de él. Solo la transcripción de texto se envía a Claude de Anthropic para redactar las notas.",
+      de: "Anrufe werden auf diesem Mac transkribiert; der Ton verlässt ihn nie. Nur das Texttranskript wird an Claude von Anthropic gesendet, um Notizen zu schreiben.",
+    },
+  "Claude API key": {
+    fr: "Clé API Claude",
+    es: "Clave API de Claude",
+    de: "Claude-API-Schlüssel",
+  },
+  "Saved in your Keychain.": {
+    fr: "Enregistrée dans votre trousseau.",
+    es: "Guardada en tu llavero.",
+    de: "In deinem Schlüsselbund gespeichert.",
+  },
+  "Create one at console.anthropic.com.": {
+    fr: "Créez-en une sur console.anthropic.com.",
+    es: "Crea una en console.anthropic.com.",
+    de: "Erstelle einen auf console.anthropic.com.",
+  },
+  "Remove key": {
+    fr: "Supprimer la clé",
+    es: "Eliminar la clave",
+    de: "Schlüssel entfernen",
+  },
+  "Writing model": {
+    fr: "Modèle de rédaction",
+    es: "Modelo de redacción",
+    de: "Schreibmodell",
+  },
+  "Writes summaries, action items and coaching.": {
+    fr: "Rédige les résumés, les actions à faire et le coaching.",
+    es: "Redacta resúmenes, tareas y consejos.",
+    de: "Schreibt Zusammenfassungen, Aufgaben und Coaching.",
+  },
+  "Speech recognition (on this Mac)": {
+    fr: "Reconnaissance vocale (sur ce Mac)",
+    es: "Reconocimiento de voz (en este Mac)",
+    de: "Spracherkennung (auf diesem Mac)",
+  },
+  "Transcription isn't included in this build of the app.": {
+    fr: "La transcription n’est pas incluse dans cette version de l’app.",
+    es: "La transcripción no está incluida en esta versión de la app.",
+    de: "Die Transkription ist in dieser App-Version nicht enthalten.",
+  },
+  Installed: {
+    fr: "Installé",
+    es: "Instalado",
+    de: "Installiert",
+  },
+  Download: {
+    fr: "Télécharger",
+    es: "Descargar",
+    de: "Herunterladen",
+  },
+  "Notes for every recorded call": {
+    fr: "Notes pour chaque appel enregistré",
+    es: "Notas para cada llamada grabada",
+    de: "Notizen für jeden aufgezeichneten Anruf",
+  },
+  "New recordings are transcribed and summarised automatically.": {
+    fr: "Les nouveaux enregistrements sont transcrits et résumés automatiquement.",
+    es: "Las nuevas grabaciones se transcriben y resumen automáticamente.",
+    de: "Neue Aufnahmen werden automatisch transkribiert und zusammengefasst.",
+  },
+  "Record every call for AI notes": {
+    fr: "Enregistrer chaque appel pour les notes IA",
+    es: "Grabar cada llamada para las notas de IA",
+    de: "Jeden Anruf für KI-Notizen aufzeichnen",
+  },
+  "Recording starts when a call connects. Tell the other party: many places require their consent to record.":
+    {
+      fr: "L’enregistrement démarre quand l’appel est établi. Prévenez votre interlocuteur : dans de nombreux pays, son consentement est requis.",
+      es: "La grabación empieza cuando se conecta la llamada. Avisa a la otra persona: en muchos lugares se necesita su consentimiento.",
+      de: "Die Aufnahme beginnt, sobald der Anruf verbunden ist. Sag es deinem Gegenüber: Vielerorts ist seine Zustimmung nötig.",
+    },
+  "AI notes are ready.": {
+    fr: "Les notes IA sont prêtes.",
+    es: "Las notas de IA están listas.",
+    de: "KI-Notizen sind bereit.",
+  },
+  "Add your Claude key and download a speech model to turn on AI notes.": {
+    fr: "Ajoutez votre clé Claude et téléchargez un modèle vocal pour activer les notes IA.",
+    es: "Añade tu clave de Claude y descarga un modelo de voz para activar las notas de IA.",
+    de: "Füge deinen Claude-Schlüssel hinzu und lade ein Sprachmodell, um KI-Notizen zu aktivieren.",
+  },
+  "Claude Sonnet 5.5 · balanced": {
+    fr: "Claude Sonnet 5.5 · équilibré",
+    es: "Claude Sonnet 5.5 · equilibrado",
+    de: "Claude Sonnet 5.5 · ausgewogen",
+  },
+  "Claude Opus 5.5 · most capable": {
+    fr: "Claude Opus 5.5 · le plus performant",
+    es: "Claude Opus 5.5 · el más capaz",
+    de: "Claude Opus 5.5 · am leistungsfähigsten",
+  },
+  "Claude Haiku 5.5 · fastest": {
+    fr: "Claude Haiku 5.5 · le plus rapide",
+    es: "Claude Haiku 5.5 · el más rápido",
+    de: "Claude Haiku 5.5 · am schnellsten",
+  },
+  "AI notes": {
+    fr: "Notes IA",
+    es: "Notas de IA",
+    de: "KI-Notizen",
+  },
+  "Loading…": {
+    fr: "Chargement…",
+    es: "Cargando…",
+    de: "Wird geladen…",
+  },
+  "You can close this window; notes keep going.": {
+    fr: "Vous pouvez fermer cette fenêtre ; les notes continuent.",
+    es: "Puedes cerrar esta ventana; las notas siguen.",
+    de: "Du kannst dieses Fenster schließen; die Notizen laufen weiter.",
+  },
+  "No notes for this call yet.": {
+    fr: "Pas encore de notes pour cet appel.",
+    es: "Aún no hay notas para esta llamada.",
+    de: "Noch keine Notizen zu diesem Anruf.",
+  },
+  Urgent: {
+    fr: "Urgent",
+    es: "Urgente",
+    de: "Dringend",
+  },
+  Summary: {
+    fr: "Résumé",
+    es: "Resumen",
+    de: "Zusammenfassung",
+  },
+  Outcome: {
+    fr: "Résultat",
+    es: "Resultado",
+    de: "Ergebnis",
+  },
+  "Action items": {
+    fr: "Actions à faire",
+    es: "Tareas",
+    de: "Aufgaben",
+  },
+  Decisions: {
+    fr: "Décisions",
+    es: "Decisiones",
+    de: "Entscheidungen",
+  },
+  "Follow-up draft": {
+    fr: "Brouillon de suivi",
+    es: "Borrador de seguimiento",
+    de: "Entwurf für die Nachricht",
+  },
+  "Insights & coaching": {
+    fr: "Analyse et coaching",
+    es: "Análisis y consejos",
+    de: "Einblicke & Coaching",
+  },
+  "You talked": {
+    fr: "Vous avez parlé",
+    es: "Hablaste",
+    de: "Du hast gesprochen",
+  },
+  Caller: {
+    fr: "Correspondant",
+    es: "Interlocutor",
+    de: "Gesprächspartner",
+  },
+  "Longest stretch": {
+    fr: "Plus longue prise de parole",
+    es: "Intervención más larga",
+    de: "Längster Redeanteil am Stück",
+  },
+  Interruptions: {
+    fr: "Interruptions",
+    es: "Interrupciones",
+    de: "Unterbrechungen",
+  },
+  "Written by": {
+    fr: "Rédigé par",
+    es: "Escrito por",
+    de: "Geschrieben von",
+  },
+  "AI can make mistakes; check important details.": {
+    fr: "L’IA peut se tromper ; vérifiez les détails importants.",
+    es: "La IA puede equivocarse; comprueba los detalles importantes.",
+    de: "KI kann Fehler machen; prüfe wichtige Details.",
+  },
+  "Make notes again": {
+    fr: "Refaire les notes",
+    es: "Volver a hacer las notas",
+    de: "Notizen neu erstellen",
+  },
+  "AI notes are unavailable.": {
+    fr: "Les notes IA ne sont pas disponibles.",
+    es: "Las notas de IA no están disponibles.",
+    de: "KI-Notizen sind nicht verfügbar.",
+  },
+  "Couldn't copy to the clipboard.": {
+    fr: "Impossible de copier dans le presse-papiers.",
+    es: "No se pudo copiar al portapapeles.",
+    de: "Kopieren in die Zwischenablage fehlgeschlagen.",
+  },
+  "Transcribing the call on this Mac…": {
+    fr: "Transcription de l’appel sur ce Mac…",
+    es: "Transcribiendo la llamada en este Mac…",
+    de: "Anruf wird auf diesem Mac transkribiert…",
+  },
+  "Claude is writing the notes…": {
+    fr: "Claude rédige les notes…",
+    es: "Claude está escribiendo las notas…",
+    de: "Claude schreibt die Notizen…",
+  },
+  "Waiting to start…": {
+    fr: "En attente…",
+    es: "Esperando para empezar…",
+    de: "Wartet auf Start…",
+  },
+  "Notes couldn't be made.": {
+    fr: "Les notes n’ont pas pu être créées.",
+    es: "No se pudieron crear las notas.",
+    de: "Notizen konnten nicht erstellt werden.",
+  },
+  "Make notes": {
+    fr: "Créer les notes",
+    es: "Crear notas",
+    de: "Notizen erstellen",
+  },
+  Transcript: {
+    fr: "Transcription",
+    es: "Transcripción",
+    de: "Transkript",
+  },
+  Both: {
+    fr: "Les deux",
+    es: "Ambos",
+    de: "Beide",
+  },
+  Copy: {
+    fr: "Copier",
+    es: "Copiar",
+    de: "Kopieren",
+  },
+  "You did most of the talking.": {
+    fr: "Vous avez surtout parlé.",
+    es: "Hablaste la mayor parte del tiempo.",
+    de: "Du hast den Großteil geredet.",
+  },
+  "You mostly listened.": {
+    fr: "Vous avez surtout écouté.",
+    es: "Escuchaste la mayor parte del tiempo.",
+    de: "Du hast vor allem zugehört.",
+  },
+  "A balanced conversation.": {
+    fr: "Une conversation équilibrée.",
+    es: "Una conversación equilibrada.",
+    de: "Ein ausgewogenes Gespräch.",
+  },
+  Speaker: {
+    fr: "Intervenant",
+    es: "Hablante",
+    de: "Sprecher",
+  },
+  "AI insights": {
+    fr: "Analyses IA",
+    es: "Análisis de IA",
+    de: "KI-Einblicke",
+  },
+  "How calls are going, from the AI notes of recorded calls: mood, talk balance, recurring topics and coaching.":
+    {
+      fr: "Comment se passent les appels, d’après les notes IA des appels enregistrés : ambiance, équilibre de parole, sujets récurrents et coaching.",
+      es: "Cómo van las llamadas, según las notas de IA de las llamadas grabadas: ánimo, equilibrio al hablar, temas recurrentes y consejos.",
+      de: "Wie Anrufe laufen, aus den KI-Notizen aufgezeichneter Anrufe: Stimmung, Redeanteil, wiederkehrende Themen und Coaching.",
+    },
+  "Set up AI notes first: add your Claude key and download a speech model.": {
+    fr: "Configurez d’abord les notes IA : ajoutez votre clé Claude et téléchargez un modèle vocal.",
+    es: "Configura primero las notas de IA: añade tu clave de Claude y descarga un modelo de voz.",
+    de: "Richte zuerst KI-Notizen ein: Füge deinen Claude-Schlüssel hinzu und lade ein Sprachmodell.",
+  },
+  "Open AI settings": {
+    fr: "Ouvrir les réglages IA",
+    es: "Abrir los ajustes de IA",
+    de: "KI-Einstellungen öffnen",
+  },
+  "No analysed calls yet. Record a call, then open it in Call history and choose AI notes.":
+    {
+      fr: "Aucun appel analysé pour l’instant. Enregistrez un appel, puis ouvrez-le dans l’historique et choisissez Notes IA.",
+      es: "Aún no hay llamadas analizadas. Graba una llamada, ábrela en el historial y elige Notas de IA.",
+      de: "Noch keine analysierten Anrufe. Zeichne einen Anruf auf, öffne ihn im Anrufverlauf und wähle KI-Notizen.",
+    },
+  "Calls analysed": {
+    fr: "Appels analysés",
+    es: "Llamadas analizadas",
+    de: "Analysierte Anrufe",
+  },
+  "Average mood": {
+    fr: "Ambiance moyenne",
+    es: "Ánimo medio",
+    de: "Durchschnittliche Stimmung",
+  },
+  "from −100 to +100": {
+    fr: "de −100 à +100",
+    es: "de −100 a +100",
+    de: "von −100 bis +100",
+  },
+  "Your talk share": {
+    fr: "Votre temps de parole",
+    es: "Tu tiempo de habla",
+    de: "Dein Redeanteil",
+  },
+  "Aim for 40–60%": {
+    fr: "Visez 40–60 %",
+    es: "Apunta a 40–60 %",
+    de: "Ziel: 40–60 %",
+  },
+  "Interruptions per call": {
+    fr: "Interruptions par appel",
+    es: "Interrupciones por llamada",
+    de: "Unterbrechungen pro Anruf",
+  },
+  "Mood of calls": {
+    fr: "Ambiance des appels",
+    es: "Ánimo de las llamadas",
+    de: "Stimmung der Anrufe",
+  },
+  "Top topics": {
+    fr: "Sujets principaux",
+    es: "Temas principales",
+    de: "Häufigste Themen",
+  },
+  "Coaching from recent calls": {
+    fr: "Coaching des derniers appels",
+    es: "Consejos de llamadas recientes",
+    de: "Coaching aus den letzten Anrufen",
+  },
+  "Insights are unavailable.": {
+    fr: "Les analyses ne sont pas disponibles.",
+    es: "Los análisis no están disponibles.",
+    de: "Einblicke sind nicht verfügbar.",
+  },
+  call: {
+    fr: "appel",
+    es: "llamada",
+    de: "Anruf",
+  },
+  calls: {
+    fr: "appels",
+    es: "llamadas",
+    de: "Anrufe",
+  },
+  "Said on calls": {
+    fr: "Dit pendant les appels",
+    es: "Dicho en llamadas",
+    de: "In Anrufen gesagt",
+  },
+  "AI assistant": {
+    fr: "Assistant IA",
+    es: "Asistente de IA",
+    de: "KI-Assistent",
+  },
+  "Notes failed": {
+    fr: "Échec des notes",
+    es: "Error en las notas",
+    de: "Notizen fehlgeschlagen",
+  },
+  "Making notes…": {
+    fr: "Création des notes…",
+    es: "Creando notas…",
+    de: "Notizen werden erstellt…",
+  },
+  Positive: {
+    fr: "Positif",
+    es: "Positivo",
+    de: "Positiv",
+  },
+  Neutral: {
+    fr: "Neutre",
+    es: "Neutral",
+    de: "Neutral",
+  },
+  Negative: {
+    fr: "Négatif",
+    es: "Negativo",
+    de: "Negativ",
+  },
+  Mixed: {
+    fr: "Mitigé",
+    es: "Mixto",
+    de: "Gemischt",
+  },
+  "Base · multilingual · 148 MB": {
+    fr: "Base · multilingue · 148 Mo",
+    es: "Base · multilingüe · 148 MB",
+    de: "Base · mehrsprachig · 148 MB",
+  },
+  "Base · English only · 148 MB": {
+    fr: "Base · anglais uniquement · 148 Mo",
+    es: "Base · solo inglés · 148 MB",
+    de: "Base · nur Englisch · 148 MB",
+  },
+  "Small · multilingual, more accurate · 488 MB": {
+    fr: "Small · multilingue, plus précis · 488 Mo",
+    es: "Small · multilingüe, más preciso · 488 MB",
+    de: "Small · mehrsprachig, genauer · 488 MB",
+  },
+  "Add your Claude API key in Settings › AI.": {
+    fr: "Ajoutez votre clé API Claude dans Réglages › IA.",
+    es: "Añade tu clave API de Claude en Ajustes › IA.",
+    de: "Füge deinen Claude-API-Schlüssel unter Einstellungen › KI hinzu.",
+  },
+  "That doesn't look like a Claude API key (it starts with sk-ant-).": {
+    fr: "Cela ne ressemble pas à une clé API Claude (elle commence par sk-ant-).",
+    es: "No parece una clave API de Claude (empieza por sk-ant-).",
+    de: "Das sieht nicht wie ein Claude-API-Schlüssel aus (er beginnt mit sk-ant-).",
+  },
+  "Download a speech model in Settings › AI first.": {
+    fr: "Téléchargez d’abord un modèle vocal dans Réglages › IA.",
+    es: "Descarga primero un modelo de voz en Ajustes › IA.",
+    de: "Lade zuerst ein Sprachmodell unter Einstellungen › KI.",
+  },
+  "This call has no local recording to transcribe.": {
+    fr: "Cet appel n’a pas d’enregistrement local à transcrire.",
+    es: "Esta llamada no tiene una grabación local para transcribir.",
+    de: "Für diesen Anruf gibt es keine lokale Aufnahme zum Transkribieren.",
+  },
+  "No speech was found in the recording.": {
+    fr: "Aucune parole n’a été trouvée dans l’enregistrement.",
+    es: "No se encontró voz en la grabación.",
+    de: "In der Aufnahme wurde keine Sprache gefunden.",
+  },
+  "Couldn't reach Claude. Check your connection.": {
+    fr: "Impossible de joindre Claude. Vérifiez votre connexion.",
+    es: "No se pudo contactar con Claude. Comprueba tu conexión.",
+    de: "Claude ist nicht erreichbar. Prüfe deine Verbindung.",
+  },
+  "The Claude API key was rejected. Check it in Settings › AI.": {
+    fr: "La clé API Claude a été refusée. Vérifiez-la dans Réglages › IA.",
+    es: "Se rechazó la clave API de Claude. Revísala en Ajustes › IA.",
+    de: "Der Claude-API-Schlüssel wurde abgelehnt. Prüfe ihn unter Einstellungen › KI.",
+  },
+  "Claude's rate limit was reached. Notes will be retried shortly.": {
+    fr: "La limite de Claude est atteinte. Réessayez dans un instant.",
+    es: "Se alcanzó el límite de Claude. Inténtalo de nuevo en un momento.",
+    de: "Claudes Limit ist erreicht. Versuche es gleich noch einmal.",
+  },
+  "Claude is temporarily unavailable. Notes will be retried shortly.": {
+    fr: "Claude est temporairement indisponible. Réessayez dans un instant.",
+    es: "Claude no está disponible por ahora. Inténtalo de nuevo en un momento.",
+    de: "Claude ist vorübergehend nicht verfügbar. Versuche es gleich noch einmal.",
+  },
+  "The speech model couldn't be downloaded. Check your connection.": {
+    fr: "Le modèle vocal n’a pas pu être téléchargé. Vérifiez votre connexion.",
+    es: "No se pudo descargar el modelo de voz. Comprueba tu conexión.",
+    de: "Das Sprachmodell konnte nicht geladen werden. Prüfe deine Verbindung.",
+  },
+  "The downloaded model failed its integrity check and was discarded.": {
+    fr: "Le modèle téléchargé n’a pas passé le contrôle d’intégrité et a été supprimé.",
+    es: "El modelo descargado no superó la comprobación de integridad y se descartó.",
+    de: "Das geladene Modell hat die Integritätsprüfung nicht bestanden und wurde verworfen.",
+  },
+  "Download cancelled.": {
+    fr: "Téléchargement annulé.",
+    es: "Descarga cancelada.",
+    de: "Download abgebrochen.",
+  },
   "Continue call on this device?": {
     fr: "Continuer l’appel sur cet appareil ?",
     es: "¿Continuar la llamada en este dispositivo?",

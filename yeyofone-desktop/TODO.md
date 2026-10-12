@@ -49,6 +49,12 @@ These run on your own device only; nothing is sent to other people.
 - [x] **14. Rebuild the iOS framework** with `yeyofone-ios/tools/build-pjsip-ios.sh --bridge-only` so iOS also gets the shared bridge's new merge function (the change is additive; nothing in iOS uses it yet). — done 2026-10-11 (#52), rebuilt with the call handoff bridge functions.
 - [x] **19. Call handoff between the Mac, iPhone and Android, in every direction.** A call on one device shows "Continue call on this device?" on the account's other devices; one tap moves it there with an INVITE carrying Replaces, and the other party notices nothing. Needs `multiple-registrations` on the PBX. — done 2026-10-11 (#52).
 
+## AI assistant
+
+- [ ] **20. AI call notes (phase 1).** Recordings are transcribed on the Mac with local Whisper and split into "You" and "Caller" (the bridge now also writes `.you.wav` and `.them.wav`). Claude writes a summary, action items, decisions, a follow-up draft and coaching. Call history gets AI notes and search over what was said. The new AI insights page shows mood, talk share, topics and coaching. Settings › AI assistant holds the Keychain key, model downloads, and automatic notes and recording. See `docs/ai-notes.md`. — implemented 2026-10-12. Still to do: a real recorded call end to end (the three-track recording isn't covered by the native fixture tests, because it runs without audio).
+- [ ] **21. PBX add-on and voicemail transcripts (phase 2).** A small FusionPBX JSON endpoint, authenticated by API key, that lists live calls and voicemails, plus voicemail transcripts and summaries in the app. Installing it is a server change you run yourself.
+- [ ] **22. Manager Listen / Whisper / Barge (phase 3).** A Live calls panel: dial `*33<ext>` (eavesdrop, enabled on the PBX), send the eavesdrop PIN from the Keychain, and switch modes with DTMF.
+
 ## Appearance
 
 - [x] **15. Dark and light mode.** Sun/Moon toggle in the top bar and Light / Dark / System in Settings → Appearance (Lucide icons); the choice is remembered and System follows the computer. Colours moved to tokens in `frontend/src/theme-colors.css` (light = original design, dark = computed and tuned). — done 2026-10-10 (#44).

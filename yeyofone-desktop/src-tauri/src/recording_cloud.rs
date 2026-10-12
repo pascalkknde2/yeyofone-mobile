@@ -407,6 +407,14 @@ impl Cloud {
                 return Err("Cloud copy deleted, but local removal failed. Retry deletion.".into());
             }
         }
+        // The per-speaker tracks used for transcripts go with the recording.
+        for suffix in ["you", "them"] {
+            let _ = std::fs::remove_file(
+                self.dir
+                    .join("call-recordings")
+                    .join(format!("{}.{suffix}.wav", entry.recording_id)),
+            );
+        }
         history
             .lock()
             .map_err(|_| "Recording metadata unavailable.")?
