@@ -140,7 +140,12 @@ fun AdvancedSettingsScreen(
         item {
             MoreSection(stringResource(R.string.advanced_codecs)) {
                 if (codecs.isEmpty()) {
-                    InfoRow(stringResource(R.string.advanced_codecs), stringResource(R.string.advanced_codecs_unavailable))
+                    InfoRow(
+                        stringResource(R.string.advanced_codecs),
+                        stringResource(
+                            if (app.engineUnsupported) R.string.advanced_engine_unsupported else R.string.advanced_codecs_unavailable,
+                        ),
+                    )
                 }
                 codecs.forEachIndexed { index, codec ->
                     if (index > 0) MoreDivider(start = 20.dp)

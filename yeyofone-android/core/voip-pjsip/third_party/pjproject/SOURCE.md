@@ -11,6 +11,7 @@
 - Android API: 26
 - Configure: `./configure-android --use-ndk-cflags --with-ssl=<per-ABI OpenSSL prefix>` (see `tools/build-pjsip-android.sh`)
 - Rebuilt: 5 October 2026 on WSL Ubuntu x86_64 with JDK 17.0.20.1 (Temurin)
+- armeabi-v7a added: 11 October 2026 on macOS x86_64 with JDK 17.0.8 (Zulu), using `ABIS=armeabi-v7a` so the other ABIs were not rebuilt
 
 ## Generated artifact checksums
 
@@ -18,6 +19,8 @@
 | --- | --- | --- |
 | arm64-v8a | `libpjsua2.so` | `60f7b5c991af7c6f4c591ded14ca5ba39f78546cf4229f25d144a07c34ea5567` |
 | arm64-v8a | `libc++_shared.so` | `ab4e6c71b96b851de45a8a9bd86369e7dbc2130a44b3b4520564be94847910f2` |
+| armeabi-v7a | `libpjsua2.so` | `cf5e3958d399301decee3a0b7195d5998084900a4e2fc8906bf95aeef083c9b4` |
+| armeabi-v7a | `libc++_shared.so` | `10ee48131d6742899619f7cfb3b8df150ad787d723c766a3fb80d4bb275711ff` |
 | x86_64 | `libpjsua2.so` | `404711f652d097ca03b89f1437ae048284072f66a96e1d8ce5ffeb45db4df608` |
 | x86_64 | `libc++_shared.so` | `e4cd73c8a3607269f3be58d15c21f78bff112e27f9398d6261e5f965668f8746` |
 
@@ -25,7 +28,7 @@
 
 Enabled: SIP TLS (OpenSSL 3.5.9, statically linked; TLS 1.2/1.3), SRTP, G.711 PCMA/PCMU, G.722, Speex AEC, WebRTC AEC, Android audio.
 
-Verified per ABI: `pj_ssl_sock_create` and `pjsip_tls_transport_start` exported, no OpenSSL shared-library dependency, 16 KB (`0x4000`) LOAD alignment. `libc++_shared.so` is byte-identical to the previous build. The regenerated Java bindings matched the checked-in sources apart from whitespace, so the sources were kept.
+Verified per ABI: `pj_ssl_sock_create` and `pjsip_tls_transport_start` exported, no OpenSSL shared-library dependency, 16 KB (`0x4000`) LOAD alignment on the 64-bit ABIs (armeabi-v7a is 4 KB, `0x1000`; Android's 16 KB page-size requirement applies only to 64-bit libraries). For armeabi-v7a, the regenerated Java bindings differed from the checked-in sources only in blank lines (and the `PjCamera2` annotation below), so the sources were kept. `libc++_shared.so` is byte-identical to the previous build. The regenerated Java bindings matched the checked-in sources apart from whitespace, so the sources were kept.
 
 OpenSSL is licensed under Apache-2.0; include its notice with the PJSIP notices (DEC-05).
 

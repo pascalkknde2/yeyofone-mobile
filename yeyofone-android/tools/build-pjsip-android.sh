@@ -7,6 +7,9 @@ PJPROJECT_SHA256=3b4fe10612949f8c673b2eb80617c3873d8acb8b1411ba7e6d08508d2978085
 OPENSSL_VERSION=3.5.9
 OPENSSL_SHA256=603f5602e2eef00d77fbd429d34dcd5822bb301757a1bc9cdb24c670f1eb859a
 ANDROID_API=26
+# Space-separated ABIs to build; override with ABIS="armeabi-v7a" to add or refresh one ABI
+# without regenerating (and re-checksumming) the others.
+ABIS=${ABIS:-"arm64-v8a armeabi-v7a x86_64"}
 
 if [ "$#" -ne 1 ]; then
     echo "usage: ANDROID_NDK_ROOT=... JAVA_HOME=... $0 OUTPUT_DIRECTORY" >&2
@@ -57,10 +60,13 @@ host_tag=$(ls "$ANDROID_NDK_ROOT/toolchains/llvm/prebuilt" | head -n 1)
 ndk_bin="$ANDROID_NDK_ROOT/toolchains/llvm/prebuilt/$host_tag/bin"
 
 mkdir -p "$stage_dir/java"
-for abi in arm64-v8a x86_64; do
+for abi in $ABIS; do
     case "$abi" in
         arm64-v8a) openssl_target=android-arm64 ;;
+        # 32-bit ARM phones (such as the moto g pure) run armeabi-v7a only.
+        armeabi-v7a) openssl_target=android-arm ;;
         x86_64) openssl_target=android-x86_64 ;;
+        *) echo "Unsupported ABI: $abi" >&2; exit 2 ;;
     esac
 
     # Static, library-only OpenSSL per ABI so no extra shared object ships in the APK.
