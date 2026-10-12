@@ -313,7 +313,7 @@ public:
     void stop_ringback() noexcept {if(!ringback_active)return;try{ringback.stopTransmit(endpoint.audDevManager().getPlaybackDevMedia());}catch(...){}try{ringback.stop();}catch(...){}ringback_active=false;}
     void stop_ringtone() noexcept {if(!ringtone_active)return;try{ringtone.stopTransmit(endpoint.audDevManager().getPlaybackDevMedia());}catch(...){}try{ringtone.stop();}catch(...){}ringtone_active=false;}
     void send_ringing(){if(!is_incoming)return;pj::CallOpParam p;p.statusCode=PJSIP_SC_RINGING;pj::Call::answer(p);}
-    void answer(){auto state=getInfo().state;if(!is_incoming||(state!=PJSIP_INV_STATE_INCOMING&&state!=PJSIP_INV_STATE_EARLY))throw pj::Error(PJ_EINVALIDOP,"answer","","",0);stop_ringtone();audio=true;pj::CallOpParam p(true);p.statusCode=PJSIP_SC_OK;p.opt.audioCount=1;p.opt.videoCount=0;p.opt.textCount=0;auto& d=endpoint.audDevManager();d.setCaptureDev(PJMEDIA_AUD_DEFAULT_CAPTURE_DEV);d.setPlaybackDev(PJMEDIA_AUD_DEFAULT_PLAYBACK_DEV);try{pj::Call::answer(p);}catch(...){d.setNoDev();throw;}}
+    void answer(){auto state=getInfo().state;if(!is_incoming||(state!=PJSIP_INV_STATE_INCOMING&&state!=PJSIP_INV_STATE_EARLY))throw pj::Error(PJ_EINVALIDOP,"answer","","",0);stop_ringtone();audio=true;pj::CallOpParam p(true);p.statusCode=PJSIP_SC_OK;p.opt.audioCount=1;p.opt.videoCount=0;p.opt.textCount=0;auto& d=endpoint.audDevManager();d.setCaptureDev(PJMEDIA_AUD_DEFAULT_CAPTURE_DEV);d.setPlaybackDev(PJMEDIA_AUD_DEFAULT_PLAYBACK_DEV);try{pj::Call::answer(p);}catch(...){d.setNullDev();throw;}}
     void reject(){if(!is_incoming)return;auto state=getInfo().state;if(state!=PJSIP_INV_STATE_INCOMING&&state!=PJSIP_INV_STATE_EARLY)return;stop_ringtone();pj::CallOpParam p;p.statusCode=PJSIP_SC_DECLINE;pj::Call::hangup(p);cancelled=true;}
     void start_recording(const std::string& final_path) {
         auto info=getInfo();
@@ -561,13 +561,13 @@ int32_t start_call(YvHandle* h,uint64_t account,uint64_t token,const uint8_t* ur
         const int port=target->port?target->port:(secure?5061:5060);
         auto& acc=*found->second;
         if(EngineEndpoint::key(host,port,acc.target_transport)!=EngineEndpoint::key(acc.target_host,acc.target_port,acc.target_transport)||secure!=(acc.target_transport==PJSIP_TRANSPORT_TLS)||target->passwd.slen || !pj_list_empty(&target->header_param))return -6;
-        if(audio){try{auto& devices=h->endpoint->audDevManager();devices.setCaptureDev(PJMEDIA_AUD_DEFAULT_CAPTURE_DEV);devices.setPlaybackDev(PJMEDIA_AUD_DEFAULT_PLAYBACK_DEV);}catch(...){h->endpoint->audDevManager().setNoDev();return -11;}}
+        if(audio){try{auto& devices=h->endpoint->audDevManager();devices.setCaptureDev(PJMEDIA_AUD_DEFAULT_CAPTURE_DEV);devices.setPlaybackDev(PJMEDIA_AUD_DEFAULT_PLAYBACK_DEV);}catch(...){h->endpoint->audDevManager().setNullDev();return -11;}}
         auto call=std::make_unique<NativeCall>(acc,token,*h->endpoint,audio!=0);
         auto* pointer=call.get();h->calls.emplace(token,std::move(call));
         try{pj::CallOpParam options(true);options.opt.audioCount=1;options.opt.videoCount=0;options.opt.textCount=0;
             if(!replaces.empty()){pj::SipHeader header;header.hName="Replaces";header.hValue=replaces;options.txOption.headers.push_back(header);}
             pointer->makeCall(destination,options);pointer->update();}
-        catch(...){h->calls.erase(token);if(audio&&h->calls.empty())h->endpoint->audDevManager().setNoDev();throw;}
+        catch(...){h->calls.erase(token);if(audio&&h->calls.empty())h->endpoint->audDevManager().setNullDev();throw;}
         return 0;
     }catch(const pj::Error& e){return e.status;}catch(...){return -1;}
 }
@@ -670,10 +670,14 @@ extern "C" int32_t yv_call_mute(YvHandle* h,uint64_t token,int32_t muted) noexce
     auto found=h->calls.find(token);if(found==h->calls.end())return -6;
     try{found->second->mute(muted!=0);return 0;}catch(const pj::Error& e){return e.status;}catch(...){return -1;}
 }
+// Releasing the sound device uses the null device, not "no device": PJSIP 2.14+ queues conference
+// bridge operations (such as removing a stopped recorder) and runs them on the bridge's clock. With
+// no device there is no clock, so the last call's recording would stay open and its WAV header
+// unwritten until the next call. The null device keeps the clock without opening any hardware.
 extern "C" int32_t yv_call_release(YvHandle* h,uint64_t token) noexcept {
     if(auto code=check(h))return code;
     auto found=h->calls.find(token);if(found==h->calls.end())return 0;
-    try{h->calls.erase(found);if(h->calls.empty()&&h->endpoint)h->endpoint->audDevManager().setNoDev();return 0;}catch(const pj::Error& e){return e.status;}catch(...){return -1;}
+    try{h->calls.erase(found);if(h->calls.empty()&&h->endpoint)h->endpoint->audDevManager().setNullDev();return 0;}catch(const pj::Error& e){return e.status;}catch(...){return -1;}
 }
 
 extern "C" int32_t yv_set_ringtone(YvHandle* h,int32_t enabled) noexcept {
@@ -685,7 +689,7 @@ extern "C" int32_t yv_audio_device(YvHandle* h,int32_t open) noexcept {
  if(!h->running)return 0;
  try{
   auto& d=h->endpoint->audDevManager();
-  if(!open){d.setNoDev();return 0;}
+  if(!open){d.setNullDev();return 0;}
   // Only calls that carry audio need the device; with none, leave it closed.
   if(std::none_of(h->calls.begin(),h->calls.end(),[](const auto& x){return x.second->isActive();}))return 0;
   pjsua_set_no_snd_dev();
