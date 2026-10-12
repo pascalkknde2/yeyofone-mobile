@@ -11,6 +11,7 @@ fn main() {
             "recording_file_command",
             "recording_cloud_command",
             "ai_command",
+            "pbx_command",
         ]),
     ))
     .expect("Tauri build configuration failed");

@@ -1,6 +1,7 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 use tauri::{Emitter, Manager};
 mod ai;
+mod pbx;
 mod recording_cloud;
 use recording_cloud::recording_cloud_command;
 
@@ -88,7 +89,9 @@ fn main() {
             recording_cloud::start_backup_loop(app.handle(), cloud, history.clone());
             let ai = std::sync::Arc::new(std::sync::Mutex::new(ai::Ai::open(dir.clone())));
             app.manage(ai.clone());
-            ai::start_worker(app.handle(), ai, history.clone());
+            let pbx = std::sync::Arc::new(std::sync::Mutex::new(pbx::Pbx::open(dir.clone())));
+            app.manage(pbx.clone());
+            ai::start_worker(app.handle(), ai, history.clone(), pbx);
             #[cfg(feature = "native-voip")]
             {
                 let app_handle = app.handle().clone();
@@ -148,7 +151,8 @@ fn main() {
             call_history_command,
             recording_file_command,
             recording_cloud_command,
-            ai::ai_command
+            ai::ai_command,
+            pbx_command
         ])
         .build(tauri::generate_context!())
         .expect("Desktop runtime failed");
@@ -722,6 +726,120 @@ async fn call_history_command(
                     .join(format!("{}.wav", entry.recording_id))
                     .is_file());
     }
+    Ok(yeyofone_ipc::Response {
+        schema_version: 1,
+        request_id,
+        sequence: 0,
+        data,
+    })
+}
+
+#[derive(serde::Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+struct PbxRequest {
+    schema_version: u8,
+    request_id: String,
+    action: String,
+    url: Option<String>,
+    key: Option<String>,
+    pin: Option<String>,
+    id: Option<String>,
+}
+
+/// The PBX add-on: connection settings, the eavesdrop PIN, live calls and voicemail. `sendPin`
+/// keys the stored eavesdrop PIN into a Listen / Whisper / Barge call, so the PIN never reaches
+/// the WebView.
+#[tauri::command]
+async fn pbx_command(
+    request: serde_json::Value,
+    app: tauri::AppHandle,
+    pbx: tauri::State<'_, pbx::PbxState>,
+) -> Result<yeyofone_ipc::Response<serde_json::Value>, String> {
+    if request.to_string().len() > 2048 {
+        return Err("Invalid PBX request.".into());
+    }
+    let mut req: PbxRequest =
+        serde_json::from_value(request).map_err(|_| "Invalid PBX request.")?;
+    yeyofone_ipc::validate_request(
+        serde_json::json!({"schemaVersion": req.schema_version, "requestId": req.request_id}),
+    )
+    .map_err(|_| "Invalid request version or ID.")?;
+    let key = req.key.take().map(zeroize::Zeroizing::new);
+    let pin = req.pin.take().map(zeroize::Zeroizing::new);
+    let pbx = pbx.inner().clone();
+    let request_id = req.request_id.clone();
+    let data =
+        tauri::async_runtime::spawn_blocking(move || -> Result<serde_json::Value, String> {
+            let lock = || {
+                pbx.lock()
+                    .map_err(|_| "PBX settings unavailable.".to_string())
+            };
+            match req.action.as_str() {
+                "status" => Ok(lock()?.status()),
+                "refresh" => {
+                    let mut p = lock()?;
+                    let result = p.refresh_me();
+                    p.set_error(result.err());
+                    Ok(p.status())
+                }
+                "connect" => {
+                    let mut p = lock()?;
+                    p.connect(
+                        req.url.as_deref().unwrap_or_default(),
+                        key.as_deref().map(String::as_str).unwrap_or_default(),
+                    )?;
+                    Ok(p.status())
+                }
+                "disconnect" => {
+                    let mut p = lock()?;
+                    p.disconnect()?;
+                    Ok(p.status())
+                }
+                "setPin" => {
+                    let p = lock()?;
+                    p.set_pin(Some(pin.as_deref().map(String::as_str).unwrap_or_default()))?;
+                    Ok(p.status())
+                }
+                "clearPin" => {
+                    let p = lock()?;
+                    p.set_pin(None)?;
+                    Ok(p.status())
+                }
+                "liveCalls" => lock()?.live_calls(),
+                "voicemails" => Ok(serde_json::json!(lock()?.voicemails()?)),
+                "sendPin" => {
+                    let id = req.id.unwrap_or_default();
+                    if id.is_empty()
+                        || id.len() > 64
+                        || !id
+                            .bytes()
+                            .all(|b| b.is_ascii_alphanumeric() || b == b'-' || b == b'_')
+                    {
+                        return Err("Invalid call.".into());
+                    }
+                    #[cfg(feature = "native-voip")]
+                    {
+                        let pin = pbx::eavesdrop_pin()?;
+                        let engine = app.state::<Runtime>().engine.clone();
+                        for digit in pin.chars().chain(std::iter::once('#')) {
+                            engine
+                                .send_dtmf(&id, digit)
+                                .map_err(|_| "Couldn't send the PIN to the call.".to_string())?;
+                            std::thread::sleep(std::time::Duration::from_millis(250));
+                        }
+                        Ok(serde_json::Value::Null)
+                    }
+                    #[cfg(not(feature = "native-voip"))]
+                    {
+                        let _ = (&app, id);
+                        Err("Calling isn't available in this build.".into())
+                    }
+                }
+                _ => Err("Unknown PBX action.".into()),
+            }
+        })
+        .await
+        .map_err(|_| "PBX task failed.")??;
     Ok(yeyofone_ipc::Response {
         schema_version: 1,
         request_id,

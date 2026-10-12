@@ -91,7 +91,8 @@ export function CallNotes({
   }
 
   const notes = record?.status === "done" ? record.notes : null;
-  const stats = record?.stats ?? null;
+  // A voicemail has one speaker, so talk-share stats don't apply.
+  const stats = id.startsWith("vm:") ? null : (record?.stats ?? null);
   const band = talkBand(stats?.youPercent ?? null);
 
   return (
