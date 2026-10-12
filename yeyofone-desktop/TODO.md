@@ -52,8 +52,8 @@ These run on your own device only; nothing is sent to other people.
 ## AI assistant
 
 - [ ] **20. AI call notes (phase 1).** Recordings are transcribed on the Mac with local Whisper and split into "You" and "Caller" (the bridge now also writes `.you.wav` and `.them.wav`). Claude writes a summary, action items, decisions, a follow-up draft and coaching. Call history gets AI notes and search over what was said. The new AI insights page shows mood, talk share, topics and coaching. Settings › AI assistant holds the Keychain key, model downloads, and automatic notes and recording. See `docs/ai-notes.md`. — implemented 2026-10-12. Still to do: a real recorded call end to end (the three-track recording isn't covered by the native fixture tests, because it runs without audio).
-- [ ] **21. PBX add-on and voicemail transcripts (phase 2).** A small FusionPBX JSON endpoint, authenticated by API key, that lists live calls and voicemails, plus voicemail transcripts and summaries in the app. Installing it is a server change you run yourself.
-- [ ] **22. Manager Listen / Whisper / Barge (phase 3).** A Live calls panel: dial `*33<ext>` (eavesdrop, enabled on the PBX), send the eavesdrop PIN from the Keychain, and switch modes with DTMF.
+- [ ] **21. PBX add-on and voicemail transcripts (phase 2).** `pbx/yeyofone/api.php` (FusionPBX API-key login, permission-checked) lists live calls and the user's voicemails. The Voicemail page shows messages with Transcribe / AI notes. — implemented 2026-10-12. Still to do: install the add-on (`pbx/install-yeyofone-api.sh`), create an API key, and link extension 1005 to a FusionPBX user.
+- [ ] **22. Manager Listen / Whisper / Barge (phase 3).** A Live calls page that dials `*33<ext>`, keys in the eavesdrop PIN from the Keychain, and switches modes with DTMF 0 / 2 / 3. — implemented 2026-10-12. Still to do: a real test with two agents on a call.
 
 ## Appearance
 

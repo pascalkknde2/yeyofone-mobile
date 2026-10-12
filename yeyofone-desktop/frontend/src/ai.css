@@ -565,3 +565,124 @@
   font-size: 13px;
   font-weight: 500;
 }
+
+/* Phone system settings, Live calls and voicemail messages */
+.ai-settings--pbx {
+  margin-top: 18px;
+}
+.ai-pbx-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.ai-pbx-form input {
+  flex: 1 1 200px;
+  padding: 8px 10px;
+  border: 1px solid var(--c-e2e8f0-b);
+  border-radius: 8px;
+  color: var(--c-0f172a-t);
+  background: var(--c-f8fafc-s);
+  font: inherit;
+}
+.live-list {
+  display: grid;
+  gap: 8px;
+  margin: 12px 0;
+  padding: 0;
+  list-style: none;
+}
+.live-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border-radius: 12px;
+  background: var(--c-ffffff-s);
+}
+.live-row > div:first-of-type {
+  display: grid;
+  flex: 1 1 220px;
+  gap: 2px;
+}
+.live-row small {
+  color: var(--c-64748b-t);
+}
+.live-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--ai-neutral);
+}
+.live-dot--talking {
+  background: var(--ai-positive);
+}
+.live-dot--ringing {
+  background: var(--ai-mixed);
+}
+.live-dot--held {
+  background: var(--ai-you);
+}
+.live-actions {
+  display: flex;
+  gap: 6px;
+}
+.live-session {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin: 12px 0;
+  padding: 14px 16px;
+  border-radius: 12px;
+  color: white;
+  background: #1e2026;
+}
+.live-session > div:first-child {
+  display: grid;
+  flex: 1 1 220px;
+  gap: 2px;
+}
+.live-session small {
+  color: #cbd5e1;
+}
+.live-modes {
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  border-radius: 10px;
+  background: #2a2d34;
+}
+.live-modes button {
+  padding: 6px 12px;
+  border: 0;
+  border-radius: 8px;
+  color: #cbd5e1;
+  background: transparent;
+  font-weight: 600;
+  cursor: pointer;
+}
+.live-modes button.selected {
+  color: white;
+  background: var(--ai-accent);
+}
+.live-modes button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.live-leave {
+  background: #dc2626;
+}
+.voicemail-messages {
+  margin-bottom: 20px;
+}
+.voicemail-messages h2 {
+  margin: 0 0 4px;
+  font-size: 17px;
+}
+.voicemail-summary {
+  margin: 4px 0 0;
+  color: var(--c-0f172a-t);
+  font-size: 14px;
+  line-height: 1.45;
+}

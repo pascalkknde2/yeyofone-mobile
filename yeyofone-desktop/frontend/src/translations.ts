@@ -2,6 +2,285 @@ export const translations: Record<
   string,
   Record<"fr" | "es" | "de", string>
 > = {
+  "Phone system (FusionPBX)": {
+    fr: "Système téléphonique (FusionPBX)",
+    es: "Centralita (FusionPBX)",
+    de: "Telefonanlage (FusionPBX)",
+  },
+  "Connect the YeyoFone add-on on your PBX to transcribe voicemail and, for managers, to listen in on live calls.":
+    {
+      fr: "Connectez le module YeyoFone de votre PBX pour transcrire la messagerie et, pour les responsables, écouter les appels en direct.",
+      es: "Conecta el complemento de YeyoFone de tu centralita para transcribir el buzón de voz y, para supervisores, escuchar llamadas en directo.",
+      de: "Verbinde das YeyoFone-Add-on deiner Telefonanlage, um Voicemails zu transkribieren und als Führungskraft Live-Anrufe mitzuhören.",
+    },
+  Extensions: {
+    fr: "Postes",
+    es: "Extensiones",
+    de: "Durchwahlen",
+  },
+  "Connected. API key saved in your Keychain.": {
+    fr: "Connecté. Clé API enregistrée dans votre trousseau.",
+    es: "Conectado. Clave API guardada en tu llavero.",
+    de: "Verbunden. API-Schlüssel im Schlüsselbund gespeichert.",
+  },
+  Check: {
+    fr: "Vérifier",
+    es: "Comprobar",
+    de: "Prüfen",
+  },
+  Disconnect: {
+    fr: "Déconnecter",
+    es: "Desconectar",
+    de: "Trennen",
+  },
+  "PBX address": {
+    fr: "Adresse du PBX",
+    es: "Dirección de la centralita",
+    de: "Adresse der Telefonanlage",
+  },
+  "FusionPBX API key": {
+    fr: "Clé API FusionPBX",
+    es: "Clave API de FusionPBX",
+    de: "FusionPBX-API-Schlüssel",
+  },
+  Connect: {
+    fr: "Connecter",
+    es: "Conectar",
+    de: "Verbinden",
+  },
+  "Eavesdrop PIN": {
+    fr: "Code d’écoute",
+    es: "PIN de escucha",
+    de: "Mithör-PIN",
+  },
+  "Saved in your Keychain. The app keys it in for you.": {
+    fr: "Enregistré dans votre trousseau. L’app le compose pour vous.",
+    es: "Guardado en tu llavero. La app lo marca por ti.",
+    de: "Im Schlüsselbund gespeichert. Die App tippt ihn für dich ein.",
+  },
+  "The PIN your PBX asks for after dialling *33. Needed for Listen, Whisper and Barge.":
+    {
+      fr: "Le code demandé par votre PBX après *33. Nécessaire pour Écouter, Chuchoter et Intervenir.",
+      es: "El PIN que pide la centralita tras marcar *33. Necesario para Escuchar, Susurrar e Intervenir.",
+      de: "Die PIN, die die Telefonanlage nach *33 abfragt. Nötig für Mithören, Flüstern und Aufschalten.",
+    },
+  "Remove PIN": {
+    fr: "Supprimer le code",
+    es: "Eliminar el PIN",
+    de: "PIN entfernen",
+  },
+  "The PBX request failed.": {
+    fr: "La requête au PBX a échoué.",
+    es: "La solicitud a la centralita falló.",
+    de: "Die Anfrage an die Telefonanlage ist fehlgeschlagen.",
+  },
+  "Voicemail allowed": {
+    fr: "Messagerie autorisée",
+    es: "Buzón permitido",
+    de: "Voicemail erlaubt",
+  },
+  "No voicemail permission": {
+    fr: "Pas d’accès à la messagerie",
+    es: "Sin permiso de buzón",
+    de: "Keine Voicemail-Berechtigung",
+  },
+  "Live calls allowed": {
+    fr: "Appels en direct autorisés",
+    es: "Llamadas en directo permitidas",
+    de: "Live-Anrufe erlaubt",
+  },
+  "No live calls permission": {
+    fr: "Pas d’accès aux appels en direct",
+    es: "Sin permiso de llamadas en directo",
+    de: "Keine Berechtigung für Live-Anrufe",
+  },
+  "Live calls": {
+    fr: "Appels en direct",
+    es: "Llamadas en directo",
+    de: "Live-Anrufe",
+  },
+  "Calls on your phone system right now. Listen in, whisper to coach the agent, or barge in to help.":
+    {
+      fr: "Les appels en cours sur votre système. Écoutez, chuchotez pour guider l’agent ou intervenez pour aider.",
+      es: "Llamadas en curso en tu centralita. Escucha, susurra para guiar al agente o intervén para ayudar.",
+      de: "Aktuelle Anrufe auf deiner Telefonanlage. Hör mit, flüstere dem Agenten Tipps zu oder schalte dich auf, um zu helfen.",
+    },
+  "Connect your PBX in Settings › AI assistant to see live calls.": {
+    fr: "Connectez votre PBX dans Réglages › Assistant IA pour voir les appels en direct.",
+    es: "Conecta tu centralita en Ajustes › Asistente de IA para ver las llamadas en directo.",
+    de: "Verbinde deine Telefonanlage unter Einstellungen › KI-Assistent, um Live-Anrufe zu sehen.",
+  },
+  "Open settings": {
+    fr: "Ouvrir les réglages",
+    es: "Abrir ajustes",
+    de: "Einstellungen öffnen",
+  },
+  Mode: {
+    fr: "Mode",
+    es: "Modo",
+    de: "Modus",
+  },
+  "Nobody else is on a call right now.": {
+    fr: "Personne d’autre n’est en ligne pour le moment.",
+    es: "Nadie más está en una llamada ahora.",
+    de: "Gerade telefoniert sonst niemand.",
+  },
+  Extension: {
+    fr: "Poste",
+    es: "Extensión",
+    de: "Durchwahl",
+  },
+  "Listening in may require telling callers that calls are monitored.": {
+    fr: "L’écoute peut nécessiter d’informer les appelants que les appels sont surveillés.",
+    es: "Escuchar puede requerir avisar a los llamantes de que las llamadas se supervisan.",
+    de: "Für das Mithören musst du Anrufer eventuell informieren, dass Anrufe überwacht werden.",
+  },
+  Listen: {
+    fr: "Écouter",
+    es: "Escuchar",
+    de: "Mithören",
+  },
+  "Hear the call; nobody hears you.": {
+    fr: "Entendez l’appel ; personne ne vous entend.",
+    es: "Oye la llamada; nadie te oye.",
+    de: "Du hörst den Anruf; niemand hört dich.",
+  },
+  Whisper: {
+    fr: "Chuchoter",
+    es: "Susurrar",
+    de: "Flüstern",
+  },
+  "Coach the agent; the caller can't hear you.": {
+    fr: "Guidez l’agent ; l’appelant ne vous entend pas.",
+    es: "Guía al agente; el llamante no te oye.",
+    de: "Coache den Agenten; der Anrufer hört dich nicht.",
+  },
+  Barge: {
+    fr: "Intervenir",
+    es: "Intervenir",
+    de: "Aufschalten",
+  },
+  "Join the call; both sides hear you.": {
+    fr: "Rejoignez l’appel ; les deux côtés vous entendent.",
+    es: "Únete a la llamada; ambos lados te oyen.",
+    de: "Tritt dem Anruf bei; beide Seiten hören dich.",
+  },
+  "Live calls are unavailable.": {
+    fr: "Les appels en direct ne sont pas disponibles.",
+    es: "Las llamadas en directo no están disponibles.",
+    de: "Live-Anrufe sind nicht verfügbar.",
+  },
+  "Couldn't join the call.": {
+    fr: "Impossible de rejoindre l’appel.",
+    es: "No se pudo unir a la llamada.",
+    de: "Beitritt zum Anruf fehlgeschlagen.",
+  },
+  "Add the eavesdrop PIN in Settings › AI assistant first.": {
+    fr: "Ajoutez d’abord le code d’écoute dans Réglages › Assistant IA.",
+    es: "Añade primero el PIN de escucha en Ajustes › Asistente de IA.",
+    de: "Füge zuerst die Mithör-PIN unter Einstellungen › KI-Assistent hinzu.",
+  },
+  "Register a SIP account to listen in on calls.": {
+    fr: "Enregistrez un compte SIP pour écouter les appels.",
+    es: "Registra una cuenta SIP para escuchar llamadas.",
+    de: "Registriere ein SIP-Konto, um Anrufe mitzuhören.",
+  },
+  "Couldn't dial the eavesdrop code.": {
+    fr: "Impossible de composer le code d’écoute.",
+    es: "No se pudo marcar el código de escucha.",
+    de: "Der Mithör-Code konnte nicht gewählt werden.",
+  },
+  "Connected to": {
+    fr: "Connecté à",
+    es: "Conectado a",
+    de: "Verbunden mit",
+  },
+  "Joining the call of": {
+    fr: "Connexion à l’appel de",
+    es: "Uniéndose a la llamada de",
+    de: "Beitritt zum Anruf von",
+  },
+  "Talking with": {
+    fr: "En ligne avec",
+    es: "Hablando con",
+    de: "Spricht mit",
+  },
+  "On hold with": {
+    fr: "En attente avec",
+    es: "En espera con",
+    de: "Gehalten mit",
+  },
+  Ringing: {
+    fr: "Sonnerie",
+    es: "Sonando",
+    de: "Klingelt",
+  },
+  "Connect your PBX in Settings › AI assistant to read voicemail transcripts here.":
+    {
+      fr: "Connectez votre PBX dans Réglages › Assistant IA pour lire ici les transcriptions des messages vocaux.",
+      es: "Conecta tu centralita en Ajustes › Asistente de IA para leer aquí las transcripciones del buzón.",
+      de: "Verbinde deine Telefonanlage unter Einstellungen › KI-Assistent, um hier Voicemail-Transkripte zu lesen.",
+    },
+  Messages: {
+    fr: "Messages",
+    es: "Mensajes",
+    de: "Nachrichten",
+  },
+  "Voicemail from": {
+    fr: "Message vocal de",
+    es: "Mensaje de voz de",
+    de: "Voicemail von",
+  },
+  "No voicemail messages.": {
+    fr: "Aucun message vocal.",
+    es: "No hay mensajes de voz.",
+    de: "Keine Voicemails.",
+  },
+  Mailbox: {
+    fr: "Boîte vocale",
+    es: "Buzón",
+    de: "Mailbox",
+  },
+  "Voicemail messages are unavailable.": {
+    fr: "Les messages vocaux ne sont pas disponibles.",
+    es: "Los mensajes de voz no están disponibles.",
+    de: "Voicemails sind nicht verfügbar.",
+  },
+  Transcribe: {
+    fr: "Transcrire",
+    es: "Transcribir",
+    de: "Transkribieren",
+  },
+  "The YeyoFone add-on isn't installed on the PBX.": {
+    fr: "Le module YeyoFone n’est pas installé sur le PBX.",
+    es: "El complemento de YeyoFone no está instalado en la centralita.",
+    de: "Das YeyoFone-Add-on ist auf der Telefonanlage nicht installiert.",
+  },
+  "The PBX didn't accept the API key.": {
+    fr: "Le PBX n’a pas accepté la clé API.",
+    es: "La centralita no aceptó la clave API.",
+    de: "Die Telefonanlage hat den API-Schlüssel nicht akzeptiert.",
+  },
+  "Your FusionPBX user doesn't have permission for this.": {
+    fr: "Votre utilisateur FusionPBX n’a pas l’autorisation.",
+    es: "Tu usuario de FusionPBX no tiene permiso para esto.",
+    de: "Dein FusionPBX-Benutzer hat dafür keine Berechtigung.",
+  },
+  "That voicemail is no longer on the PBX.": {
+    fr: "Ce message vocal n’est plus sur le PBX.",
+    es: "Ese mensaje de voz ya no está en la centralita.",
+    de: "Diese Voicemail ist nicht mehr auf der Telefonanlage.",
+  },
+  "This voicemail is stored as MP3, which can't be transcribed yet.": {
+    fr: "Ce message est enregistré en MP3, qui ne peut pas encore être transcrit.",
+    es: "Este mensaje está en MP3, que aún no se puede transcribir.",
+    de: "Diese Voicemail ist als MP3 gespeichert, das noch nicht transkribiert werden kann.",
+  },
+  "Couldn't reach the PBX.": {
+    fr: "Impossible de joindre le PBX.",
+    es: "No se pudo contactar con la centralita.",
+    de: "Die Telefonanlage ist nicht erreichbar.",
+  },
   "AI features are available in the desktop app.": {
     fr: "Les fonctions d’IA sont disponibles dans l’application de bureau.",
     es: "Las funciones de IA están disponibles en la aplicación de escritorio.",

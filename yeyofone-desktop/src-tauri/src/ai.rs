@@ -431,6 +431,44 @@ fn transcribe(
     Err("Transcription isn't included in this build of the app.".into())
 }
 
+/// A voicemail has one speaker: the caller.
+#[cfg(feature = "whisper")]
+fn transcribe_voicemail(
+    dir: &Path,
+    model: &models::WhisperModel,
+    audio: &Path,
+) -> Result<Vec<transcript::Segment>, String> {
+    let bytes = std::fs::read(audio).map_err(|_| "The voicemail audio couldn't be read.")?;
+    let samples = wav::to_whisper_rate(&wav::read_wav(&bytes).map_err(|e| e.to_string())?);
+    if wav::rms(&samples) < SILENT_RMS {
+        return Ok(Vec::new());
+    }
+    let transcriber =
+        yeyofone_ai::whisper::Transcriber::load(&dir.join("ai-models").join(model.file))?;
+    let threads = std::thread::available_parallelism()
+        .map(|n| n.get().saturating_sub(1).max(1) as i32)
+        .unwrap_or(2);
+    transcriber.transcribe(&samples, transcript::Speaker::Them, threads)
+}
+
+#[cfg(not(feature = "whisper"))]
+fn transcribe_voicemail(
+    _: &Path,
+    _: &models::WhisperModel,
+    _: &Path,
+) -> Result<Vec<transcript::Segment>, String> {
+    Err("Transcription isn't included in this build of the app.".into())
+}
+
+/// Voicemail items are `vm:<message uuid>`; everything else is a call history ID.
+pub fn source_of(item: &str) -> &'static str {
+    if item.starts_with("vm:") {
+        "voicemail"
+    } else {
+        "call"
+    }
+}
+
 /// Sends the transcript to Claude and returns the notes.
 pub fn write_notes(
     model: &str,
@@ -477,7 +515,12 @@ fn search_text(segments: &[transcript::Segment], written: &notes::CallNotes) -> 
     text
 }
 
-fn process(ai: &AiState, history: &History, item: &str) -> Result<(), String> {
+fn process(
+    ai: &AiState,
+    history: &History,
+    pbx: &crate::pbx::PbxState,
+    item: &str,
+) -> Result<(), String> {
     let (dir, whisper, model) = {
         let ai = ai.lock().map_err(|_| "AI unavailable.")?;
         let whisper = models::find(&ai.settings.whisper_model)
@@ -487,29 +530,63 @@ fn process(ai: &AiState, history: &History, item: &str) -> Result<(), String> {
         }
         (ai.dir.clone(), whisper, ai.settings.model.clone())
     };
+    let source = source_of(item);
     let set = |status: &str, error: Option<&str>| {
         if let Ok(mut store) = history.lock() {
-            let _ = store.ai_set_status(item, "call", status, error, now_ms());
+            let _ = store.ai_set_status(item, source, status, error, now_ms());
         }
     };
-    let (recording, mut context) = context_for(history, item)?;
     set("transcribing", None);
-    let segments = transcribe(&dir, whisper, &recording)?;
+    let (segments, context, kind) = if let Some(uuid) = item.strip_prefix("vm:") {
+        let (audio, message) = {
+            let pbx = pbx.lock().map_err(|_| "PBX settings unavailable.")?;
+            let message = pbx
+                .voicemails()?
+                .into_iter()
+                .find(|m| m.uuid == uuid)
+                .ok_or("That voicemail is no longer on the PBX.")?;
+            (pbx.voicemail_audio(uuid)?, message)
+        };
+        let context = notes::CallContext {
+            remote_party: [message.caller_name, message.caller_number]
+                .into_iter()
+                .filter(|s| !s.is_empty())
+                .collect::<Vec<_>>()
+                .join(" "),
+            direction: "voicemail".into(),
+            started_at_ms: message.created_epoch.saturating_mul(1000),
+            duration_seconds: message.seconds,
+            you_percent: None,
+        };
+        (
+            transcribe_voicemail(&dir, whisper, &audio)?,
+            context,
+            notes::Source::Voicemail,
+        )
+    } else {
+        let (recording, context) = context_for(history, item)?;
+        (
+            transcribe(&dir, whisper, &recording)?,
+            context,
+            notes::Source::Call,
+        )
+    };
     if segments.is_empty() {
         return Err("No speech was found in the recording.".into());
     }
+    let mut context = context;
     let stats = transcript::talk_stats(&segments);
     context.you_percent = stats.you_percent;
     set("summarising", None);
     let text = transcript::plain_text(&segments);
-    let written = write_notes(&model, notes::Source::Call, &context, &text)?;
+    let written = write_notes(&model, kind, &context, &text)?;
     let search = search_text(&segments, &written);
     history
         .lock()
         .map_err(|_| "Call history unavailable.")?
         .ai_save(
             item,
-            "call",
+            source,
             &serde_json::to_string(&segments).unwrap_or_default(),
             &serde_json::to_string(&stats).unwrap_or_default(),
             &serde_json::to_string(&written).unwrap_or_default(),
@@ -544,10 +621,39 @@ fn unprocessed(dir: &Path, history: &History) -> Vec<String> {
 }
 
 /// Runs queued notes one at a time and, when automatic notes are on, queues new recordings.
-pub fn start_worker(app: &tauri::AppHandle, ai: AiState, history: History) {
+/// Voicemails on the PBX without notes yet, for automatic notes.
+fn unprocessed_voicemails(pbx: &crate::pbx::PbxState, history: &History) -> Vec<String> {
+    let messages = match pbx.lock() {
+        Ok(pbx) if pbx.configured() => pbx.voicemails().unwrap_or_default(),
+        _ => return Vec::new(),
+    };
+    let Ok(store) = history.lock() else {
+        return Vec::new();
+    };
+    let known: std::collections::BTreeSet<String> = store
+        .ai_statuses()
+        .unwrap_or_default()
+        .into_iter()
+        .map(|row| row.item_id)
+        .collect();
+    messages
+        .into_iter()
+        .map(|m| format!("vm:{}", m.uuid))
+        .filter(|id| !known.contains(id))
+        .take(3)
+        .collect()
+}
+
+pub fn start_worker(
+    app: &tauri::AppHandle,
+    ai: AiState,
+    history: History,
+    pbx: crate::pbx::PbxState,
+) {
     let app = app.clone();
     std::thread::spawn(move || {
         let mut last_sweep = std::time::Instant::now() - Duration::from_secs(60);
+        let mut last_voicemail_sweep = std::time::Instant::now() - Duration::from_secs(600);
         loop {
             if last_sweep.elapsed() >= Duration::from_secs(30) {
                 last_sweep = std::time::Instant::now();
@@ -557,10 +663,23 @@ pub fn start_worker(app: &tauri::AppHandle, ai: AiState, history: History) {
                     .unwrap_or(false);
                 if ready {
                     let dir = ai.lock().map(|a| a.dir.clone()).ok();
-                    if let Some(dir) = dir {
-                        for id in unprocessed(&dir, &history) {
+                    let mut items = dir
+                        .map(|dir| unprocessed(&dir, &history))
+                        .unwrap_or_default();
+                    if last_voicemail_sweep.elapsed() >= Duration::from_secs(120) {
+                        last_voicemail_sweep = std::time::Instant::now();
+                        items.extend(unprocessed_voicemails(&pbx, &history));
+                    }
+                    {
+                        for id in items {
                             if let Ok(mut store) = history.lock() {
-                                let _ = store.ai_set_status(&id, "call", "queued", None, now_ms());
+                                let _ = store.ai_set_status(
+                                    &id,
+                                    source_of(&id),
+                                    "queued",
+                                    None,
+                                    now_ms(),
+                                );
                             }
                             if let Ok(mut a) = ai.lock() {
                                 a.enqueue(&id);
@@ -579,11 +698,12 @@ pub fn start_worker(app: &tauri::AppHandle, ai: AiState, history: History) {
                 continue;
             };
             let _ = app.emit_to("main", "ai-state", &item);
-            let result = process(&ai, &history, &item);
+            let result = process(&ai, &history, &pbx, &item);
             if let Err(ref message) = result
                 && let Ok(mut store) = history.lock()
             {
-                let _ = store.ai_set_status(&item, "call", "failed", Some(message), now_ms());
+                let _ =
+                    store.ai_set_status(&item, source_of(&item), "failed", Some(message), now_ms());
             }
             if let Ok(mut a) = ai.lock() {
                 a.busy = None;
@@ -766,7 +886,7 @@ pub async fn ai_command(
                 history
                     .lock()
                     .map_err(|_| "Call history unavailable.")?
-                    .ai_set_status(&id, "call", "queued", None, now_ms())
+                    .ai_set_status(&id, source_of(&id), "queued", None, now_ms())
                     .map_err(|_| "Couldn't queue the notes.")?;
                 ai.lock().map_err(|_| "AI unavailable.")?.enqueue(&id);
                 Ok(json!({ "queued": id }))

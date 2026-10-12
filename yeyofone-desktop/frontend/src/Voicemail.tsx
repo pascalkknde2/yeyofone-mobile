@@ -11,6 +11,7 @@ import {
   pickVoicemailAccount,
 } from "./mailbox";
 import "./voicemail.css";
+import { VoicemailMessages } from "./VoicemailMessages";
 
 type Account = {
   id: string;
@@ -147,6 +148,7 @@ export function Voicemail() {
           <p>{t("Listen to messages in your SIP mailbox")}</p>
         </div>
       </header>
+      <VoicemailMessages />
       <div className="voicemail-layout">
         {!live ? (
           <div className="voicemail-card">

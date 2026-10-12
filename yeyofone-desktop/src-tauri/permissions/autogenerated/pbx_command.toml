@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-pbx-command"
+description = "Enables the pbx_command command without any pre-configured scope."
+commands.allow = ["pbx_command"]
+
+[[permission]]
+identifier = "deny-pbx-command"
+description = "Denies the pbx_command command without any pre-configured scope."
+commands.deny = ["pbx_command"]
