@@ -16,7 +16,7 @@ impl std::fmt::Display for HistoryError {
 }
 impl std::error::Error for HistoryError {}
 
-pub struct SqliteCallHistory(Connection);
+pub struct SqliteCallHistory(pub(crate) Connection);
 
 impl SqliteCallHistory {
     pub fn open(path: &std::path::Path) -> Result<Self, HistoryError> {
@@ -50,6 +50,7 @@ impl SqliteCallHistory {
             PRAGMA journal_mode=WAL;",
         )
         .map_err(|_| HistoryError::StorageUnavailable)?;
+        crate::ai_notes::migrate(&db)?;
         Ok(Self(db))
     }
 

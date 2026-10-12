@@ -1,5 +1,6 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 use tauri::{Emitter, Manager};
+mod ai;
 mod recording_cloud;
 use recording_cloud::recording_cloud_command;
 
@@ -85,6 +86,9 @@ fn main() {
             ));
             app.manage(cloud.clone());
             recording_cloud::start_backup_loop(app.handle(), cloud, history.clone());
+            let ai = std::sync::Arc::new(std::sync::Mutex::new(ai::Ai::open(dir.clone())));
+            app.manage(ai.clone());
+            ai::start_worker(app.handle(), ai, history.clone());
             #[cfg(feature = "native-voip")]
             {
                 let app_handle = app.handle().clone();
@@ -143,7 +147,8 @@ fn main() {
             handoff_command,
             call_history_command,
             recording_file_command,
-            recording_cloud_command
+            recording_cloud_command,
+            ai::ai_command
         ])
         .build(tauri::generate_context!())
         .expect("Desktop runtime failed");

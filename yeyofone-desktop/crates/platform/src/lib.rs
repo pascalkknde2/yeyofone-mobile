@@ -20,4 +20,5 @@ pub fn current_platform() -> DesktopPlatform {
 }
 
 pub mod accounts;
+pub mod ai_notes;
 pub mod call_history;
