@@ -146,7 +146,7 @@
   .call-history-row time {
     display: none;
   }
-  .call-history-recording-actions {
+  .call-history-tools {
     grid-column: 2 / -1;
     justify-content: flex-start;
   }
@@ -315,4 +315,13 @@
 .call-history-recording-actions .recording-icon-button:focus-visible {
   outline: 2px solid var(--c-2563eb-b);
   outline-offset: 3px;
+}
+
+/* The AI notes button and the recording actions share the last column. */
+.call-history-tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
 }

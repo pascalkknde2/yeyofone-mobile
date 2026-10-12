@@ -342,6 +342,7 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Info.plist;
+				INFOPLIST_KEY_NSCameraUsageDescription = "YeyoFone shows your camera in the Team room. Nothing is sent to anyone.";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "YeyoFone uses the microphone for your calls.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
@@ -388,6 +389,7 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Info.plist;
+				INFOPLIST_KEY_NSCameraUsageDescription = "YeyoFone shows your camera in the Team room. Nothing is sent to anyone.";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "YeyoFone uses the microphone for your calls.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;

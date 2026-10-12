@@ -19,7 +19,7 @@ Complete this file before Phase 1 and update it when a decision changes.
 - PJSIP/PJSUA2 version and source: `2.17, tag 2.17, commit 5a457451fa2712ba18e12b01738e8ff3af2b26fd`
 - Native build method and reproducibility: `Pinned official configure-android + make + SWIG flow; verified inputs/artifacts are recorded in core/voip-pjsip/third_party/pjproject/SOURCE.md`
 - Compiled codecs and optional features: `SRTP, G.711 PCMA/PCMU, G.722, Speex AEC, WebRTC AEC, Android audio; TLS, Opus, and Oboe are not enabled`
-- Supported ABIs: `arm64-v8a and x86_64, verified in the debug APK`
+- Supported ABIs: `arm64-v8a, armeabi-v7a and x86_64, verified in the debug APK`
 - SIP test server/provider: `Not supplied; Android VoIP integration owner must verify Phase 4 against staging`
 - Test accounts are supplied outside source control: `Required for Phase 4 live verification; none supplied`
 - TLS CA/certificate test setup: `TBD`

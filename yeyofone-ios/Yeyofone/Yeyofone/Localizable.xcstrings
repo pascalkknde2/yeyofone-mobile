@@ -314,6 +314,50 @@
         }
       }
     },
+    "A better conversation." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ein besseres Gespräch."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Una conversación mejor."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Une meilleure conversation."
+          }
+        }
+      }
+    },
+    "A little focus." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ein wenig Fokus."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Un poco de enfoque."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Un peu de concentration."
+          }
+        }
+      }
+    },
     "A password is required for a new account" : {
       "localizations" : {
         "de" : {
@@ -688,6 +732,28 @@
         }
       }
     },
+    "Admit" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zulassen"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Admitir"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Admettre"
+          }
+        }
+      }
+    },
     "Advanced" : {
       "localizations" : {
         "de" : {
@@ -706,6 +772,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Avancé"
+          }
+        }
+      }
+    },
+    "Agenda" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tagesordnung"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Orden del día"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ordre du jour"
           }
         }
       }
@@ -1674,6 +1762,28 @@
         }
       }
     },
+    "Camera access was not allowed." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Der Kamerazugriff wurde nicht erlaubt."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No se permitió el acceso a la cámara."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "L’accès à la caméra n’a pas été autorisé."
+          }
+        }
+      }
+    },
     "Camera device" : {
       "localizations" : {
         "de" : {
@@ -1692,6 +1802,50 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Caméra utilisée"
+          }
+        }
+      }
+    },
+    "Camera off" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kamera aus"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cámara apagada"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Caméra désactivée"
+          }
+        }
+      }
+    },
+    "Camera on" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kamera an"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cámara encendida"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Caméra activée"
           }
         }
       }
@@ -1758,6 +1912,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Annuler"
+          }
+        }
+      }
+    },
+    "Capture a decision or an action…" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Entscheidung oder Aufgabe festhalten…"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Anota una decisión o acción…"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Notez une décision ou une action…"
           }
         }
       }
@@ -1872,6 +2048,28 @@
         }
       }
     },
+    "Close conference preview" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Konferenzvorschau schließen"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cerrar vista previa de conferencia"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fermer l’aperçu de conférence"
+          }
+        }
+      }
+    },
     "Coming soon" : {
       "localizations" : {
         "de" : {
@@ -1912,6 +2110,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Terminer le transfert"
+          }
+        }
+      }
+    },
+    "Conference preview · Sample participants · Nothing you share is sent to anyone" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Konferenzvorschau · Beispielteilnehmer · Geteilte Inhalte werden an niemanden gesendet"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vista previa de conferencia · Participantes de muestra · Nada de lo que compartes se envía"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aperçu de conférence · Participants de démonstration · Rien de ce que vous partagez n’est envoyé"
           }
         }
       }
@@ -2186,6 +2406,28 @@
         }
       }
     },
+    "Customer experience" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kundenerlebnis"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Experiencia del cliente"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Expérience client"
+          }
+        }
+      }
+    },
     "Dark" : {
       "localizations" : {
         "de" : {
@@ -2270,6 +2512,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Débogage"
+          }
+        }
+      }
+    },
+    "Decisions & next steps" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Entscheidungen und nächste Schritte"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Decisiones y próximos pasos"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Décisions et prochaines étapes"
           }
         }
       }
@@ -2430,6 +2694,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Désactivé"
+          }
+        }
+      }
+    },
+    "Dismiss notification" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Benachrichtigung schließen"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cerrar notificación"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fermer la notification"
           }
         }
       }
@@ -2716,6 +3002,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Activer le renvoi d’appel"
+          }
+        }
+      }
+    },
+    "Engineering" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Entwicklung"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ingeniería"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ingénierie"
           }
         }
       }
@@ -3294,6 +3602,28 @@
         }
       }
     },
+    "Hand raised" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hand gehoben"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mano levantada"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Main levée"
+          }
+        }
+      }
+    },
     "Hang up" : {
       "localizations" : {
         "de" : {
@@ -3334,6 +3664,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Entendez la traduction pendant qu’ils parlent"
+          }
+        }
+      }
+    },
+    "Hide room panel" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Raumbereich ausblenden"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ocultar panel"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Masquer le panneau"
           }
         }
       }
@@ -3400,6 +3752,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Défilement horizontal"
+          }
+        }
+      }
+    },
+    "Host" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gastgeber"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Anfitrión"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hôte"
           }
         }
       }
@@ -3624,6 +3998,28 @@
         }
       }
     },
+    "Invited" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Eingeladen"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Invitados"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Invités"
+          }
+        }
+      }
+    },
     "It will appear here in a future update." : {
       "localizations" : {
         "de" : {
@@ -3730,6 +4126,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Disposition"
+          }
+        }
+      }
+    },
+    "Leave" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Verlassen"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Salir"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quitter"
           }
         }
       }
@@ -3844,6 +4262,28 @@
         }
       }
     },
+    "Lower hand" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hand senken"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bajar la mano"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Baisser la main"
+          }
+        }
+      }
+    },
     "Manage Account" : {
       "localizations" : {
         "de" : {
@@ -3910,6 +4350,50 @@
         }
       }
     },
+    "Meeting" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Besprechung"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reunión"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Réunion"
+          }
+        }
+      }
+    },
+    "Message everyone" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nachricht an alle"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mensaje para todos"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Message à tous"
+          }
+        }
+      }
+    },
     "Message status" : {
       "localizations" : {
         "de" : {
@@ -3928,6 +4412,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "État du message"
+          }
+        }
+      }
+    },
+    "Microphone access was not allowed." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Der Mikrofonzugriff wurde nicht erlaubt."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No se permitió el acceso al micrófono."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "L’accès au micro n’a pas été autorisé."
           }
         }
       }
@@ -4038,6 +4544,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Plus d’options"
+          }
+        }
+      }
+    },
+    "Morning all! I added the release notes to the agenda." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Morgen zusammen! Ich habe die Versionshinweise zur Tagesordnung hinzugefügt."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¡Buenos días! He añadido las notas de la versión al orden del día."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bonjour à tous ! J’ai ajouté les notes de version à l’ordre du jour."
           }
         }
       }
@@ -4328,6 +4856,28 @@
         }
       }
     },
+    "No camera was found." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Keine Kamera gefunden."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No se encontró ninguna cámara."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aucune caméra trouvée."
+          }
+        }
+      }
+    },
     "No contacts yet" : {
       "localizations" : {
         "de" : {
@@ -4390,6 +4940,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Aucun paramètre correspondant"
+          }
+        }
+      }
+    },
+    "No microphone was found." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kein Mikrofon gefunden."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No se encontró ningún micrófono."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aucun micro trouvé."
           }
         }
       }
@@ -4482,6 +5054,28 @@
         }
       }
     },
+    "Notes" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Notizen"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Notas"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Notes"
+          }
+        }
+      }
+    },
     "Notify when another call comes in" : {
       "localizations" : {
         "de" : {
@@ -4570,6 +5164,28 @@
         }
       }
     },
+    "On the call" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Im Anruf"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "En la llamada"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dans l’appel"
+          }
+        }
+      }
+    },
     "On your %@" : {
       "localizations" : {
         "de" : {
@@ -4632,6 +5248,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Licences open source"
+          }
+        }
+      }
+    },
+    "Operations" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Betrieb"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Operaciones"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Opérations"
           }
         }
       }
@@ -4742,6 +5380,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Périphérique de sortie"
+          }
+        }
+      }
+    },
+    "Participants" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Teilnehmer"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Participantes"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Participants"
           }
         }
       }
@@ -4922,6 +5582,28 @@
         }
       }
     },
+    "Preview chat · Messages stay on this device" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vorschau-Chat · Nachrichten bleiben auf diesem Gerät"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chat de muestra · Los mensajes se quedan en este dispositivo"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Discussion de démonstration · Les messages restent sur cet appareil"
+          }
+        }
+      }
+    },
     "Primary account" : {
       "localizations" : {
         "de" : {
@@ -4972,6 +5654,72 @@
         }
       }
     },
+    "Private preview notes · Cleared when you leave" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Private Vorschaunotizen · Beim Verlassen gelöscht"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Notas privadas de muestra · Se borran al salir"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Notes privées de démonstration · Effacées à la sortie"
+          }
+        }
+      }
+    },
+    "Product design" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Produktdesign"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Diseño de producto"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Design produit"
+          }
+        }
+      }
+    },
+    "Product priorities" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Produktprioritäten"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Prioridades del producto"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Priorités produit"
+          }
+        }
+      }
+    },
     "Put this call on hold" : {
       "localizations" : {
         "de" : {
@@ -4990,6 +5738,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Mettre cet appel en attente"
+          }
+        }
+      }
+    },
+    "Raise hand" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hand heben"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Levantar la mano"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lever la main"
           }
         }
       }
@@ -5742,6 +6512,50 @@
         }
       }
     },
+    "Sales" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vertrieb"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ventas"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ventes"
+          }
+        }
+      }
+    },
+    "Sarah’s agenda · Share preview" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sarahs Agenda · Vorschau"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agenda de Sarah · Vista previa"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ordre du jour de Sarah · Aperçu"
+          }
+        }
+      }
+    },
     "Save" : {
       "localizations" : {
         "de" : {
@@ -5826,6 +6640,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Rechercher des contacts"
+          }
+        }
+      }
+    },
+    "Search for people" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Personen suchen"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Buscar personas"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rechercher des personnes"
           }
         }
       }
@@ -5918,6 +6754,28 @@
         }
       }
     },
+    "Send" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Senden"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enviar"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Envoyer"
+          }
+        }
+      }
+    },
     "Send message" : {
       "localizations" : {
         "de" : {
@@ -5984,6 +6842,28 @@
         }
       }
     },
+    "Share agenda" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agenda teilen"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Compartir agenda"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Partager l’ordre du jour"
+          }
+        }
+      }
+    },
     "Share debug log" : {
       "localizations" : {
         "de" : {
@@ -6046,6 +6926,50 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Partager, inviter des amis, communauté"
+          }
+        }
+      }
+    },
+    "Show on stage" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Groß anzeigen"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mostrar en grande"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Afficher en grand"
+          }
+        }
+      }
+    },
+    "Show room panel" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Raumbereich anzeigen"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mostrar panel"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Afficher le panneau"
           }
         }
       }
@@ -6358,6 +7282,28 @@
         }
       }
     },
+    "Speaking" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Spricht"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hablando"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Parle"
+          }
+        }
+      }
+    },
     "Spoken translation" : {
       "localizations" : {
         "de" : {
@@ -6420,6 +7366,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "État"
+          }
+        }
+      }
+    },
+    "Stop sharing" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Teilen beenden"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dejar de compartir"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Arrêter le partage"
           }
         }
       }
@@ -6666,6 +7634,50 @@
         }
       }
     },
+    "Team check-in" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Team-Check-in"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ronda de equipo"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tour de table"
+          }
+        }
+      }
+    },
+    "Team room" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Teamraum"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sala de equipo"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Salle d’équipe"
+          }
+        }
+      }
+    },
     "Team video rooms" : {
       "localizations" : {
         "de" : {
@@ -6706,6 +7718,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Indiquez comment vous joindre sur YeyoFone"
+          }
+        }
+      }
+    },
+    "Thanks, I’ll walk through the API changes." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Danke, ich gehe die API-Änderungen durch."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gracias, repasaré los cambios de la API."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Merci, je présenterai les changements de l’API."
           }
         }
       }
@@ -6820,6 +7854,28 @@
         }
       }
     },
+    "The camera couldn’t start." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Die Kamera konnte nicht gestartet werden."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No se pudo iniciar la cámara."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Impossible de démarrer la caméra."
+          }
+        }
+      }
+    },
     "The change applies straight away to every screen." : {
       "localizations" : {
         "de" : {
@@ -6860,6 +7916,50 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Le journal peut contenir des numéros de téléphone et des adresses de serveur. Il reste sur cet appareil sauf si vous le partagez."
+          }
+        }
+      }
+    },
+    "The meeting topics" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Die Themen der Besprechung"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Los temas de la reunión"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Les sujets de la réunion"
+          }
+        }
+      }
+    },
+    "The microphone couldn’t start." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Das Mikrofon konnte nicht gestartet werden."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No se pudo iniciar el micrófono."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Impossible de démarrer le micro."
           }
         }
       }
@@ -7326,6 +8426,28 @@
         }
       }
     },
+    "Unmute" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stummschaltung aufheben"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Activar micrófono"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Activer le micro"
+          }
+        }
+      }
+    },
     "Unregistering…" : {
       "localizations" : {
         "de" : {
@@ -7546,6 +8668,28 @@
         }
       }
     },
+    "Video conference" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Videokonferenz"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Videoconferencia"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Visioconférence"
+          }
+        }
+      }
+    },
     "Voice & Translation" : {
       "localizations" : {
         "de" : {
@@ -7708,6 +8852,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Nous trouvons le système téléphonique de votre entreprise"
+          }
+        }
+      }
+    },
+    "Weekly catch-up" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wöchentlicher Austausch"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reunión semanal"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Point hebdomadaire"
           }
         }
       }
@@ -7888,6 +9054,28 @@
         }
       }
     },
+    "You" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sie"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tú"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vous"
+          }
+        }
+      }
+    },
     "You're ready to call" : {
       "localizations" : {
         "de" : {
@@ -7906,6 +9094,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Prêt à appeler"
+          }
+        }
+      }
+    },
+    "Your camera" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ihre Kamera"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tu cámara"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Votre caméra"
           }
         }
       }

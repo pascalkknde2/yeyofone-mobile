@@ -98,6 +98,11 @@ class YeyoFoneViewModel(
 ) : ViewModel() {
     /** Calls on this account's other devices that can be continued here. */
     val handoffOffers: StateFlow<List<HandoffOffer>> = handoff?.offers ?: MutableStateFlow(emptyList())
+    private val mutableTeamRoomOpen = MutableStateFlow(false)
+    /** The Team room video conference preview, shown over everything except calls. */
+    val teamRoomOpen: StateFlow<Boolean> = mutableTeamRoomOpen
+    fun openTeamRoom() { mutableTeamRoomOpen.value = true }
+    fun closeTeamRoom() { mutableTeamRoomOpen.value = false }
 
     /** Moves an offered call here; the call screen opens as for a dialed call. */
     fun continueHandoff(offer: HandoffOffer) = launch {

@@ -306,6 +306,9 @@ private fun AccountsApp(
     // so at most one "waiting" call can exist at a time.
     val nonTerminal = state.sessions.filter { !it.state.isTerminal() && it.id !in state.dismissedIncomingCalls }
     val handoffOffers by viewModel.handoffOffers.collectAsStateWithLifecycle()
+    val teamRoomOpen by viewModel.teamRoomOpen.collectAsStateWithLifecycle()
+    // A call takes over the screen, so the room closes (and releases the camera and mic).
+    LaunchedEffect(nonTerminal.isNotEmpty()) { if (nonTerminal.isNotEmpty()) viewModel.closeTeamRoom() }
     // A call that moved to (or was answered on) another device of this account ends without a
     // summary screen; a short message says where it went instead.
     val movedElsewhere = state.sessions.filter {
@@ -500,6 +503,7 @@ private fun AccountsApp(
             viewModel = chatViewModel,
             onBack = viewModel::showAccounts,
             onVoiceCall = { state.accounts.firstOrNull()?.let { viewModel.dial(it.id) } },
+            onVideoCall = viewModel::openTeamRoom,
             onNavigationItemSelected = navigateFromMenu,
         )
         AppScreen.Settings -> SettingsScreen(
@@ -570,8 +574,11 @@ private fun AccountsApp(
         AppScreen.Licenses -> LicensesScreen(onBack = viewModel::showAbout)
     }
     }
+    if (teamRoomOpen && nonTerminal.isEmpty()) {
+        com.yeyofone.app.ui.room.TeamRoomScreen(onClose = viewModel::closeTeamRoom)
+    }
     val handoffOffer = handoffOffers.lastOrNull()
-    if (handoffOffer != null && nonTerminal.isEmpty()) {
+    if (handoffOffer != null && nonTerminal.isEmpty() && !teamRoomOpen) {
         com.yeyofone.app.ui.components.HandoffBanner(
             offer = handoffOffer,
             onContinue = { viewModel.continueHandoff(handoffOffer) },

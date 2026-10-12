@@ -14,6 +14,7 @@
 #include <cctype>
 #include <cstring>
 #include <deque>
+#include <vector>
 #include <pjlib-util/errno.h>
 #include <pjsip/sip_errno.h>
 #include <pjsua-lib/pjsua_internal.h>
@@ -153,10 +154,32 @@ class NativeCall final : public pj::Call {
     bool ringtone_active=false;
     pj::ToneGenerator ringback;
     bool ringback_created=false,ringback_active=false;
-    std::unique_ptr<pj::AudioMediaRecorder> recorder;
-    std::filesystem::path recording_final_path, recording_temp_path;
+    // A recording is one or more WAV tracks: the mixed call (both sides), plus "you" (microphone
+    // only) and "them" (the call's incoming audio only) so transcripts can tell the speakers apart.
+    struct RecordingTrack {
+        std::unique_ptr<pj::AudioMediaRecorder> recorder;
+        std::filesystem::path final_path, temp_path;
+        bool wants_stream=false, wants_capture=false;
+        bool stream_connected=false, capture_connected=false;
+    };
+    std::vector<RecordingTrack> tracks;
     int recording_media_index=-1;
-    bool recording_audio_connected=false, recording_capture_connected=false;
+    void unlink_track_streams() noexcept {
+        if(recording_media_index<0)return;
+        for(auto& t:tracks)if(t.stream_connected){try{getAudioMedia(recording_media_index).stopTransmit(*t.recorder);}catch(...){}t.stream_connected=false;}
+    }
+    void unlink_track_captures() noexcept {
+        for(auto& t:tracks)if(t.capture_connected){try{endpoint.audDevManager().getCaptureDevMedia().stopTransmit(*t.recorder);}catch(...){}t.capture_connected=false;}
+    }
+    void link_tracks(pj::AudioMedia& stream, int index, bool send) {
+        if(recording_media_index!=index){unlink_track_streams();recording_media_index=index;}
+        auto& capture=endpoint.audDevManager().getCaptureDevMedia();
+        for(auto& t:tracks){
+            if(t.wants_stream&&!t.stream_connected){stream.startTransmit(*t.recorder);t.stream_connected=true;}
+            if(t.wants_capture&&send&&!t.capture_connected){capture.startTransmit(*t.recorder);t.capture_connected=true;}
+            if(t.capture_connected&&!send){capture.stopTransmit(*t.recorder);t.capture_connected=false;}
+        }
+    }
     int media_index=-1;
     // Merged calls: each call's audio is sent to the other, and both stay
     // connected to the local devices, so the conference bridge mixes all three.
@@ -241,9 +264,9 @@ public:
             if(info.state==PJSIP_INV_STATE_DISCONNECTED){unlink_peer();stop_recording();return;}
             if(controls.held){
                 stop_peer_audio();
-                if(media_index>=0){try{auto stream=getAudioMedia(media_index);auto& d=endpoint.audDevManager();if(capture_connected)d.getCaptureDevMedia().stopTransmit(stream);if(playback_connected)stream.stopTransmit(d.getPlaybackDevMedia());if(recorder&&recording_audio_connected)stream.stopTransmit(*recorder);}catch(...){}}
-                capture_connected=false;playback_connected=false;recording_audio_connected=false;
-                if(recorder&&recording_capture_connected){try{endpoint.audDevManager().getCaptureDevMedia().stopTransmit(*recorder);}catch(...){}recording_capture_connected=false;}
+                if(media_index>=0){try{auto stream=getAudioMedia(media_index);auto& d=endpoint.audDevManager();if(capture_connected)d.getCaptureDevMedia().stopTransmit(stream);if(playback_connected)stream.stopTransmit(d.getPlaybackDevMedia());}catch(...){}}
+                capture_connected=false;playback_connected=false;
+                unlink_track_streams();unlink_track_captures();
                 std::lock_guard<std::mutex> lock(mutex);latest.audio_active=0;latest.media_active=0;return;
             }
             for(auto& item:info.media) {
@@ -257,22 +280,13 @@ public:
                     const bool send=info.state==PJSIP_INV_STATE_CONFIRMED && !muted && !cancelled;
                     if(send&&!capture_connected){devices.getCaptureDevMedia().startTransmit(stream);capture_connected=true;}
                     if(!send&&capture_connected){devices.getCaptureDevMedia().stopTransmit(stream);capture_connected=false;}
-                    if(recorder){
-                        if(recording_media_index!=static_cast<int>(item.index)){
-                            if(recording_audio_connected&&recording_media_index>=0){try{auto old_stream=getAudioMedia(recording_media_index);old_stream.stopTransmit(*recorder);}catch(...){}}
-                            recording_audio_connected=false;
-                            recording_media_index=static_cast<int>(item.index);
-                        }
-                        if(!recording_audio_connected){stream.startTransmit(*recorder);recording_audio_connected=true;}
-                        if(send&&!recording_capture_connected){devices.getCaptureDevMedia().startTransmit(*recorder);recording_capture_connected=true;}
-                        if(!send&&recording_capture_connected){devices.getCaptureDevMedia().stopTransmit(*recorder);recording_capture_connected=false;}
-                    }
+                    if(!tracks.empty())link_tracks(stream,static_cast<int>(item.index),send);
                 }
                 if(audio)link_peer();
-                std::lock_guard<std::mutex> lock(mutex);++latest.sequence;latest.media_active=1;latest.audio_active=audio?1:0;latest.recording=recorder?1:0;return;
+                std::lock_guard<std::mutex> lock(mutex);++latest.sequence;latest.media_active=1;latest.audio_active=audio?1:0;latest.recording=tracks.empty()?0:1;return;
             }
-            if(recorder&&recording_capture_connected){try{endpoint.audDevManager().getCaptureDevMedia().stopTransmit(*recorder);}catch(...){}recording_capture_connected=false;}
-            std::lock_guard<std::mutex> lock(mutex);latest.audio_active=0;latest.media_active=0;latest.recording=recorder?1:0;
+            unlink_track_captures();
+            std::lock_guard<std::mutex> lock(mutex);latest.audio_active=0;latest.media_active=0;latest.recording=tracks.empty()?0:1;
         } catch(const pj::Error& e){std::lock_guard<std::mutex> lock(mutex);latest.audio_error=e.status;latest.audio_active=0;}
           catch(...){std::lock_guard<std::mutex> lock(mutex);latest.audio_error=-1;latest.audio_active=0;}
     }
@@ -313,43 +327,62 @@ public:
     void stop_ringback() noexcept {if(!ringback_active)return;try{ringback.stopTransmit(endpoint.audDevManager().getPlaybackDevMedia());}catch(...){}try{ringback.stop();}catch(...){}ringback_active=false;}
     void stop_ringtone() noexcept {if(!ringtone_active)return;try{ringtone.stopTransmit(endpoint.audDevManager().getPlaybackDevMedia());}catch(...){}try{ringtone.stop();}catch(...){}ringtone_active=false;}
     void send_ringing(){if(!is_incoming)return;pj::CallOpParam p;p.statusCode=PJSIP_SC_RINGING;pj::Call::answer(p);}
-    void answer(){auto state=getInfo().state;if(!is_incoming||(state!=PJSIP_INV_STATE_INCOMING&&state!=PJSIP_INV_STATE_EARLY))throw pj::Error(PJ_EINVALIDOP,"answer","","",0);stop_ringtone();audio=true;pj::CallOpParam p(true);p.statusCode=PJSIP_SC_OK;p.opt.audioCount=1;p.opt.videoCount=0;p.opt.textCount=0;auto& d=endpoint.audDevManager();d.setCaptureDev(PJMEDIA_AUD_DEFAULT_CAPTURE_DEV);d.setPlaybackDev(PJMEDIA_AUD_DEFAULT_PLAYBACK_DEV);try{pj::Call::answer(p);}catch(...){d.setNoDev();throw;}}
+    void answer(){auto state=getInfo().state;if(!is_incoming||(state!=PJSIP_INV_STATE_INCOMING&&state!=PJSIP_INV_STATE_EARLY))throw pj::Error(PJ_EINVALIDOP,"answer","","",0);stop_ringtone();audio=true;pj::CallOpParam p(true);p.statusCode=PJSIP_SC_OK;p.opt.audioCount=1;p.opt.videoCount=0;p.opt.textCount=0;auto& d=endpoint.audDevManager();d.setCaptureDev(PJMEDIA_AUD_DEFAULT_CAPTURE_DEV);d.setPlaybackDev(PJMEDIA_AUD_DEFAULT_PLAYBACK_DEV);try{pj::Call::answer(p);}catch(...){d.setNullDev();throw;}}
     void reject(){if(!is_incoming)return;auto state=getInfo().state;if(state!=PJSIP_INV_STATE_INCOMING&&state!=PJSIP_INV_STATE_EARLY)return;stop_ringtone();pj::CallOpParam p;p.statusCode=PJSIP_SC_DECLINE;pj::Call::hangup(p);cancelled=true;}
     void start_recording(const std::string& final_path) {
         auto info=getInfo();
-        if(info.state!=PJSIP_INV_STATE_CONFIRMED||!audio||recorder||controls.held)throw pj::Error(PJ_EINVALIDOP,"recording","","",0);
+        if(info.state!=PJSIP_INV_STATE_CONFIRMED||!audio||!tracks.empty()||controls.held)throw pj::Error(PJ_EINVALIDOP,"recording","","",0);
         int audio_index=-1;
         for(const auto& item:info.media)if(item.type==PJMEDIA_TYPE_AUDIO&&item.status==PJSUA_CALL_MEDIA_ACTIVE){audio_index=static_cast<int>(item.index);break;}
         if(audio_index<0)throw pj::Error(PJ_EINVALIDOP,"recording","","",0);
-        recording_final_path=std::filesystem::path(final_path);
-        recording_temp_path=recording_final_path.parent_path()/(recording_final_path.stem().string()+".partial.wav");
-        if(std::filesystem::exists(recording_final_path)||std::filesystem::exists(recording_temp_path))throw pj::Error(PJ_EEXISTS,"recording","","",0);
-        auto candidate=std::make_unique<pj::AudioMediaRecorder>();
-        candidate->createRecorder(recording_temp_path.string());
-        auto stream=getAudioMedia(audio_index);
-        bool stream_linked=false,capture_linked=false;
-        try{
-            stream.startTransmit(*candidate);stream_linked=true;
-            bool muted;{std::lock_guard<std::mutex> lock(mutex);muted=latest.muted!=0;}
-            if(!muted){endpoint.audDevManager().getCaptureDevMedia().startTransmit(*candidate);capture_linked=true;}
-        }catch(...){
-            if(capture_linked)try{endpoint.audDevManager().getCaptureDevMedia().stopTransmit(*candidate);}catch(...){}
-            if(stream_linked)try{stream.stopTransmit(*candidate);}catch(...){}
-            candidate.reset();std::error_code ec;std::filesystem::remove(recording_temp_path,ec);throw;
+        const std::filesystem::path main_path(final_path);
+        // <id>.wav (both sides), <id>.you.wav (microphone) and <id>.them.wav (the other party).
+        const auto sibling=[&](const char* suffix){return main_path.parent_path()/(main_path.stem().string()+suffix);};
+        std::vector<RecordingTrack> candidates(3);
+        candidates[0].final_path=main_path;candidates[0].wants_stream=true;candidates[0].wants_capture=true;
+        candidates[1].final_path=sibling(".you.wav");candidates[1].wants_capture=true;
+        candidates[2].final_path=sibling(".them.wav");candidates[2].wants_stream=true;
+        for(auto& t:candidates){
+            t.temp_path=t.final_path.parent_path()/(t.final_path.stem().string()+".partial.wav");
+            if(std::filesystem::exists(t.final_path)||std::filesystem::exists(t.temp_path))throw pj::Error(PJ_EEXISTS,"recording","","",0);
         }
-        recorder=std::move(candidate);recording_media_index=audio_index;recording_audio_connected=true;recording_capture_connected=capture_linked;
+        const auto discard=[&]{
+            for(auto& t:candidates){
+                if(t.recorder){
+                    if(t.capture_connected)try{endpoint.audDevManager().getCaptureDevMedia().stopTransmit(*t.recorder);}catch(...){}
+                    if(t.stream_connected)try{getAudioMedia(audio_index).stopTransmit(*t.recorder);}catch(...){}
+                    t.recorder.reset();
+                }
+                std::error_code ec;std::filesystem::remove(t.temp_path,ec);
+            }
+        };
+        try{
+            auto stream=getAudioMedia(audio_index);
+            bool muted;{std::lock_guard<std::mutex> lock(mutex);muted=latest.muted!=0;}
+            for(auto& t:candidates){
+                t.recorder=std::make_unique<pj::AudioMediaRecorder>();
+                t.recorder->createRecorder(t.temp_path.string());
+                if(t.wants_stream){stream.startTransmit(*t.recorder);t.stream_connected=true;}
+                if(t.wants_capture&&!muted){endpoint.audDevManager().getCaptureDevMedia().startTransmit(*t.recorder);t.capture_connected=true;}
+            }
+        }catch(...){discard();throw;}
+        tracks=std::move(candidates);recording_media_index=audio_index;
         std::lock_guard<std::mutex> lock(mutex);latest.recording=1;
     }
     int stop_recording() noexcept {
-        if(!recorder)return 0;
-        if(recording_audio_connected&&recording_media_index>=0){try{auto stream=getAudioMedia(recording_media_index);stream.stopTransmit(*recorder);}catch(...){}}
-        if(recording_capture_connected){try{endpoint.audDevManager().getCaptureDevMedia().stopTransmit(*recorder);}catch(...){}}
-        recording_audio_connected=false;recording_capture_connected=false;recording_media_index=-1;
-        recorder.reset();
-        std::error_code ec;std::filesystem::rename(recording_temp_path,recording_final_path,ec);
-        recording_temp_path.clear();recording_final_path.clear();
+        if(tracks.empty())return 0;
+        unlink_track_streams();unlink_track_captures();
+        int result=0;
+        for(size_t i=0;i<tracks.size();++i){
+            tracks[i].recorder.reset();
+            std::error_code ec;std::filesystem::rename(tracks[i].temp_path,tracks[i].final_path,ec);
+            // Only the main (mixed) recording decides success; the speaker tracks are best effort.
+            if(ec&&i==0)result=-1;
+            if(ec&&i>0){std::error_code ignored;std::filesystem::remove(tracks[i].temp_path,ignored);}
+        }
+        tracks.clear();recording_media_index=-1;
         {std::lock_guard<std::mutex> lock(mutex);latest.recording=0;}
-        return ec? -1 : 0;
+        return result;
     }
     void mute(bool value) { {std::lock_guard<std::mutex> lock(mutex);latest.muted=value?1:0;}route();auto snap=snapshot();if(snap.audio_error)throw pj::Error(snap.audio_error,"audio","","",0); }
     YvCall snapshot(){if(controls.transfer_pending&&std::chrono::steady_clock::now()-transfer_started>std::chrono::seconds(120)){controls.transfer_pending=0;controls.transfer_code=408;}update();std::lock_guard<std::mutex> lock(mutex);return latest;}
@@ -561,13 +594,13 @@ int32_t start_call(YvHandle* h,uint64_t account,uint64_t token,const uint8_t* ur
         const int port=target->port?target->port:(secure?5061:5060);
         auto& acc=*found->second;
         if(EngineEndpoint::key(host,port,acc.target_transport)!=EngineEndpoint::key(acc.target_host,acc.target_port,acc.target_transport)||secure!=(acc.target_transport==PJSIP_TRANSPORT_TLS)||target->passwd.slen || !pj_list_empty(&target->header_param))return -6;
-        if(audio){try{auto& devices=h->endpoint->audDevManager();devices.setCaptureDev(PJMEDIA_AUD_DEFAULT_CAPTURE_DEV);devices.setPlaybackDev(PJMEDIA_AUD_DEFAULT_PLAYBACK_DEV);}catch(...){h->endpoint->audDevManager().setNoDev();return -11;}}
+        if(audio){try{auto& devices=h->endpoint->audDevManager();devices.setCaptureDev(PJMEDIA_AUD_DEFAULT_CAPTURE_DEV);devices.setPlaybackDev(PJMEDIA_AUD_DEFAULT_PLAYBACK_DEV);}catch(...){h->endpoint->audDevManager().setNullDev();return -11;}}
         auto call=std::make_unique<NativeCall>(acc,token,*h->endpoint,audio!=0);
         auto* pointer=call.get();h->calls.emplace(token,std::move(call));
         try{pj::CallOpParam options(true);options.opt.audioCount=1;options.opt.videoCount=0;options.opt.textCount=0;
             if(!replaces.empty()){pj::SipHeader header;header.hName="Replaces";header.hValue=replaces;options.txOption.headers.push_back(header);}
             pointer->makeCall(destination,options);pointer->update();}
-        catch(...){h->calls.erase(token);if(audio&&h->calls.empty())h->endpoint->audDevManager().setNoDev();throw;}
+        catch(...){h->calls.erase(token);if(audio&&h->calls.empty())h->endpoint->audDevManager().setNullDev();throw;}
         return 0;
     }catch(const pj::Error& e){return e.status;}catch(...){return -1;}
 }
@@ -670,10 +703,14 @@ extern "C" int32_t yv_call_mute(YvHandle* h,uint64_t token,int32_t muted) noexce
     auto found=h->calls.find(token);if(found==h->calls.end())return -6;
     try{found->second->mute(muted!=0);return 0;}catch(const pj::Error& e){return e.status;}catch(...){return -1;}
 }
+// Releasing the sound device uses the null device, not "no device": PJSIP 2.14+ queues conference
+// bridge operations (such as removing a stopped recorder) and runs them on the bridge's clock. With
+// no device there is no clock, so the last call's recording would stay open and its WAV header
+// unwritten until the next call. The null device keeps the clock without opening any hardware.
 extern "C" int32_t yv_call_release(YvHandle* h,uint64_t token) noexcept {
     if(auto code=check(h))return code;
     auto found=h->calls.find(token);if(found==h->calls.end())return 0;
-    try{h->calls.erase(found);if(h->calls.empty()&&h->endpoint)h->endpoint->audDevManager().setNoDev();return 0;}catch(const pj::Error& e){return e.status;}catch(...){return -1;}
+    try{h->calls.erase(found);if(h->calls.empty()&&h->endpoint)h->endpoint->audDevManager().setNullDev();return 0;}catch(const pj::Error& e){return e.status;}catch(...){return -1;}
 }
 
 extern "C" int32_t yv_set_ringtone(YvHandle* h,int32_t enabled) noexcept {
@@ -685,7 +722,7 @@ extern "C" int32_t yv_audio_device(YvHandle* h,int32_t open) noexcept {
  if(!h->running)return 0;
  try{
   auto& d=h->endpoint->audDevManager();
-  if(!open){d.setNoDev();return 0;}
+  if(!open){d.setNullDev();return 0;}
   // Only calls that carry audio need the device; with none, leave it closed.
   if(std::none_of(h->calls.begin(),h->calls.end(),[](const auto& x){return x.second->isActive();}))return 0;
   pjsua_set_no_snd_dev();
