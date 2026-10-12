@@ -77,7 +77,7 @@ struct ChatScreen: View {
                 Image(systemName: "phone.fill").frame(width: 40, height: 40)
             }
             .accessibilityLabel("Voice call")
-            Button { toast = String(localized: "Coming soon") } label: {
+            Button { store.teamRoomOpen = true } label: {
                 Image(systemName: "video.fill").frame(width: 40, height: 40)
             }
             .accessibilityLabel("Video call")
