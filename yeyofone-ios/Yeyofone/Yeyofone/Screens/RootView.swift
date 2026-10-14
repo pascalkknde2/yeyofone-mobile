@@ -22,6 +22,7 @@ struct RootView: View {
                 case .main: OutgoingCallScreen(session: call)
                 case .options: CallOptionsScreen()
                 case .transfer: TransferCallScreen(callerName: call.remoteName)
+                case .keypad: InCallKeypadScreen(session: call)
                 }
             } else if let summary = store.endedSummary {
                 CallEndedScreen(summary: summary)
