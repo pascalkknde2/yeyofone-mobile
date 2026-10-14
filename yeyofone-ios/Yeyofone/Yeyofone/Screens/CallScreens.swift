@@ -13,7 +13,6 @@ import SwiftUI
 struct OutgoingCallScreen: View {
     @Environment(AppStore.self) private var store
     let session: CallSession
-    @State private var keypadOpen = false
 
     var body: some View {
         VStack(spacing: 0) {
@@ -41,15 +40,6 @@ struct OutgoingCallScreen: View {
                     TimelineView(.periodic(from: .now, by: 1)) { context in
                         CallerIdentity(name: session.remoteName, status: status(at: context.date))
                     }
-                    if keypadOpen {
-                        DialPad { key in if !session.held { store.sendDtmf(key) } }
-                            .frame(maxWidth: 260)
-                        if session.held {
-                            Text("Resume the call to send keypad tones")
-                                .font(.system(size: 12))
-                                .foregroundStyle(Palette.accentRed)
-                        }
-                    }
                 }
                 .padding(.horizontal, 24)
                 .padding(.vertical, 16)
@@ -64,8 +54,8 @@ struct OutgoingCallScreen: View {
                         CallActionButton(icon: "speaker.wave.2.fill", label: "Speaker", active: store.selectedRoute == .speaker) {
                             store.selectedRoute = store.selectedRoute == .speaker ? .earpiece : .speaker
                         }
-                        CallActionButton(icon: "circle.grid.3x3.fill", label: "Keypad", active: keypadOpen) {
-                            withAnimation { keypadOpen.toggle() }
+                        CallActionButton(icon: "circle.grid.3x3.fill", label: "Keypad") {
+                            store.callPage = .keypad
                         }
                         CallActionButton(icon: session.muted ? "mic.slash.fill" : "mic.fill", label: "Mute",
                                          active: session.muted, enabled: !session.held) {
@@ -510,6 +500,94 @@ private struct OptionRow: View {
     }
 }
 
+// MARK: In-call keypad
+
+/// The in-call keypad as its own page, laid out like [TransferCallScreen], so the dial pad no
+/// longer squeezes in between the caller identity and the call controls. Cancel returns to the
+/// call screen; the call keeps running.
+struct InCallKeypadScreen: View {
+    @Environment(AppStore.self) private var store
+    let session: CallSession
+    @State private var tones = ""
+
+    var body: some View {
+        VStack(spacing: 0) {
+            HStack {
+                Button { store.callPage = .main } label: {
+                    Image(systemName: "arrow.left")
+                        .font(.system(size: 18, weight: .semibold))
+                        .foregroundStyle(Palette.textPrimary)
+                        .frame(width: 48, height: 48)
+                }
+                .accessibilityLabel("Cancel")
+                Spacer()
+                VStack(spacing: 2) {
+                    Text(session.remoteName)
+                        .font(.system(size: 18, weight: .bold))
+                        .foregroundStyle(Palette.textPrimary)
+                    TimelineView(.periodic(from: .now, by: 1)) { context in
+                        Text(status(at: context.date))
+                            .font(.system(size: 13, weight: .medium))
+                            .monospacedDigit()
+                            .foregroundStyle(Palette.textSecondary)
+                    }
+                }
+                Spacer()
+                Color.clear.frame(width: 48, height: 48)
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 6)
+
+            ScrollView {
+                VStack(spacing: 16) {
+                    Text(tones)
+                        .font(.system(size: 32, weight: .medium))
+                        .tracking(1)
+                        .foregroundStyle(Palette.textPrimary)
+                        .lineLimit(1)
+                        .frame(height: 44)
+                    if session.held {
+                        Text("Resume the call to send keypad tones")
+                            .font(.system(size: 12))
+                            .foregroundStyle(Palette.accentRed)
+                            .multilineTextAlignment(.center)
+                    }
+                    DialPad(rowSpacing: 16) { key in
+                        guard !session.held else { return }
+                        tones = String((tones + key).suffix(24))
+                        store.sendDtmf(key)
+                    }
+                    .frame(maxWidth: 288)
+                }
+                .padding(.horizontal, 32)
+                .frame(maxWidth: .infinity)
+            }
+            .scrollBounceBehavior(.basedOnSize)
+            .defaultScrollAnchor(.center)
+
+            CallTray {
+                HStack {
+                    PrimaryCallActionButton(icon: "xmark", label: "Cancel", color: Palette.textSecondary) {
+                        store.callPage = .main
+                    }
+                    .frame(maxWidth: .infinity)
+                    PrimaryCallActionButton(icon: "phone.down.fill", label: "Hang up", color: Palette.accentRed) {
+                        store.endCall()
+                    }
+                    .frame(maxWidth: .infinity)
+                }
+            }
+        }
+        .background(Palette.backgroundGray)
+    }
+
+    private func status(at date: Date) -> String {
+        if session.held { return CallState.held.label }
+        guard let connectedAt = session.connectedAt else { return session.state.label }
+        return DurationFormat.clock(date.timeIntervalSince(connectedAt))
+    }
+}
+
 // MARK: Blind transfer
 
 struct TransferCallScreen: View {
@@ -539,9 +617,16 @@ struct TransferCallScreen: View {
             .scrollBounceBehavior(.basedOnSize)
             .defaultScrollAnchor(.center)
             CallTray {
-                PrimaryCallActionButton(icon: "phone.arrow.right.fill", label: "Transfer now", color: Palette.accentBlue,
-                                        enabled: !destination.trimmingCharacters(in: .whitespaces).isEmpty) {
-                    store.blindTransfer(to: destination)
+                HStack {
+                    PrimaryCallActionButton(icon: "xmark", label: "Cancel", color: Palette.textSecondary) {
+                        store.callPage = .main
+                    }
+                    .frame(maxWidth: .infinity)
+                    PrimaryCallActionButton(icon: "phone.arrow.right.fill", label: "Transfer now", color: Palette.accentBlue,
+                                            enabled: !destination.trimmingCharacters(in: .whitespaces).isEmpty) {
+                        store.blindTransfer(to: destination)
+                    }
+                    .frame(maxWidth: .infinity)
                 }
             }
         }

@@ -21,6 +21,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.outlined.Backspace
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.outlined.Call
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -111,13 +112,19 @@ fun TransferCallScreen(
             }
         }
 
-        Column(
+        Row(
             Modifier.fillMaxWidth()
                 .shadow(4.dp, RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp))
                 .background(CallBackground, RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp))
                 .padding(start = 24.dp, top = 32.dp, end = 24.dp, bottom = 48.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
+            horizontalArrangement = Arrangement.SpaceEvenly,
         ) {
+            PrimaryCallActionButton(
+                icon = Icons.Default.Close,
+                label = stringResource(R.string.cancel),
+                backgroundColor = CallTextSecondary,
+                onClick = onCancel,
+            )
             PrimaryCallActionButton(
                 icon = Icons.Outlined.Call,
                 label = stringResource(R.string.transfer_now),

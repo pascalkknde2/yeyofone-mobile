@@ -41,7 +41,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -61,7 +60,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.yeyofone.app.R
 import com.yeyofone.app.data.model.toSipIdentity
-import com.yeyofone.app.ui.components.DialPad
 import com.yeyofone.app.ui.theme.AccentBlue
 import com.yeyofone.app.ui.theme.AccentGreen
 import com.yeyofone.app.ui.theme.AccentRed
@@ -88,12 +86,11 @@ fun OutgoingCallScreen(
     onSpeakerChange: (Boolean) -> Unit,
     onMuteChange: (Boolean) -> Unit,
     onHoldChange: (Boolean) -> Unit,
-    onDtmf: (Char) -> Unit,
+    onOpenKeypad: () -> Unit,
     onOpenTransfer: () -> Unit,
     onOpenMore: () -> Unit,
     onEndCall: () -> Unit,
 ) {
-    var keypadOpen by remember(session.id) { mutableStateOf(false) }
     var elapsedSeconds by remember(session.id) { mutableLongStateOf(callElapsedSeconds(session)) }
 
     LaunchedEffect(session.connectedAt, session.state) {
@@ -129,15 +126,6 @@ fun OutgoingCallScreen(
                 name = session.remoteUri.toSipIdentity().displayName,
                 status = if (media.held) callStatus(CallState.Held) else if (session.connectedAt == null) callStatus(session.state) else formatDuration(elapsedSeconds),
             )
-
-            if (keypadOpen) {
-                DialPad(
-                    onNumberClick = { if (!media.held) onDtmf(it.first()) },
-                    modifier = Modifier.padding(horizontal = 56.dp),
-                )
-                if (media.held) Text(stringResource(R.string.dtmf_unavailable_on_hold), color = AccentRed, fontSize = 12.sp)
-                Spacer(Modifier.height(18.dp))
-            }
         }
 
         Column(
@@ -151,8 +139,8 @@ fun OutgoingCallScreen(
                 CallActionButton(Icons.AutoMirrored.Filled.VolumeUp, stringResource(R.string.speaker), speakerOn) {
                     onSpeakerChange(!speakerOn)
                 }
-                CallActionButton(Icons.Default.Dialpad, stringResource(R.string.keypad), keypadOpen) {
-                    keypadOpen = !keypadOpen
+                CallActionButton(Icons.Default.Dialpad, stringResource(R.string.keypad)) {
+                    onOpenKeypad()
                 }
                 CallActionButton(if (media.muted) Icons.Default.MicOff else Icons.Default.Mic, stringResource(R.string.mute), media.muted, enabled = !media.held) {
                     onMuteChange(!media.muted)
@@ -259,7 +247,7 @@ private fun CallActionButton(
 internal fun formatDuration(totalSeconds: Long): String =
     "%02d:%02d".format(totalSeconds / 60, totalSeconds % 60)
 
-private fun callElapsedSeconds(session: CallSession): Long =
+internal fun callElapsedSeconds(session: CallSession): Long =
     session.connectedAt?.let { max(0, Instant.now().epochSecond - it.epochSecond) } ?: 0
 
 private fun initials(name: String): String = name.split(' ', '.', '-', '_')
@@ -268,7 +256,7 @@ private fun initials(name: String): String = name.split(' ', '.', '-', '_')
     .joinToString("") { it.first().uppercase() }
     .ifEmpty { "?" }
 
-private fun callStatus(state: CallState): String = when (state) {
+internal fun callStatus(state: CallState): String = when (state) {
     CallState.Preparing -> "Preparing…"
     CallState.Calling -> "Calling…"
     CallState.EarlyMedia, CallState.Ringing -> "Ringing…"
