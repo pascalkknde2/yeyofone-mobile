@@ -82,6 +82,7 @@ import com.yeyofone.app.ui.accounts.AccountsScreen
 import com.yeyofone.app.ui.call.CallOptionsScreen
 import com.yeyofone.app.ui.call.OutgoingCallScreen
 import com.yeyofone.app.ui.call.TransferCallScreen
+import com.yeyofone.app.ui.call.InCallKeypadScreen
 import com.yeyofone.app.ui.callended.CallEndedScreen
 import com.yeyofone.app.ui.callhistory.CallHistoryScreen
 import com.yeyofone.app.ui.callhistory.CallHistoryViewModel
@@ -881,8 +882,8 @@ private fun IncomingCallScreen(
 }
 
 /**
- * Hosts the active call screen and, when the user taps Transfer or More, swaps it for a
- * dedicated [TransferCallScreen] or [CallOptionsScreen] instead of overlaying a dial pad or
+ * Hosts the active call screen and, when the user taps Keypad, Transfer or More, swaps it for a
+ * dedicated [InCallKeypadScreen], [TransferCallScreen] or [CallOptionsScreen] instead of overlaying a dial pad or
  * option list on top of the call UI in place (the previous inline approach caused the transfer
  * dial pad and the call content to overlap).
  */
@@ -908,7 +909,15 @@ private fun OutgoingCallHost(
 ) {
     var transferOpen by remember(session.id) { mutableStateOf(false) }
     var moreOpen by remember(session.id) { mutableStateOf(false) }
+    var keypadOpen by remember(session.id) { mutableStateOf(false) }
     when {
+        keypadOpen -> InCallKeypadScreen(
+            session = session,
+            media = media,
+            onDtmf = onDtmf,
+            onCancel = { keypadOpen = false },
+            onEndCall = onEndCall,
+        )
         transferOpen -> TransferCallScreen(
             currentCallerName = session.remoteUri.toSipIdentity().displayName,
             onCancel = { transferOpen = false },
@@ -938,7 +947,7 @@ private fun OutgoingCallHost(
             onSpeakerChange = onSpeakerChange,
             onMuteChange = onMuteChange,
             onHoldChange = onHoldChange,
-            onDtmf = onDtmf,
+            onOpenKeypad = { keypadOpen = true },
             onOpenTransfer = { transferOpen = true },
             onOpenMore = { moreOpen = true },
             onEndCall = onEndCall,

@@ -42,7 +42,7 @@ enum Tab: Int, CaseIterable {
 }
 
 /// Which page of the in-call flow is showing over the active call.
-enum CallPage { case main, options, transfer }
+enum CallPage { case main, options, transfer, keypad }
 
 @Observable
 final class AppStore {
