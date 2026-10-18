@@ -12,9 +12,10 @@ struct HomeScreen: View {
 
     var body: some View {
         let account = store.primaryAccount
+        let dnd = account.map { store.preferences(for: $0.id).doNotDisturb } ?? false
         ScrollView {
             VStack(alignment: .leading, spacing: 24) {
-                header(name: account?.displayName ?? "YeyoFone", extensionNumber: account?.username, online: store.isPrimaryRegistered)
+                header(name: account?.displayName ?? "YeyoFone", extensionNumber: account?.username, online: store.isPrimaryRegistered, doNotDisturb: dnd)
 
                 if let destination = store.forwardingDestination {
                     ForwardingBanner(accountNumber: account?.username, destination: destination)
@@ -23,7 +24,7 @@ struct HomeScreen: View {
 
                 AccountStatusCard(
                     account: account,
-                    doNotDisturb: account.map { store.preferences(for: $0.id).doNotDisturb } ?? false,
+                    doNotDisturb: dnd,
                     onToggleDoNotDisturb: {
                         guard let account else { return }
                         var prefs = store.preferences(for: account.id)
@@ -52,7 +53,7 @@ struct HomeScreen: View {
         .background(Palette.cardWhite)
     }
 
-    private func header(name: String, extensionNumber: String?, online: Bool) -> some View {
+    private func header(name: String, extensionNumber: String?, online: Bool, doNotDisturb: Bool) -> some View {
         HStack {
             VStack(alignment: .leading, spacing: 4) {
                 Text(name)
@@ -62,9 +63,9 @@ struct HomeScreen: View {
                     .lineLimit(1)
                 HStack(spacing: 6) {
                     Circle()
-                        .fill(online ? Palette.accentGreen : Palette.inactiveGray)
+                        .fill(doNotDisturb ? Palette.accentRed : online ? Palette.accentGreen : Palette.inactiveGray)
                         .frame(width: 8, height: 8)
-                    let status = online ? String(localized: "Available") : String(localized: "Offline")
+                    let status = doNotDisturb ? String(localized: "Do Not Disturb") : online ? String(localized: "Available") : String(localized: "Offline")
                     Text(verbatim: extensionNumber.map { "\(status) • Ext \($0)" } ?? status)
                         .appFont(size: 14, weight: .medium)
                         .foregroundStyle(Palette.textSecondary)
@@ -193,10 +194,10 @@ private struct AccountStatusCard: View {
                         Image(systemName: "power").appFont(size: 14, weight: .semibold)
                         Text("DND").appFont(size: 13, weight: .semibold)
                     }
-                    .foregroundStyle(.white)
+                    .foregroundStyle(doNotDisturb ? Palette.accentRed : .white)
                     .padding(.horizontal, 16)
                     .padding(.vertical, 10)
-                    .background(Capsule().fill(.white.opacity(doNotDisturb ? 0.28 : 0.1)))
+                    .background(Capsule().fill(doNotDisturb ? Color.white : Color.white.opacity(0.1)))
                     .overlay(Capsule().stroke(.white.opacity(0.15), lineWidth: 1))
                 }
                 .buttonStyle(PressScaleStyle())
