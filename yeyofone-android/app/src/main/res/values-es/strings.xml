@@ -237,6 +237,7 @@
     <string name="manage">Editar</string>
     <string name="see_all">Ver todo</string>
     <string name="today">HOY</string>
+    <string name="chat_empty">Aún no hay mensajes</string>
     <string name="edit_call_history">Editar historial de llamadas</string>
     <string name="call_contact">Llamar a %1$s</string>
     <string name="play_voicemail">Reproducir mensaje de voz de %1$s</string>
@@ -522,4 +523,7 @@
     <string name="room_error_mic_missing">No se encontró ningún micrófono.</string>
     <string name="room_error_camera_failed">No se pudo iniciar la cámara.</string>
     <string name="room_error_mic_failed">No se pudo iniciar el micrófono.</string>
+    <string name="search_or_dial">Buscar o marcar un número…</string>
+    <string name="home_available">Disponible</string>
+    <string name="dnd_short">NM</string>
 </resources>

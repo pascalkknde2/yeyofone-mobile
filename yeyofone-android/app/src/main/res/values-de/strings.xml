@@ -236,6 +236,7 @@
     <string name="manage">Bearbeiten</string>
     <string name="see_all">Alle anzeigen</string>
     <string name="today">HEUTE</string>
+    <string name="chat_empty">Noch keine Nachrichten</string>
     <string name="edit_call_history">Anrufliste bearbeiten</string>
     <string name="call_contact">%1$s anrufen</string>
     <string name="play_voicemail">Mailbox-Nachricht von %1$s abspielen</string>
@@ -520,4 +521,7 @@
     <string name="room_error_mic_missing">Kein Mikrofon gefunden.</string>
     <string name="room_error_camera_failed">Die Kamera konnte nicht gestartet werden.</string>
     <string name="room_error_mic_failed">Das Mikrofon konnte nicht gestartet werden.</string>
+    <string name="search_or_dial">Suchen oder Nummer wählen…</string>
+    <string name="home_available">Verfügbar</string>
+    <string name="dnd_short">DND</string>
 </resources>
