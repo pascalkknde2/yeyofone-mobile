@@ -217,6 +217,7 @@
     <string name="manage">Edit</string>
     <string name="see_all">See All</string>
     <string name="today">TODAY</string>
+    <string name="chat_empty">No messages yet</string>
     <string name="edit_call_history">Edit call history</string>
     <string name="call_contact">Call %1$s</string>
     <string name="play_voicemail">Play voicemail from %1$s</string>
@@ -520,4 +521,7 @@
     <string name="room_error_mic_missing">No microphone was found.</string>
     <string name="room_error_camera_failed">The camera couldn’t start.</string>
     <string name="room_error_mic_failed">The microphone couldn’t start.</string>
+    <string name="search_or_dial">Search or dial a number…</string>
+    <string name="home_available">Available</string>
+    <string name="dnd_short">DND</string>
 </resources>
