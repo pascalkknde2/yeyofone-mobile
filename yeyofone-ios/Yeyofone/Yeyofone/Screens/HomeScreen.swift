@@ -12,26 +12,32 @@ struct HomeScreen: View {
 
     var body: some View {
         let account = store.primaryAccount
+        let dnd = account.map { store.preferences(for: $0.id).doNotDisturb } ?? false
         ScrollView {
             VStack(alignment: .leading, spacing: 24) {
-                header(name: account?.displayName ?? "YeyoFone", online: store.isPrimaryRegistered)
+                header(name: account?.displayName ?? "YeyoFone", extensionNumber: account?.username, online: store.isPrimaryRegistered, doNotDisturb: dnd)
 
                 if let destination = store.forwardingDestination {
                     ForwardingBanner(accountNumber: account?.username, destination: destination)
                         .padding(.horizontal, 20)
                 }
 
-                AccountStatusCard(account: account) {
+                AccountStatusCard(
+                    account: account,
+                    doNotDisturb: dnd,
+                    onToggleDoNotDisturb: {
+                        guard let account else { return }
+                        var prefs = store.preferences(for: account.id)
+                        prefs.doNotDisturb.toggle()
+                        store.setPreferences(prefs, for: account.id)
+                    }
+                ) {
                     if let account { store.screen = .accountDetail(account.id) } else { store.screen = .accountEditor(nil) }
                 }
                 .padding(.horizontal, 20)
 
-                HStack(spacing: 12) {
-                    QuickAction(icon: "circle.grid.3x3.fill", label: "Keypad", color: Palette.accentBlue) { store.select(.keypad) }
-                    QuickAction(icon: "person.fill", label: "Contacts", color: Palette.accentGreen) { store.select(.contacts) }
-                    QuickAction(icon: "clock.arrow.circlepath", label: "Recent", color: Palette.accentOrange) { store.select(.calls) }
-                }
-                .padding(.horizontal, 20)
+                SearchBar { store.select(.keypad) }
+                    .padding(.horizontal, 20)
 
                 VStack(alignment: .leading, spacing: 8) {
                     SectionHeader(title: "Favorites", action: "Edit") { store.select(.contacts) }
@@ -47,22 +53,28 @@ struct HomeScreen: View {
         .background(Palette.cardWhite)
     }
 
-    private func header(name: String, online: Bool) -> some View {
+    private func header(name: String, extensionNumber: String?, online: Bool, doNotDisturb: Bool) -> some View {
         HStack {
-            VStack(alignment: .leading, spacing: 2) {
-                Text("Welcome back")
-                    .font(.system(size: 12, weight: .semibold))
-                    .tracking(0.5)
-                    .textCase(.uppercase)
-                    .foregroundStyle(Palette.textSecondary)
+            VStack(alignment: .leading, spacing: 4) {
                 Text(name)
-                    .font(.system(size: 26, weight: .bold))
+                    .appFont(size: 26, weight: .bold)
                     .tracking(-0.5)
                     .foregroundStyle(Palette.textPrimary)
                     .lineLimit(1)
+                HStack(spacing: 6) {
+                    Circle()
+                        .fill(doNotDisturb ? Palette.accentRed : online ? Palette.accentGreen : Palette.inactiveGray)
+                        .frame(width: 8, height: 8)
+                    let status = doNotDisturb ? String(localized: "Do Not Disturb") : online ? String(localized: "Available") : String(localized: "Offline")
+                    Text(verbatim: extensionNumber.map { "\(status) • Ext \($0)" } ?? status)
+                        .appFont(size: 14, weight: .medium)
+                        .foregroundStyle(Palette.textSecondary)
+                        .lineLimit(1)
+                }
             }
             Spacer(minLength: 16)
-            InitialsAvatar(name: name, size: 44, fontSize: 18, foreground: Palette.accentBlue)
+            InitialsAvatar(name: name, size: 52, fontSize: 16, background: Palette.cardWhite, foreground: Palette.accentBlue)
+                .overlay(Circle().stroke(Palette.borderLight, lineWidth: 2))
                 .overlay(alignment: .bottomTrailing) {
                     Circle()
                         .fill(online ? Palette.accentGreen : Palette.inactiveGray)
@@ -74,16 +86,24 @@ struct HomeScreen: View {
         .padding(.top, 16)
     }
 
+    private static let favoriteTints: [(foreground: Color, background: Color)] = [
+        (Palette.accentBlue, Palette.primaryLight),
+        (Palette.pink, Palette.pinkLight),
+        (Palette.accentOrange, Palette.orangeLight),
+        (Palette.accentGreen, Palette.successLight),
+    ]
+
     private var favoritesStrip: some View {
         ScrollView(.horizontal) {
             HStack(alignment: .top, spacing: 16) {
-                ForEach(store.contacts.filter(\.favorite)) { contact in
+                ForEach(Array(store.contacts.filter(\.favorite).enumerated()), id: \.element.id) { index, contact in
+                    let tint = Self.favoriteTints[index % Self.favoriteTints.count]
                     Button { store.startCall(to: contact.number) } label: {
                         VStack(spacing: 7) {
-                            InitialsAvatar(name: contact.displayName, size: 56, fontSize: 20, foreground: Palette.accentBlue)
+                            InitialsAvatar(name: contact.displayName, size: 64, fontSize: 18, background: tint.background, foreground: tint.foreground)
                             Text(contact.displayName)
-                                .font(.system(size: 12, weight: .medium))
-                                .foregroundStyle(Palette.textSecondary)
+                                .appFont(size: 12, weight: .semibold)
+                                .foregroundStyle(Palette.textPrimary)
                                 .lineLimit(1)
                         }
                         .frame(width: 72)
@@ -93,13 +113,12 @@ struct HomeScreen: View {
                 Button { store.select(.contacts) } label: {
                     VStack(spacing: 7) {
                         Image(systemName: "plus")
-                            .font(.system(size: 18))
+                            .appFont(size: 18)
                             .foregroundStyle(Palette.textSecondary)
-                            .frame(width: 56, height: 56)
-                            .background(Circle().fill(Palette.backgroundGray))
-                            .overlay(Circle().stroke(Palette.borderLight, lineWidth: 1))
+                            .frame(width: 64, height: 64)
+                            .overlay(Circle().stroke(Palette.borderLight, lineWidth: 1.5))
                         Text("Add")
-                            .font(.system(size: 12))
+                            .appFont(size: 12)
                             .foregroundStyle(Palette.textSecondary)
                     }
                 }
@@ -119,12 +138,9 @@ struct HomeScreen: View {
                 .padding(.horizontal, 20)
                 .padding(.vertical, 16)
         } else {
-            VStack(spacing: 0) {
-                ForEach(Array(calls.enumerated()), id: \.element.id) { index, call in
+            VStack(spacing: 10) {
+                ForEach(calls) { call in
                     RecentCallRow(call: call) { store.startCall(to: call.number) }
-                    if index < calls.count - 1 {
-                        Rectangle().fill(Palette.borderLight.opacity(0.5)).frame(height: 1)
-                    }
                 }
             }
             .padding(.horizontal, 20)
@@ -139,10 +155,10 @@ private struct ForwardingBanner: View {
     var body: some View {
         HStack(spacing: 10) {
             Image(systemName: "phone.arrow.right.fill")
-                .font(.system(size: 15))
+                .appFont(size: 15)
             Text(accountNumber.map { String(localized: "Calls to \($0) are being forwarded to \(destination)") }
                  ?? String(localized: "Forwarding to \(destination)"))
-                .font(.system(size: 13, weight: .medium))
+                .appFont(size: 13, weight: .medium)
             Spacer(minLength: 0)
         }
         .foregroundStyle(Palette.accentBlue)
@@ -154,82 +170,69 @@ private struct ForwardingBanner: View {
 
 private struct AccountStatusCard: View {
     let account: SipAccount?
+    let doNotDisturb: Bool
+    let onToggleDoNotDisturb: () -> Void
     let onManage: () -> Void
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            HStack {
-                Text("Primary account")
-                    .font(.system(size: 11, weight: .semibold))
-                    .tracking(1.5)
-                    .textCase(.uppercase)
-                    .foregroundStyle(.white.opacity(0.6))
-                Spacer()
-                // SIM-style chip.
-                RoundedRectangle(cornerRadius: 4)
-                    .fill(LinearGradient(colors: [Color(hex: 0xFBBF24), Color(hex: 0xD97706)], startPoint: .topLeading, endPoint: .bottomTrailing))
-                    .frame(width: 32, height: 24)
-                    .overlay(RoundedRectangle(cornerRadius: 2).stroke(.black.opacity(0.2), lineWidth: 1).frame(width: 20, height: 16))
-            }
+        HStack {
             VStack(alignment: .leading, spacing: 4) {
-                Text(account?.displayName ?? String(localized: "No SIP accounts configured"))
-                    .font(.system(size: 22, weight: .semibold))
-                    .tracking(-0.5)
+                Text("Primary account")
+                    .appFont(size: 11, weight: .bold)
+                    .tracking(1)
+                    .textCase(.uppercase)
+                    .foregroundStyle(.white.opacity(0.75))
+                (account.map { Text("Extension \($0.username)") } ?? Text("Add account"))
+                    .appFont(size: 18, weight: .bold)
                     .foregroundStyle(.white)
-                    .lineLimit(2)
-                if let account {
-                    Text("Extension \(account.username)")
-                        .font(.system(size: 14, weight: .medium))
-                        .foregroundStyle(.white.opacity(0.7))
-                }
+                    .lineLimit(1)
             }
-            .padding(.vertical, 20)
-            Rectangle().fill(.white.opacity(0.1)).frame(height: 1)
-            Button(action: onManage) {
-                HStack(spacing: 4) {
-                    (account == nil ? Text("Add account") : Text("Manage Account"))
-                        .font(.system(size: 13))
-                    Image(systemName: "chevron.right")
-                        .font(.system(size: 11, weight: .semibold))
+            Spacer(minLength: 12)
+            if account != nil {
+                Button(action: onToggleDoNotDisturb) {
+                    HStack(spacing: 8) {
+                        Image(systemName: "power").appFont(size: 14, weight: .semibold)
+                        Text("DND").appFont(size: 13, weight: .semibold)
+                    }
+                    .foregroundStyle(doNotDisturb ? Palette.accentRed : .white)
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 10)
+                    .background(Capsule().fill(doNotDisturb ? Color.white : Color.white.opacity(0.1)))
+                    .overlay(Capsule().stroke(.white.opacity(0.15), lineWidth: 1))
                 }
-                .foregroundStyle(.white.opacity(0.7))
-                .padding(.top, 14)
+                .buttonStyle(PressScaleStyle())
             }
         }
-        .padding(24)
+        .padding(.horizontal, 22)
+        .padding(.vertical, 18)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background {
-            ZStack(alignment: .topTrailing) {
-                LinearGradient(colors: [Palette.cardGradientStart, Palette.cardGradientEnd], startPoint: .topLeading, endPoint: .bottomTrailing)
-                RadialGradient(colors: [Palette.cardAccent.opacity(0.22), .clear], center: .topTrailing, startRadius: 0, endRadius: 150)
-            }
-        }
-        .clipShape(RoundedRectangle(cornerRadius: 24))
-        .shadow(color: .black.opacity(0.18), radius: 12, y: 6)
+        .background(LinearGradient(colors: [Color(hex: 0x3B82F6), Color(hex: 0x1D4ED8)], startPoint: .topLeading, endPoint: .bottomTrailing))
+        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .shadow(color: Palette.accentBlue.opacity(0.35), radius: 12, y: 6)
+        .contentShape(RoundedRectangle(cornerRadius: 12))
+        .onTapGesture(perform: onManage)
     }
 }
 
-private struct QuickAction: View {
-    let icon: String
-    let label: LocalizedStringKey
-    let color: Color
+private struct SearchBar: View {
     let action: () -> Void
 
     var body: some View {
         Button(action: action) {
-            VStack(spacing: 10) {
-                Image(systemName: icon)
-                    .font(.system(size: 24))
-                    .foregroundStyle(color)
-                    .frame(width: 60, height: 60)
-                    .background(Circle().fill(color.opacity(0.13)))
-                Text(label)
-                    .font(.system(size: 12, weight: .semibold))
-                    .foregroundStyle(Palette.textPrimary)
-                    .lineLimit(1)
+            HStack(spacing: 12) {
+                Image(systemName: "magnifyingglass")
+                    .appFont(size: 18, weight: .semibold)
+                    .foregroundStyle(Palette.accentBlue)
+                Text("Search or dial a number…")
+                    .appFont(size: 16, weight: .medium)
+                    .foregroundStyle(Palette.inactiveGray)
+                Spacer(minLength: 0)
             }
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, 12)
+            .padding(.horizontal, 18)
+            .padding(.vertical, 16)
+            .background(RoundedRectangle(cornerRadius: 20).fill(Palette.cardWhite))
+            .overlay(RoundedRectangle(cornerRadius: 20).stroke(Palette.borderLight, lineWidth: 1))
+            .shadow(color: .black.opacity(0.08), radius: 6, y: 3)
         }
         .buttonStyle(PressScaleStyle())
     }
@@ -243,11 +246,11 @@ private struct SectionHeader: View {
     var body: some View {
         HStack {
             Text(title)
-                .font(.system(size: 16, weight: .bold))
+                .appFont(size: 16, weight: .bold)
                 .foregroundStyle(Palette.textPrimary)
             Spacer()
             Button(action, action: onAction)
-                .font(.system(size: 13, weight: .semibold))
+                .appFont(size: 13, weight: .semibold)
                 .foregroundStyle(Palette.accentBlue)
         }
         .padding(.horizontal, 20)
@@ -260,38 +263,37 @@ private struct RecentCallRow: View {
 
     var body: some View {
         let missed = call.callType == .missed
-        HStack(spacing: 12) {
-            InitialsAvatar(
-                name: call.contactName, size: 44, fontSize: 15,
-                background: missed ? Palette.dangerLight : Palette.backgroundGray,
-                foreground: missed ? Palette.accentRed : Palette.textSecondary
-            )
-            VStack(alignment: .leading, spacing: 4) {
-                Text(call.contactName)
-                    .font(.system(size: 15, weight: .semibold))
-                    .foregroundStyle(Palette.textPrimary)
-                    .lineLimit(1)
-                HStack(spacing: 4) {
-                    Image(systemName: call.callType.arrowIcon)
-                        .font(.system(size: 11, weight: .bold))
-                        .foregroundStyle(missed ? Palette.accentRed : Palette.accentGreen)
-                    Text(verbatim: "\(call.callType.label) • \(call.timestamp.formatted(.dateTime.hour(.twoDigits(amPM: .omitted)).minute(.twoDigits)))")
-                        .font(.system(size: 13))
+        let tint = missed ? Palette.accentRed : Palette.accentGreen
+        Button(action: onCall) {
+            HStack(spacing: 14) {
+                Image(systemName: call.callType.arrowIcon)
+                    .appFont(size: 18, weight: .bold)
+                    .foregroundStyle(tint)
+                    .frame(width: 46, height: 46)
+                    .background(Circle().fill(missed ? Palette.dangerLight : Palette.successLight))
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(call.contactName)
+                        .appFont(size: 15, weight: .bold)
+                        .foregroundStyle(Palette.textPrimary)
+                        .lineLimit(1)
+                    Text(call.callType.label)
+                        .appFont(size: 13, weight: .medium)
                         .foregroundStyle(missed ? Palette.accentRed : Palette.textSecondary)
                 }
+                Spacer(minLength: 0)
+                Text(verbatim: call.timestamp.formatted(.dateTime.hour(.twoDigits(amPM: .omitted)).minute(.twoDigits)))
+                    .appFont(size: 12, weight: .semibold)
+                    .foregroundStyle(Palette.textSecondary)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 6)
+                    .background(RoundedRectangle(cornerRadius: 10).fill(Palette.backgroundGray))
             }
-            Spacer(minLength: 0)
-            Button(action: onCall) {
-                Image(systemName: "phone.fill")
-                    .font(.system(size: 16))
-                    .foregroundStyle(Palette.accentGreen)
-                    .frame(width: 48, height: 48)
-                    .background(Circle().fill(Palette.successLight))
-            }
-            .buttonStyle(PressScaleStyle())
-            .accessibilityLabel("Call back")
+            .padding(14)
+            .background(RoundedRectangle(cornerRadius: 16).fill(Palette.cardWhite))
+            .overlay(RoundedRectangle(cornerRadius: 16).stroke(Palette.borderLight.opacity(0.6), lineWidth: 1))
         }
-        .padding(.vertical, 12)
+        .buttonStyle(PressScaleStyle())
+        .accessibilityLabel("Call back")
     }
 }
 

@@ -126,6 +126,7 @@ import com.yeyofone.core.account.AccountDraft
 import com.yeyofone.core.account.ContactDraft
 import com.yeyofone.core.account.normalizeRegistrarUri
 import com.yeyofone.core.model.AccountPreferences
+import com.yeyofone.core.model.PreferenceToggle
 import com.yeyofone.core.model.AudioRoute
 import com.yeyofone.core.model.CallDirection
 import com.yeyofone.core.model.CallId
@@ -416,6 +417,12 @@ private fun AccountsApp(
                 onCallBack = { viewModel.dial(it.accountId, it.dialDestination) },
                 onNavigationItemSelected = navigateFromMenu,
                 forwardingDestination = primaryForwarding.destination.takeIf { primaryForwarding.enabled },
+                doNotDisturb = primary?.let { preferences[it.id.value]?.doNotDisturb } ?: false,
+                onToggleDoNotDisturb = {
+                    primary?.let {
+                        viewModel.setPreference(it.id, PreferenceToggle.DoNotDisturb, !(preferences[it.id.value]?.doNotDisturb ?: false))
+                    }
+                },
             )
         }
         AppScreen.Accounts -> AccountsScreen(

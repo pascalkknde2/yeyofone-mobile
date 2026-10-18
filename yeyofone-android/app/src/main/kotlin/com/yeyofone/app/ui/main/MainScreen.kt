@@ -1,6 +1,5 @@
 package com.yeyofone.app.ui.main
 
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -16,7 +15,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -24,14 +23,12 @@ import androidx.compose.material.icons.automirrored.filled.CallMade
 import androidx.compose.material.icons.automirrored.filled.CallReceived
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Apps
-import androidx.compose.material.icons.filled.Call
+import androidx.compose.material.icons.filled.PowerSettingsNew
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.automirrored.filled.CallMissed
-import androidx.compose.material.icons.filled.History
-import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.PhoneForwarded
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -40,10 +37,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -56,13 +51,9 @@ import com.yeyofone.app.ui.components.BottomNavigationBar
 import com.yeyofone.app.ui.components.HOME_NAVIGATION
 import com.yeyofone.app.ui.theme.AccentBlue
 import com.yeyofone.app.ui.theme.AccentGreen
-import com.yeyofone.app.ui.theme.AccentOrange
 import com.yeyofone.app.ui.theme.AccentRed
 import com.yeyofone.app.ui.theme.BackgroundGray
 import com.yeyofone.app.ui.theme.BorderLight
-import com.yeyofone.app.ui.theme.CardAccent
-import com.yeyofone.app.ui.theme.CardGradientEnd
-import com.yeyofone.app.ui.theme.CardGradientStart
 import com.yeyofone.app.ui.theme.CardWhite
 import com.yeyofone.app.ui.theme.DangerLight
 import com.yeyofone.app.ui.theme.InactiveGray
@@ -91,6 +82,8 @@ fun MainScreen(
     onCallBack: (CallLog) -> Unit,
     onNavigationItemSelected: (Int) -> Unit,
     forwardingDestination: String? = null,
+    doNotDisturb: Boolean = false,
+    onToggleDoNotDisturb: () -> Unit = {},
 ) {
     Scaffold(
         containerColor = CardWhite,
@@ -101,7 +94,7 @@ fun MainScreen(
             contentPadding = PaddingValues(bottom = 32.dp),
             verticalArrangement = Arrangement.spacedBy(24.dp),
         ) {
-            item { MainHeader(primaryAccount?.displayName ?: stringResource(R.string.app_name), isRegistered) }
+            item { MainHeader(primaryAccount?.displayName ?: stringResource(R.string.app_name), primaryAccount?.username, isRegistered, doNotDisturb) }
             // FWD-04: a persistent reminder on the main screen, not only in Settings, so a user
             // doesn't forget calls are being redirected elsewhere.
             if (forwardingDestination != null) {
@@ -115,18 +108,13 @@ fun MainScreen(
             }
             item {
                 Box(Modifier.padding(horizontal = 20.dp)) {
-                    AccountStatusCard(primaryAccount) {
+                    AccountStatusCard(primaryAccount, doNotDisturb, onToggleDoNotDisturb) {
                         primaryAccount?.let(onAccountClick) ?: onAddAccount()
                     }
                 }
             }
             item {
-                QuickActions(
-                    onKeypad = onKeypad,
-                    onContacts = onContacts,
-                    onHistory = onHistory,
-                    modifier = Modifier.padding(horizontal = 20.dp),
-                )
+                SearchBar(onKeypad, Modifier.padding(horizontal = 20.dp))
             }
             item {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -145,11 +133,8 @@ fun MainScreen(
                 }
             } else {
                 item {
-                    Column(Modifier.padding(horizontal = 20.dp)) {
-                        recentCalls.take(3).forEachIndexed { index, call ->
-                            RecentCallRow(call, { onCallBack(call) })
-                            if (index < minOf(recentCalls.size, 3) - 1) HorizontalDivider(color = BorderLight.copy(alpha = 0.5f))
-                        }
+                    Column(Modifier.padding(horizontal = 20.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                        recentCalls.take(3).forEach { call -> RecentCallRow(call, { onCallBack(call) }) }
                     }
                 }
             }
@@ -158,18 +143,32 @@ fun MainScreen(
 }
 
 @Composable
-private fun MainHeader(name: String, online: Boolean) {
+private fun MainHeader(name: String, extension: String?, online: Boolean, doNotDisturb: Boolean) {
     Row(
         Modifier.fillMaxWidth().background(CardWhite).padding(start = 20.dp, end = 20.dp, top = 24.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Column(Modifier.weight(1f).padding(end = 16.dp)) {
-            Text(stringResource(R.string.welcome_back).uppercase(), letterSpacing = 0.5.sp, fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = TextSecondary)
-            Text(name, maxLines = 1, overflow = TextOverflow.Ellipsis, fontSize = 26.sp, fontWeight = FontWeight.Bold, color = TextPrimary, letterSpacing = (-0.5).sp)
+            Text(
+                name,
+                style = MaterialTheme.typography.headlineLarge,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                color = TextPrimary,
+                letterSpacing = (-0.5).sp,
+            )
+            Row(Modifier.padding(top = 4.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                Box(Modifier.size(8.dp).clip(CircleShape).background(if (doNotDisturb) AccentRed else if (online) AccentGreen else InactiveGray))
+                val status = stringResource(if (doNotDisturb) R.string.do_not_disturb_setting else if (online) R.string.home_available else R.string.dashboard_offline)
+                Text(
+                    if (extension != null) "$status • Ext $extension" else status,
+                    fontSize = 14.sp, fontWeight = FontWeight.Medium, color = TextSecondary, maxLines = 1, overflow = TextOverflow.Ellipsis,
+                )
+            }
         }
-        Box(Modifier.size(44.dp).background(PrimaryLight, CircleShape), contentAlignment = Alignment.Center) {
-            Text(name.initials(), fontSize = 18.sp, fontWeight = FontWeight.SemiBold, color = AccentBlue)
+        Box(Modifier.size(52.dp).background(CardWhite, CircleShape).border(2.dp, BorderLight, CircleShape), contentAlignment = Alignment.Center) {
+            Text(name.initials(), fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = AccentBlue)
             Box(
                 Modifier.align(Alignment.BottomEnd).size(12.dp).clip(CircleShape)
                     .background(if (online) AccentGreen else InactiveGray).border(2.dp, CardWhite, CircleShape),
@@ -201,73 +200,50 @@ private fun ForwardingBanner(accountNumber: String?, destination: String, modifi
 }
 
 @Composable
-private fun AccountStatusCard(account: SipAccount?, onManage: () -> Unit) {
-    Box(
-        Modifier.fillMaxWidth().shadow(10.dp, RoundedCornerShape(24.dp))
-            .clip(RoundedCornerShape(24.dp))
-            .background(Brush.linearGradient(listOf(CardGradientStart, CardGradientEnd))),
+private fun AccountStatusCard(account: SipAccount?, doNotDisturb: Boolean, onToggleDnd: () -> Unit, onManage: () -> Unit) {
+    val shape = RoundedCornerShape(12.dp)
+    Row(
+        Modifier.fillMaxWidth().shadow(12.dp, shape, ambientColor = AccentBlue.copy(alpha = 0.3f), spotColor = AccentBlue.copy(alpha = 0.4f))
+            .clip(shape).background(Brush.linearGradient(listOf(Color(0xFF3B82F6), Color(0xFF1D4ED8))))
+            .clickable(onClick = onManage).padding(horizontal = 22.dp, vertical = 18.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
     ) {
-        Canvas(Modifier.matchParentSize()) {
-            val radius = 150.dp.toPx()
-            val blueCenter = Offset(size.width, 0f)
-            drawCircle(Brush.radialGradient(listOf(CardAccent.copy(alpha = 0.22f), Color.Transparent), blueCenter, radius), radius, blueCenter)
+        Column(Modifier.weight(1f).padding(end = 12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Text(stringResource(R.string.primary_account).uppercase(), fontSize = 11.sp, letterSpacing = 1.sp, fontWeight = FontWeight.Bold, color = Color.White.copy(alpha = 0.75f))
+            Text(
+                account?.let { stringResource(R.string.dashboard_extension, it.username) } ?: stringResource(R.string.add_account),
+                fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color.White, maxLines = 1, overflow = TextOverflow.Ellipsis,
+            )
         }
-        Column(Modifier.padding(24.dp)) {
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                Text(stringResource(R.string.primary_account).uppercase(), Modifier.weight(1f), fontSize = 11.sp, letterSpacing = 1.5.sp, fontWeight = FontWeight.SemiBold, color = Color.White.copy(alpha = 0.6f))
-                Box(
-                    Modifier.size(width = 32.dp, height = 24.dp)
-                        .background(Brush.linearGradient(listOf(Color(0xFFFBBF24), Color(0xFFD97706))), RoundedCornerShape(4.dp)),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Box(Modifier.size(width = 20.dp, height = 16.dp).border(1.dp, Color.Black.copy(alpha = 0.2f), RoundedCornerShape(2.dp)))
-                }
-            }
-            Column(Modifier.padding(vertical = 20.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text(
-                    account?.displayName ?: stringResource(R.string.no_accounts),
-                    fontSize = 22.sp, fontWeight = FontWeight.SemiBold, color = Color.White,
-                    letterSpacing = (-0.5).sp, maxLines = 2, overflow = TextOverflow.Ellipsis,
-                )
-                if (account != null) {
-                    Text(
-                        stringResource(R.string.dashboard_extension, account.username),
-                        fontSize = 14.sp, fontWeight = FontWeight.Medium,
-                        color = Color.White.copy(alpha = 0.7f),
-                        maxLines = 1, overflow = TextOverflow.Ellipsis,
-                    )
-                }
-            }
-            HorizontalDivider(color = Color.White.copy(alpha = 0.1f))
-            TextButton(onClick = onManage, contentPadding = PaddingValues(top = 12.dp, bottom = 0.dp)) {
-                Text(stringResource(if (account == null) R.string.add_account else R.string.dashboard_manage_account), color = Color.White.copy(alpha = 0.7f), fontSize = 13.sp)
-                Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null, tint = Color.White.copy(alpha = 0.7f), modifier = Modifier.size(16.dp))
+        if (account != null) {
+            Row(
+                Modifier.clip(CircleShape)
+                    .background(if (doNotDisturb) Color.White else Color.White.copy(alpha = 0.1f))
+                    .border(1.dp, Color.White.copy(alpha = 0.15f), CircleShape)
+                    .clickable(onClick = onToggleDnd).padding(horizontal = 16.dp, vertical = 10.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                val content = if (doNotDisturb) AccentRed else Color.White
+                Icon(Icons.Default.PowerSettingsNew, null, tint = content, modifier = Modifier.size(16.dp))
+                Text(stringResource(R.string.dnd_short), fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = content)
             }
         }
     }
 }
 
 @Composable
-private fun QuickActions(onKeypad: () -> Unit, onContacts: () -> Unit, onHistory: () -> Unit, modifier: Modifier = Modifier) {
-    Row(modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-        QuickAction(Icons.Default.Apps, stringResource(R.string.keypad), AccentBlue, Modifier.weight(1f), onKeypad)
-        QuickAction(Icons.Default.Person, stringResource(R.string.contacts_navigation), AccentGreen, Modifier.weight(1f), onContacts)
-        QuickAction(Icons.Default.History, stringResource(R.string.dashboard_recent), AccentOrange, Modifier.weight(1f), onHistory)
-    }
-}
-
-@Composable
-private fun QuickAction(icon: ImageVector, label: String, color: Color, modifier: Modifier, onClick: () -> Unit) {
-    Column(
-        modifier.clip(RoundedCornerShape(16.dp))
-            .clickable(onClick = onClick).padding(vertical = 12.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(10.dp),
+private fun SearchBar(onClick: () -> Unit, modifier: Modifier = Modifier) {
+    Row(
+        modifier.fillMaxWidth().shadow(6.dp, RoundedCornerShape(20.dp), ambientColor = Color.Black.copy(alpha = 0.08f), spotColor = Color.Black.copy(alpha = 0.08f))
+            .clip(RoundedCornerShape(20.dp)).background(CardWhite).border(1.dp, BorderLight, RoundedCornerShape(20.dp))
+            .clickable(onClick = onClick).padding(horizontal = 18.dp, vertical = 16.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        Box(Modifier.size(60.dp).clip(CircleShape).background(color.copy(alpha = 0.13f)), contentAlignment = Alignment.Center) {
-            Icon(icon, null, tint = color, modifier = Modifier.size(30.dp))
-        }
-        Text(label, fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = TextPrimary, maxLines = 1)
+        Icon(Icons.Default.Search, null, tint = AccentBlue, modifier = Modifier.size(22.dp))
+        Text(stringResource(R.string.search_or_dial), fontSize = 16.sp, fontWeight = FontWeight.Medium, color = InactiveGray)
     }
 }
 
@@ -286,22 +262,23 @@ private fun SectionHeader(title: String, action: String, onAction: () -> Unit) {
 @Composable
 private fun ContactStrip(contacts: List<Contact>, onClick: (Contact) -> Unit, onAdd: () -> Unit) {
     LazyRow(contentPadding = PaddingValues(horizontal = 20.dp), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-        items(contacts, key = { it.id.value }) { contact ->
+        itemsIndexed(contacts, key = { _, c -> c.id.value }) { index, contact ->
+            val (tint, bg) = FAVORITE_TINTS[index % FAVORITE_TINTS.size]
             Column(
                 Modifier.width(72.dp).clip(RoundedCornerShape(12.dp)).clickable { onClick(contact) },
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(7.dp),
             ) {
                 Box(
-                    Modifier.size(56.dp).clip(CircleShape).background(PrimaryLight),
+                    Modifier.size(64.dp).clip(CircleShape).background(bg()),
                     contentAlignment = Alignment.Center,
-                ) { Text(contact.displayName.initials(), fontSize = 20.sp, fontWeight = FontWeight.SemiBold, color = AccentBlue) }
-                Text(contact.displayName, fontSize = 12.sp, fontWeight = FontWeight.Medium, color = TextSecondary, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                ) { Text(contact.displayName.initials(), fontSize = 18.sp, fontWeight = FontWeight.Bold, color = tint()) }
+                Text(contact.displayName, fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = TextPrimary, maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
         }
         item {
             Column(Modifier.clickable(onClick = onAdd), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(7.dp)) {
-                Box(Modifier.size(56.dp).clip(CircleShape).background(BackgroundGray).border(1.dp, BorderLight, CircleShape), contentAlignment = Alignment.Center) {
+                Box(Modifier.size(64.dp).clip(CircleShape).border(1.5.dp, BorderLight, CircleShape), contentAlignment = Alignment.Center) {
                     Icon(Icons.Default.Add, stringResource(R.string.add_account), tint = TextSecondary, modifier = Modifier.size(20.dp))
                 }
                 Text(stringResource(R.string.dashboard_add), fontSize = 12.sp, color = TextSecondary)
@@ -312,47 +289,51 @@ private fun ContactStrip(contacts: List<Contact>, onClick: (Contact) -> Unit, on
 
 @Composable
 private fun RecentCallRow(call: CallLog, onCall: () -> Unit, modifier: Modifier = Modifier) {
+    val missed = call.callType == CallType.MISSED
+    val tint = if (missed) AccentRed else AccentGreen
     Row(
-        modifier.fillMaxWidth().padding(vertical = 12.dp),
+        modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(CardWhite)
+            .border(1.dp, BorderLight.copy(alpha = 0.6f), RoundedCornerShape(16.dp))
+            .clickable(onClick = onCall).padding(14.dp),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        horizontalArrangement = Arrangement.spacedBy(14.dp),
     ) {
-        Box(Modifier.size(44.dp).clip(CircleShape).background(if (call.callType == CallType.MISSED) DangerLight else BackgroundGray), contentAlignment = Alignment.Center) {
-            Text(call.contactName.initials(), fontWeight = FontWeight.SemiBold, color = if (call.callType == CallType.MISSED) AccentRed else TextSecondary)
+        Box(Modifier.size(46.dp).clip(CircleShape).background(if (missed) DangerLight else SuccessLight), contentAlignment = Alignment.Center) {
+            Icon(when (call.callType) {
+                CallType.INCOMING -> Icons.AutoMirrored.Filled.CallReceived
+                CallType.OUTGOING -> Icons.AutoMirrored.Filled.CallMade
+                CallType.MISSED -> Icons.AutoMirrored.Filled.CallMissed
+            }, null, tint = tint, modifier = Modifier.size(20.dp))
         }
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Text(call.contactName, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = TextPrimary, maxLines = 1, overflow = TextOverflow.Ellipsis)
             Text(
-                call.contactName,
-                fontSize = 15.sp,
-                fontWeight = FontWeight.SemiBold,
-                color = TextPrimary,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
+                stringResource(
+                    when (call.callType) {
+                        CallType.INCOMING -> R.string.incoming_call
+                        CallType.OUTGOING -> R.string.outgoing_call
+                        CallType.MISSED -> R.string.missed_call
+                    },
+                ),
+                fontSize = 13.sp, fontWeight = FontWeight.Medium, color = if (missed) AccentRed else TextSecondary,
             )
-            val type = stringResource(
-                when (call.callType) {
-                    CallType.INCOMING -> R.string.incoming_call
-                    CallType.OUTGOING -> R.string.outgoing_call
-                    CallType.MISSED -> R.string.missed_call
-                },
-            )
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                Icon(when (call.callType) {
-                    CallType.INCOMING -> Icons.AutoMirrored.Filled.CallReceived
-                    CallType.OUTGOING -> Icons.AutoMirrored.Filled.CallMade
-                    CallType.MISSED -> Icons.AutoMirrored.Filled.CallMissed
-                }, null, tint = if (call.callType == CallType.MISSED) AccentRed else AccentGreen, modifier = Modifier.size(14.dp))
-                Text("$type • ${call.timestamp.atZone(ZoneId.systemDefault()).format(TIME_FORMAT)}", fontSize = 13.sp, color = if (call.callType == CallType.MISSED) AccentRed else TextSecondary)
-            }
         }
-        Box(
-            Modifier.size(48.dp).clip(CircleShape).background(SuccessLight).clickable(onClick = onCall),
-            contentAlignment = Alignment.Center,
-        ) { Icon(Icons.Default.Call, stringResource(R.string.call_back), tint = AccentGreen, modifier = Modifier.size(18.dp)) }
+        Text(
+            call.timestamp.atZone(ZoneId.systemDefault()).format(TIME_FORMAT),
+            Modifier.clip(RoundedCornerShape(10.dp)).background(BackgroundGray).padding(horizontal = 10.dp, vertical = 6.dp),
+            fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = TextSecondary,
+        )
     }
 }
 
 private fun String.initials(): String = trim().split(Regex("\\s+")).filter(String::isNotEmpty)
     .take(2).joinToString("") { it.first().uppercase() }.ifEmpty { "?" }
+
+private val FAVORITE_TINTS: List<Pair<() -> Color, () -> Color>> = listOf(
+    Pair({ AccentBlue }, { PrimaryLight }),
+    Pair({ Color(0xFFDB2777) }, { Color(0xFFDB2777).copy(alpha = 0.14f) }),
+    Pair({ Color(0xFFD97706) }, { Color(0xFFD97706).copy(alpha = 0.14f) }),
+    Pair({ AccentGreen }, { SuccessLight }),
+)
 
 private val TIME_FORMAT = DateTimeFormatter.ofPattern("HH:mm")
