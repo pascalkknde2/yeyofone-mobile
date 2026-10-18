@@ -94,7 +94,7 @@ fun MainScreen(
             contentPadding = PaddingValues(bottom = 32.dp),
             verticalArrangement = Arrangement.spacedBy(24.dp),
         ) {
-            item { MainHeader(primaryAccount?.displayName ?: stringResource(R.string.app_name), primaryAccount?.username, isRegistered) }
+            item { MainHeader(primaryAccount?.displayName ?: stringResource(R.string.app_name), primaryAccount?.username, isRegistered, doNotDisturb) }
             // FWD-04: a persistent reminder on the main screen, not only in Settings, so a user
             // doesn't forget calls are being redirected elsewhere.
             if (forwardingDestination != null) {
@@ -143,7 +143,7 @@ fun MainScreen(
 }
 
 @Composable
-private fun MainHeader(name: String, extension: String?, online: Boolean) {
+private fun MainHeader(name: String, extension: String?, online: Boolean, doNotDisturb: Boolean) {
     Row(
         Modifier.fillMaxWidth().background(CardWhite).padding(start = 20.dp, end = 20.dp, top = 24.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
@@ -159,8 +159,8 @@ private fun MainHeader(name: String, extension: String?, online: Boolean) {
                 letterSpacing = (-0.5).sp,
             )
             Row(Modifier.padding(top = 4.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                Box(Modifier.size(8.dp).clip(CircleShape).background(if (online) AccentGreen else InactiveGray))
-                val status = stringResource(if (online) R.string.home_available else R.string.dashboard_offline)
+                Box(Modifier.size(8.dp).clip(CircleShape).background(if (doNotDisturb) AccentRed else if (online) AccentGreen else InactiveGray))
+                val status = stringResource(if (doNotDisturb) R.string.do_not_disturb_setting else if (online) R.string.home_available else R.string.dashboard_offline)
                 Text(
                     if (extension != null) "$status • Ext $extension" else status,
                     fontSize = 14.sp, fontWeight = FontWeight.Medium, color = TextSecondary, maxLines = 1, overflow = TextOverflow.Ellipsis,
@@ -219,14 +219,15 @@ private fun AccountStatusCard(account: SipAccount?, doNotDisturb: Boolean, onTog
         if (account != null) {
             Row(
                 Modifier.clip(CircleShape)
-                    .background(Color.White.copy(alpha = if (doNotDisturb) 0.28f else 0.1f))
+                    .background(if (doNotDisturb) Color.White else Color.White.copy(alpha = 0.1f))
                     .border(1.dp, Color.White.copy(alpha = 0.15f), CircleShape)
                     .clickable(onClick = onToggleDnd).padding(horizontal = 16.dp, vertical = 10.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                Icon(Icons.Default.PowerSettingsNew, null, tint = Color.White, modifier = Modifier.size(16.dp))
-                Text(stringResource(R.string.dnd_short), fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = Color.White)
+                val content = if (doNotDisturb) AccentRed else Color.White
+                Icon(Icons.Default.PowerSettingsNew, null, tint = content, modifier = Modifier.size(16.dp))
+                Text(stringResource(R.string.dnd_short), fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = content)
             }
         }
     }
