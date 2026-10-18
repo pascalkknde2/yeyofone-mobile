@@ -524,4 +524,5 @@
     <string name="search_or_dial">Search or dial a number…</string>
     <string name="home_available">Available</string>
     <string name="dnd_short">DND</string>
+    <string name="call_could_not_be_placed">Couldn’t place the call. Check that the account is connected.</string>
 </resources>

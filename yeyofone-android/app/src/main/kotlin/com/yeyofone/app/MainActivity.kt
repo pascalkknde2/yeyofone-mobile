@@ -282,6 +282,12 @@ private fun AccountsApp(
     onAcceptHandled: () -> Unit,
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val callErrorContext = LocalContext.current
+    LaunchedEffect(viewModel) {
+        viewModel.callErrors.collect {
+            android.widget.Toast.makeText(callErrorContext, R.string.call_could_not_be_placed, android.widget.Toast.LENGTH_LONG).show()
+        }
+    }
     if (pendingAccept != null) {
         val context = LocalContext.current
         // Drop requests for calls that ended, were answered or never matched a live session.

@@ -33,12 +33,14 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.After
+import org.junit.Assert.assertNull
 import org.junit.Before
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -246,6 +248,20 @@ class YeyoFoneViewModelTest {
         runCurrent()
 
         assertEquals(listOf(current to true, other to false), media.heldCalls)
+    }
+
+    @Test
+    fun `startCall that fails reports an error instead of crashing`() = runTest {
+        val viewModel = viewModel()
+        val errors = mutableListOf<Unit>()
+        val collector = launch(UnconfinedTestDispatcher(testScheduler)) { viewModel.callErrors.collect { errors += it } }
+
+        viewModel.startCall(SipAccountId("disabled"), "1005")
+        runCurrent()
+
+        assertEquals(1, errors.size)
+        assertNull(viewModel.uiState.value.activeCallId)
+        collector.cancel()
     }
 
     @Test
