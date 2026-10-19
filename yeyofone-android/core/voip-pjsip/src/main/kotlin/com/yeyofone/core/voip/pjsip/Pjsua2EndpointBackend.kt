@@ -437,6 +437,10 @@ internal class Pjsua2EndpointBackend : EndpointBackend {
         }
         try {
             call.sendDtmf(prm)
+            Log.i("YeyoFoneCall", "call=$callId dtmf=$digit method=RFC2833 sent")
+        } catch (error: Exception) {
+            Log.w("YeyoFoneCall", "call=$callId dtmf=$digit method=RFC2833 failed: ${error.message}")
+            throw error
         } finally {
             prm.delete()
         }
