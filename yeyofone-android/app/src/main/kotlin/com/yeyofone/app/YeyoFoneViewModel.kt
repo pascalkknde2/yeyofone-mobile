@@ -27,7 +27,12 @@ import com.yeyofone.core.voip.AudioRouteManager
 import com.yeyofone.core.voip.CallManager
 import com.yeyofone.core.voip.MediaManager
 import com.yeyofone.core.voip.RegistrationManager
+import android.util.Log
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -278,9 +283,26 @@ class YeyoFoneViewModel(
     fun setContactFavorite(id: ContactId, favorite: Boolean) = launch { contactsRepo.setFavorite(id, favorite) }
     fun deleteContact(id: ContactId) = launch { contactsRepo.delete(id) }
 
-    fun startCall(accountId: SipAccountId, destination: String) = launch {
+    private val mutableCallErrors = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
+
+    /** Emits when an outgoing call could not be placed (for example the account is disabled), so the UI can say so. */
+    val callErrors: SharedFlow<Unit> = mutableCallErrors.asSharedFlow()
+
+    // An exception escaping viewModelScope.launch kills the app; placing a call can legitimately
+    // fail (account disabled or not registered with the SIP stack, engine stopped), so report it instead.
+    private suspend fun placeCall(accountId: SipAccountId, destination: String): CallId? = try {
         audioRoutes.prepareForCall()
-        activeCallId.value = calls.call(accountId, destination)
+        calls.call(accountId, destination)
+    } catch (error: CancellationException) {
+        throw error
+    } catch (error: Exception) {
+        runCatching { Log.w("YeyoFoneCall", "Could not place call to $destination", error) }
+        mutableCallErrors.tryEmit(Unit)
+        null
+    }
+
+    fun startCall(accountId: SipAccountId, destination: String) = launch {
+        placeCall(accountId, destination)?.let { activeCallId.value = it }
     }
 
     fun answer(callId: CallId) = launch {
@@ -316,8 +338,7 @@ class YeyoFoneViewModel(
     }
 
     fun startConsultation(accountId: SipAccountId, destination: String) = launch {
-        audioRoutes.prepareForCall()
-        consultationCallId.value = calls.call(accountId, destination)
+        placeCall(accountId, destination)?.let { consultationCallId.value = it }
     }
 
     fun returnToCaller(callId: CallId, consultation: CallSession) = launch {

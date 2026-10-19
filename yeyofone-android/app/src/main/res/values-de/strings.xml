@@ -524,4 +524,5 @@
     <string name="search_or_dial">Suchen oder Nummer wählen…</string>
     <string name="home_available">Verfügbar</string>
     <string name="dnd_short">DND</string>
+    <string name="call_could_not_be_placed">Der Anruf konnte nicht aufgebaut werden. Prüfen Sie, ob das Konto verbunden ist.</string>
 </resources>

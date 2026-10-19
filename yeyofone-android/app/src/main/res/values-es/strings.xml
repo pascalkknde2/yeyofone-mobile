@@ -526,4 +526,5 @@
     <string name="search_or_dial">Buscar o marcar un número…</string>
     <string name="home_available">Disponible</string>
     <string name="dnd_short">NM</string>
+    <string name="call_could_not_be_placed">No se pudo realizar la llamada. Comprueba que la cuenta esté conectada.</string>
 </resources>

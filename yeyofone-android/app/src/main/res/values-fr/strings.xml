@@ -526,4 +526,5 @@
     <string name="search_or_dial">Rechercher ou composer un numéro…</string>
     <string name="home_available">Disponible</string>
     <string name="dnd_short">NPD</string>
+    <string name="call_could_not_be_placed">Impossible de passer l’appel. Vérifiez que le compte est connecté.</string>
 </resources>
