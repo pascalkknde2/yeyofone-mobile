@@ -331,7 +331,16 @@ class YeyoFoneViewModel(
         media.setHeld(otherId, false)
         activeCallId.value = otherId
     }
-    fun sendDtmf(callId: CallId, digit: Char) = launch { calls.sendDtmf(callId, digit) }
+    // A rejected digit (call just ended, remote has no RFC 2833) must not take the app down.
+    fun sendDtmf(callId: CallId, digit: Char) = launch {
+        try {
+            calls.sendDtmf(callId, digit)
+        } catch (error: CancellationException) {
+            throw error
+        } catch (error: Exception) {
+            runCatching { Log.w("YeyoFoneCall", "DTMF $digit was not sent", error) }
+        }
+    }
     fun transfer(callId: CallId, destination: String) = launch { calls.transfer(callId, destination) }
     fun completeTransfer(callId: CallId, consultationId: CallId) = launch {
         calls.attendedTransfer(callId, consultationId)
