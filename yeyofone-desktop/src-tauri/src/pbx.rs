@@ -1,6 +1,6 @@
 //! The FusionPBX add-on (`pbx/yeyofone/api.php`): live calls for managers and voicemail for
 //! transcripts. The add-on URL is a setting; the user's FusionPBX API key and the eavesdrop PIN
-//! live in the macOS Keychain and never reach the WebView.
+//! live in the operating system's secure credential store and never reach the WebView.
 
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
@@ -55,39 +55,39 @@ pub struct Pbx {
 }
 
 fn secret_read(account: &str) -> Result<Zeroizing<String>, String> {
-    #[cfg(target_os = "macos")]
+    #[cfg(any(target_os = "macos", target_os = "linux"))]
     {
         keyring::Entry::new(SERVICE, account)
             .and_then(|entry| entry.get_password())
             .map(Zeroizing::new)
             .map_err(|_| "Not set up yet.".into())
     }
-    #[cfg(not(target_os = "macos"))]
+    #[cfg(not(any(target_os = "macos", target_os = "linux")))]
     {
         let _ = account;
-        Err("PBX credentials are currently stored on macOS only.".into())
+        Err("Secure credential storage is unavailable on this platform.".into())
     }
 }
 
 fn secret_write(account: &str, value: Option<&str>) -> Result<(), String> {
-    #[cfg(target_os = "macos")]
+    #[cfg(any(target_os = "macos", target_os = "linux"))]
     {
         let entry = keyring::Entry::new(SERVICE, account)
-            .map_err(|_| "Keychain unavailable.".to_string())?;
+            .map_err(|_| "Secure credential store unavailable.".to_string())?;
         match value {
             Some(value) => entry
                 .set_password(value)
-                .map_err(|_| "Could not save to Keychain.".into()),
+                .map_err(|_| "Could not save the credential securely.".into()),
             None => match entry.delete_credential() {
                 Ok(()) | Err(keyring::Error::NoEntry) => Ok(()),
-                Err(_) => Err("Could not remove it from Keychain.".into()),
+                Err(_) => Err("Could not remove the saved credential.".into()),
             },
         }
     }
-    #[cfg(not(target_os = "macos"))]
+    #[cfg(not(any(target_os = "macos", target_os = "linux")))]
     {
         let _ = (account, value);
-        Err("PBX credentials are currently stored on macOS only.".into())
+        Err("Secure credential storage is unavailable on this platform.".into())
     }
 }
 

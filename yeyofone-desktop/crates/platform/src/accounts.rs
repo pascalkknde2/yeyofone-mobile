@@ -108,14 +108,14 @@ impl AccountRepository for SqliteAccounts {
     }
 }
 pub struct OsVault;
-#[cfg(target_os = "macos")]
+#[cfg(any(target_os = "macos", target_os = "linux"))]
 fn entry(r: &CredentialRef) -> Result<keyring::Entry, DomainError> {
     keyring::Entry::new("com.yeyofone.desktop.sip", r.as_str())
         .map_err(|_| DomainError::Unavailable)
 }
 impl CredentialStore for OsVault {
     fn read(&self, r: &CredentialRef) -> Result<SipCredentials, DomainError> {
-        #[cfg(target_os = "macos")]
+        #[cfg(any(target_os = "macos", target_os = "linux"))]
         {
             SipCredentials::new(
                 entry(r)?
@@ -123,14 +123,14 @@ impl CredentialStore for OsVault {
                     .map_err(|_| DomainError::Unavailable)?,
             )
         }
-        #[cfg(not(target_os = "macos"))]
+        #[cfg(not(any(target_os = "macos", target_os = "linux")))]
         {
             let _ = r;
             Err(DomainError::Unavailable)
         }
     }
     fn write(&mut self, r: &CredentialRef, s: &SipCredentials) -> Result<(), DomainError> {
-        #[cfg(target_os = "macos")]
+        #[cfg(any(target_os = "macos", target_os = "linux"))]
         {
             s.expose(|v| {
                 entry(r)?
@@ -138,21 +138,21 @@ impl CredentialStore for OsVault {
                     .map_err(|_| DomainError::Unavailable)
             })
         }
-        #[cfg(not(target_os = "macos"))]
+        #[cfg(not(any(target_os = "macos", target_os = "linux")))]
         {
             let _ = (r, s);
             Err(DomainError::Unavailable)
         }
     }
     fn remove(&mut self, r: &CredentialRef) -> Result<(), DomainError> {
-        #[cfg(target_os = "macos")]
+        #[cfg(any(target_os = "macos", target_os = "linux"))]
         {
             match entry(r)?.delete_credential() {
                 Ok(()) | Err(keyring::Error::NoEntry) => Ok(()),
                 Err(_) => Err(DomainError::Unavailable),
             }
         }
-        #[cfg(not(target_os = "macos"))]
+        #[cfg(not(any(target_os = "macos", target_os = "linux")))]
         {
             let _ = r;
             Err(DomainError::Unavailable)

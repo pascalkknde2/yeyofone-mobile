@@ -18,10 +18,10 @@ export const translations: Record<
     es: "Extensiones",
     de: "Durchwahlen",
   },
-  "Connected. API key saved in your Keychain.": {
-    fr: "Connecté. Clé API enregistrée dans votre trousseau.",
-    es: "Conectado. Clave API guardada en tu llavero.",
-    de: "Verbunden. API-Schlüssel im Schlüsselbund gespeichert.",
+  "Connected. API key saved in your secure password store.": {
+    fr: "Connecté. Clé API enregistrée dans votre coffre-fort sécurisé.",
+    es: "Conectado. Clave API guardada en tu almacén seguro.",
+    de: "Verbunden. API-Schlüssel im sicheren Passwortspeicher gespeichert.",
   },
   Check: {
     fr: "Vérifier",
@@ -53,10 +53,10 @@ export const translations: Record<
     es: "PIN de escucha",
     de: "Mithör-PIN",
   },
-  "Saved in your Keychain. The app keys it in for you.": {
-    fr: "Enregistré dans votre trousseau. L’app le compose pour vous.",
-    es: "Guardado en tu llavero. La app lo marca por ti.",
-    de: "Im Schlüsselbund gespeichert. Die App tippt ihn für dich ein.",
+  "Saved in your secure password store. The app keys it in for you.": {
+    fr: "Enregistré dans votre coffre-fort sécurisé. L’app le compose pour vous.",
+    es: "Guardado en tu almacén seguro. La app lo marca por ti.",
+    de: "Im sicheren Passwortspeicher gespeichert. Die App tippt ihn für dich ein.",
   },
   "The PIN your PBX asks for after dialling *33. Needed for Listen, Whisper and Barge.":
     {
@@ -302,10 +302,10 @@ export const translations: Record<
     es: "Clave API de Claude",
     de: "Claude-API-Schlüssel",
   },
-  "Saved in your Keychain.": {
-    fr: "Enregistrée dans votre trousseau.",
-    es: "Guardada en tu llavero.",
-    de: "In deinem Schlüsselbund gespeichert.",
+  "Saved in your secure password store.": {
+    fr: "Enregistrée dans votre coffre-fort sécurisé.",
+    es: "Guardada en tu almacén seguro.",
+    de: "Im sicheren Passwortspeicher gespeichert.",
   },
   "Create one at console.anthropic.com.": {
     fr: "Créez-en une sur console.anthropic.com.",
@@ -1346,10 +1346,10 @@ export const translations: Record<
   Register: { fr: "Enregistrer", es: "Registrar", de: "Registrieren" },
   Unregister: { fr: "Désenregistrer", es: "Cancelar registro", de: "Abmelden" },
 
-  "Password cleanup retries when Keychain is available.": {
-    fr: "La suppression des mots de passe reprend lorsque le trousseau est disponible.",
-    es: "La eliminación de contraseñas se reintenta cuando el llavero está disponible.",
-    de: "Passwörter werden gelöscht, sobald der Schlüsselbund wieder verfügbar ist.",
+  "Password cleanup retries when the secure password store is available.": {
+    fr: "La suppression des mots de passe reprend lorsque le coffre-fort sécurisé est disponible.",
+    es: "La eliminación de contraseñas se reintenta cuando el almacén seguro está disponible.",
+    de: "Passwörter werden gelöscht, sobald der sichere Passwortspeicher wieder verfügbar ist.",
   },
 
   "SIP accounts": { fr: "Comptes SIP", es: "Cuentas SIP", de: "SIP-Konten" },
@@ -1368,10 +1368,10 @@ export const translations: Record<
     es: "Abra la aplicación de escritorio para gestionar cuentas SIP.",
     de: "Öffnen Sie die Desktop-App, um SIP-Konten zu verwalten.",
   },
-  "Keychain is unavailable. Unlock it and try again.": {
-    fr: "Le trousseau est indisponible. Déverrouillez-le et réessayez.",
-    es: "El llavero no está disponible. Desbloquéelo y vuelva a intentarlo.",
-    de: "Der Schlüsselbund ist nicht verfügbar. Entsperren Sie ihn und versuchen Sie es erneut.",
+  "Secure password store is unavailable. Unlock it and try again.": {
+    fr: "Le coffre-fort sécurisé est indisponible. Déverrouillez-le et réessayez.",
+    es: "El almacén seguro no está disponible. Desbloquéelo y vuelva a intentarlo.",
+    de: "Der sichere Passwortspeicher ist nicht verfügbar. Entsperren Sie ihn und versuchen Sie es erneut.",
   },
   "Account operation failed. Check the fields and try again.": {
     fr: "L’opération a échoué. Vérifiez les champs et réessayez.",

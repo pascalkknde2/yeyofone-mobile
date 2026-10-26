@@ -4,22 +4,30 @@ fn main() {
     println!("cargo:rerun-if-env-changed=YEYOFONE_NATIVE_DIR");
     let root = PathBuf::from(env::var("CARGO_MANIFEST_DIR").unwrap()).join("../..");
     let os = env::var("CARGO_CFG_TARGET_OS").unwrap();
-    assert_eq!(
-        os, "macos",
-        "The native Rust linker profile is verified on macOS only; other targets require validation"
+    assert!(
+        os == "macos" || os == "linux",
+        "The native Rust linker profile is available for macOS and Linux"
     );
     let arch = env::var("CARGO_CFG_TARGET_ARCH").unwrap();
     let native_arch = if arch == "aarch64" { "arm64" } else { &arch };
     let directory = env::var_os("YEYOFONE_NATIVE_DIR")
         .map(PathBuf::from)
-        .unwrap_or_else(|| root.join(format!("target/native/darwin-{native_arch}")));
+        .unwrap_or_else(|| {
+            root.join(format!(
+                "target/native/{}-{native_arch}",
+                if os == "macos" { "darwin" } else { "linux" }
+            ))
+        });
     let manifest_file = directory.join("artifacts.json");
     println!("cargo:rerun-if-changed={}", manifest_file.display());
     let manifest: serde_json::Value = serde_json::from_slice(&fs::read(&manifest_file).expect(
         "Build pinned native artifacts first (see docs/pjsip-build.md), or set YEYOFONE_NATIVE_DIR",
     ))
     .unwrap();
-    assert_eq!(manifest["platform"], "Darwin");
+    assert_eq!(
+        manifest["platform"],
+        if os == "macos" { "Darwin" } else { "Linux" }
+    );
     assert_eq!(manifest["architecture"], native_arch);
     let source_lock: serde_json::Value =
         serde_json::from_slice(&fs::read(root.join("native/sources.lock.json")).unwrap()).unwrap();
@@ -81,14 +89,21 @@ fn main() {
     ] {
         println!("cargo:rustc-link-lib=static={library}");
     }
-    println!("cargo:rustc-link-lib=dylib=c++");
-    for framework in [
-        "CoreAudio",
-        "AudioToolbox",
-        "Foundation",
-        "AppKit",
-        "CoreFoundation",
-    ] {
-        println!("cargo:rustc-link-lib=framework={framework}");
+    if os == "macos" {
+        println!("cargo:rustc-link-lib=dylib=c++");
+        for framework in [
+            "CoreAudio",
+            "AudioToolbox",
+            "Foundation",
+            "AppKit",
+            "CoreFoundation",
+        ] {
+            println!("cargo:rustc-link-lib=framework={framework}");
+        }
+    } else {
+        println!("cargo:rustc-link-lib=dylib=stdc++");
+        for library in ["asound", "pthread", "dl", "m", "rt", "atomic"] {
+            println!("cargo:rustc-link-lib=dylib={library}");
+        }
     }
 }

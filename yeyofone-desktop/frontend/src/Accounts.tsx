@@ -118,7 +118,7 @@ export function Accounts() {
         e === "account_in_call"
           ? t("End the active call before changing this account.")
           : e === "vault_unavailable"
-            ? t("Keychain is unavailable. Unlock it and try again.")
+            ? t("Secure password store is unavailable. Unlock it and try again.")
             : t("Account operation failed. Check the fields and try again."),
       );
       return false;
@@ -173,7 +173,7 @@ export function Accounts() {
         )}
       </p>
       {error && <p role="alert">{error}</p>}
-      <p>{t("Password cleanup retries when Keychain is available.")}</p>
+      <p>{t("Password cleanup retries when the secure password store is available.")}</p>
       {!registrationAvailable && (
         <p role="status">{t("SIP registration is currently unavailable.")}</p>
       )}

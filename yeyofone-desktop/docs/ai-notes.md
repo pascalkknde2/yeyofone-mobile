@@ -24,7 +24,7 @@ The **AI insights** page totals these across calls, so a manager can coach from 
 
 ## Setup (Settings › AI assistant)
 
-- **Claude API key:** stored in the macOS Keychain (service `com.yeyofone.desktop.ai`). It is never written to disk or logged, and it's checked to look like `sk-ant-…` before it is saved.
+- **Claude API key:** stored in the operating system's secure credential store (macOS Keychain or Linux Secret Service, service `com.yeyofone.desktop.ai`). It is never written to app settings or logged, and it's checked to look like `sk-ant-…` before it is saved.
 - **Speech model:** downloaded from `huggingface.co/ggerganov/whisper.cpp` into `ai-models/`. Its size and SHA-256 must match the pinned values in `crates/ai/src/models.rs`, or the file is discarded.
   - Base: 148 MB, multilingual or English only.
   - Small: 488 MB, more accurate.
@@ -65,8 +65,8 @@ The script checks the file's PHP syntax on the server before replacing anything.
 3. For Live calls, the user needs the `call_active_view` permission. Admins have it.
 
 **In the app**, under Settings › AI assistant › Phone system:
-1. Enter the PBX address and the API key. The app checks them against the PBX and then keeps the key in the Keychain.
-2. For Listen / Whisper / Barge, also enter the **eavesdrop PIN**. It's stored in the Keychain, and the Rust side keys it into the call as DTMF, so it never reaches the WebView.
+1. Enter the PBX address and the API key. The app checks them against the PBX and then keeps the key in the OS secure credential store.
+2. For Listen / Whisper / Barge, also enter the **eavesdrop PIN**. It's stored in the OS secure credential store, and the Rust side keys it into the call as DTMF, so it never reaches the WebView.
 
 ### Voicemail transcripts
 
