@@ -40,6 +40,7 @@ int32_t yv_call_release(struct YvHandle*, uint64_t token) YV_NOEXCEPT;
 struct YvAccountConfig {
     uint64_t token;
     const uint8_t* username; uint32_t username_len;
+    const uint8_t* authentication_username; uint32_t authentication_username_len;
     const uint8_t* host; uint32_t host_len;
     const uint8_t* password; uint32_t password_len;
     uint32_t port; int32_t transport; /* 0 UDP, 1 TCP, 2 TLS */
@@ -63,6 +64,8 @@ int32_t yv_set_ringtone(struct YvHandle* handle, int32_t enabled) YV_NOEXCEPT;
  * media connections. iOS CallKit hosts call this when the system activates or deactivates the
  * audio session, since audio must not start before activation. */
 int32_t yv_audio_device(struct YvHandle* handle, int32_t open) YV_NOEXCEPT;
+/* Sets remote call audio playback gain (0.5x–1.5x) for current and future calls. */
+int32_t yv_set_call_receive_gain(struct YvHandle* handle, float gain) YV_NOEXCEPT;
 /* Call handoff between devices of the same account. */
 /* A call's SIP dialog as the PBX sees it, for another device's INVITE with Replaces (RFC 3891).
  * Lengths are 0 until the dialog is known. ended_elsewhere is 1 once the PBX ended the call with

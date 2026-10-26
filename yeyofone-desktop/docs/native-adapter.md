@@ -35,9 +35,9 @@ Rust's command queue has 16 slots. Full queues return Busy; disconnected workers
 
 ## Static linking and packaging
 
-CMake builds the narrow bridge archive alongside the pinned PJSUA2/OpenSSL stack. The Rust build script verifies source pins, platform/architecture, bridge/header/CMake fingerprints and all archive hashes before linking. It never downloads dependencies. It fails on stale/missing/mismatched archives. The current Rust linker profile is deliberately gated to macOS until other target evidence is available; macOS ARM64 is configured but untested.
+CMake builds the narrow bridge archive alongside the pinned PJSUA2/OpenSSL stack. The Rust build script verifies source pins, platform/architecture, bridge/header/CMake fingerprints and all archive hashes before linking. It never downloads dependencies. It fails on stale/missing/mismatched archives. macOS and Linux link profiles are implemented; macOS ARM64 and all Linux runtime behavior still need platform verification.
 
-The bridge and VoIP/crypto libraries are statically linked into the app; there is no native DLL/dylib search path. The macOS app minimum is 13.0 to match the libraries, but runtime compatibility on macOS 13 has not been tested. Third-party notices are packaged under `Contents/Resources/licenses`. The PJSIP product distribution license decision, release signing and notarization remain unresolved; the bundle is local debug evidence.
+The bridge and VoIP/crypto libraries are statically linked into the app; there is no native DLL/dylib search path. On Linux, ALSA and standard system libraries remain dynamic dependencies. The macOS app minimum is 13.0 to match the libraries, but runtime compatibility on macOS 13 has not been tested. Third-party notices are packaged under `Contents/Resources/licenses`. The PJSIP product distribution license decision, release signing and notarization remain unresolved; the bundle is local debug evidence.
 
 ## Verification
 

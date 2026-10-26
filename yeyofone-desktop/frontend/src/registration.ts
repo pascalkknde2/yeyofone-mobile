@@ -117,7 +117,7 @@ export function registrationPresentation(
     transport: "The SIP transport failed. Retrying when possible.",
     offline: "Your network is unavailable.",
     timeout: "The SIP server did not respond in time.",
-    vault_unavailable: "Keychain is unavailable. Unlock it and try again.",
+    vault_unavailable: "Secure password store is unavailable. Unlock it and try again.",
     engine_unavailable: "The SIP engine could not configure this account.",
     capacity:
       "The active account limit has been reached. Disable an account and try again.",

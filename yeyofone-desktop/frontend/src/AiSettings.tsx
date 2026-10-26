@@ -93,7 +93,7 @@ export function AiSettings() {
           <strong>{t("Claude API key")}</strong>
           <small>
             {status.hasKey
-              ? t("Saved in your Keychain.")
+              ? t("Saved in your secure password store.")
               : t("Create one at console.anthropic.com.")}
           </small>
         </div>

@@ -1,6 +1,6 @@
 # Cloudflare R2 recording storage
 
-YeyoFone records WAV files locally, then backs up completed calls to a private R2 bucket through the included authenticated Cloudflare Worker. Local files remain available offline. The desktop connection token is stored in macOS Keychain, never in frontend storage or the public settings file.
+YeyoFone records WAV files locally, then backs up completed calls to a private R2 bucket through the included authenticated Cloudflare Worker. Local files remain available offline. The desktop connection token is stored in the OS secure credential store, never in frontend storage or the public settings file.
 
 ## Details to provide
 
@@ -98,7 +98,7 @@ recordings/<installation-id>/<recording-id>.wav
 - Single recordings are limited to **100 MiB** by the app and Worker. WAVs above this size stay local; compression/multipart uploads are not implemented.
 - Backups cover audio files. Call metadata and the recording-to-object mapping remain in the local `call-history.sqlite3` database. Preserve that database and `recording-cloud.json` for full recovery. This implementation does not yet provide a cross-device cloud history index.
 - This Worker uses one private owner token; it is intended for your own installation(s), not a shared multi-user service. A multi-user deployment should add user authentication and per-user authorization.
-- macOS Keychain is supported. Other desktop platforms retain the existing project's secure-vault limitation.
+- macOS Keychain and Linux Secret Service are supported. Windows secure credential storage remains unavailable.
 
 ## Validation
 

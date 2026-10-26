@@ -34,29 +34,29 @@ pub struct Cloud {
 pub type CloudState = Arc<Mutex<Cloud>>;
 
 fn vault_read() -> Result<Zeroizing<String>, String> {
-    #[cfg(target_os = "macos")]
+    #[cfg(any(target_os = "macos", target_os = "linux"))]
     {
         keyring::Entry::new("com.yeyofone.desktop.r2", "recordings-token")
             .and_then(|entry| entry.get_password())
             .map(Zeroizing::new)
             .map_err(|_| "Cloud connection token unavailable. Reconnect R2.".into())
     }
-    #[cfg(not(target_os = "macos"))]
+    #[cfg(not(any(target_os = "macos", target_os = "linux")))]
     {
-        Err("Secure cloud credentials are currently supported on macOS.".into())
+        Err("Secure credential storage is unavailable on this platform.".into())
     }
 }
 fn vault_write(token: &str) -> Result<(), String> {
-    #[cfg(target_os = "macos")]
+    #[cfg(any(target_os = "macos", target_os = "linux"))]
     {
         keyring::Entry::new("com.yeyofone.desktop.r2", "recordings-token")
             .and_then(|entry| entry.set_password(token))
-            .map_err(|_| "Could not store the cloud token in Keychain.".into())
+            .map_err(|_| "Could not store the cloud token securely.".into())
     }
-    #[cfg(not(target_os = "macos"))]
+    #[cfg(not(any(target_os = "macos", target_os = "linux")))]
     {
         let _ = token;
-        Err("Secure cloud credentials are currently supported on macOS.".into())
+        Err("Secure credential storage is unavailable on this platform.".into())
     }
 }
 pub fn validate_endpoint(value: &str) -> Result<String, String> {

@@ -3,7 +3,7 @@
 //!
 //! Audio never leaves the computer: transcription runs on this Mac with whisper.cpp. Only the
 //! text transcript is sent to Anthropic, and only when notes are generated. The Claude API key
-//! lives in the macOS Keychain.
+//! lives in the operating system's secure credential store.
 
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
@@ -92,42 +92,42 @@ struct DownloadStatus {
 }
 
 fn vault_read() -> Result<Zeroizing<String>, String> {
-    #[cfg(target_os = "macos")]
+    #[cfg(any(target_os = "macos", target_os = "linux"))]
     {
         keyring::Entry::new(KEY_SERVICE, KEY_ACCOUNT)
             .and_then(|entry| entry.get_password())
             .map(Zeroizing::new)
             .map_err(|_| "Add your Claude API key in Settings › AI.".into())
     }
-    #[cfg(not(target_os = "macos"))]
+    #[cfg(not(any(target_os = "macos", target_os = "linux")))]
     {
-        Err("The Claude API key is currently stored on macOS only.".into())
+        Err("Secure credential storage is unavailable on this platform.".into())
     }
 }
 
 fn vault_write(key: Option<&str>) -> Result<(), String> {
-    #[cfg(target_os = "macos")]
+    #[cfg(any(target_os = "macos", target_os = "linux"))]
     {
         let entry = keyring::Entry::new(KEY_SERVICE, KEY_ACCOUNT)
-            .map_err(|_| "Keychain unavailable.".to_string())?;
+            .map_err(|_| "Secure credential store unavailable.".to_string())?;
         match key {
             Some(key) => entry
                 .set_password(key)
-                .map_err(|_| "Could not save the key in Keychain.".into()),
+                .map_err(|_| "Could not save the key securely.".into()),
             None => match entry.delete_credential() {
                 Ok(()) | Err(keyring::Error::NoEntry) => Ok(()),
-                Err(_) => Err("Could not remove the key from Keychain.".into()),
+                Err(_) => Err("Could not remove the saved key.".into()),
             },
         }
     }
-    #[cfg(not(target_os = "macos"))]
+    #[cfg(not(any(target_os = "macos", target_os = "linux")))]
     {
         let _ = key;
-        Err("The Claude API key is currently stored on macOS only.".into())
+        Err("Secure credential storage is unavailable on this platform.".into())
     }
 }
 
-/// Anthropic keys look like `sk-ant-…`; reject anything else before it reaches Keychain.
+/// Anthropic keys look like `sk-ant-…`; reject anything else before saving it.
 pub fn validate_key(key: &str) -> Result<&str, String> {
     let key = key.trim();
     if !key.starts_with("sk-ant-")

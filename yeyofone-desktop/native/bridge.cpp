@@ -13,6 +13,7 @@
 #include <filesystem>
 #include <cctype>
 #include <cstring>
+#include <cmath>
 #include <deque>
 #include <vector>
 #include <pjlib-util/errno.h>
@@ -150,6 +151,7 @@ class NativeCall final : public pj::Call {
     YvCall latest{};
     pj::Endpoint& endpoint;
     bool audio, capture_connected=false, playback_connected=false;
+    float receive_gain=1.0f;
     pj::ToneGenerator ringtone;
     bool ringtone_active=false;
     pj::ToneGenerator ringback;
@@ -207,7 +209,7 @@ public:
     bool is_incoming=false;
     std::string dialog_call_id,dialog_local_tag,dialog_remote_tag,dialog_remote_user;
     bool ended_elsewhere=false;
-    NativeCall(NativeAccount& account,uint64_t token,pj::Endpoint& ep,bool use_audio,int call_id=PJSUA_INVALID_ID,bool incoming=false):pj::Call(account,call_id),endpoint(ep),audio(use_audio),account_token(account.token),is_incoming(incoming){latest.token=token;latest.account_token=account.token;latest.incoming=incoming?1:0;if(incoming){latest.state=PJSIP_INV_STATE_INCOMING;capture_caller();}}
+    NativeCall(NativeAccount& account,uint64_t token,pj::Endpoint& ep,bool use_audio,int call_id=PJSUA_INVALID_ID,bool incoming=false,float gain=1.0f):pj::Call(account,call_id),endpoint(ep),audio(use_audio),receive_gain(gain),account_token(account.token),is_incoming(incoming){latest.token=token;latest.account_token=account.token;latest.incoming=incoming?1:0;if(incoming){latest.state=PJSIP_INV_STATE_INCOMING;capture_caller();}}
     ~NativeCall() override { unlink_peer(); stop_recording(); stop_ringtone(); stop_ringback(); }
     void capture_caller() noexcept {try{auto info=getInfo();auto* pool=pjsua_pool_create("caller-check",512,512);if(!pool)return;struct Guard{pj_pool_t*p;~Guard(){pj_pool_release(p);}}guard{pool};std::string uri=info.remoteUri;auto* parsed=pjsip_parse_uri(pool,uri.data(),uri.size(),0);if(!parsed||(!PJSIP_URI_SCHEME_IS_SIP(parsed)&&!PJSIP_URI_SCHEME_IS_SIPS(parsed)))return;auto* sip=static_cast<pjsip_sip_uri*>(pjsip_uri_get_uri(parsed));if(sip->user.slen<1||sip->user.slen>64)return;for(pj_ssize_t i=0;i<sip->user.slen;++i){unsigned char c=static_cast<unsigned char>(sip->user.ptr[i]);if(!(std::isalnum(c)||c=='+'||c=='*'||c=='#'||c=='-'||c=='_'||c=='.'))return;}std::lock_guard<std::mutex> lock(mutex);latest.caller_len=static_cast<int32_t>(sip->user.slen);std::copy(sip->user.ptr,sip->user.ptr+sip->user.slen,latest.caller);}catch(...){} }
     // Copies the dialog identifiers while PJSUA still has the dialog; they outlive the call.
@@ -275,6 +277,7 @@ public:
                 bool muted;{std::lock_guard<std::mutex> lock(mutex);muted=latest.muted!=0;}
                 if(audio){
                     auto stream=getAudioMedia(item.index);
+                    stream.adjustRxLevel(receive_gain);
                     auto& devices=endpoint.audDevManager();
                     if(!playback_connected){stream.startTransmit(devices.getPlaybackDevMedia());playback_connected=true;}
                     const bool send=info.state==PJSIP_INV_STATE_CONFIRMED && !muted && !cancelled;
@@ -394,6 +397,7 @@ struct YvHandle {
     std::unique_ptr<EngineEndpoint> endpoint;
     bool running = false;
     bool ringtone = true;
+    float receive_gain = 1.0f;
     std::map<uint64_t,std::unique_ptr<NativeCall>> calls;
     std::map<uint64_t,std::unique_ptr<NativeAccount>> accounts;
 };
@@ -403,7 +407,7 @@ void NativeAccount::onIncomingCall(pj::OnIncomingCallParam& event) noexcept {
   if(!owner||!owner->running||owner->calls.size()>=16||std::any_of(owner->calls.begin(),owner->calls.end(),[](const auto& item){return item.second->isActive();})){pjsua_call_answer(event.callId,PJSIP_SC_BUSY_HERE,nullptr,nullptr);return;}
   const uint64_t serial=incoming_serial.fetch_add(1);if(serial==0||serial>0x7fffffffffffffffULL){pjsua_call_answer(event.callId,PJSIP_SC_SERVICE_UNAVAILABLE,nullptr,nullptr);return;}
   const uint64_t token=0x8000000000000000ULL|serial;
-  auto call=std::make_unique<NativeCall>(*this,token,*endpoint,false,event.callId,true);
+  auto call=std::make_unique<NativeCall>(*this,token,*endpoint,false,event.callId,true,owner->receive_gain);
   auto* incoming=call.get();owner->calls.emplace(token,std::move(call));if(owner->ringtone)incoming->start_ringtone();incoming->send_ringing();
  } catch (...) {pjsua_call_answer(event.callId,PJSIP_SC_TEMPORARILY_UNAVAILABLE,nullptr,nullptr);}
 }
@@ -516,7 +520,7 @@ extern "C" int32_t yv_network_online() noexcept {
 }
 extern "C" int32_t yv_account_add(YvHandle* h, const YvAccountConfig* c) noexcept {
     if (auto code=check(h)) return code;
-    if (!h->running || !c || !c->token || !c->username || !c->host || !c->password || c->username_len==0 || c->username_len>128 || c->host_len==0 || c->host_len>253 || c->password_len==0 || c->password_len>4096 || c->port==0 || c->port>65535 || c->transport<0 || c->transport>2) return -6;
+    if (!h->running || !c || !c->token || !c->username || !c->authentication_username || !c->host || !c->password || c->username_len==0 || c->username_len>128 || c->authentication_username_len==0 || c->authentication_username_len>128 || c->host_len==0 || c->host_len>253 || c->password_len==0 || c->password_len>4096 || c->port==0 || c->port>65535 || c->transport<0 || c->transport>2) return -6;
     if (h->accounts.count(c->token)) return -6;
     // PJSUA 2.17 has eight transport slots; one is reserved for the engine.
     if (h->accounts.size()>=7) return -9;
@@ -543,7 +547,7 @@ extern "C" int32_t yv_account_add(YvHandle* h, const YvAccountConfig* c) noexcep
         // since this bridge has no SRTP setting and SDES keys must not travel over UDP/TCP signaling.
         config.natConfig.sdpNatRewriteUse=1;config.natConfig.sipOutboundUse=0;
         config.mediaConfig.srtpUse=PJMEDIA_SRTP_DISABLED;
-        config.sipConfig.authCreds.emplace_back("digest","*",std::string(reinterpret_cast<const char*>(c->username),c->username_len),0,std::string(reinterpret_cast<const char*>(c->password),c->password_len));
+        config.sipConfig.authCreds.emplace_back("digest","*",std::string(reinterpret_cast<const char*>(c->authentication_username),c->authentication_username_len),0,std::string(reinterpret_cast<const char*>(c->password),c->password_len));
         auto account=std::make_unique<NativeAccount>(c->token,h->endpoint.get(),h);account->transport=transport;
         account->target_host=std::string(reinterpret_cast<const char*>(c->host),c->host_len);account->target_port=c->port;account->target_transport=type;
         account->username=std::string(reinterpret_cast<const char*>(c->username),c->username_len);account->own_uri=config.idUri;
@@ -595,7 +599,7 @@ int32_t start_call(YvHandle* h,uint64_t account,uint64_t token,const uint8_t* ur
         auto& acc=*found->second;
         if(EngineEndpoint::key(host,port,acc.target_transport)!=EngineEndpoint::key(acc.target_host,acc.target_port,acc.target_transport)||secure!=(acc.target_transport==PJSIP_TRANSPORT_TLS)||target->passwd.slen || !pj_list_empty(&target->header_param))return -6;
         if(audio){try{auto& devices=h->endpoint->audDevManager();devices.setCaptureDev(PJMEDIA_AUD_DEFAULT_CAPTURE_DEV);devices.setPlaybackDev(PJMEDIA_AUD_DEFAULT_PLAYBACK_DEV);}catch(...){h->endpoint->audDevManager().setNullDev();return -11;}}
-        auto call=std::make_unique<NativeCall>(acc,token,*h->endpoint,audio!=0);
+        auto call=std::make_unique<NativeCall>(acc,token,*h->endpoint,audio!=0,PJSUA_INVALID_ID,false,h->receive_gain);
         auto* pointer=call.get();h->calls.emplace(token,std::move(call));
         try{pj::CallOpParam options(true);options.opt.audioCount=1;options.opt.videoCount=0;options.opt.textCount=0;
             if(!replaces.empty()){pj::SipHeader header;header.hName="Replaces";header.hValue=replaces;options.txOption.headers.push_back(header);}
@@ -729,6 +733,15 @@ extern "C" int32_t yv_audio_device(YvHandle* h,int32_t open) noexcept {
   pj_status_t status=pjsua_set_snd_dev(PJMEDIA_AUD_DEFAULT_CAPTURE_DEV,PJMEDIA_AUD_DEFAULT_PLAYBACK_DEV);
   return status;
  }catch(const pj::Error&e){return e.status;}catch(...){return -1;}
+}
+extern "C" int32_t yv_set_call_receive_gain(YvHandle* h,float gain) noexcept {
+ if(auto code=check(h))return code;if(!std::isfinite(gain)||gain<0.5f||gain>1.5f)return -6;
+ h->receive_gain=gain;
+ for(auto& item:h->calls){
+  try{auto info=item.second->getInfo();for(const auto& media:info.media)if(media.type==PJMEDIA_TYPE_AUDIO&&media.status==PJSUA_CALL_MEDIA_ACTIVE)item.second->getAudioMedia(media.index).adjustRxLevel(gain);}
+  catch(...){}
+ }
+ return 0;
 }
 
 extern "C" int32_t yv_call_list(YvHandle* h,YvCall* output,uint32_t capacity,uint32_t* count) noexcept {

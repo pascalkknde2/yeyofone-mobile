@@ -63,7 +63,7 @@ export function PbxSettings() {
             <small>
               {status.me
                 ? `${status.me.domain} · ${t("Extensions")}: ${status.me.extensions.join(", ") || "—"} · ${t(status.me.voicemail ? "Voicemail allowed" : "No voicemail permission")} · ${t(status.me.liveCalls ? "Live calls allowed" : "No live calls permission")}`
-                : t("Connected. API key saved in your Keychain.")}
+                : t("Connected. API key saved in your secure password store.")}
             </small>
             {status.lastError && (
               <small className="ai-error">{t(status.lastError)}</small>
@@ -127,7 +127,7 @@ export function PbxSettings() {
           <strong>{t("Eavesdrop PIN")}</strong>
           <small>
             {status.hasPin
-              ? t("Saved in your Keychain. The app keys it in for you.")
+              ? t("Saved in your secure password store. The app keys it in for you.")
               : t(
                   "The PIN your PBX asks for after dialling *33. Needed for Listen, Whisper and Barge.",
                 )}
