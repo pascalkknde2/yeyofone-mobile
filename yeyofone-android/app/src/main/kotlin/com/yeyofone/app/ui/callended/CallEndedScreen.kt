@@ -46,7 +46,6 @@ import com.yeyofone.app.ui.components.SecondaryCallActionButton
 import com.yeyofone.app.ui.theme.AccentGreen
 import com.yeyofone.app.ui.theme.AccentRed
 import com.yeyofone.app.ui.theme.BorderLight
-import com.yeyofone.app.ui.theme.CallBackground
 import com.yeyofone.app.ui.theme.CallTextPrimary
 import com.yeyofone.app.ui.theme.CallTextSecondary
 import com.yeyofone.app.ui.theme.CardWhite
@@ -64,7 +63,7 @@ fun CallEndedScreen(
     val failed = summary.mediaRejected || (summary.direction == CallDirection.INCOMING && !summary.wasAnswered)
     val accent = if (failed) AccentRed else AccentGreen
 
-    Column(Modifier.fillMaxSize().background(CallBackground).systemBarsPadding()) {
+    Column(Modifier.fillMaxSize().systemBarsPadding()) {
         Row(
             Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically,
@@ -133,9 +132,10 @@ fun CallEndedScreen(
 
         Column(
             Modifier.fillMaxWidth()
-                .shadow(4.dp, RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp))
-                .background(GlassCard, RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp))
-                .padding(start = 24.dp, top = 32.dp, end = 24.dp, bottom = 48.dp),
+                .padding(start = 16.dp, end = 16.dp, bottom = 16.dp)
+                .shadow(4.dp, RoundedCornerShape(32.dp))
+                .background(GlassCard, RoundedCornerShape(32.dp))
+                .padding(start = 24.dp, top = 32.dp, end = 24.dp, bottom = 32.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             PrimaryCallActionButton(Icons.Default.Call, stringResource(R.string.call_again), AccentGreen, onCallAgain)
