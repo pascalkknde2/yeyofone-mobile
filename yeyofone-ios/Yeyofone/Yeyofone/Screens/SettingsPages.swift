@@ -102,6 +102,7 @@ private struct HeroCard: View {
     let icon: String
     let title: LocalizedStringKey
     let subtitle: LocalizedStringKey
+    var premium: Bool = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -121,9 +122,25 @@ private struct HeroCard: View {
         .padding(22)
         .background(
             RoundedRectangle(cornerRadius: 24)
-                .fill(LinearGradient(colors: [Palette.cardGradientStart, Palette.cardGradientEnd],
+                .fill(LinearGradient(colors: premium ? [Palette.premiumGradientStart, Palette.premiumGradientEnd]
+                                                     : [Palette.cardGradientStart, Palette.cardGradientEnd],
                                      startPoint: .topLeading, endPoint: .bottomTrailing))
         )
+        .overlay(alignment: .topTrailing) {
+            if premium {
+                Image("PremiumBird")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 92, height: 92)
+                    .padding(.top, 18).padding(.trailing, 20)
+            }
+        }
+        .background(alignment: .topTrailing) {
+            if premium {
+                Circle().fill(.white.opacity(0.10)).frame(width: 180, height: 180).offset(x: 40, y: -40)
+            }
+        }
+        .clipShape(RoundedRectangle(cornerRadius: 24))
     }
 }
 
@@ -186,7 +203,7 @@ struct PremiumScreen: View {
 
     var body: some View {
         SettingsPageLayout(title: "Premium Features", onBack: { store.screen = .settings }) {
-            HeroCard(icon: "star.fill", title: "YeyoFone Premium", subtitle: "Better calls and smart tools for busy teams.")
+            HeroCard(icon: "star.fill", title: "YeyoFone Premium", subtitle: "Better calls and smart tools for busy teams.", premium: true)
             FeatureList(title: "What's included", features: [
                 Feature(icon: "waveform", tint: Palette.accentBlue, background: Palette.primaryLight,
                         title: "HD voice", subtitle: String(localized: "Wideband audio on supported calls")),

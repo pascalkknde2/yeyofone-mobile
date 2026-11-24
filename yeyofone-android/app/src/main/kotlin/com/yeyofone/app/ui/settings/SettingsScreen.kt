@@ -1,5 +1,6 @@
 package com.yeyofone.app.ui.settings
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -55,6 +56,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -70,8 +72,8 @@ import com.yeyofone.app.ui.theme.AccentOrange
 import com.yeyofone.app.ui.theme.AccentRed
 import com.yeyofone.app.ui.theme.BackgroundGray
 import com.yeyofone.app.ui.theme.BorderLight
-import com.yeyofone.app.ui.theme.CardGradientEnd
-import com.yeyofone.app.ui.theme.CardGradientStart
+import com.yeyofone.app.ui.theme.PremiumGradientEnd
+import com.yeyofone.app.ui.theme.PremiumGradientStart
 import com.yeyofone.app.ui.theme.InactiveGray
 import com.yeyofone.app.ui.theme.PrimaryLight
 import com.yeyofone.app.ui.theme.SuccessLight
@@ -260,8 +262,8 @@ private fun PremiumBanner(onClick: () -> Unit) {
     Row(
         Modifier.fillMaxWidth().shadow(8.dp, RoundedCornerShape(20.dp), ambientColor = AccentBlue.copy(alpha = 0.2f))
             .clip(RoundedCornerShape(20.dp))
-            .background(Brush.linearGradient(listOf(CardGradientStart, CardGradientEnd)))
-            .clickable(onClick = onClick).padding(18.dp),
+            .background(Brush.linearGradient(listOf(PremiumGradientStart, PremiumGradientEnd)))
+            .clickable(onClick = onClick).padding(start = 18.dp, top = 18.dp, bottom = 18.dp, end = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(14.dp),
     ) {
@@ -272,6 +274,7 @@ private fun PremiumBanner(onClick: () -> Unit) {
             Text(stringResource(R.string.settings_premium), color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
             Text(stringResource(R.string.settings_premium_subtitle), color = Color.White.copy(alpha = 0.9f), fontSize = 12.sp)
         }
+        Image(painterResource(R.drawable.premium_bird), null, Modifier.size(52.dp))
     }
 }
 
