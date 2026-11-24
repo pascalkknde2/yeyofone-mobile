@@ -50,7 +50,6 @@ struct HomeScreen: View {
             .padding(.bottom, 32)
         }
         .scrollIndicators(.hidden)
-        .background(Palette.cardWhite)
     }
 
     private func header(name: String, extensionNumber: String?, online: Bool, doNotDisturb: Bool) -> some View {
@@ -73,7 +72,7 @@ struct HomeScreen: View {
                 }
             }
             Spacer(minLength: 16)
-            InitialsAvatar(name: name, size: 52, fontSize: 16, background: Palette.cardWhite, foreground: Palette.accentBlue)
+            InitialsAvatar(name: name, size: 52, fontSize: 16, background: Palette.glass, foreground: Palette.accentBlue)
                 .overlay(Circle().stroke(Palette.borderLight, lineWidth: 2))
                 .overlay(alignment: .bottomTrailing) {
                     Circle()
@@ -230,7 +229,7 @@ private struct SearchBar: View {
             }
             .padding(.horizontal, 18)
             .padding(.vertical, 16)
-            .background(RoundedRectangle(cornerRadius: 20).fill(Palette.cardWhite))
+            .background(RoundedRectangle(cornerRadius: 20).fill(Palette.glass))
             .overlay(RoundedRectangle(cornerRadius: 20).stroke(Palette.borderLight, lineWidth: 1))
             .shadow(color: .black.opacity(0.08), radius: 6, y: 3)
         }
@@ -289,7 +288,7 @@ private struct RecentCallRow: View {
                     .background(RoundedRectangle(cornerRadius: 10).fill(Palette.backgroundGray))
             }
             .padding(14)
-            .background(RoundedRectangle(cornerRadius: 16).fill(Palette.cardWhite))
+            .background(RoundedRectangle(cornerRadius: 16).fill(Palette.glass))
             .overlay(RoundedRectangle(cornerRadius: 16).stroke(Palette.borderLight.opacity(0.6), lineWidth: 1))
         }
         .buttonStyle(PressScaleStyle())

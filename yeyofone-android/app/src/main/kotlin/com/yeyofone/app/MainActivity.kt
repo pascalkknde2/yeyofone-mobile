@@ -116,8 +116,10 @@ import com.yeyofone.app.ui.theme.BorderLight
 import com.yeyofone.app.ui.theme.PrimaryLight
 import com.yeyofone.app.ui.theme.TextPrimary
 import com.yeyofone.app.ui.theme.TextSecondary
+import com.yeyofone.app.ui.theme.AppBackdrop
 import com.yeyofone.app.ui.theme.YeyoFoneTheme
 import com.yeyofone.app.ui.theme.CardWhite
+import com.yeyofone.app.ui.theme.GlassCard
 import com.yeyofone.app.ui.theme.AppearancePreferences
 import com.yeyofone.app.ui.theme.Appearance
 import com.yeyofone.app.ui.theme.isAppInDarkTheme
@@ -222,11 +224,13 @@ class MainActivity : ComponentActivity() {
                 val dialPadViewModel: DialPadViewModel = viewModel()
                 val chatViewModel: ChatViewModel = viewModel()
                 val pendingAccept by acceptRequest.collectAsStateWithLifecycle()
-                AccountsApp(
-                    viewModel, callHistoryViewModel, dialPadViewModel, chatViewModel,
-                    pendingAccept = pendingAccept,
-                    onAcceptHandled = { acceptRequest.value = null },
-                )
+                AppBackdrop {
+                    AccountsApp(
+                        viewModel, callHistoryViewModel, dialPadViewModel, chatViewModel,
+                        pendingAccept = pendingAccept,
+                        onAcceptHandled = { acceptRequest.value = null },
+                    )
+                }
             }
         }
     }
@@ -286,6 +290,11 @@ private fun AccountsApp(
     LaunchedEffect(viewModel) {
         viewModel.callErrors.collect {
             android.widget.Toast.makeText(callErrorContext, R.string.call_could_not_be_placed, android.widget.Toast.LENGTH_LONG).show()
+        }
+    }
+    LaunchedEffect(viewModel) {
+        viewModel.audioRouteErrors.collect {
+            android.widget.Toast.makeText(callErrorContext, R.string.audio_route_failed, android.widget.Toast.LENGTH_LONG).show()
         }
     }
     if (pendingAccept != null) {
@@ -1230,9 +1239,10 @@ private fun AccountEditor(existing: SipAccount?, viewModel: YeyoFoneViewModel, o
     val saveFailedMessage = stringResource(R.string.save_failed)
 
     Scaffold(
-        containerColor = BackgroundGray,
+        containerColor = Color.Transparent,
         topBar = {
             TopAppBar(
+                colors = androidx.compose.material3.TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent),
                 title = {
                     Text(
                         stringResource(if (existing == null) R.string.add_account else R.string.edit_account),
@@ -1388,7 +1398,7 @@ private fun CheckRow(
 @Composable
 private fun EditorCard(content: @Composable ColumnScope.() -> Unit) {
     Column(
-        Modifier.fillMaxWidth().background(CardWhite, RoundedCornerShape(20.dp)).padding(16.dp),
+        Modifier.fillMaxWidth().background(GlassCard, RoundedCornerShape(20.dp)).padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
         content = content,
     )

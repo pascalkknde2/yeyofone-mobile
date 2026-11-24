@@ -7,12 +7,34 @@ plugins {
     id("com.google.gms.google-services")
 }
 
+val uploadStoreFile = providers.environmentVariable("YEYOFONE_UPLOAD_STORE_FILE").orNull
+val uploadStorePassword = providers.environmentVariable("YEYOFONE_UPLOAD_STORE_PASSWORD").orNull
+val uploadKeyAlias = providers.environmentVariable("YEYOFONE_UPLOAD_KEY_ALIAS").orNull
+val uploadKeyPassword = providers.environmentVariable("YEYOFONE_UPLOAD_KEY_PASSWORD").orNull
+val uploadSigningValues = listOf(uploadStoreFile, uploadStorePassword, uploadKeyAlias, uploadKeyPassword)
+val hasUploadSigning = uploadSigningValues.all { !it.isNullOrBlank() }
+
+require(hasUploadSigning || uploadSigningValues.all { it.isNullOrBlank() }) {
+    "Set all four YEYOFONE_UPLOAD_* environment variables to sign a release, or leave all unset."
+}
+
 android {
     namespace = "com.yeyofone.app"
     compileSdk = 36
     // BUILD-03: pinned so CI and every dev machine resolve the identical build-tools release
     // instead of whatever AGP picks from what's locally installed.
     buildToolsVersion = "35.0.0"
+
+    if (hasUploadSigning) {
+        signingConfigs {
+            create("playUpload") {
+                storeFile = file(uploadStoreFile!!)
+                storePassword = uploadStorePassword!!
+                keyAlias = uploadKeyAlias!!
+                keyPassword = uploadKeyPassword!!
+            }
+        }
+    }
 
     defaultConfig {
         applicationId = "com.yeyofone.app"
@@ -43,6 +65,7 @@ android {
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+            if (hasUploadSigning) signingConfig = signingConfigs.getByName("playUpload")
         }
     }
 

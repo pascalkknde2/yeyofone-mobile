@@ -13,6 +13,7 @@ import com.yeyofone.core.model.MediaState
 import com.yeyofone.core.model.SipAccountId
 import com.yeyofone.core.model.TransferState
 import com.yeyofone.core.model.VoipError
+import com.yeyofone.core.voip.AudioRouteManager
 import com.yeyofone.core.voip.CallDialog
 import com.yeyofone.core.voip.CallManager
 import com.yeyofone.core.voip.CallHistoryRepository
@@ -24,6 +25,8 @@ import com.yeyofone.core.voip.SipHandoffGateway
 import java.time.Instant
 import java.util.concurrent.ConcurrentHashMap
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -40,14 +43,21 @@ class CallCoordinator(
     private val history: CallHistoryRepository? = null,
     private val preferences: AccountPreferencesRepository? = null,
     private val handoff: SipHandoffGateway? = null,
+    private val audioRoutes: AudioRouteManager? = null,
 ) : CallManager, MediaManager {
     private val mutableSessions = MutableStateFlow<List<CallSession>>(emptyList())
     override val sessions: StateFlow<List<CallSession>> = mutableSessions.asStateFlow()
     private val mediaStates = mutableMapOf<CallId, MutableStateFlow<MediaState>>()
     private val locallyEndedCalls = ConcurrentHashMap.newKeySet<CallId>()
     private val commandMutex = Mutex()
+    private val audioLifecycleMutex = Mutex()
 
     init {
+        scope.launch {
+            sessions.collect {
+                audioLifecycleMutex.withLock { releaseAudioIfIdle() }
+            }
+        }
         scope.launch {
             gateway.callEvents.collect { event -> onCallEvent(event) }
         }
@@ -62,7 +72,21 @@ class CallCoordinator(
         }
     }
 
-    override suspend fun call(accountId: SipAccountId, destination: String): CallId {
+    private suspend fun releaseAudioIfIdle() {
+        if (sessions.value.all { it.state.isTerminal() }) audioRoutes?.releaseAfterCall()
+    }
+
+    // Own routing at the call layer, including auto-answer and handoff without an Activity.
+    private suspend fun <T> withCallAudio(block: suspend () -> T): T = audioLifecycleMutex.withLock {
+        try {
+            audioRoutes?.prepareForCall()
+            block()
+        } finally {
+            withContext(NonCancellable) { releaseAudioIfIdle() }
+        }
+    }
+
+    override suspend fun call(accountId: SipAccountId, destination: String): CallId = withCallAudio {
         val account = accounts.observeAccount(accountId).first()
             ?: error("Account does not exist")
         val uri = destination.toSipUri(account.server.domain)
@@ -78,14 +102,14 @@ class CallCoordinator(
         )
         mutableSessions.update { it + session }
         history?.upsert(session.toHistoryEntry())
-        return id
+        id
     }
 
     /**
      * Takes over [offer], a call announced by another device of the same account: the INVITE
      * replaces that device's dialog, so the PBX moves the call here without the other party noticing.
      */
-    suspend fun takeOver(offer: HandoffOffer): CallId {
+    suspend fun takeOver(offer: HandoffOffer): CallId = withCallAudio {
         val gateway = checkNotNull(handoff) { "Call handoff is not available" }
         val account = accounts.observeAccount(offer.accountId).first()
             ?: error("Account does not exist")
@@ -106,7 +130,7 @@ class CallCoordinator(
         )
         mutableSessions.update { it + session }
         history?.upsert(session.toHistoryEntry())
-        return id
+        id
     }
 
     /** The SIP dialog of a live call, for offering it to the account's other devices. */
@@ -120,7 +144,12 @@ class CallCoordinator(
                 current.map { if (it.id == callId) it.copy(state = CallState.Answering) else it }
             }
             try {
-                gateway.answer(callId.value)
+                withCallAudio {
+                    // The caller may have hung up while a Bluetooth connection was pending.
+                    if (sessions.value.any { it.id == callId && it.state == CallState.Answering }) {
+                        gateway.answer(callId.value)
+                    }
+                }
             } catch (error: Exception) {
                 mutableSessions.update { current ->
                     current.map {

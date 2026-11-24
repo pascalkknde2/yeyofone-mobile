@@ -147,6 +147,8 @@ interface AudioRouteManager {
     val selectedRoute: StateFlow<AudioRoute?>
     /** Puts the platform audio stack into the mode required for two-way call audio. */
     suspend fun prepareForCall() = Unit
+    /** Releases communication routing only once the last call has ended. */
+    suspend fun releaseAfterCall() = Unit
     suspend fun select(route: AudioRoute)
 }
 

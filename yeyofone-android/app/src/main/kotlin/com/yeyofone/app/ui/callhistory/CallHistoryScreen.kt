@@ -62,7 +62,7 @@ fun CallHistoryScreen(
 ) {
     var confirmClear by remember { mutableStateOf(false) }
     Scaffold(
-        containerColor = BackgroundGray,
+        containerColor = Color.Transparent,
         bottomBar = {
             BottomNavigationBar(
                 selectedIndex = CALLS_NAVIGATION,
@@ -133,7 +133,7 @@ private fun CallHistoryHeader(
     onTabSelected: (Int) -> Unit,
     onEdit: () -> Unit,
 ) {
-    Column(Modifier.fillMaxWidth().background(CardWhite).statusBarsPadding().padding(top = 32.dp, bottom = 16.dp)) {
+    Column(Modifier.fillMaxWidth().statusBarsPadding().padding(top = 32.dp, bottom = 16.dp)) {
         Row(
             Modifier.fillMaxWidth().padding(horizontal = 24.dp),
             horizontalArrangement = Arrangement.SpaceBetween,

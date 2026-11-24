@@ -25,6 +25,7 @@ import androidx.compose.ui.unit.sp
 import com.yeyofone.app.ui.theme.CallTextPrimary
 import com.yeyofone.app.ui.theme.CallTextSecondary
 import com.yeyofone.app.ui.theme.CardWhite
+import com.yeyofone.app.ui.theme.GlassCard
 
 @Composable
 fun PrimaryCallActionButton(
@@ -57,7 +58,7 @@ fun PrimaryCallActionButton(
 fun SecondaryCallActionButton(icon: ImageVector, label: String, onClick: () -> Unit) {
     Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.clickable(onClick = onClick)) {
         Box(
-            Modifier.size(56.dp).shadow(4.dp, CircleShape).clip(CircleShape).background(CardWhite),
+            Modifier.size(56.dp).shadow(4.dp, CircleShape).clip(CircleShape).background(GlassCard),
             contentAlignment = Alignment.Center,
         ) {
             Icon(icon, label, tint = CallTextPrimary, modifier = Modifier.size(22.dp))

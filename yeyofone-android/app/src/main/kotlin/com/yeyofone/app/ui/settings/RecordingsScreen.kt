@@ -37,6 +37,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.yeyofone.app.R
 import com.yeyofone.app.ui.theme.*
+import com.yeyofone.app.ui.theme.GlassCard
 import java.io.File
 import java.text.DateFormat
 import java.util.Date
@@ -112,10 +113,10 @@ fun RecordingsScreen(onBack: () -> Unit) {
         }
     }
 
-    Scaffold(containerColor = BackgroundGray) { insets ->
+    Scaffold(containerColor = Color.Transparent) { insets ->
         Column(Modifier.fillMaxSize().padding(bottom = insets.calculateBottomPadding())) {
             Row(
-                Modifier.fillMaxWidth().background(CardWhite).statusBarsPadding()
+                Modifier.fillMaxWidth().statusBarsPadding()
                     .padding(start = 12.dp, top = 8.dp, end = 20.dp, bottom = 8.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
@@ -146,7 +147,7 @@ fun RecordingsScreen(onBack: () -> Unit) {
                         Row(Modifier.fillMaxWidth().padding(bottom = 8.dp), horizontalArrangement = Arrangement.SpaceBetween) {
                             Text(stringResource(R.string.recording_storage_title).uppercase(), Modifier.padding(start = 4.dp), fontSize = 12.sp, fontWeight = FontWeight.Bold, color = InactiveGray, letterSpacing = 1.sp)
                         }
-                        Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp)).background(CardWhite).padding(20.dp)) {
+                        Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp)).background(GlassCard).padding(20.dp)) {
                             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                                 Text(stringResource(R.string.recording_storage_used), fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = TextPrimary)
                                 Text("${formatBytes(usedBytes)} / ${formatBytes(totalBytes)}", fontSize = 13.sp, color = TextSecondary)
@@ -173,8 +174,8 @@ fun RecordingsScreen(onBack: () -> Unit) {
                         leadingIcon = { Icon(Icons.Default.Search, null, tint = InactiveGray) },
                         singleLine = true,
                         colors = TextFieldDefaults.colors(
-                            focusedContainerColor = CardWhite,
-                            unfocusedContainerColor = CardWhite,
+                            focusedContainerColor = GlassCard,
+                            unfocusedContainerColor = GlassCard,
                             focusedIndicatorColor = Color.Transparent,
                             unfocusedIndicatorColor = Color.Transparent,
                         ),
@@ -186,7 +187,7 @@ fun RecordingsScreen(onBack: () -> Unit) {
                 if (filtered.isEmpty()) {
                     item {
                         Column(
-                            Modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp)).background(CardWhite).padding(horizontal = 24.dp, vertical = 36.dp),
+                            Modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp)).background(GlassCard).padding(horizontal = 24.dp, vertical = 36.dp),
                             horizontalAlignment = Alignment.CenterHorizontally,
                             verticalArrangement = Arrangement.spacedBy(8.dp),
                         ) {
@@ -204,7 +205,7 @@ fun RecordingsScreen(onBack: () -> Unit) {
                         }
                     }
                 } else {
-                    item { Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp)).background(CardWhite)) {
+                    item { Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp)).background(GlassCard)) {
                         filtered.forEachIndexed { index, recording ->
                             if (index > 0) androidx.compose.material3.HorizontalDivider(Modifier.padding(start = 80.dp), color = BorderLight.copy(alpha = .55f))
                             RecordingRow(

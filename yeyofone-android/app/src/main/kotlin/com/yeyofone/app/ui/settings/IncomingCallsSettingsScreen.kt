@@ -34,6 +34,7 @@ import com.yeyofone.app.ForwardingClient
 import com.yeyofone.app.R
 import com.yeyofone.app.RingtonePreference
 import com.yeyofone.app.ui.theme.*
+import com.yeyofone.app.ui.theme.GlassCard
 
 private val RingtoneOrange get() = AccentOrange
 private val RingtoneOrangeLight get() = OrangeLight
@@ -110,9 +111,9 @@ fun IncomingCallsSettingsScreen(
         return
     }
 
-    Scaffold(containerColor = BackgroundGray) { insets ->
+    Scaffold(containerColor = Color.Transparent) { insets ->
         Column(Modifier.fillMaxSize().padding(insets)) {
-            Row(Modifier.fillMaxWidth().background(CardWhite).padding(start = 12.dp, end = 20.dp, top = 8.dp, bottom = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+            Row(Modifier.fillMaxWidth().padding(start = 12.dp, end = 20.dp, top = 8.dp, bottom = 8.dp), verticalAlignment = Alignment.CenterVertically) {
                 IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.back), tint = TextPrimary) }
                 Text(stringResource(R.string.incoming_calls_title), fontSize = 20.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
             }
@@ -185,7 +186,7 @@ fun IncomingCallsSettingsScreen(
 private fun IncomingGroup(title: String, content: @Composable () -> Unit) {
     Column {
         Text(title.uppercase(), Modifier.padding(start = 4.dp, bottom = 8.dp), fontSize = 12.sp, fontWeight = FontWeight.Bold, color = InactiveGray, letterSpacing = 1.sp)
-        Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp)).background(CardWhite)) { content() }
+        Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp)).background(GlassCard)) { content() }
     }
 }
 

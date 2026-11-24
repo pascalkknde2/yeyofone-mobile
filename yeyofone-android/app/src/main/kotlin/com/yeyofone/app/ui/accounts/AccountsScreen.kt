@@ -65,11 +65,11 @@ fun AccountsScreen(
     )
 
     Scaffold(
-        containerColor = BackgroundGray,
+        containerColor = Color.Transparent,
         bottomBar = { BottomNavigationBar(SETTINGS_NAVIGATION, onNavigationItemSelected) },
     ) { padding ->
         Column(Modifier.fillMaxSize().padding(bottom = padding.calculateBottomPadding())) {
-            Column(Modifier.fillMaxWidth().background(CardWhite).statusBarsPadding()) {
+            Column(Modifier.fillMaxWidth().statusBarsPadding()) {
                 Row(
                     Modifier.fillMaxWidth().padding(start = 24.dp, top = 14.dp, end = 12.dp, bottom = 14.dp),
                     verticalAlignment = Alignment.CenterVertically,

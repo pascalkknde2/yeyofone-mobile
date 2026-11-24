@@ -21,7 +21,7 @@ struct AccountsScreen: View {
                 TabHeader(title: "SIP accounts") {
                     Button { store.screen = .accountEditor(nil) } label: {
                         Image(systemName: "plus")
-                            .font(.system(size: 20, weight: .medium))
+                            .appFont(size: 20, weight: .medium)
                             .foregroundStyle(Palette.textPrimary)
                             .frame(width: 44, height: 44)
                     }
@@ -32,7 +32,6 @@ struct AccountsScreen: View {
                     .padding(.bottom, 16)
             }
             .padding(.top, 6)
-            .background(Palette.cardWhite)
 
             if selectedTab == 0, !store.accounts.isEmpty {
                 ScrollView {
@@ -51,7 +50,6 @@ struct AccountsScreen: View {
                 )
             }
         }
-        .background(Palette.backgroundGray)
     }
 }
 
@@ -68,11 +66,11 @@ private struct AccountCard: View {
             )
             VStack(alignment: .leading, spacing: 4) {
                 Text(account.displayName)
-                    .font(.system(size: 16, weight: .semibold))
+                    .appFont(size: 16, weight: .semibold)
                     .foregroundStyle(account.enabled ? Palette.textPrimary : Palette.inactiveGray)
                     .strikethrough(!account.enabled)
                 Text(account.sipIdentity)
-                    .font(.system(size: 12, design: .monospaced))
+                    .appFont(size: 12, design: .monospaced)
                     .foregroundStyle(Palette.textSecondary)
                     .lineLimit(1)
             }
@@ -82,7 +80,7 @@ private struct AccountCard: View {
                 .tint(Palette.accentGreen)
         }
         .padding(16)
-        .background(RoundedRectangle(cornerRadius: 16).fill(Palette.cardWhite))
+        .background(RoundedRectangle(cornerRadius: 16).fill(Palette.glass))
         .shadow(color: .black.opacity(0.05), radius: 3, y: 1)
         .contentShape(Rectangle())
     }
@@ -130,14 +128,14 @@ struct AccountDetailScreen: View {
                 }
                 .accessibilityLabel("Back")
                 Spacer()
-                Text("Account Details").font(.system(size: 20, weight: .bold))
+                Text("Account Details").appFont(size: 20, weight: .bold)
                 Spacer()
                 Button { store.screen = .accountEditor(account.id) } label: {
                     Image(systemName: "pencil").frame(width: 44, height: 44)
                 }
                 .accessibilityLabel("Edit account")
             }
-            .font(.system(size: 18, weight: .semibold))
+            .appFont(size: 18, weight: .semibold)
             .foregroundStyle(Palette.textPrimary)
             .padding(.horizontal, 8)
             .padding(.vertical, 4)
@@ -169,14 +167,13 @@ struct AccountDetailScreen: View {
                 .padding(.bottom, 40)
             }
         }
-        .background(Palette.backgroundGray)
     }
 
     private func profileHeader(_ account: SipAccount, state: RegistrationState) -> some View {
         let (label, color) = status(account, state)
         return VStack(spacing: 0) {
             Text(account.displayName.initials)
-                .font(.system(size: 30, weight: .semibold))
+                .appFont(size: 30, weight: .semibold)
                 .foregroundStyle(Palette.textOnPrimary)
                 .frame(width: 84, height: 84)
                 .background(Circle().fill(Palette.textPrimary))
@@ -185,12 +182,12 @@ struct AccountDetailScreen: View {
                 .frame(width: 96, height: 96)
                 .background(Circle().fill(Palette.primaryLight))
             Text(account.displayName)
-                .font(.system(size: 24, weight: .bold))
+                .appFont(size: 24, weight: .bold)
                 .tracking(-0.3)
                 .foregroundStyle(Palette.textPrimary)
                 .padding(.top, 16)
             Text("Ext. \(account.username)")
-                .font(.system(size: 14, weight: .medium))
+                .appFont(size: 14, weight: .medium)
                 .foregroundStyle(Palette.textSecondary)
                 .padding(.top, 4)
             HStack(spacing: 6) {
@@ -198,7 +195,7 @@ struct AccountDetailScreen: View {
                     .frame(width: 12, height: 12)
                     .background(Circle().fill(color.opacity(0.2)))
                 Text(label)
-                    .font(.system(size: 12, weight: .semibold))
+                    .appFont(size: 12, weight: .semibold)
                     .foregroundStyle(color)
             }
             .padding(.horizontal, 12)
@@ -221,7 +218,7 @@ struct AccountDetailScreen: View {
                     if account.enabled { Image(systemName: "arrow.clockwise") }
                     account.enabled ? Text("Re-register Account") : Text("Sign In")
                 }
-                .font(.system(size: 16, weight: .semibold))
+                .appFont(size: 16, weight: .semibold)
                 .foregroundStyle(Palette.textOnPrimary)
                 .frame(maxWidth: .infinity, minHeight: 56)
                 .background(RoundedRectangle(cornerRadius: 16).fill(Palette.textPrimary))
@@ -232,7 +229,7 @@ struct AccountDetailScreen: View {
             if account.enabled {
                 Button { confirmSignOut = true } label: {
                     Text("Sign Out")
-                        .font(.system(size: 16, weight: .semibold))
+                        .appFont(size: 16, weight: .semibold)
                         .foregroundStyle(Palette.accentRed)
                         .frame(maxWidth: .infinity, minHeight: 56)
                         .background(RoundedRectangle(cornerRadius: 16).fill(Palette.accentRed.opacity(0.1)))
@@ -268,13 +265,13 @@ private struct DetailSection<Content: View>: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text(title)
-                .font(.system(size: 13, weight: .semibold))
+                .appFont(size: 13, weight: .semibold)
                 .tracking(0.5)
                 .foregroundStyle(Palette.textSecondary)
                 .padding(.leading, 4)
             VStack(spacing: 0) { content }
                 .padding(.vertical, 8)
-                .background(RoundedRectangle(cornerRadius: 16).fill(Palette.cardWhite))
+                .background(RoundedRectangle(cornerRadius: 16).fill(Palette.glass))
                 .shadow(color: .black.opacity(0.05), radius: 3, y: 1)
         }
     }
@@ -294,11 +291,11 @@ private struct InfoRow: View {
     var body: some View {
         HStack {
             Text(label)
-                .font(.system(size: 15, weight: .medium))
+                .appFont(size: 15, weight: .medium)
                 .foregroundStyle(Palette.textPrimary)
             Spacer()
             Text(value)
-                .font(.system(size: mono ? 14 : 15, design: mono ? .monospaced : .default))
+                .appFont(size: mono ? 14 : 15, design: mono ? .monospaced : .default)
                 .foregroundStyle(Palette.textSecondary)
                 .lineLimit(1)
         }
@@ -314,7 +311,7 @@ private struct SwitchRow: View {
     var body: some View {
         Toggle(isOn: $isOn) {
             Text(label)
-                .font(.system(size: 15, weight: .medium))
+                .appFont(size: 15, weight: .medium)
                 .foregroundStyle(Palette.textPrimary)
         }
         .tint(Palette.accentGreen)
@@ -414,11 +411,11 @@ struct AccountEditorScreen: View {
                         EditorField(label: "Caller ID (optional)", text: $callerId)
                     }
                     if let error {
-                        Text(error).foregroundStyle(Palette.accentRed).font(.system(size: 14))
+                        Text(error).foregroundStyle(Palette.accentRed).appFont(size: 14)
                     }
                     Button(action: save) {
                         Text("Save")
-                            .font(.system(size: 16, weight: .semibold))
+                            .appFont(size: 16, weight: .semibold)
                             .foregroundStyle(.white)
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 16)
@@ -440,7 +437,6 @@ struct AccountEditorScreen: View {
             }
             .scrollDismissesKeyboard(.interactively)
         }
-        .background(Palette.backgroundGray)
         // Load once: coming back from the Delete page mustn't reset unsaved edits.
         .onAppear { if !loaded { loaded = true; load() } }
     }
@@ -547,7 +543,7 @@ private struct EditorCard<Content: View>: View {
     var body: some View {
         VStack(spacing: 12) { content }
             .padding(16)
-            .background(RoundedRectangle(cornerRadius: 20).fill(Palette.cardWhite))
+            .background(RoundedRectangle(cornerRadius: 20).fill(Palette.glass))
     }
 }
 
@@ -561,7 +557,7 @@ private struct EditorField: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
             Text(label)
-                .font(.system(size: 12, weight: .medium))
+                .appFont(size: 12, weight: .medium)
                 .foregroundStyle(focused ? Palette.accentBlue : Palette.textSecondary)
             Group {
                 if secure {
@@ -571,7 +567,7 @@ private struct EditorField: View {
                         .keyboardType(keyboard)
                 }
             }
-            .font(.system(size: 15))
+            .appFont(size: 15)
             .foregroundStyle(Palette.textPrimary)
             .textInputAutocapitalization(.never)
             .autocorrectionDisabled()
@@ -596,10 +592,10 @@ private struct CheckRow: View {
         Button { isOn.toggle() } label: {
             HStack(spacing: 12) {
                 Image(systemName: isOn ? "checkmark.square.fill" : "square")
-                    .font(.system(size: 20))
+                    .appFont(size: 20)
                     .foregroundStyle(isOn ? Palette.accentBlue : Palette.inactiveGray)
                 Text(label)
-                    .font(.system(size: 15, weight: .medium))
+                    .appFont(size: 15, weight: .medium)
                     .foregroundStyle(enabled ? Palette.textPrimary : Palette.textSecondary)
                 Spacer()
             }
@@ -625,18 +621,18 @@ private struct ConfirmPage: View {
         SettingsPageLayout(title: title, onBack: onCancel) {
             VStack(alignment: .leading, spacing: 10) {
                 Text(verbatim: heading)
-                    .font(.system(size: 20, weight: .bold))
+                    .appFont(size: 20, weight: .bold)
                     .foregroundStyle(Palette.textPrimary)
                 Text(verbatim: message)
-                    .font(.system(size: 15))
+                    .appFont(size: 15)
                     .foregroundStyle(Palette.textSecondary)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(22)
-            .background(RoundedRectangle(cornerRadius: 20).fill(Palette.cardWhite))
+            .background(RoundedRectangle(cornerRadius: 20).fill(Palette.glass))
             PageButton(title: actionTitle, color: Palette.accentRed, action: onConfirm)
             Button("Cancel", action: onCancel)
-                .font(.system(size: 16, weight: .medium))
+                .appFont(size: 16, weight: .medium)
                 .foregroundStyle(Palette.textSecondary)
                 .frame(maxWidth: .infinity, minHeight: 44)
         }

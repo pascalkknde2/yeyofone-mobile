@@ -43,6 +43,7 @@ import com.yeyofone.app.ui.theme.AccentGreen
 import com.yeyofone.app.ui.theme.AccentRed
 import com.yeyofone.app.ui.theme.BackgroundGray
 import com.yeyofone.app.ui.theme.CardWhite
+import com.yeyofone.app.ui.theme.GlassCard
 import com.yeyofone.app.ui.theme.TextPrimary
 import com.yeyofone.app.ui.theme.TextSecondary
 import java.time.Duration
@@ -59,7 +60,7 @@ fun CallHistoryItem(
     Card(
         modifier = Modifier.fillMaxWidth().clickable(enabled = canCallBack, onClick = onCallClick),
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = CardWhite),
+        colors = CardDefaults.cardColors(containerColor = GlassCard),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
     ) {
         Row(Modifier.padding(14.dp).fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
@@ -118,7 +119,7 @@ private fun CallAvatar(call: CallLog) {
             CallType.MISSED -> AccentRed to Icons.AutoMirrored.Outlined.CallMissed
         }
         Box(
-            Modifier.align(Alignment.BottomEnd).size(18.dp).clip(CircleShape).background(CardWhite),
+            Modifier.align(Alignment.BottomEnd).size(18.dp).clip(CircleShape).background(GlassCard),
             contentAlignment = Alignment.Center,
         ) {
             Icon(badgeIcon, null, tint = badgeColor, modifier = Modifier.size(12.dp))

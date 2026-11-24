@@ -64,6 +64,7 @@ import com.yeyofone.app.ui.theme.CallTextSecondary
 import com.yeyofone.app.ui.theme.InactiveGray
 import com.yeyofone.app.ui.theme.PrimaryLight
 import com.yeyofone.app.ui.theme.CardWhite
+import com.yeyofone.app.ui.theme.GlassCard
 import com.yeyofone.core.model.AudioRoute
 import com.yeyofone.core.model.CallSession
 import com.yeyofone.core.model.CallState
@@ -91,7 +92,7 @@ fun CallOptionsScreen(
     var destination by remember { mutableStateOf("") }
     var showRoutePicker by remember { mutableStateOf(false) }
 
-    Column(Modifier.fillMaxSize().background(CallBackground).systemBarsPadding()) {
+    Column(Modifier.fillMaxSize().systemBarsPadding()) {
         Row(
             Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically,
@@ -309,7 +310,7 @@ private fun ConsultationTray(session: CallSession, onCompleteTransfer: () -> Uni
 
 @Composable
 private fun CallOptionsGroup(content: @Composable () -> Unit) {
-    Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp)).background(CardWhite)) { content() }
+    Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp)).background(GlassCard)) { content() }
 }
 
 @Composable

@@ -54,13 +54,13 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.yeyofone.app.ui.theme.AccentGreen
 import com.yeyofone.app.ui.theme.AccentOrange
 import com.yeyofone.app.ui.theme.AccentRed
-import com.yeyofone.app.ui.theme.BackgroundGray
 import com.yeyofone.app.ui.theme.BorderLight
 import com.yeyofone.app.ui.theme.InactiveGray
 import com.yeyofone.app.ui.theme.PrimaryLight
 import com.yeyofone.app.ui.theme.TextPrimary
 import com.yeyofone.app.ui.theme.TextSecondary
 import com.yeyofone.app.ui.theme.CardWhite
+import com.yeyofone.app.ui.theme.GlassCard
 import com.yeyofone.app.ui.theme.TextOnPrimary
 import com.yeyofone.core.account.PushCredentialStore
 import com.yeyofone.core.model.AccountPreferences
@@ -74,7 +74,7 @@ import kotlinx.coroutines.withContext
 private val Ink get() = TextPrimary
 private val Gray get() = TextSecondary
 private val GrayMid get() = InactiveGray
-private val PageBackground get() = BackgroundGray
+private val PageBackground get() = androidx.compose.ui.graphics.Color.Transparent
 private val Success get() = AccentGreen
 private val Warning get() = AccentOrange
 private val Danger get() = AccentRed
@@ -97,7 +97,7 @@ fun AccountDetail(account: SipAccount, viewModel: YeyoFoneViewModel) {
             primary = Ink,
             onPrimary = TextOnPrimary,
             background = PageBackground,
-            surface = CardWhite,
+            surface = GlassCard,
             surfaceVariant = SwitchTrackOff,
             error = Danger,
         ),
@@ -106,7 +106,7 @@ fun AccountDetail(account: SipAccount, viewModel: YeyoFoneViewModel) {
             com.yeyofone.app.ui.settings.SettingsPage(stringResource(R.string.sign_out), onBack = { showSignOutDialog = false }) {
                 item {
                     Column(
-                        Modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp)).background(CardWhite).padding(22.dp),
+                        Modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp)).background(GlassCard).padding(22.dp),
                         verticalArrangement = Arrangement.spacedBy(10.dp),
                     ) {
                         Text(stringResource(R.string.sign_out_title, account.displayName), fontSize = 20.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
@@ -132,6 +132,7 @@ fun AccountDetail(account: SipAccount, viewModel: YeyoFoneViewModel) {
             containerColor = MaterialTheme.colorScheme.background,
             topBar = {
                 CenterAlignedTopAppBar(
+                    colors = androidx.compose.material3.TopAppBarDefaults.centerAlignedTopAppBarColors(containerColor = androidx.compose.ui.graphics.Color.Transparent),
                     title = {
                         Text(stringResource(R.string.account_details), style = MaterialTheme.typography.titleLarge)
                     },
@@ -265,7 +266,7 @@ private fun Section(titleRes: Int, content: @Composable () -> Unit) {
         )
         Surface(
             shape = RoundedCornerShape(16.dp),
-            color = CardWhite,
+            color = GlassCard,
             shadowElevation = 2.dp,
             modifier = Modifier.fillMaxWidth(),
         ) {

@@ -139,10 +139,11 @@ nonisolated final class SipEngine: Thread, @unchecked Sendable {
 
     // MARK: Commands (any thread)
 
-    func addAccount(token: UInt64, username: String, host: String, password: String, port: Int,
+    func addAccount(token: UInt64, username: String, authenticationUsername: String, host: String, password: String, port: Int,
                     transport: EngineTransport, completion: Completion? = nil) {
         run(completion) { [weak self] handle in
             var user = Array(username.utf8)
+            var authUser = Array(authenticationUsername.utf8)
             var server = Array(host.utf8)
             var secret = Array(password.utf8)
             defer {
@@ -150,20 +151,25 @@ nonisolated final class SipEngine: Thread, @unchecked Sendable {
                 for index in secret.indices { secret[index] = 0 }
             }
             let code = user.withUnsafeBufferPointer { userBytes in
-                server.withUnsafeBufferPointer { serverBytes in
-                    secret.withUnsafeBufferPointer { secretBytes in
-                        var config = YvAccountConfig(
-                            token: token,
-                            username: userBytes.baseAddress, username_len: UInt32(userBytes.count),
-                            host: serverBytes.baseAddress, host_len: UInt32(serverBytes.count),
-                            password: secretBytes.baseAddress, password_len: UInt32(secretBytes.count),
-                            port: UInt32(port), transport: transport.rawValue
-                        )
-                        return yv_account_add(handle, &config)
+                authUser.withUnsafeBufferPointer { authUserBytes in
+                    server.withUnsafeBufferPointer { serverBytes in
+                        secret.withUnsafeBufferPointer { secretBytes in
+                            var config = YvAccountConfig(
+                                token: token,
+                                username: userBytes.baseAddress, username_len: UInt32(userBytes.count),
+                                authentication_username: authUserBytes.baseAddress,
+                                authentication_username_len: UInt32(authUserBytes.count),
+                                host: serverBytes.baseAddress, host_len: UInt32(serverBytes.count),
+                                password: secretBytes.baseAddress, password_len: UInt32(secretBytes.count),
+                                port: UInt32(port), transport: transport.rawValue
+                            )
+                            return yv_account_add(handle, &config)
+                        }
                     }
                 }
             }
             user.removeAll()
+            authUser.removeAll()
             server.removeAll()
             if code == 0 { self?.accountTokens.insert(token) }
             return code
@@ -211,8 +217,8 @@ nonisolated final class SipEngine: Thread, @unchecked Sendable {
         }
     }
 
-    func answer(token: UInt64, completion: Completion? = nil) {
-        run(completion) { yv_call_answer($0, token) }
+    func answer(token: UInt64, deferAudio: Bool = false, completion: Completion? = nil) {
+        run(completion) { deferAudio ? yv_call_answer_deferred($0, token) : yv_call_answer($0, token) }
     }
 
     /// 603 Decline, or 480 Temporarily Unavailable.
@@ -264,8 +270,13 @@ nonisolated final class SipEngine: Thread, @unchecked Sendable {
     }
 
     /// Opens or closes the sound device for active calls, following CallKit's audio session activation.
-    func audioDevice(open: Bool) {
-        run(nil) { yv_audio_device($0, open ? 1 : 0) }
+    func audioDevice(open: Bool, completion: Completion? = nil) {
+        run(completion) { yv_audio_device($0, open ? 1 : 0) }
+    }
+
+    /// Sets remote audio playback gain for active and future calls.
+    func setCallReceiveGain(_ gain: Float) {
+        run(nil) { yv_set_call_receive_gain($0, gain) }
     }
 
     /// Frees an ended call once the UI has recorded it.

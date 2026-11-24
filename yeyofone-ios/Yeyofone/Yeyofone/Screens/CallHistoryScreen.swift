@@ -35,7 +35,7 @@ struct CallHistoryScreen: View {
                 TabHeader(title: "Recents") {
                     Button { confirmClear = true } label: {
                         Image(systemName: "pencil")
-                            .font(.system(size: 18, weight: .medium))
+                            .appFont(size: 18, weight: .medium)
                             .foregroundStyle(Palette.textPrimary)
                             .frame(width: 44, height: 44)
                     }
@@ -47,14 +47,13 @@ struct CallHistoryScreen: View {
             }
             .padding(.top, 16)
             .padding(.bottom, 16)
-            .background(Palette.cardWhite)
 
             if calls.isEmpty {
                 EmptyStateView(title: "No recent calls")
             } else {
                 List {
                     Text("TODAY")
-                        .font(.system(size: 13, weight: .semibold))
+                        .appFont(size: 13, weight: .semibold)
                         .foregroundStyle(Palette.textSecondary)
                         .padding(.leading, 4)
                         .listRowStyle()
@@ -73,7 +72,6 @@ struct CallHistoryScreen: View {
                 .contentMargins(.top, 8, for: .scrollContent)
             }
         }
-        .background(Palette.backgroundGray)
         .alert("Clear all call history?", isPresented: $confirmClear) {
             Button("Clear all", role: .destructive) { store.history.removeAll() }
             Button("Cancel", role: .cancel) {}
@@ -98,17 +96,17 @@ struct CallHistoryItem: View {
             InitialsAvatar(name: call.contactName, size: 46, fontSize: 15, background: Palette.backgroundGray)
                 .overlay(alignment: .bottomTrailing) {
                     Image(systemName: call.callType.arrowIcon)
-                        .font(.system(size: 9, weight: .bold))
+                        .appFont(size: 9, weight: .bold)
                         .foregroundStyle(badgeColor)
                         .frame(width: 18, height: 18)
-                        .background(Circle().fill(Palette.cardWhite))
+                        .background(Circle().fill(Palette.glass))
                 }
             VStack(alignment: .leading, spacing: 2) {
                 Text(call.contactName)
-                    .font(.system(size: 16, weight: .semibold))
+                    .appFont(size: 16, weight: .semibold)
                     .foregroundStyle(call.callType == .missed ? Palette.accentRed : Palette.textPrimary)
                 Text(metadata)
-                    .font(.system(size: 13))
+                    .appFont(size: 13)
                     .foregroundStyle(Palette.textSecondary)
             }
             Spacer(minLength: 8)
@@ -120,7 +118,7 @@ struct CallHistoryItem: View {
                 .accessibilityLabel("Call \(call.contactName)")
         }
         .padding(14)
-        .background(RoundedRectangle(cornerRadius: 16).fill(Palette.cardWhite))
+        .background(RoundedRectangle(cornerRadius: 16).fill(Palette.glass))
         .shadow(color: .black.opacity(0.05), radius: 3, y: 1)
         .contentShape(Rectangle())
         .onTapGesture(perform: onCall)
@@ -143,7 +141,7 @@ struct CallHistoryItem: View {
     private func roundButton(icon: String, tint: Color, background: Color, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Image(systemName: icon)
-                .font(.system(size: 15))
+                .appFont(size: 15)
                 .foregroundStyle(tint)
                 .frame(width: 36, height: 36)
                 .background(Circle().fill(background))

@@ -59,7 +59,7 @@ struct AdvancedSettingsScreen: View {
                             }
                         }
                         Text("The log can contain phone numbers and server addresses. It stays on this device unless you share it.")
-                            .font(.system(size: 12))
+                            .appFont(size: 12)
                             .foregroundStyle(Palette.textSecondary)
                             .padding(.horizontal, 4)
                     }
@@ -69,7 +69,6 @@ struct AdvancedSettingsScreen: View {
                 .padding(.bottom, 32)
             }
         }
-        .background(Palette.backgroundGray)
         .onChange(of: debugLog) { _, on in
             if on { EngineLog.start() } else { EngineLog.stop() }
             refreshLogSize()
@@ -138,7 +137,7 @@ private struct StatusBadge: View {
         HStack(spacing: 6) {
             Circle().fill(color).frame(width: 8, height: 8)
             Text(label)
-                .font(.system(size: 12, weight: .semibold))
+                .appFont(size: 12, weight: .semibold)
                 .foregroundStyle(color)
         }
         .padding(.horizontal, 10)
@@ -157,10 +156,10 @@ private struct InfoRow<Trailing: View>: View {
         HStack(spacing: 12) {
             VStack(alignment: .leading, spacing: 2) {
                 Text(verbatim: title)
-                    .font(.system(size: 15, weight: .semibold))
+                    .appFont(size: 15, weight: .semibold)
                     .foregroundStyle(Palette.textPrimary)
                 Text(verbatim: detail)
-                    .font(.system(size: 13))
+                    .appFont(size: 13)
                     .foregroundStyle(Palette.textSecondary)
                     .lineLimit(1)
                     .truncationMode(.middle)
@@ -213,7 +212,6 @@ struct SocialScreen: View {
                 .padding(.bottom, 32)
             }
         }
-        .background(Palette.backgroundGray)
     }
 
     private var inviteMessage: String {
@@ -244,15 +242,15 @@ struct AboutScreen: View {
                 VStack(spacing: 20) {
                     VStack(spacing: 10) {
                         Image(systemName: "phone.fill")
-                            .font(.system(size: 34, weight: .semibold))
+                            .appFont(size: 34, weight: .semibold)
                             .foregroundStyle(.white)
                             .frame(width: 76, height: 76)
                             .background(RoundedRectangle(cornerRadius: 20).fill(Palette.accentBlue))
                         Text(verbatim: "YeyoFone")
-                            .font(.system(size: 22, weight: .bold))
+                            .appFont(size: 22, weight: .bold)
                             .foregroundStyle(Palette.textPrimary)
                         Text("Version \(AppInfo.version) (\(AppInfo.build))")
-                            .font(.system(size: 14))
+                            .appFont(size: 14)
                             .foregroundStyle(Palette.textSecondary)
                     }
                     .frame(maxWidth: .infinity)
@@ -278,7 +276,6 @@ struct AboutScreen: View {
                 .padding(.bottom, 32)
             }
         }
-        .background(Palette.backgroundGray)
     }
 }
 
@@ -289,11 +286,11 @@ private struct ValueRow: View {
     var body: some View {
         HStack {
             Text(title)
-                .font(.system(size: 15, weight: .medium))
+                .appFont(size: 15, weight: .medium)
                 .foregroundStyle(Palette.textPrimary)
             Spacer()
             Text(verbatim: value)
-                .font(.system(size: 15))
+                .appFont(size: 15)
                 .foregroundStyle(Palette.textSecondary)
         }
         .padding(.horizontal, 16)
@@ -314,15 +311,15 @@ struct LicensesScreen: View {
                             VStack(alignment: .leading, spacing: 4) {
                                 HStack {
                                     Text(verbatim: "PJSIP")
-                                        .font(.system(size: 15, weight: .semibold))
+                                        .appFont(size: 15, weight: .semibold)
                                         .foregroundStyle(Palette.textPrimary)
                                     Spacer()
                                     Text(verbatim: "GNU GPL v2")
-                                        .font(.system(size: 13, weight: .medium))
+                                        .appFont(size: 13, weight: .medium)
                                         .foregroundStyle(Palette.accentBlue)
                                 }
                                 Text("SIP signalling and audio. Includes third-party components under their own licenses, listed at pjsip.org.")
-                                    .font(.system(size: 13))
+                                    .appFont(size: 13)
                                     .foregroundStyle(Palette.textSecondary)
                                     .multilineTextAlignment(.leading)
                             }
@@ -335,6 +332,5 @@ struct LicensesScreen: View {
                 .padding(.bottom, 32)
             }
         }
-        .background(Palette.backgroundGray)
     }
 }

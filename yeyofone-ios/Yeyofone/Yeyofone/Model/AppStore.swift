@@ -9,6 +9,7 @@
 //
 
 import Foundation
+import AVFoundation
 import Observation
 import os
 
@@ -77,13 +78,23 @@ final class AppStore {
 
     var availableRoutes: [AudioRoute] = [.earpiece, .speaker]
     var selectedRoute: AudioRoute = .earpiece {
-        didSet { if engine != nil, activeCall != nil { AudioController.select(selectedRoute) } }
+        didSet {
+            guard !refreshingAudioRoutes, engine != nil, activeCall != nil else { return }
+            do {
+                try AudioController.select(selectedRoute)
+            } catch {
+                log.error("Audio route selection failed: \(error.localizedDescription)")
+                notice = String(localized: "The audio device could not be selected. Check that it is connected.")
+            }
+            refreshAudioRoutes()
+        }
     }
 
-    var chatContactName = "Noah Anderson"
-    var chatContactOnline = true
-    var chatMessages: [ChatMessage] = SampleData.chatMessages
-    var contactTyping = true
+    /// Empty until a conversation is opened (e.g. from a call summary).
+    var chatContactName = ""
+    var chatContactOnline = false
+    var chatMessages: [ChatMessage] = []
+    var contactTyping = false
 
     @ObservationIgnored private let persists: Bool
     @ObservationIgnored private var engine: SipEngine?
@@ -105,6 +116,8 @@ final class AppStore {
     @ObservationIgnored private var offerExpiry: Task<Void, Never>?
     /// True while a call that CallKit doesn't manage has activated the audio session itself.
     @ObservationIgnored private var ownsAudioSession = false
+    @ObservationIgnored private var refreshingAudioRoutes = false
+    @ObservationIgnored private var audioRouteTask: Task<Void, Never>?
 
     init(demo: Bool = false) {
         persists = !demo
@@ -122,7 +135,16 @@ final class AppStore {
         contacts = LocalStore.load([Contact].self, from: "contacts") ?? []
         history = LocalStore.load([CallLog].self, from: "history") ?? []
         startEngine()
+        audioRouteTask = Task { [weak self] in
+            for await _ in NotificationCenter.default.notifications(named: AVAudioSession.routeChangeNotification) {
+                guard !Task.isCancelled else { break }
+                self?.refreshAudioRoutes()
+            }
+        }
+        refreshAudioRoutes()
     }
+
+    deinit { audioRouteTask?.cancel() }
 
     var primaryAccount: SipAccount? { accounts.first }
 
@@ -223,7 +245,8 @@ final class AppStore {
         accountTokens[account.id] = token
         registration[account.id] = .registering
         engine.addAccount(
-            token: token, username: account.username, host: account.domain, password: password,
+            token: token, username: account.username, authenticationUsername: account.authenticationUsername,
+            host: account.domain, password: password,
             port: account.port, transport: account.transport == .tcp ? .tcp : .udp
         ) { [weak self] code in
             guard let self, accountTokens[account.id] == token else { return }
@@ -293,7 +316,14 @@ final class AppStore {
             activeCall = CallSession(token: token, remoteName: contactName(for: number) ?? number,
                                      remoteNumber: number, direction: .outgoing, state: .calling)
             callPage = .main
-            AudioController.activateSession()
+            do {
+                try AudioController.activateSession()
+            } catch {
+                activeCall = nil
+                log.error("Audio session activation failed: \(error.localizedDescription)")
+                notice = String(localized: "Call audio could not start. Check your audio device.")
+                return
+            }
             ownsAudioSession = true
             prepareAudioRoutes()
             engine.startCall(account: accountToken, token: token, uri: sipUri(number, account: account)) { [weak self] code in
@@ -382,11 +412,20 @@ final class AppStore {
             activeCall = answered
             callPage = .main
             if !viaCallKit {
-                AudioController.activateSession()
+                do {
+                    try AudioController.activateSession()
+                } catch {
+                    incomingCall = call
+                    activeCall = nil
+                    log.error("Audio session activation failed: \(error.localizedDescription)")
+                    notice = String(localized: "Call audio could not start. Check your audio device.")
+                    completion(false)
+                    return
+                }
                 ownsAudioSession = true
             }
             prepareAudioRoutes()
-            engine.answer(token: call.token) { [weak self] code in
+            engine.answer(token: call.token, deferAudio: viaCallKit) { [weak self] code in
                 log.info("Call \(call.token) answer: \(code)")
                 if code != 0 { self?.notice = String(localized: "Call failed") }
                 completion(code == 0)
@@ -542,13 +581,25 @@ final class AppStore {
     }
 
     private func prepareAudioRoutes() {
+        // Preserve the system's headset choice. Assigning .earpiece here used to actively
+        // select the built-in microphone every time a call started or was answered.
+        refreshAudioRoutes()
+    }
+
+    private func refreshAudioRoutes() {
+        refreshingAudioRoutes = true
+        defer { refreshingAudioRoutes = false }
         availableRoutes = AudioController.availableRoutes()
-        selectedRoute = .earpiece
+        selectedRoute = AudioController.currentRoute()
+        log.debug("Audio route: \(self.selectedRoute.rawValue, privacy: .public)")
     }
 
     /// `elsewhere`: the PBX moved the call to another device of the account, or that device answered it.
     private func finish(_ call: CallSession, elsewhere: Bool = false) {
         let answered = call.connectedAt != nil
+        if activeCall == nil, incomingCall == nil, consultationCall == nil {
+            AudioController.resetRoute()
+        }
         callKit?.reportEnded(id: call.id, answered: answered, elsewhere: elsewhere)
         if ownsAudioSession, activeCall == nil, incomingCall == nil {
             ownsAudioSession = false
@@ -679,7 +730,14 @@ final class AppStore {
             session.connectedAt = offer.connectedAt
             activeCall = session
             callPage = .main
-            AudioController.activateSession()
+            do {
+                try AudioController.activateSession()
+            } catch {
+                activeCall = nil
+                log.error("Audio session activation failed: \(error.localizedDescription)")
+                notice = String(localized: "Call audio could not start. Check your audio device.")
+                return
+            }
             ownsAudioSession = true
             prepareAudioRoutes()
             engine.startCallReplacing(account: offer.accountToken, token: token, uri: sipUri(offer.remote, account: account),
@@ -712,6 +770,9 @@ final class AppStore {
         )
         self.engine = engine
         engine.start()
+        let savedVolume = UserDefaults.standard.object(forKey: "speakerVolume") == nil
+            ? 0.7 : UserDefaults.standard.double(forKey: "speakerVolume")
+        engine.setCallReceiveGain(Float(0.5 + min(max(savedVolume, 0), 1)))
         #if !targetEnvironment(simulator)
         // CallKit rings for incoming calls; the Simulator has no CallKit ringing, so keep the bridge's tone there.
         engine.setRingtone(false)
@@ -730,12 +791,21 @@ final class AppStore {
             dtmf: { [weak self] _, digits in digits.forEach { self?.sendDtmf(String($0)) } },
             audioSession: { [weak self] active in
                 log.info("CallKit audio session active: \(active)")
-                self?.engine?.audioDevice(open: active)
+                self?.engine?.audioDevice(open: active) { [weak self] code in
+                    guard code != 0 else { return }
+                    log.error("Call audio device failed: \(code)")
+                    self?.notice = String(localized: "Call audio could not start. Check your audio device.")
+                }
+                self?.refreshAudioRoutes()
             },
             reset: { [weak self] in self?.endAllCalls() }
         ))
         log.info("Engine started with \(self.accounts.count) account(s)")
         for account in accounts where account.enabled { addToEngine(account) }
+    }
+
+    func setSpeakerVolume(_ value: Double) {
+        engine?.setCallReceiveGain(Float(0.5 + min(max(value, 0), 1)))
     }
 
     private func apply(_ snapshot: EngineSnapshot) {
@@ -949,12 +1019,4 @@ enum SampleData {
         ]
     }()
 
-    static let chatMessages: [ChatMessage] = [
-        ChatMessage(content: "Hey! Are you available for a quick call?", timestamp: "09:42", isOutgoing: false),
-        ChatMessage(content: "Sure, give me 5 minutes to wrap up something.", timestamp: "09:43", isOutgoing: true, status: .read),
-        ChatMessage(content: "0:24", timestamp: "09:45", isOutgoing: false, isVoice: true,
-                    waveformHeights: [8, 14, 10, 18, 12, 16, 8, 14, 10, 6, 16, 12]),
-        ChatMessage(content: "Got your voice note. Calling you now!", timestamp: "09:46", isOutgoing: true, status: .delivered),
-        ChatMessage(content: "Perfect, thanks! 👍", timestamp: "09:46", isOutgoing: false),
-    ]
 }

@@ -39,6 +39,8 @@ enum Palette {
     static let backgroundGray = Color(light: 0xF4F7F9, dark: 0x0B1120)
     static let keypadBackground = Color(light: 0xF8FAFC, dark: 0x0F172A)
     static let cardWhite = Color(light: 0xFFFFFF, dark: 0x1E293B)
+    /// Surfaces that sit on the backdrop artwork. Currently the same as `cardWhite`; one place to restyle them.
+    static let glass = cardWhite
     static let textPrimary = Color(light: 0x0F172A, dark: 0xF1F5F9)
     /// Text on a `textPrimary` fill: white in light mode, dark slate in dark mode.
     static let textOnPrimary = Color(light: 0xFFFFFF, dark: 0x0F172A)
@@ -101,10 +103,55 @@ extension String {
 extension View {
     /// Uppercased small caption used for section labels throughout the app.
     func sectionLabelStyle(color: Color = Palette.inactiveGray, size: CGFloat = 12, tracking: CGFloat = 1) -> some View {
-        font(.system(size: size, weight: .bold))
+        appFont(size: size, weight: .bold)
             .tracking(tracking)
             .foregroundStyle(color)
             .textCase(.uppercase)
+    }
+
+    /// App font sizing that preserves the designed point size while honoring Dynamic Type.
+    /// Use this for custom-sized UI text instead of fixed-size SwiftUI fonts.
+    func appFont(
+        size: CGFloat,
+        weight: Font.Weight = .regular,
+        design: Font.Design = .default
+    ) -> some View {
+        modifier(ScaledAppFont(size: size, weight: weight, design: design))
+    }
+}
+
+private struct ScaledAppFont: ViewModifier {
+    @ScaledMetric private var scaledSize: CGFloat
+    let weight: Font.Weight
+    let design: Font.Design
+
+    init(size: CGFloat, weight: Font.Weight, design: Font.Design) {
+        _scaledSize = ScaledMetric(
+            wrappedValue: size,
+            relativeTo: AppTypography.scalingAnchor(for: size)
+        )
+        self.weight = weight
+        self.design = design
+    }
+
+    func body(content: Content) -> some View {
+        content.font(.system(size: scaledSize, weight: weight, design: design))
+    }
+}
+
+/// Dynamic Type anchors for the app's compact custom type scale.
+private enum AppTypography {
+    static func scalingAnchor(for size: CGFloat) -> Font.TextStyle {
+        switch size {
+        case 34...: .largeTitle
+        case 24..<34: .title
+        case 20..<24: .title2
+        case 18..<20: .title3
+        case 16..<18: .headline
+        case 14..<16: .body
+        case 12..<14: .footnote
+        default: .caption
+        }
     }
 }
 
@@ -138,5 +185,23 @@ nonisolated enum AppInfo {
 
     static var build: String {
         Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "1"
+    }
+}
+
+/// Full-screen backdrop behind the app's pages. Light mode shows the blue wave artwork; dark
+/// mode keeps the plain slate fill. Pages draw on top of it without a background of their own.
+struct AppBackdrop: View {
+    @Environment(\.colorScheme) private var colorScheme
+
+    var body: some View {
+        ZStack {
+            Palette.backgroundGray
+            if colorScheme == .light {
+                Image("AppBackground")
+                    .resizable()
+                    .scaledToFill()
+            }
+        }
+        .ignoresSafeArea()
     }
 }

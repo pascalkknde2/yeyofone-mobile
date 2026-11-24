@@ -83,6 +83,7 @@ import com.yeyofone.app.ui.theme.AccentOrange
 import com.yeyofone.app.ui.theme.BackgroundGray
 import com.yeyofone.app.ui.theme.BorderLight
 import com.yeyofone.app.ui.theme.CardWhite
+import com.yeyofone.app.ui.theme.GlassCard
 import com.yeyofone.app.ui.theme.InactiveGray
 import com.yeyofone.app.ui.theme.OrangeLight
 import com.yeyofone.app.ui.theme.PrimaryLight
@@ -423,10 +424,10 @@ internal fun SettingsPage(
     content: androidx.compose.foundation.lazy.LazyListScope.() -> Unit,
 ) {
     BackHandler(onBack = onBack)
-    Scaffold(containerColor = BackgroundGray, snackbarHost = { snackbar?.let { SnackbarHost(it) } }) { insets ->
+    Scaffold(containerColor = Color.Transparent, snackbarHost = { snackbar?.let { SnackbarHost(it) } }) { insets ->
         Column(Modifier.fillMaxSize().padding(bottom = insets.calculateBottomPadding())) {
             Row(
-                Modifier.fillMaxWidth().background(CardWhite).statusBarsPadding()
+                Modifier.fillMaxWidth().statusBarsPadding()
                     .padding(start = 12.dp, top = 8.dp, end = 20.dp, bottom = 8.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
@@ -457,7 +458,7 @@ internal fun MoreSection(title: String, content: @Composable ColumnScope.() -> U
             letterSpacing = 1.sp,
         )
         Column(
-            Modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp)).background(CardWhite)
+            Modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp)).background(GlassCard)
                 .border(1.dp, BorderLight.copy(alpha = .55f), RoundedCornerShape(20.dp)),
             content = content,
         )

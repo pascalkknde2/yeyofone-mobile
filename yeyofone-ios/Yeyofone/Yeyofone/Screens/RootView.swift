@@ -30,6 +30,7 @@ struct RootView: View {
                 mainScreen
             }
         }
+        .background(AppBackdrop())
         .animation(.easeInOut(duration: 0.2), value: store.incomingCall?.id)
         .animation(.easeInOut(duration: 0.2), value: store.activeCall?.id)
         .animation(.easeInOut(duration: 0.2), value: store.endedSummary)
@@ -98,6 +99,6 @@ struct RootView: View {
     }
 
     private var tabBarBackground: Color {
-        store.screen == .home ? Palette.cardWhite : Palette.backgroundGray
+        Color.clear
     }
 }

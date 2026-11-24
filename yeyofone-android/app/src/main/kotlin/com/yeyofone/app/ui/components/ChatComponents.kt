@@ -39,6 +39,7 @@ import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Videocam
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -49,7 +50,6 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
@@ -69,17 +69,19 @@ import com.yeyofone.app.ui.theme.PrimaryLight
 import com.yeyofone.app.ui.theme.TextPrimary
 import com.yeyofone.app.ui.theme.TextSecondary
 import com.yeyofone.app.ui.theme.CardWhite
+import com.yeyofone.app.ui.theme.GlassCard
 
 @Composable
 fun ChatHeader(contact: ChatContact, onBack: () -> Unit, onVoiceCall: () -> Unit, onVideoCall: () -> Unit) {
     Row(
-        Modifier.fillMaxWidth().background(CardWhite).statusBarsPadding().padding(horizontal = 8.dp, vertical = 10.dp),
+        Modifier.fillMaxWidth().statusBarsPadding().padding(horizontal = 8.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         IconButton(onClick = onBack) {
             Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.cd_back), tint = TextPrimary)
         }
-        Box {
+        // No avatar until a conversation is open (the header just reads "Chat").
+        if (contact.id.isNotEmpty()) Box {
             Box(Modifier.size(40.dp).clip(CircleShape).background(PrimaryLight), contentAlignment = Alignment.Center) {
                 Text(contact.name.initials(), fontWeight = FontWeight.Bold, color = TextPrimary)
             }
@@ -90,10 +92,12 @@ fun ChatHeader(contact: ChatContact, onBack: () -> Unit, onVoiceCall: () -> Unit
                 )
             }
         }
-        Spacer(Modifier.width(10.dp))
+        Spacer(Modifier.width(if (contact.id.isNotEmpty()) 10.dp else 4.dp))
         Column(Modifier.weight(1f)) {
-            Text(contact.name, fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = TextPrimary, maxLines = 1, overflow = TextOverflow.Ellipsis)
-            Text(contact.statusText, fontSize = 12.sp, color = if (contact.isOnline) AccentGreen else TextSecondary)
+            Text(contact.name, style = MaterialTheme.typography.titleMedium, color = TextPrimary, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            if (contact.statusText.isNotEmpty()) {
+                Text(contact.statusText, style = MaterialTheme.typography.bodySmall, color = if (contact.isOnline) AccentGreen else TextSecondary)
+            }
         }
         IconButton(onClick = onVoiceCall) { Icon(Icons.Default.Call, stringResource(R.string.voice_call), tint = TextPrimary) }
         IconButton(onClick = onVideoCall) { Icon(Icons.Default.Videocam, stringResource(R.string.video_call), tint = TextPrimary) }
@@ -103,7 +107,7 @@ fun ChatHeader(contact: ChatContact, onBack: () -> Unit, onVoiceCall: () -> Unit
 @Composable
 fun MessageBubble(message: ChatMessage, onPlayVoice: () -> Unit) {
     val outgoing = message.isOutgoing
-    val bubble = if (outgoing) AccentBlue else CardWhite
+    val bubble = if (outgoing) AccentBlue else GlassCard
     val foreground = if (outgoing) Color.White else TextPrimary
     val meta = if (outgoing) Color.White.copy(alpha = 0.78f) else InactiveGray
     val shape = if (outgoing) RoundedCornerShape(18.dp, 18.dp, 4.dp, 18.dp)
@@ -119,7 +123,7 @@ fun MessageBubble(message: ChatMessage, onPlayVoice: () -> Unit) {
             if (message.type == MessageType.VOICE) {
                 VoiceMessage(message, foreground, onPlayVoice)
             } else {
-                Text(message.content, fontSize = 15.sp, lineHeight = 20.sp, color = foreground)
+                Text(message.content, style = MaterialTheme.typography.bodyLarge.copy(lineHeight = 20.sp), color = foreground)
             }
             Spacer(Modifier.height(4.dp))
             Row(
@@ -127,7 +131,7 @@ fun MessageBubble(message: ChatMessage, onPlayVoice: () -> Unit) {
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(3.dp),
             ) {
-                Text(message.timestamp, fontSize = 10.sp, color = meta)
+                Text(message.timestamp, style = MaterialTheme.typography.labelSmall, color = meta)
                 if (outgoing) {
                     Icon(
                         if (message.status == MessageStatus.READ || message.status == MessageStatus.DELIVERED) Icons.Default.DoneAll else Icons.Default.Done,
@@ -171,7 +175,7 @@ fun TypingIndicator() {
     Row(Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
         Row(
             Modifier.shadow(2.dp, RoundedCornerShape(18.dp, 18.dp, 18.dp, 4.dp))
-                .clip(RoundedCornerShape(18.dp, 18.dp, 18.dp, 4.dp)).background(CardWhite)
+                .clip(RoundedCornerShape(18.dp, 18.dp, 18.dp, 4.dp)).background(GlassCard)
                 .padding(horizontal = 16.dp, vertical = 12.dp),
             horizontalArrangement = Arrangement.spacedBy(4.dp),
         ) {
@@ -198,7 +202,7 @@ private fun TypingDot(delay: Int) {
 @Composable
 fun ChatInputBar(text: String, onTextChange: (String) -> Unit, onSend: () -> Unit, onAttach: () -> Unit) {
     Row(
-        Modifier.fillMaxWidth().background(CardWhite).padding(horizontal = 12.dp, vertical = 10.dp),
+        Modifier.fillMaxWidth().background(GlassCard).padding(horizontal = 12.dp, vertical = 10.dp),
         verticalAlignment = Alignment.Bottom,
         horizontalArrangement = Arrangement.spacedBy(10.dp),
     ) {
@@ -210,12 +214,12 @@ fun ChatInputBar(text: String, onTextChange: (String) -> Unit, onSend: () -> Uni
             Modifier.weight(1f).clip(RoundedCornerShape(22.dp)).background(BackgroundGray)
                 .padding(horizontal = 16.dp, vertical = 10.dp),
         ) {
-            if (text.isEmpty()) Text(stringResource(R.string.type_message), color = InactiveGray, fontSize = 15.sp)
+            if (text.isEmpty()) Text(stringResource(R.string.type_message), style = MaterialTheme.typography.bodyLarge, color = InactiveGray)
             BasicTextField(
                 value = text,
                 onValueChange = onTextChange,
                 modifier = Modifier.fillMaxWidth(),
-                textStyle = TextStyle(fontSize = 15.sp, color = TextPrimary, lineHeight = 20.sp),
+                textStyle = MaterialTheme.typography.bodyLarge.copy(color = TextPrimary, lineHeight = 20.sp),
                 cursorBrush = SolidColor(AccentBlue),
                 keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences, imeAction = ImeAction.Send),
                 keyboardActions = KeyboardActions(onSend = { onSend() }),

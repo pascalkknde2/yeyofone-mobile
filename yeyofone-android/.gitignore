@@ -5,3 +5,6 @@ local.properties
 *.iml
 .idea/
 prompt/credentials.md
+
+# Local Google Play upload key. Keep a secure backup outside this checkout.
+/app/yeyofone-upload.jks

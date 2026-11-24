@@ -78,6 +78,7 @@ import com.yeyofone.app.ui.theme.SuccessLight
 import com.yeyofone.app.ui.theme.TextPrimary
 import com.yeyofone.app.ui.theme.TextSecondary
 import com.yeyofone.app.ui.theme.CardWhite
+import com.yeyofone.app.ui.theme.GlassCard
 import com.yeyofone.app.ui.theme.Appearance
 import com.yeyofone.app.ui.theme.AppearancePreferences
 import com.yeyofone.app.ui.theme.Purple
@@ -160,7 +161,7 @@ fun SettingsScreen(
     }
 
     Scaffold(
-        containerColor = BackgroundGray,
+        containerColor = Color.Transparent,
         bottomBar = { BottomNavigationBar(SETTINGS_NAVIGATION, onNavigationItemSelected) },
     ) { padding ->
         Column(Modifier.fillMaxSize().padding(bottom = padding.calculateBottomPadding())) {
@@ -216,7 +217,7 @@ private fun SettingsHeader(
     onSearchToggle: () -> Unit,
 ) {
     Row(
-        Modifier.fillMaxWidth().background(CardWhite).statusBarsPadding()
+        Modifier.fillMaxWidth().statusBarsPadding()
             .padding(start = 24.dp, top = 14.dp, end = 12.dp, bottom = 14.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -285,7 +286,7 @@ private fun SettingsSection(title: String, entries: List<SettingEntry>) {
             fontWeight = FontWeight.SemiBold,
             letterSpacing = 0.5.sp,
         )
-        Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(CardWhite)) {
+        Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(GlassCard)) {
             entries.forEachIndexed { index, entry ->
                 SettingRow(entry, entry.action ?: {})
                 if (index < entries.lastIndex) {

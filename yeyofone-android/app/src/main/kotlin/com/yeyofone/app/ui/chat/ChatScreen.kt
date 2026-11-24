@@ -34,13 +34,13 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.yeyofone.app.R
+import com.yeyofone.app.data.model.ChatContact
 import com.yeyofone.app.ui.components.BottomNavigationBar
 import com.yeyofone.app.ui.components.CHAT_NAVIGATION
 import com.yeyofone.app.ui.components.ChatHeader
 import com.yeyofone.app.ui.components.ChatInputBar
 import com.yeyofone.app.ui.components.MessageBubble
 import com.yeyofone.app.ui.components.TypingIndicator
-import com.yeyofone.app.ui.theme.BackgroundGray
 import com.yeyofone.app.ui.theme.BorderLight
 import com.yeyofone.app.ui.theme.TextSecondary
 import kotlinx.coroutines.launch
@@ -66,7 +66,7 @@ fun ChatScreen(
     }
 
     Scaffold(
-        containerColor = BackgroundGray,
+        containerColor = Color.Transparent,
         snackbarHost = { SnackbarHost(snackbar) },
         bottomBar = { BottomNavigationBar(CHAT_NAVIGATION, onNavigationItemSelected) },
     ) { padding ->
@@ -75,15 +75,21 @@ fun ChatScreen(
         Column(
             Modifier.fillMaxSize().padding(bottomPadding).consumeWindowInsets(bottomPadding).imePadding(),
         ) {
-            ChatHeader(state.contact, onBack, onVoiceCall, onVideoCall)
+            val contact = state.contact
+                ?: ChatContact("", stringResource(R.string.chat_navigation), statusText = "")
+            ChatHeader(contact, onBack, onVoiceCall, onVideoCall)
             HorizontalDivider(thickness = 0.5.dp, color = BorderLight)
             LazyColumn(
                 state = listState,
-                modifier = Modifier.weight(1f).fillMaxWidth().background(BackgroundGray),
+                modifier = Modifier.weight(1f).fillMaxWidth(),
                 contentPadding = PaddingValues(horizontal = 16.dp, vertical = 18.dp),
                 verticalArrangement = Arrangement.spacedBy(2.dp),
             ) {
-                item {
+                if (state.messages.isEmpty() && !state.isContactTyping) item {
+                    Box(Modifier.fillParentMaxSize(), contentAlignment = Alignment.Center) {
+                        Text(stringResource(R.string.chat_empty), fontSize = 14.sp, color = TextSecondary)
+                    }
+                } else item {
                     Box(Modifier.fillMaxWidth().padding(vertical = 8.dp), contentAlignment = Alignment.Center) {
                         Text(
                             stringResource(R.string.today).uppercase(),
