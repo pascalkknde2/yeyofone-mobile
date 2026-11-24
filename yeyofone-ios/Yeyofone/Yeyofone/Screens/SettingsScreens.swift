@@ -166,11 +166,15 @@ struct SettingsScreen: View {
                 }
                 .foregroundStyle(.white)
                 Spacer()
+                Image("PremiumBird")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 52, height: 52)
             }
-            .padding(18)
+            .padding(.leading, 18).padding(.vertical, 18).padding(.trailing, 12)
             .background(
                 RoundedRectangle(cornerRadius: 20)
-                    .fill(LinearGradient(colors: [Palette.cardGradientStart, Palette.cardGradientEnd], startPoint: .topLeading, endPoint: .bottomTrailing))
+                    .fill(LinearGradient(colors: [Palette.premiumGradientStart, Palette.premiumGradientEnd], startPoint: .topLeading, endPoint: .bottomTrailing))
             )
             .shadow(color: Palette.accentBlue.opacity(0.2), radius: 8, y: 4)
         }

@@ -64,6 +64,9 @@ enum Palette {
     static let radioBorder = Color(light: 0xCBD5E1, dark: 0x475569)
     static let cardGradientStart = Color(light: 0x1E293B, dark: 0x334155)
     static let cardGradientEnd = Color(light: 0x0F172A, dark: 0x1E293B)
+    /// Brand blue gradient for the Premium banner and hero (matches the app icon).
+    static let premiumGradientStart = Color(light: 0x002DC3, dark: 0x002DC3)
+    static let premiumGradientEnd = Color(light: 0x13C0FF, dark: 0x13C0FF)
     static let cardAccent = Color(hex: 0x3B82F6)
     /// Unselected bottom navigation icons: gray in light mode, white in dark mode.
     static let navInactive = Color(light: 0x94A3B8, dark: 0xFFFFFF)

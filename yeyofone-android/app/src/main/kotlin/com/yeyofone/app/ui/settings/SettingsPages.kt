@@ -3,6 +3,11 @@ package com.yeyofone.app.ui.settings
 import androidx.annotation.StringRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.res.painterResource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -48,6 +53,8 @@ import com.yeyofone.app.ui.theme.Appearance
 import com.yeyofone.app.ui.theme.AppearancePreferences
 import com.yeyofone.app.ui.theme.CardGradientEnd
 import com.yeyofone.app.ui.theme.CardGradientStart
+import com.yeyofone.app.ui.theme.PremiumGradientEnd
+import com.yeyofone.app.ui.theme.PremiumGradientStart
 import com.yeyofone.app.ui.theme.PrimaryLight
 import com.yeyofone.app.ui.theme.Purple
 import com.yeyofone.app.ui.theme.PurpleLight
@@ -98,18 +105,21 @@ fun OutputDeviceScreen(routes: List<AudioRoute>, selected: AudioRoute?, onSelect
 }
 
 @Composable
-private fun HeroCard(icon: ImageVector, title: String, subtitle: String) {
-    Column(
-        Modifier.fillMaxWidth().clip(RoundedCornerShape(24.dp))
-            .background(Brush.linearGradient(listOf(CardGradientStart, CardGradientEnd)))
-            .padding(22.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
-    ) {
-        Box(Modifier.size(48.dp).clip(RoundedCornerShape(14.dp)).background(Color.White.copy(alpha = .18f)), contentAlignment = androidx.compose.ui.Alignment.Center) {
-            Icon(icon, null, tint = Color.White, modifier = Modifier.size(26.dp))
+private fun HeroCard(icon: ImageVector, title: String, subtitle: String, premium: Boolean = false) {
+    val gradient = if (premium) listOf(PremiumGradientStart, PremiumGradientEnd) else listOf(CardGradientStart, CardGradientEnd)
+    Box(Modifier.fillMaxWidth().clip(RoundedCornerShape(24.dp)).background(Brush.linearGradient(gradient))) {
+        if (premium) {
+            // Soft glow plus the brand bird tucked into the top-right corner.
+            Box(Modifier.align(Alignment.TopEnd).offset(x = 40.dp, y = (-40).dp).size(180.dp).background(Color.White.copy(alpha = .10f), CircleShape))
+            Image(painterResource(R.drawable.premium_bird), null, Modifier.align(Alignment.TopEnd).padding(top = 18.dp, end = 20.dp).size(92.dp))
         }
-        Text(title, color = Color.White, fontSize = 22.sp, fontWeight = FontWeight.Bold)
-        Text(subtitle, color = Color.White.copy(alpha = .9f), fontSize = 14.sp, lineHeight = 19.sp)
+        Column(Modifier.fillMaxWidth().padding(22.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Box(Modifier.size(48.dp).clip(RoundedCornerShape(14.dp)).background(Color.White.copy(alpha = .18f)), contentAlignment = Alignment.Center) {
+                Icon(icon, null, tint = Color.White, modifier = Modifier.size(26.dp))
+            }
+            Text(title, color = Color.White, fontSize = 22.sp, fontWeight = FontWeight.Bold)
+            Text(subtitle, color = Color.White.copy(alpha = .9f), fontSize = 14.sp, lineHeight = 19.sp)
+        }
     }
 }
 
@@ -129,7 +139,7 @@ private fun FeatureList(@StringRes section: Int, features: List<Feature>) {
 @Composable
 fun PremiumScreen(onBack: () -> Unit) {
     SettingsPage(stringResource(R.string.settings_premium), onBack) {
-        item { HeroCard(Icons.Default.WorkspacePremium, stringResource(R.string.premium_title), stringResource(R.string.premium_intro)) }
+        item { HeroCard(Icons.Default.WorkspacePremium, stringResource(R.string.premium_title), stringResource(R.string.premium_intro), premium = true) }
         item {
             FeatureList(
                 R.string.premium_section_features,
