@@ -288,6 +288,17 @@ class CallCoordinator(
         }
     }
 
+    override suspend fun mergeCalls(callId: CallId, otherCallId: CallId) {
+        require(callId != otherCallId) { "A conference needs two different calls" }
+        commandMutex.withLock {
+            val first = sessions.value.firstOrNull { it.id == callId } ?: error("First call does not exist")
+            val second = sessions.value.firstOrNull { it.id == otherCallId } ?: error("Second call does not exist")
+            check(first.state == CallState.Connected) { "First call must be connected" }
+            check(second.state == CallState.Connected) { "Second call must be connected" }
+            gateway.mergeCalls(callId.value, otherCallId.value)
+        }
+    }
+
     override fun observe(callId: CallId): StateFlow<MediaState> = mediaState(callId).asStateFlow()
 
     override suspend fun setMuted(callId: CallId, muted: Boolean) {

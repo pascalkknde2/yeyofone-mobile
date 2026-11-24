@@ -130,6 +130,10 @@
     <string name="call_options_consult_subtitle">Call someone else privately, then complete or return</string>
     <string name="add_call">Add call</string>
     <string name="call_options_add_call_subtitle">Bring someone else into this conversation</string>
+    <string name="merge_calls">Merge</string>
+    <string name="conference_title">Conference call</string>
+    <string name="conference_with">%1$s and %2$s are on this call</string>
+    <string name="remove_from_call">Remove from call</string>
     <string name="ai_assistant">AI assistant</string>
     <string name="call_options_ai_subtitle">Live notes, summary and follow-ups</string>
     <string name="record_call">Record</string>

@@ -116,6 +116,8 @@ interface SipCallGateway {
         error("Attended transfer is not supported")
     suspend fun setMuted(callId: String, muted: Boolean): Unit = error("Mute is not supported")
     suspend fun setHeld(callId: String, held: Boolean): Unit = error("Hold is not supported")
+    /** Joins two connected calls into one three-way audio conference. */
+    suspend fun mergeCalls(callId: String, otherCallId: String): Unit = error("Conference is not supported")
 }
 
 interface CallManager {
@@ -127,6 +129,8 @@ interface CallManager {
     suspend fun sendDtmf(callId: CallId, digit: Char)
     suspend fun transfer(callId: CallId, destination: String)
     suspend fun attendedTransfer(callId: CallId, destinationCallId: CallId)
+    /** Joins two connected calls into one three-way conference; the first one may be on hold. */
+    suspend fun mergeCalls(callId: CallId, otherCallId: CallId): Unit = error("Conference is not supported")
 }
 
 interface CallHistoryRepository {
