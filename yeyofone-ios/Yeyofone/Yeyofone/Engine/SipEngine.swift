@@ -255,6 +255,19 @@ nonisolated final class SipEngine: Thread, @unchecked Sendable {
         }
     }
 
+    /// Records both sides of the call to a WAV file at `path` until `recordStop`.
+    func recordStart(token: UInt64, path: String, completion: Completion? = nil) {
+        run(completion) { handle in
+            Array(path.utf8).withUnsafeBufferPointer { bytes in
+                yv_call_record_start(handle, token, bytes.baseAddress, UInt32(bytes.count))
+            }
+        }
+    }
+
+    func recordStop(token: UInt64, completion: Completion? = nil) {
+        run(completion) { yv_call_record_stop($0, token) }
+    }
+
     /// Sends a handoff message to every device registered with this account (see CallHandoff).
     func sendHandoff(account: UInt64, body: Data) {
         run(nil) { handle in

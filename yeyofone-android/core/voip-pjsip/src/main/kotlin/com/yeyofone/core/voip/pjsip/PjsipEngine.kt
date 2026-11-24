@@ -114,6 +114,14 @@ class PjsipEngine internal constructor(
         withContext(dispatcher) { backend.setHeld(callId, held) }
     }
 
+    override suspend fun startRecording(callId: String, path: String) {
+        withContext(dispatcher) { backend.startRecording(callId, path) }
+    }
+
+    override suspend fun stopRecording(callId: String) {
+        withContext(dispatcher) { backend.stopRecording(callId) }
+    }
+
     override suspend fun mergeCalls(callId: String, otherCallId: String) {
         withContext(dispatcher) { backend.mergeCalls(callId, otherCallId) }
     }

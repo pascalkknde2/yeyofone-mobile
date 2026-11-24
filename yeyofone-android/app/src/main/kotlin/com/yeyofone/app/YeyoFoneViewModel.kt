@@ -38,6 +38,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
@@ -81,6 +82,8 @@ data class YeyoFoneUiState(
     val consultationCallId: CallId? = null,
     /** True once the consultation call has been merged into a three-way conference. */
     val conferenceMerged: Boolean = false,
+    /** Calls currently being recorded to a file. */
+    val recordingCallIds: Set<CallId> = emptySet(),
     val dismissedIncomingCalls: Set<CallId> = emptySet(),
 )
 
@@ -89,6 +92,7 @@ private data class CallSelection(
     val consultation: CallId?,
     val dismissed: Set<CallId>,
     val merged: Boolean,
+    val recording: Set<CallId>,
 )
 
 private data class CoreUiState(
@@ -133,6 +137,7 @@ class YeyoFoneViewModel(
     private val activeCallId = MutableStateFlow<CallId?>(null)
     private val consultationCallId = MutableStateFlow<CallId?>(null)
     private val conferenceMerged = MutableStateFlow(false)
+    private val recordingCallIds = MutableStateFlow<Set<CallId>>(emptySet())
     private val dismissedIncomingCalls = MutableStateFlow<Set<CallId>>(emptySet())
 
     // Re-subscribes to each account's preferences whenever the account list itself changes;
@@ -162,8 +167,8 @@ class YeyoFoneViewModel(
 
     val uiState: StateFlow<YeyoFoneUiState> = combine(
         coreUiState,
-        combine(activeCallId, consultationCallId, dismissedIncomingCalls, conferenceMerged) { active, consultation, dismissed, merged ->
-            CallSelection(active, consultation, dismissed, merged)
+        combine(activeCallId, consultationCallId, dismissedIncomingCalls, conferenceMerged, recordingCallIds) { active, consultation, dismissed, merged, recording ->
+            CallSelection(active, consultation, dismissed, merged, recording)
         },
     ) { core, callSelection ->
         YeyoFoneUiState(
@@ -175,6 +180,7 @@ class YeyoFoneViewModel(
             activeCallId = callSelection.active,
             consultationCallId = callSelection.consultation,
             conferenceMerged = callSelection.merged,
+            recordingCallIds = callSelection.recording,
             dismissedIncomingCalls = callSelection.dismissed,
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), YeyoFoneUiState())
@@ -189,6 +195,9 @@ class YeyoFoneViewModel(
                 if (consultationCallId.value != null && sessions.all { it.state.isTerminal() }) {
                     consultationCallId.value = null
                 }
+                // A recording ends with its call (the engine finalizes the file on disconnect).
+                val live = sessions.filter { !it.state.isTerminal() }.map { it.id }.toSet()
+                if (!live.containsAll(recordingCallIds.value)) recordingCallIds.update { it intersect live }
                 // The conference is over once the consultation leg is gone.
                 val consultation = sessions.firstOrNull { it.id == consultationCallId.value }
                 if (conferenceMerged.value && (consultation == null || consultation.state.isTerminal())) {
@@ -360,6 +369,23 @@ class YeyoFoneViewModel(
 
     fun startConsultation(accountId: SipAccountId, destination: String) = launch {
         placeCall(accountId, destination)?.let { consultationCallId.value = it }
+    }
+
+    /** Starts recording [callId] to [file], or stops the recording when [file] is null. */
+    fun setRecording(callId: CallId, file: java.io.File?) = launch {
+        try {
+            if (file != null) {
+                calls.startRecording(callId, file.absolutePath)
+                recordingCallIds.update { it + callId }
+            } else {
+                calls.stopRecording(callId)
+                recordingCallIds.update { it - callId }
+            }
+        } catch (error: CancellationException) {
+            throw error
+        } catch (error: Exception) {
+            runCatching { Log.w("YeyoFoneCall", "Call recording could not be changed", error) }
+        }
     }
 
     /** Joins the held call and the consultation call into one three-way conference. */

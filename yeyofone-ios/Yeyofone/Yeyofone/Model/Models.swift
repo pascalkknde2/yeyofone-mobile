@@ -107,6 +107,7 @@ struct CallSession: Identifiable, Equatable {
     var connectedAt: Date?
     var muted = false
     var held = false
+    var recording = false
 }
 
 struct CallSummary: Equatable {

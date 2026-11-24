@@ -19,6 +19,7 @@ import com.yeyofone.core.voip.NativeMediaEvent
 import com.yeyofone.core.voip.NativeRegistrationEvent
 import com.yeyofone.core.voip.NativeTransferEvent
 import org.pjsip.pjsua2.AccountConfig
+import org.pjsip.pjsua2.AudioMediaRecorder
 import org.pjsip.pjsua2.AuthCredInfo
 import org.pjsip.pjsua2.AuthCredInfoVector
 import org.pjsip.pjsua2.CallOpParam
@@ -69,6 +70,8 @@ internal class Pjsua2EndpointBackend : EndpointBackend {
     private val locallyHeldCallIds = ConcurrentHashMap.newKeySet<String>()
     /** Calls merged into a three-way conference, keyed both ways (a -> b and b -> a). */
     private val conferencePartners = ConcurrentHashMap<String, String>()
+    /** Active call recorders; each mixes the remote voice and (while unmuted) the local microphone. */
+    private val recorders = ConcurrentHashMap<String, AudioMediaRecorder>()
     private var callEventCallback: ((NativeCallEvent) -> Unit)? = null
     private var mediaEventCallback: ((NativeMediaEvent) -> Unit)? = null
     private var transferEventCallback: ((NativeTransferEvent) -> Unit)? = null
@@ -229,6 +232,7 @@ internal class Pjsua2EndpointBackend : EndpointBackend {
         val current = endpoint ?: return
         endpoint = null
         transportIds.clear()
+        recorders.keys.toList().forEach { stopRecording(it) }
         calls.values.forEach { runCatching { it.hangup(voiceCallOpParam()) }; it.delete() }
         calls.clear()
         locallyHeldCallIds.clear()
@@ -562,6 +566,52 @@ internal class Pjsua2EndpointBackend : EndpointBackend {
         bridgeConference(callId)
     }
 
+    override fun startRecording(callId: String, path: String) {
+        checkNotNull(calls[callId]) { "Native call does not exist" }
+        check(!recorders.containsKey(callId)) { "Call is already being recorded" }
+        java.io.File(path).parentFile?.mkdirs()
+        val recorder = AudioMediaRecorder()
+        try {
+            recorder.createRecorder(path)
+        } catch (error: Exception) {
+            recorder.delete()
+            throw error
+        }
+        recorders[callId] = recorder
+        refreshRecorder(callId)
+    }
+
+    override fun stopRecording(callId: String) {
+        val recorder = recorders.remove(callId) ?: return
+        val call = calls[callId]
+        val ep = endpoint
+        // Detach every source first; deleting the recorder is what finalizes the file.
+        if (call != null) runCatching { call.getAudioMedia(-1).stopTransmit(recorder) }
+        if (ep != null) runCatching { ep.audDevManager().captureDevMedia.stopTransmit(recorder) }
+        recorder.delete()
+    }
+
+    /**
+     * Reconnects a recording's sources to match the call's current state: the remote voice whenever
+     * the call has audio, and the microphone only while the call is neither muted nor held, so
+     * muted speech never ends up in the file. Safe to call repeatedly (media can change after a
+     * re-INVITE, hold or resume).
+     */
+    private fun refreshRecorder(callId: String) {
+        val recorder = recorders[callId] ?: return
+        val call = calls[callId] ?: return
+        val ep = endpoint ?: return
+        val capture = ep.audDevManager().captureDevMedia
+        runCatching { capture.stopTransmit(recorder) }
+        val held = locallyHeldCallIds.contains(callId)
+        runCatching { call.getAudioMedia(-1).startTransmit(recorder) }
+            .onFailure { Log.w(MEDIA_LOG_TAG, "call=$callId recorder remote audio not attached", it) }
+        if (!call.muted && !held) {
+            runCatching { capture.startTransmit(recorder) }
+                .onFailure { Log.w(MEDIA_LOG_TAG, "call=$callId recorder microphone not attached", it) }
+        }
+    }
+
     /** Connects a call's audio both ways to its conference partner, once neither leg is held. */
     private fun bridgeConference(callId: String) {
         val partnerId = conferencePartners[callId] ?: return
@@ -713,6 +763,7 @@ internal class Pjsua2EndpointBackend : EndpointBackend {
                 calls.remove(id)
                 locallyHeldCallIds.remove(id)
                 conferencePartners.remove(id)?.let { conferencePartners.remove(it) }
+                stopRecording(id)
                 delete()
             }
         }
@@ -811,6 +862,7 @@ internal class Pjsua2EndpointBackend : EndpointBackend {
                 getInfo().media.any { it.status == pjsua_call_media_status.PJSUA_CALL_MEDIA_LOCAL_HOLD }
             }.getOrDefault(false)
             mediaEventCallback?.invoke(NativeMediaEvent(id, muted, localHold))
+            refreshRecorder(id)
         }
 
         /**

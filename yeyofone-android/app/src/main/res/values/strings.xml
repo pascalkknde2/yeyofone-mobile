@@ -134,6 +134,9 @@
     <string name="conference_title">Conference call</string>
     <string name="conference_with">%1$s and %2$s are on this call</string>
     <string name="remove_from_call">Remove from call</string>
+    <string name="stop_recording">Stop recording</string>
+    <string name="call_options_recording_subtitle">This call is being recorded</string>
+    <string name="recording_indicator">Recording</string>
     <string name="ai_assistant">AI assistant</string>
     <string name="call_options_ai_subtitle">Live notes, summary and follow-ups</string>
     <string name="record_call">Record</string>

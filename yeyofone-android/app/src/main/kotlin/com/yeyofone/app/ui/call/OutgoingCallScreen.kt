@@ -91,6 +91,7 @@ fun OutgoingCallScreen(
     onOpenKeypad: () -> Unit,
     onOpenTransfer: () -> Unit,
     onOpenMore: () -> Unit,
+    recording: Boolean = false,
     onEndCall: () -> Unit,
 ) {
     var elapsedSeconds by remember(session.id) { mutableLongStateOf(callElapsedSeconds(session)) }
@@ -128,6 +129,18 @@ fun OutgoingCallScreen(
                 name = session.remoteUri.toSipIdentity().displayName,
                 status = if (media.held) callStatus(CallState.Held) else if (session.connectedAt == null) callStatus(session.state) else formatDuration(elapsedSeconds),
             )
+            if (recording) {
+                Spacer(Modifier.height(16.dp))
+                Row(
+                    Modifier.clip(RoundedCornerShape(20.dp)).background(AccentRed.copy(alpha = 0.12f))
+                        .padding(horizontal = 14.dp, vertical = 6.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    Box(Modifier.size(8.dp).background(AccentRed, CircleShape))
+                    Text(stringResource(R.string.recording_indicator), fontSize = 12.sp, fontWeight = FontWeight.Bold, color = AccentRed)
+                }
+            }
         }
 
         Column(

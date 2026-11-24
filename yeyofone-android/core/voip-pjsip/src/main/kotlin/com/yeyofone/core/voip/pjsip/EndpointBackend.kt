@@ -37,6 +37,9 @@ internal interface EndpointBackend {
         error("Mute is not supported by this backend")
     fun setHeld(callId: String, held: Boolean): Unit =
         error("Hold is not supported by this backend")
+    fun startRecording(callId: String, path: String): Unit =
+        error("Recording is not supported by this backend")
+    fun stopRecording(callId: String) = Unit
     fun mergeCalls(callId: String, otherCallId: String): Unit =
         error("Conference is not supported by this backend")
     fun setCallEventListener(callback: (NativeCallEvent) -> Unit) = Unit

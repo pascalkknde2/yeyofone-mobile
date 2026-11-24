@@ -6,6 +6,7 @@
 //  IncomingCallsSettingsScreen, LanguageSettingsScreen and RecordingsScreen.
 //
 
+import AVFoundation
 import SwiftUI
 
 // MARK: Settings
@@ -726,10 +727,18 @@ struct LanguageSettingsScreen: View {
 struct RecordingsScreen: View {
     @Environment(AppStore.self) private var store
     @State private var query = ""
+    @State private var recordings: [SavedRecording] = []
+    @State private var player: AVAudioPlayer?
+    @State private var playingID: URL?
+
+    private var filtered: [SavedRecording] {
+        let trimmed = query.trimmingCharacters(in: .whitespaces)
+        return trimmed.isEmpty ? recordings : recordings.filter { $0.title.localizedCaseInsensitiveContains(trimmed) }
+    }
 
     var body: some View {
         VStack(spacing: 0) {
-            BackHeader(title: "Recordings") { store.screen = .settings }
+            BackHeader(title: "Recordings") { stopPlayback(); store.screen = .settings }
             ScrollView {
                 VStack(alignment: .leading, spacing: 20) {
                     GroupSection(title: "Storage") {
@@ -739,12 +748,12 @@ struct RecordingsScreen: View {
                                     .appFont(size: 14, weight: .semibold)
                                     .foregroundStyle(Palette.textPrimary)
                                 Spacer()
-                                Text(verbatim: "0 B / \(totalStorage)")
+                                Text(verbatim: "\(ByteCountFormatter.string(fromByteCount: recordings.reduce(0) { $0 + $1.bytes }, countStyle: .file)) / \(totalStorage)")
                                     .appFont(size: 13)
                                     .foregroundStyle(Palette.textSecondary)
                             }
                             Capsule().fill(Palette.borderLight).frame(height: 8).padding(.top, 12)
-                            Text("\(0) recordings saved")
+                            Text("\(recordings.count) recordings saved")
                                 .appFont(size: 12)
                                 .foregroundStyle(Palette.inactiveGray)
                                 .padding(.top, 8)
@@ -754,32 +763,113 @@ struct RecordingsScreen: View {
                     SearchField(placeholder: "Search recordings…", text: $query, background: Palette.glass)
                         .clipShape(Capsule())
                     Text("Recent Recordings").sectionLabelStyle().padding(.leading, 4)
-                    VStack(spacing: 8) {
-                        Image(systemName: "mic.fill")
-                            .appFont(size: 28)
-                            .foregroundStyle(Palette.inactiveGray)
-                        (query.isEmpty ? Text("No recordings yet") : Text("No matches"))
-                            .appFont(size: 16, weight: .semibold)
-                            .foregroundStyle(Palette.textPrimary)
-                        (query.isEmpty ? Text("Saved recordings on this device will appear here.") : Text("Try another name."))
-                            .appFont(size: 13)
-                            .foregroundStyle(Palette.textSecondary)
+                    if filtered.isEmpty {
+                        emptyState
+                    } else {
+                        VStack(spacing: 8) {
+                            ForEach(filtered) { recording in row(recording) }
+                        }
                     }
-                    .multilineTextAlignment(.center)
-                    .frame(maxWidth: .infinity)
-                    .padding(.horizontal, 24)
-                    .padding(.vertical, 36)
-                    .background(RoundedRectangle(cornerRadius: 20).fill(Palette.glass))
                 }
                 .padding(.horizontal, 20)
                 .padding(.top, 24)
                 .padding(.bottom, 32)
             }
         }
+        .onAppear(perform: load)
+        .onDisappear(perform: stopPlayback)
+    }
+
+    private var emptyState: some View {
+        VStack(spacing: 8) {
+            Image(systemName: "mic.fill")
+                .appFont(size: 28)
+                .foregroundStyle(Palette.inactiveGray)
+            (query.isEmpty ? Text("No recordings yet") : Text("No matches"))
+                .appFont(size: 16, weight: .semibold)
+                .foregroundStyle(Palette.textPrimary)
+            (query.isEmpty ? Text("Saved recordings on this device will appear here.") : Text("Try another name."))
+                .appFont(size: 13)
+                .foregroundStyle(Palette.textSecondary)
+        }
+        .multilineTextAlignment(.center)
+        .frame(maxWidth: .infinity)
+        .padding(.horizontal, 24)
+        .padding(.vertical, 36)
+        .background(RoundedRectangle(cornerRadius: 20).fill(Palette.glass))
+    }
+
+    private func row(_ recording: SavedRecording) -> some View {
+        let playing = playingID == recording.url
+        return Button { toggle(recording) } label: {
+            HStack(spacing: 14) {
+                IconTile(icon: playing ? "pause.fill" : "play.fill", tint: Palette.accentBlue, background: Palette.primaryLight)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(verbatim: recording.title)
+                        .appFont(size: 15, weight: .semibold)
+                        .foregroundStyle(Palette.textPrimary)
+                    Text(verbatim: "\(recording.durationText) · \(recording.date.formatted(date: .abbreviated, time: .shortened))")
+                        .appFont(size: 13)
+                        .foregroundStyle(Palette.textSecondary)
+                }
+                Spacer(minLength: 8)
+            }
+            .padding(.horizontal, 18)
+            .padding(.vertical, 14)
+            .background(RoundedRectangle(cornerRadius: 20).fill(Palette.glass))
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+    }
+
+    private func load() { recordings = SavedRecording.all() }
+
+    private func toggle(_ recording: SavedRecording) {
+        if playingID == recording.url { stopPlayback(); return }
+        stopPlayback()
+        try? AVAudioSession.sharedInstance().setCategory(.playback)
+        if let next = try? AVAudioPlayer(contentsOf: recording.url) {
+            player = next
+            playingID = recording.url
+            next.play()
+        }
+    }
+
+    private func stopPlayback() {
+        player?.stop()
+        player = nil
+        playingID = nil
     }
 
     private var totalStorage: String {
         let bytes = (try? URL.documentsDirectory.resourceValues(forKeys: [.volumeTotalCapacityKey]).volumeTotalCapacity) ?? 0
         return ByteCountFormatter.string(fromByteCount: Int64(bytes), countStyle: .file)
+    }
+}
+
+/// A call recording saved in Documents/recordings.
+struct SavedRecording: Identifiable {
+    let url: URL
+    let bytes: Int64
+    let date: Date
+    let duration: TimeInterval
+
+    var id: URL { url }
+    var title: String { url.deletingPathExtension().lastPathComponent.replacingOccurrences(of: "-", with: " ") }
+    var durationText: String { String(format: "%02d:%02d", Int(duration) / 60, Int(duration) % 60) }
+
+    static func all() -> [SavedRecording] {
+        let folder = URL.documentsDirectory.appending(path: "recordings", directoryHint: .isDirectory)
+        let files = (try? FileManager.default.contentsOfDirectory(
+            at: folder, includingPropertiesForKeys: [.fileSizeKey, .contentModificationDateKey])) ?? []
+        return files
+            .filter { ["wav", "m4a", "mp3"].contains($0.pathExtension.lowercased()) }
+            .map { url in
+                let values = try? url.resourceValues(forKeys: [.fileSizeKey, .contentModificationDateKey])
+                let duration = (try? AVAudioPlayer(contentsOf: url))?.duration ?? 0
+                return SavedRecording(url: url, bytes: Int64(values?.fileSize ?? 0),
+                                      date: values?.contentModificationDate ?? .distantPast, duration: duration)
+            }
+            .sorted { $0.date > $1.date }
     }
 }

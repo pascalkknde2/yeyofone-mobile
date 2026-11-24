@@ -491,6 +491,8 @@ private fun AccountsApp(
                     selectedRoute = state.selectedRoute,
                     consultationSession = consultationSession,
                     conferenceMerged = state.conferenceMerged,
+                    recording = activeSession.id in state.recordingCallIds,
+                    onRecordingChange = { on -> viewModel.setRecording(activeSession.id, if (on) newRecordingFile(context, activeSession) else null) },
                     onNavigateBack = { viewModel.showAccount(account.id) },
                     onSpeakerChange = { enabled ->
                         val route = if (enabled) AudioRoute.Speaker else
@@ -784,6 +786,8 @@ private fun IncomingCallScreen(
             selectedRoute = state.selectedRoute,
             consultationSession = consultationSession,
             conferenceMerged = state.conferenceMerged,
+            recording = current.id in state.recordingCallIds,
+            onRecordingChange = { on -> viewModel.setRecording(current.id, if (on) newRecordingFile(context, current) else null) },
             onNavigateBack = viewModel::showAccounts,
             onSpeakerChange = { enabled ->
                 val route = if (enabled) AudioRoute.Speaker else
@@ -915,6 +919,8 @@ private fun OutgoingCallHost(
     selectedRoute: AudioRoute?,
     consultationSession: CallSession?,
     conferenceMerged: Boolean,
+    recording: Boolean,
+    onRecordingChange: (Boolean) -> Unit,
     onNavigateBack: () -> Unit,
     onSpeakerChange: (Boolean) -> Unit,
     onMuteChange: (Boolean) -> Unit,
@@ -956,6 +962,8 @@ private fun OutgoingCallHost(
             heldCallerName = session.remoteUri.toSipIdentity().displayName,
             consultationSession = consultationSession,
             conferenceMerged = conferenceMerged,
+            recording = recording,
+            onRecordingChange = onRecordingChange,
             onMergeCalls = onMergeCalls,
             onStartConsultation = onStartConsultation,
             onCompleteTransfer = onCompleteTransfer,
@@ -973,9 +981,17 @@ private fun OutgoingCallHost(
             onOpenKeypad = { keypadOpen = true },
             onOpenTransfer = { transferOpen = true },
             onOpenMore = { moreOpen = true },
+            recording = recording,
             onEndCall = onEndCall,
         )
     }
+}
+
+/** A fresh WAV path in the app's recordings folder, named for the other party and the time. */
+private fun newRecordingFile(context: android.content.Context, session: CallSession): java.io.File {
+    val who = session.remoteUri.toSipIdentity().displayName.replace(Regex("[^A-Za-z0-9._-]+"), "-").trim('-').ifEmpty { "call" }
+    val stamp = java.text.SimpleDateFormat("yyyyMMdd-HHmmss", java.util.Locale.US).format(java.util.Date())
+    return java.io.File(context.filesDir, "recordings/$who-$stamp.wav")
 }
 
 private fun currentCallKey(session: CallSession): String = session.id.value
