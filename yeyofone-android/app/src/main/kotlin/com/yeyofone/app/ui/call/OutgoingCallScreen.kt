@@ -30,6 +30,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material.icons.filled.CallEnd
+import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Dialpad
 import androidx.compose.material.icons.filled.MicOff
 import androidx.compose.material.icons.filled.Mic
@@ -92,6 +93,7 @@ fun OutgoingCallScreen(
     onOpenTransfer: () -> Unit,
     onOpenMore: () -> Unit,
     recording: Boolean = false,
+    assistant: Boolean = false,
     onEndCall: () -> Unit,
 ) {
     var elapsedSeconds by remember(session.id) { mutableLongStateOf(callElapsedSeconds(session)) }
@@ -139,6 +141,18 @@ fun OutgoingCallScreen(
                 ) {
                     Box(Modifier.size(8.dp).background(AccentRed, CircleShape))
                     Text(stringResource(R.string.recording_indicator), fontSize = 12.sp, fontWeight = FontWeight.Bold, color = AccentRed)
+                }
+            }
+            if (assistant) {
+                Spacer(Modifier.height(8.dp))
+                Row(
+                    Modifier.clip(RoundedCornerShape(20.dp)).background(AccentBlue.copy(alpha = 0.12f))
+                        .padding(horizontal = 14.dp, vertical = 6.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    Icon(Icons.Default.AutoAwesome, null, tint = AccentBlue, modifier = Modifier.size(12.dp))
+                    Text(stringResource(R.string.ai_notes_indicator), fontSize = 12.sp, fontWeight = FontWeight.Bold, color = AccentBlue)
                 }
             }
         }

@@ -50,6 +50,15 @@ struct OutgoingCallScreen: View {
                         .padding(.horizontal, 14).padding(.vertical, 6)
                         .background(Capsule().fill(Palette.accentRed.opacity(0.12)))
                     }
+                    if session.assistant {
+                        HStack(spacing: 8) {
+                            Image(systemName: "sparkles").appFont(size: 11)
+                            Text("AI notes on").appFont(size: 12, weight: .bold)
+                        }
+                        .foregroundStyle(Palette.accentBlue)
+                        .padding(.horizontal, 14).padding(.vertical, 6)
+                        .background(Capsule().fill(Palette.accentBlue.opacity(0.12)))
+                    }
                 }
                 .padding(.horizontal, 24)
                 .padding(.vertical, 16)
@@ -252,6 +261,62 @@ struct IncomingCallScreen: View {
 
 // MARK: Call ended
 
+/// The AI assistant's notes on the call that just ended.
+private struct NotesCard: View {
+    let state: NotesState
+    @State private var showTranscript = false
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 8) {
+                Image(systemName: "sparkles").appFont(size: 14).foregroundStyle(Palette.accentBlue)
+                Text("AI notes").appFont(size: 15, weight: .bold).foregroundStyle(Palette.textPrimary)
+            }
+            switch state {
+            case .working:
+                Text("Writing up the call on this iPhone…")
+                    .appFont(size: 13).foregroundStyle(Palette.textSecondary)
+            case .failed(let reason):
+                Text("Notes could not be made: \(reason)")
+                    .appFont(size: 13).foregroundStyle(Palette.accentRed)
+            case .ready(let notes):
+                if notes.isEmpty {
+                    Text("No speech was picked up in this call.")
+                        .appFont(size: 13).foregroundStyle(Palette.textSecondary)
+                } else {
+                    if !notes.summary.isEmpty {
+                        heading("Summary")
+                        Text(notes.summary).appFont(size: 14).foregroundStyle(Palette.textPrimary)
+                    }
+                    if !notes.actionItems.isEmpty {
+                        heading("Follow-ups")
+                        ForEach(notes.actionItems, id: \.self) { item in
+                            Text(verbatim: "\u{2022} \(item)").appFont(size: 14).foregroundStyle(Palette.textPrimary)
+                        }
+                    }
+                    Button { showTranscript.toggle() } label: {
+                        (showTranscript ? Text("Hide transcript") : Text("Show transcript"))
+                            .appFont(size: 13, weight: .semibold).foregroundStyle(Palette.accentBlue)
+                    }
+                    if showTranscript {
+                        Text(notes.transcript).appFont(size: 13).foregroundStyle(Palette.textSecondary)
+                    }
+                    Text("Made automatically on this iPhone. It can contain mistakes.")
+                        .appFont(size: 11).foregroundStyle(Palette.textSecondary)
+                }
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(18)
+        .background(RoundedRectangle(cornerRadius: 20).fill(Palette.glass))
+        .overlay(RoundedRectangle(cornerRadius: 20).stroke(Palette.borderLight, lineWidth: 1))
+    }
+
+    private func heading(_ title: LocalizedStringKey) -> some View {
+        Text(title).appFont(size: 11, weight: .semibold).foregroundStyle(Palette.textSecondary).textCase(.uppercase)
+    }
+}
+
 struct CallEndedScreen: View {
     @Environment(AppStore.self) private var store
     let summary: CallSummary
@@ -321,6 +386,10 @@ struct CallEndedScreen: View {
                     .background(RoundedRectangle(cornerRadius: 20).fill(Palette.glass))
                     .overlay(RoundedRectangle(cornerRadius: 20).stroke(Palette.borderLight, lineWidth: 1))
                     .padding(.top, 28)
+
+                    if let notes = store.endedNotes {
+                        NotesCard(state: notes).padding(.top, 24)
+                    }
                 }
                 .padding(24)
                 .frame(maxWidth: .infinity)
@@ -436,9 +505,12 @@ struct CallOptionsScreen: View {
                             comingSoon = String(localized: "Add call")
                         }
                         RowDivider(leading: 18)
-                        OptionRow(icon: "sparkles", title: "AI assistant",
-                                  subtitle: String(localized: "Live notes, summary and follow-ups")) {
-                            comingSoon = String(localized: "AI assistant")
+                        let assistant = store.activeCall?.assistant ?? false
+                        OptionRow(icon: "sparkles", title: assistant ? "Stop AI assistant" : "AI assistant",
+                                  subtitle: assistant ? String(localized: "Notes will be ready when the call ends")
+                                                      : String(localized: "Transcript, summary and follow-ups after the call"),
+                                  iconTint: assistant ? Palette.accentGreen : Palette.accentBlue) {
+                            store.setAssistant(!assistant)
                         }
                         RowDivider(leading: 18)
                         let recording = store.activeCall?.recording ?? false
