@@ -237,7 +237,6 @@ struct IncomingCallScreen: View {
                     .frame(maxWidth: .infinity)
                 }
             }
-            .background(Palette.keypadBackground)
         }
     }
 }

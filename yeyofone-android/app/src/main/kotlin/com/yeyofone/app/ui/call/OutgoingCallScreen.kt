@@ -8,6 +8,9 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.foundation.interaction.collectIsPressedAsState
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Arrangement
@@ -129,9 +132,10 @@ fun OutgoingCallScreen(
 
         Column(
             Modifier.fillMaxWidth()
-                .shadow(4.dp, RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp))
-                .background(CallBackground, RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp))
-                .padding(start = 24.dp, top = 32.dp, end = 24.dp, bottom = 48.dp),
+                .padding(start = 16.dp, end = 16.dp, bottom = 16.dp)
+                .shadow(4.dp, RoundedCornerShape(32.dp))
+                .background(CallBackground, RoundedCornerShape(32.dp))
+                .padding(start = 24.dp, top = 32.dp, end = 24.dp, bottom = 32.dp),
             verticalArrangement = Arrangement.spacedBy(24.dp),
         ) {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
@@ -211,6 +215,8 @@ private fun CallActionButton(
     enabled: Boolean = true,
     onClick: () -> Unit,
 ) {
+    val interactionSource = remember { MutableInteractionSource() }
+    val pressed by interactionSource.collectIsPressedAsState()
     val background = when {
         destructive -> AccentRed
         active -> AccentBlue
@@ -219,7 +225,10 @@ private fun CallActionButton(
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier.semantics { if (!destructive) selected = active }
-            .clickable(enabled = enabled, role = Role.Button, onClick = onClick).padding(horizontal = 5.dp),
+            .graphicsLayer { scaleX = if (pressed) 0.96f else 1f; scaleY = scaleX }
+            // No ripple: the default one paints a gray rectangle behind the whole button on every touch.
+            .clickable(interactionSource = interactionSource, indication = null, enabled = enabled, role = Role.Button, onClick = onClick)
+            .padding(horizontal = 5.dp),
     ) {
         Box(
             Modifier.size(64.dp)

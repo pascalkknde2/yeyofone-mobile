@@ -236,13 +236,15 @@ struct CallTray<Content: View>: View {
             .frame(maxWidth: .infinity)
             .padding(.horizontal, 24)
             .padding(.top, 32)
-            .padding(.bottom, 24)
+            .padding(.bottom, 32)
             .background(
-                TopRoundedTray()
+                RoundedRectangle(cornerRadius: 32, style: .continuous)
                     .fill(background)
                     .shadow(color: .black.opacity(0.08), radius: 4, y: -2)
-                    .ignoresSafeArea(edges: .bottom)
             )
+            // Floating card: margin on the left, right and bottom.
+            .padding(.horizontal, 16)
+            .padding(.bottom, 16)
     }
 }
 

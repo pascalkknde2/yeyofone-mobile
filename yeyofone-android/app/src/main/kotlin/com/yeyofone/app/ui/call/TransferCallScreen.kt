@@ -114,9 +114,10 @@ fun TransferCallScreen(
 
         Row(
             Modifier.fillMaxWidth()
-                .shadow(4.dp, RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp))
-                .background(CallBackground, RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp))
-                .padding(start = 24.dp, top = 32.dp, end = 24.dp, bottom = 48.dp),
+                .padding(start = 16.dp, end = 16.dp, bottom = 16.dp)
+                .shadow(4.dp, RoundedCornerShape(32.dp))
+                .background(CallBackground, RoundedCornerShape(32.dp))
+                .padding(start = 24.dp, top = 32.dp, end = 24.dp, bottom = 32.dp),
             horizontalArrangement = Arrangement.SpaceEvenly,
         ) {
             PrimaryCallActionButton(

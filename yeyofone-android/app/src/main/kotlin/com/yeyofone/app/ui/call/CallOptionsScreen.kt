@@ -240,9 +240,10 @@ private fun ConsultDestinationCenter(
 private fun ConsultDestinationTray(enabled: Boolean, onStart: () -> Unit) {
     Column(
         Modifier.fillMaxWidth()
-            .shadow(4.dp, RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp))
-            .background(CallBackground, RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp))
-            .padding(start = 24.dp, top = 32.dp, end = 24.dp, bottom = 48.dp),
+            .padding(start = 16.dp, end = 16.dp, bottom = 16.dp)
+            .shadow(4.dp, RoundedCornerShape(32.dp))
+            .background(CallBackground, RoundedCornerShape(32.dp))
+            .padding(start = 24.dp, top = 32.dp, end = 24.dp, bottom = 32.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         PrimaryCallActionButton(
@@ -291,9 +292,10 @@ private fun ConsultationCenter(session: CallSession, heldCallerName: String, mod
 private fun ConsultationTray(session: CallSession, onCompleteTransfer: () -> Unit, onReturnToCaller: () -> Unit) {
     Column(
         Modifier.fillMaxWidth()
-            .shadow(4.dp, RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp))
-            .background(CallBackground, RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp))
-            .padding(start = 24.dp, top = 32.dp, end = 24.dp, bottom = 48.dp),
+            .padding(start = 16.dp, end = 16.dp, bottom = 16.dp)
+            .shadow(4.dp, RoundedCornerShape(32.dp))
+            .background(CallBackground, RoundedCornerShape(32.dp))
+            .padding(start = 24.dp, top = 32.dp, end = 24.dp, bottom = 32.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         PrimaryCallActionButton(
