@@ -46,7 +46,6 @@ import com.yeyofone.app.ui.components.PrimaryCallActionButton
 import com.yeyofone.app.ui.components.SecondaryCallActionButton
 import com.yeyofone.app.ui.theme.AccentGreen
 import com.yeyofone.app.ui.theme.AccentRed
-import com.yeyofone.app.ui.theme.KeypadBackground
 import com.yeyofone.app.ui.theme.SuccessLight
 import com.yeyofone.app.ui.theme.CallTextPrimary
 import com.yeyofone.app.ui.theme.CallTextSecondary
@@ -96,7 +95,7 @@ fun IncomingCallScreen(
             }
         }
         Column(
-            Modifier.fillMaxWidth().weight(1f).background(KeypadBackground).padding(horizontal = 24.dp),
+            Modifier.fillMaxWidth().weight(1f).padding(horizontal = 24.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,
         ) {
@@ -140,7 +139,7 @@ fun IncomingCallScreen(
         }
 
         Column(
-            Modifier.fillMaxWidth().background(KeypadBackground)
+            Modifier.fillMaxWidth()
                 .shadow(4.dp, RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp))
                 .background(GlassCard, RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp))
                 .padding(start = 24.dp, top = 32.dp, end = 24.dp, bottom = 48.dp),
