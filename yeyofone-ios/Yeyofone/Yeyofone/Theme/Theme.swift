@@ -188,19 +188,21 @@ nonisolated enum AppInfo {
     }
 }
 
-/// Full-screen backdrop behind the app's pages. Light mode shows the blue wave artwork; dark
-/// mode keeps the plain slate fill. Pages draw on top of it without a background of their own.
+/// Full-screen backdrop behind the app's pages: the blue wave artwork over the plain fill, dimmed
+/// in dark mode. Pages draw on top of it without a background of their own.
 struct AppBackdrop: View {
+    /// Opacity of the wave artwork over the dark fill; full strength in light mode.
+    private static let darkOpacity = 0.25
+
     @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
         ZStack {
             Palette.backgroundGray
-            if colorScheme == .light {
-                Image("AppBackground")
-                    .resizable()
-                    .scaledToFill()
-            }
+            Image("AppBackground")
+                .resizable()
+                .scaledToFill()
+                .opacity(colorScheme == .dark ? Self.darkOpacity : 1)
         }
         .ignoresSafeArea()
     }
