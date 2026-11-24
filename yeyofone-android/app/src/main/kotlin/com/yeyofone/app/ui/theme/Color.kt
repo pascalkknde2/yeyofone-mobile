@@ -19,8 +19,8 @@ private fun pick(light: Long, dark: Long) = Color(if (Palette.isDark) dark else 
 val BackgroundGray get() = pick(0xFFF4F7F9, 0xFF0B1120)
 val KeypadBackground get() = pick(0xFFF8FAFC, 0xFF0F172A)
 val CardWhite get() = pick(0xFFFFFFFF, 0xFF1E293B)
-/** Surfaces on the backdrop artwork. Currently the same as CardWhite; one place to restyle them. */
-val GlassCard get() = CardWhite
+/** Surfaces on the backdrop artwork: white in light mode, translucent slate in dark mode so the artwork shows through. */
+val GlassCard get() = if (Palette.isDark) Color(0x991E293B) else CardWhite
 val TextPrimary get() = pick(0xFF0F172A, 0xFFF1F5F9)
 /** Text on a [TextPrimary] fill: white in light mode, dark slate in dark mode. */
 val TextOnPrimary get() = pick(0xFFFFFFFF, 0xFF0F172A)
