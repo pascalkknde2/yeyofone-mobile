@@ -108,6 +108,10 @@ struct CallSession: Identifiable, Equatable {
     var muted = false
     var held = false
     var recording = false
+    /// Where the active recording is being written; set once the engine confirms it started.
+    var recordingURL: URL?
+    /// The AI assistant is on: notes are made from the recording when the call ends.
+    var assistant = false
 }
 
 struct CallSummary: Equatable {

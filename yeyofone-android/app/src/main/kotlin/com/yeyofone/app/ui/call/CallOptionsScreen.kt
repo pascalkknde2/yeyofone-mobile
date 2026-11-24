@@ -91,6 +91,8 @@ fun CallOptionsScreen(
     onMergeCalls: () -> Unit,
     recording: Boolean,
     onRecordingChange: (Boolean) -> Unit,
+    assistant: Boolean,
+    onAssistantChange: (Boolean) -> Unit,
     onStartConsultation: (String) -> Unit,
     onCompleteTransfer: () -> Unit,
     onReturnToCaller: () -> Unit,
@@ -100,7 +102,6 @@ fun CallOptionsScreen(
     var enteringDestination by remember { mutableStateOf(false) }
     var destination by remember { mutableStateOf("") }
     var showRoutePicker by remember { mutableStateOf(false) }
-    var comingSoon by remember { mutableStateOf<String?>(null) }
     // Add call and Consult transfer share the dial-and-hold flow; only Consult transfer can complete a transfer.
     var addingCall by remember { mutableStateOf(false) }
 
@@ -180,12 +181,14 @@ fun CallOptionsScreen(
                         },
                     )
                     OptionDivider()
-                    val aiTitle = stringResource(R.string.ai_assistant)
                     CallOptionRow(
                         icon = Icons.Default.AutoAwesome,
-                        title = aiTitle,
-                        subtitle = stringResource(R.string.call_options_ai_subtitle),
-                        onClick = { comingSoon = aiTitle },
+                        title = stringResource(if (assistant) R.string.stop_ai_assistant else R.string.ai_assistant),
+                        subtitle = stringResource(
+                            if (assistant) R.string.call_options_ai_on_subtitle else R.string.call_options_ai_subtitle,
+                        ),
+                        iconTint = if (assistant) AccentGreen else AccentBlue,
+                        onClick = { onAssistantChange(!assistant) },
                     )
                     OptionDivider()
                     CallOptionRow(
@@ -209,15 +212,6 @@ fun CallOptionsScreen(
                 }
             }
         }
-    }
-
-    comingSoon?.let { feature ->
-        AlertDialog(
-            onDismissRequest = { comingSoon = null },
-            title = { Text(stringResource(R.string.coming_soon_title)) },
-            text = { Text(stringResource(R.string.coming_soon_message, feature)) },
-            confirmButton = { TextButton(onClick = { comingSoon = null }) { Text(stringResource(R.string.ok)) } },
-        )
     }
 
     if (showRoutePicker) {

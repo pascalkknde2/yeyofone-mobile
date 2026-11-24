@@ -84,6 +84,10 @@ data class YeyoFoneUiState(
     val conferenceMerged: Boolean = false,
     /** Calls currently being recorded to a file. */
     val recordingCallIds: Set<CallId> = emptySet(),
+    /** Calls where the AI assistant is on; its notes are made when the call ends. */
+    val assistantCallIds: Set<CallId> = emptySet(),
+    /** The assistant's progress or result for calls that have ended. */
+    val callNotes: Map<CallId, com.yeyofone.app.ai.NotesState> = emptyMap(),
     val dismissedIncomingCalls: Set<CallId> = emptySet(),
 )
 
@@ -93,6 +97,8 @@ private data class CallSelection(
     val dismissed: Set<CallId>,
     val merged: Boolean,
     val recording: Set<CallId>,
+    val assistant: Set<CallId>,
+    val notes: Map<CallId, com.yeyofone.app.ai.NotesState>,
 )
 
 private data class CoreUiState(
@@ -113,6 +119,7 @@ class YeyoFoneViewModel(
     private val forwarding: ForwardingCoordinator,
     private val contactsRepo: ContactRepository,
     private val handoff: HandoffCoordinator? = null,
+    private val notesProcessor: com.yeyofone.app.ai.CallNotesProcessor? = null,
 ) : ViewModel() {
     /** Calls on this account's other devices that can be continued here. */
     val handoffOffers: StateFlow<List<HandoffOffer>> = handoff?.offers ?: MutableStateFlow(emptyList())
@@ -138,6 +145,11 @@ class YeyoFoneViewModel(
     private val consultationCallId = MutableStateFlow<CallId?>(null)
     private val conferenceMerged = MutableStateFlow(false)
     private val recordingCallIds = MutableStateFlow<Set<CallId>>(emptySet())
+    private val assistantCallIds = MutableStateFlow<Set<CallId>>(emptySet())
+    private val callNotes = MutableStateFlow<Map<CallId, com.yeyofone.app.ai.NotesState>>(emptyMap())
+    private val recordingFiles = mutableMapOf<CallId, java.io.File>()
+    /** Recordings the assistant started itself, so turning it off stops only those. */
+    private val assistantStartedRecording = mutableSetOf<CallId>()
     private val dismissedIncomingCalls = MutableStateFlow<Set<CallId>>(emptySet())
 
     // Re-subscribes to each account's preferences whenever the account list itself changes;
@@ -167,8 +179,11 @@ class YeyoFoneViewModel(
 
     val uiState: StateFlow<YeyoFoneUiState> = combine(
         coreUiState,
-        combine(activeCallId, consultationCallId, dismissedIncomingCalls, conferenceMerged, recordingCallIds) { active, consultation, dismissed, merged, recording ->
-            CallSelection(active, consultation, dismissed, merged, recording)
+        combine(
+            activeCallId, consultationCallId, dismissedIncomingCalls, conferenceMerged,
+            combine(recordingCallIds, assistantCallIds, callNotes) { r, a, n -> Triple(r, a, n) },
+        ) { active, consultation, dismissed, merged, extras ->
+            CallSelection(active, consultation, dismissed, merged, extras.first, extras.second, extras.third)
         },
     ) { core, callSelection ->
         YeyoFoneUiState(
@@ -181,6 +196,8 @@ class YeyoFoneViewModel(
             consultationCallId = callSelection.consultation,
             conferenceMerged = callSelection.merged,
             recordingCallIds = callSelection.recording,
+            assistantCallIds = callSelection.assistant,
+            callNotes = callSelection.notes,
             dismissedIncomingCalls = callSelection.dismissed,
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), YeyoFoneUiState())
@@ -194,6 +211,11 @@ class YeyoFoneViewModel(
             calls.sessions.collect { sessions ->
                 if (consultationCallId.value != null && sessions.all { it.state.isTerminal() }) {
                     consultationCallId.value = null
+                }
+                // Calls that ended with the assistant on get their notes made now.
+                sessions.filter { it.state.isTerminal() && it.id in assistantCallIds.value }.forEach { ended ->
+                    assistantCallIds.update { it - ended.id }
+                    makeNotes(ended.id)
                 }
                 // A recording ends with its call (the engine finalizes the file on disconnect).
                 val live = sessions.filter { !it.state.isTerminal() }.map { it.id }.toSet()
@@ -376,6 +398,7 @@ class YeyoFoneViewModel(
         try {
             if (file != null) {
                 calls.startRecording(callId, file.absolutePath)
+                recordingFiles[callId] = file
                 recordingCallIds.update { it + callId }
             } else {
                 calls.stopRecording(callId)
@@ -385,6 +408,45 @@ class YeyoFoneViewModel(
             throw error
         } catch (error: Exception) {
             runCatching { Log.w("YeyoFoneCall", "Call recording could not be changed", error) }
+        }
+    }
+
+    /**
+     * Turns the AI assistant on or off for a call. Turning it on records the call (to [file]) unless
+     * it is already being recorded; the notes are made on the phone once the call ends.
+     */
+    fun setAssistant(callId: CallId, on: Boolean, file: java.io.File?) = launch {
+        try {
+            if (on) {
+                if (callId !in recordingCallIds.value && file != null) {
+                    calls.startRecording(callId, file.absolutePath)
+                    recordingFiles[callId] = file
+                    recordingCallIds.update { it + callId }
+                    assistantStartedRecording += callId
+                }
+                if (callId in recordingCallIds.value) assistantCallIds.update { it + callId }
+            } else {
+                assistantCallIds.update { it - callId }
+                if (assistantStartedRecording.remove(callId)) {
+                    calls.stopRecording(callId)
+                    recordingCallIds.update { it - callId }
+                    recordingFiles.remove(callId)?.delete()
+                }
+            }
+        } catch (error: CancellationException) {
+            throw error
+        } catch (error: Exception) {
+            runCatching { Log.w("YeyoFoneCall", "AI assistant could not be changed", error) }
+        }
+    }
+
+    private fun makeNotes(callId: CallId) {
+        val file = recordingFiles[callId]
+        val processor = notesProcessor
+        if (file == null || processor == null) return
+        viewModelScope.launch {
+            callNotes.update { it + (callId to com.yeyofone.app.ai.NotesState.Preparing(null)) }
+            processor.process(file) { state -> callNotes.update { it + (callId to state) } }
         }
     }
 
@@ -441,6 +503,7 @@ class YeyoFoneViewModel(
                 app.forwardingCoordinator,
                 app.contacts,
                 app.handoff,
+                com.yeyofone.app.ai.CallNotesProcessor(app),
             ) as T
         }
     }

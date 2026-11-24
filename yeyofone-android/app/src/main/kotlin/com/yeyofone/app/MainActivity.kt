@@ -379,6 +379,7 @@ private fun AccountsApp(
     if (endedCall != null) {
         CallEndedScreen(
             summary = endedCall.toCallSummary(),
+            notes = state.callNotes[endedCall.id],
             onCallAgain = {
                 viewModel.dismissCallSummary(endedCall.id)
                 viewModel.dial(endedCall.accountId, endedCall.remoteUri.toSipIdentity().extension)
@@ -492,6 +493,8 @@ private fun AccountsApp(
                     consultationSession = consultationSession,
                     conferenceMerged = state.conferenceMerged,
                     recording = activeSession.id in state.recordingCallIds,
+                    assistant = activeSession.id in state.assistantCallIds,
+                    onAssistantChange = { on -> viewModel.setAssistant(activeSession.id, on, if (on) newRecordingFile(context, activeSession) else null) },
                     onRecordingChange = { on -> viewModel.setRecording(activeSession.id, if (on) newRecordingFile(context, activeSession) else null) },
                     onNavigateBack = { viewModel.showAccount(account.id) },
                     onSpeakerChange = { enabled ->
@@ -787,6 +790,8 @@ private fun IncomingCallScreen(
             consultationSession = consultationSession,
             conferenceMerged = state.conferenceMerged,
             recording = current.id in state.recordingCallIds,
+            assistant = current.id in state.assistantCallIds,
+            onAssistantChange = { on -> viewModel.setAssistant(current.id, on, if (on) newRecordingFile(context, current) else null) },
             onRecordingChange = { on -> viewModel.setRecording(current.id, if (on) newRecordingFile(context, current) else null) },
             onNavigateBack = viewModel::showAccounts,
             onSpeakerChange = { enabled ->
@@ -921,6 +926,8 @@ private fun OutgoingCallHost(
     conferenceMerged: Boolean,
     recording: Boolean,
     onRecordingChange: (Boolean) -> Unit,
+    assistant: Boolean,
+    onAssistantChange: (Boolean) -> Unit,
     onNavigateBack: () -> Unit,
     onSpeakerChange: (Boolean) -> Unit,
     onMuteChange: (Boolean) -> Unit,
@@ -964,6 +971,8 @@ private fun OutgoingCallHost(
             conferenceMerged = conferenceMerged,
             recording = recording,
             onRecordingChange = onRecordingChange,
+            assistant = assistant,
+            onAssistantChange = onAssistantChange,
             onMergeCalls = onMergeCalls,
             onStartConsultation = onStartConsultation,
             onCompleteTransfer = onCompleteTransfer,
@@ -982,6 +991,7 @@ private fun OutgoingCallHost(
             onOpenTransfer = { transferOpen = true },
             onOpenMore = { moreOpen = true },
             recording = recording,
+            assistant = assistant,
             onEndCall = onEndCall,
         )
     }

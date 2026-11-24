@@ -1,6 +1,14 @@
 package com.yeyofone.app.ui.callended
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.clickable
+import androidx.compose.material.icons.filled.AutoAwesome
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import com.yeyofone.app.ai.NotesState
+import com.yeyofone.app.ui.theme.AccentBlue
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -56,6 +64,7 @@ import com.yeyofone.core.model.CallDirection
 @Composable
 fun CallEndedScreen(
     summary: CallSummary,
+    notes: NotesState? = null,
     onCallAgain: () -> Unit,
     onSendMessage: (() -> Unit)?,
     onClose: () -> Unit,
@@ -129,6 +138,10 @@ fun CallEndedScreen(
                 DetailColumn(stringResource(R.string.time), summary.timestamp)
             }
             Spacer(Modifier.height(24.dp))
+            if (notes != null) {
+                NotesCard(notes)
+                Spacer(Modifier.height(24.dp))
+            }
         }
 
         Column(
@@ -146,6 +159,56 @@ fun CallEndedScreen(
             }
         }
     }
+}
+
+@Composable
+private fun NotesCard(notes: NotesState) {
+    var showTranscript by remember { mutableStateOf(false) }
+    Column(
+        Modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp)).background(GlassCard)
+            .border(1.dp, BorderLight, RoundedCornerShape(20.dp)).padding(18.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Icon(Icons.Default.AutoAwesome, null, tint = AccentBlue, modifier = Modifier.size(16.dp))
+            Text(stringResource(R.string.ai_notes_title), fontSize = 15.sp, fontWeight = FontWeight.Bold, color = CallTextPrimary)
+        }
+        when (notes) {
+            is NotesState.Preparing -> Text(
+                notes.percent?.let { stringResource(R.string.ai_notes_preparing, it) } ?: stringResource(R.string.ai_notes_working),
+                fontSize = 13.sp, color = CallTextSecondary,
+            )
+            NotesState.Transcribing -> Text(stringResource(R.string.ai_notes_transcribing), fontSize = 13.sp, color = CallTextSecondary)
+            is NotesState.Failed -> Text(stringResource(R.string.ai_notes_failed, notes.reason), fontSize = 13.sp, color = AccentRed)
+            is NotesState.Ready -> {
+                val result = notes.notes
+                if (result.isEmpty) {
+                    Text(stringResource(R.string.ai_notes_empty), fontSize = 13.sp, color = CallTextSecondary)
+                } else {
+                    if (result.summary.isNotBlank()) {
+                        NotesHeading(R.string.ai_notes_summary)
+                        Text(result.summary, fontSize = 14.sp, color = CallTextPrimary)
+                    }
+                    if (result.actionItems.isNotEmpty()) {
+                        NotesHeading(R.string.ai_notes_actions)
+                        result.actionItems.forEach { Text("\u2022 $it", fontSize = 14.sp, color = CallTextPrimary) }
+                    }
+                    Text(
+                        stringResource(if (showTranscript) R.string.ai_notes_hide_transcript else R.string.ai_notes_show_transcript),
+                        fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = AccentBlue,
+                        modifier = Modifier.clickable { showTranscript = !showTranscript },
+                    )
+                    if (showTranscript) Text(result.transcript, fontSize = 13.sp, color = CallTextSecondary)
+                    Text(stringResource(R.string.ai_notes_disclaimer), fontSize = 11.sp, color = CallTextSecondary)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun NotesHeading(@androidx.annotation.StringRes id: Int) {
+    Text(stringResource(id).uppercase(), fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = CallTextSecondary, letterSpacing = 0.5.sp)
 }
 
 @Composable

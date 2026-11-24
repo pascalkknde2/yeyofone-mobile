@@ -71,6 +71,8 @@ final class AppStore {
     var consultationCall: CallSession?
     var callPage: CallPage = .main
     var endedSummary: CallSummary?
+    /// The AI assistant's notes for the call in `endedSummary`, once it has started on them.
+    var endedNotes: NotesState?
     /// A short message shown over the current screen, such as a failed call.
     var notice: String?
     /// The Team room video conference preview, shown over everything except calls.
@@ -505,11 +507,33 @@ final class AppStore {
             let stamp = formatter.string(from: .now)
             let file = folder.appending(path: "\(who.isEmpty ? "call" : who)-\(stamp).wav")
             engine.recordStart(token: call.token, path: file.path) { [weak self] code in
-                if code == 0 { self?.activeCall?.recording = true }
+                if code == 0 {
+                    self?.activeCall?.recording = true
+                    self?.activeCall?.recordingURL = file
+                }
             }
         } else {
             engine.recordStop(token: call.token)
             activeCall?.recording = false
+        }
+    }
+
+    /// Turns the AI assistant on or off for the active call. It records the call (unless it already
+    /// is) and, once the call ends, makes the notes on this iPhone.
+    func setAssistant(_ on: Bool) {
+        guard let call = activeCall, call.token != 0, call.assistant != on else { return }
+        guard on else {
+            activeCall?.assistant = false
+            return
+        }
+        Task { @MainActor in
+            guard await CallNotesService.requestAuthorization() else {
+                notice = String(localized: "Speech recognition is turned off for YeyoFone in Settings.")
+                return
+            }
+            guard activeCall?.id == call.id else { return }
+            activeCall?.assistant = true
+            if !(activeCall?.recording ?? false) { setRecording(true) }
         }
     }
 
@@ -576,6 +600,7 @@ final class AppStore {
 
     func dismissSummary() {
         endedSummary = nil
+        endedNotes = nil
         screen = .history
     }
 
@@ -644,6 +669,15 @@ final class AppStore {
         guard !elsewhere else {
             notice = String(localized: "Call continued on another device")
             return
+        }
+        endedNotes = nil
+        if call.assistant, let url = call.recordingURL {
+            endedNotes = .working
+            Task { @MainActor [weak self] in
+                let state = await CallNotesService.process(recording: url)
+                // Only show the result while the summary it belongs to is still on screen.
+                if self?.endedSummary != nil { self?.endedNotes = state }
+            }
         }
         endedSummary = CallSummary(
             callerName: call.remoteName,
