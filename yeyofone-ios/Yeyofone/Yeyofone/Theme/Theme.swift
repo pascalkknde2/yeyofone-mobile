@@ -39,8 +39,13 @@ enum Palette {
     static let backgroundGray = Color(light: 0xF4F7F9, dark: 0x0B1120)
     static let keypadBackground = Color(light: 0xF8FAFC, dark: 0x0F172A)
     static let cardWhite = Color(light: 0xFFFFFF, dark: 0x1E293B)
-    /// Surfaces that sit on the backdrop artwork. Currently the same as `cardWhite`; one place to restyle them.
-    static let glass = cardWhite
+    /// Surfaces that sit on the backdrop artwork: white in light mode, translucent slate in dark mode
+    /// so the artwork shows through. One place to restyle them.
+    static let glass = Color(UIColor { traits in
+        traits.userInterfaceStyle == .dark
+            ? UIColor(red: 0x1E / 255, green: 0x29 / 255, blue: 0x3B / 255, alpha: 0.6)
+            : .white
+    })
     static let textPrimary = Color(light: 0x0F172A, dark: 0xF1F5F9)
     /// Text on a `textPrimary` fill: white in light mode, dark slate in dark mode.
     static let textOnPrimary = Color(light: 0xFFFFFF, dark: 0x0F172A)
