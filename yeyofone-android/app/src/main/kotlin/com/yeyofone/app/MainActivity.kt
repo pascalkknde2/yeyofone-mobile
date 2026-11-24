@@ -490,6 +490,7 @@ private fun AccountsApp(
                     availableRoutes = state.availableRoutes,
                     selectedRoute = state.selectedRoute,
                     consultationSession = consultationSession,
+                    conferenceMerged = state.conferenceMerged,
                     onNavigateBack = { viewModel.showAccount(account.id) },
                     onSpeakerChange = { enabled ->
                         val route = if (enabled) AudioRoute.Speaker else
@@ -508,6 +509,7 @@ private fun AccountsApp(
                     onReturnToCaller = {
                         consultationSession?.let { viewModel.returnToCaller(activeSession.id, it) }
                     },
+                    onMergeCalls = { consultationSession?.let { viewModel.mergeCalls(activeSession.id, it.id) } },
                     onEndCall = { viewModel.end(activeSession.id) },
                 )
             }
@@ -781,6 +783,7 @@ private fun IncomingCallScreen(
             availableRoutes = state.availableRoutes,
             selectedRoute = state.selectedRoute,
             consultationSession = consultationSession,
+            conferenceMerged = state.conferenceMerged,
             onNavigateBack = viewModel::showAccounts,
             onSpeakerChange = { enabled ->
                 val route = if (enabled) AudioRoute.Speaker else
@@ -799,6 +802,7 @@ private fun IncomingCallScreen(
             onReturnToCaller = {
                 consultationSession?.let { viewModel.returnToCaller(current.id, it) }
             },
+            onMergeCalls = { consultationSession?.let { viewModel.mergeCalls(current.id, it.id) } },
             onEndCall = { viewModel.end(current.id) },
         )
         return
@@ -910,6 +914,7 @@ private fun OutgoingCallHost(
     availableRoutes: List<AudioRoute>,
     selectedRoute: AudioRoute?,
     consultationSession: CallSession?,
+    conferenceMerged: Boolean,
     onNavigateBack: () -> Unit,
     onSpeakerChange: (Boolean) -> Unit,
     onMuteChange: (Boolean) -> Unit,
@@ -920,6 +925,7 @@ private fun OutgoingCallHost(
     onStartConsultation: (String) -> Unit,
     onCompleteTransfer: () -> Unit,
     onReturnToCaller: () -> Unit,
+    onMergeCalls: () -> Unit,
     onEndCall: () -> Unit,
 ) {
     var transferOpen by remember(session.id) { mutableStateOf(false) }
@@ -949,6 +955,8 @@ private fun OutgoingCallHost(
             onSelectRoute = onSelectRoute,
             heldCallerName = session.remoteUri.toSipIdentity().displayName,
             consultationSession = consultationSession,
+            conferenceMerged = conferenceMerged,
+            onMergeCalls = onMergeCalls,
             onStartConsultation = onStartConsultation,
             onCompleteTransfer = onCompleteTransfer,
             onReturnToCaller = onReturnToCaller,

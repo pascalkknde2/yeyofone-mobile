@@ -67,6 +67,8 @@ internal class Pjsua2EndpointBackend : EndpointBackend {
     private val accounts = mutableMapOf<SipAccountId, NativeAccount>()
     private val calls = mutableMapOf<String, NativeCall>()
     private val locallyHeldCallIds = ConcurrentHashMap.newKeySet<String>()
+    /** Calls merged into a three-way conference, keyed both ways (a -> b and b -> a). */
+    private val conferencePartners = ConcurrentHashMap<String, String>()
     private var callEventCallback: ((NativeCallEvent) -> Unit)? = null
     private var mediaEventCallback: ((NativeMediaEvent) -> Unit)? = null
     private var transferEventCallback: ((NativeTransferEvent) -> Unit)? = null
@@ -230,6 +232,7 @@ internal class Pjsua2EndpointBackend : EndpointBackend {
         calls.values.forEach { runCatching { it.hangup(voiceCallOpParam()) }; it.delete() }
         calls.clear()
         locallyHeldCallIds.clear()
+        conferencePartners.clear()
         accounts.values.forEach { it.shutdown(); it.delete() }
         accounts.clear()
         try {
@@ -547,6 +550,33 @@ internal class Pjsua2EndpointBackend : EndpointBackend {
         }
     }
 
+    override fun mergeCalls(callId: String, otherCallId: String) {
+        require(callId != otherCallId) { "A conference needs two different calls" }
+        checkNotNull(calls[callId]) { "Native call does not exist" }
+        checkNotNull(calls[otherCallId]) { "Native call does not exist" }
+        conferencePartners[callId] = otherCallId
+        conferencePartners[otherCallId] = callId
+        // Resume whichever leg is held. Its media callback reattaches it to the sound device and
+        // then bridges it to its partner; bridge now too for the leg that is already live.
+        listOf(callId, otherCallId).filter { locallyHeldCallIds.contains(it) }.forEach { setHeld(it, false) }
+        bridgeConference(callId)
+    }
+
+    /** Connects a call's audio both ways to its conference partner, once neither leg is held. */
+    private fun bridgeConference(callId: String) {
+        val partnerId = conferencePartners[callId] ?: return
+        if (locallyHeldCallIds.contains(callId) || locallyHeldCallIds.contains(partnerId)) return
+        val call = calls[callId] ?: return
+        val partner = calls[partnerId] ?: return
+        runCatching {
+            val audio = call.getAudioMedia(-1)
+            val partnerAudio = partner.getAudioMedia(-1)
+            audio.startTransmit(partnerAudio)
+            partnerAudio.startTransmit(audio)
+            Log.i(MEDIA_LOG_TAG, "conference bridged call=$callId partner=$partnerId")
+        }.onFailure { Log.w(MEDIA_LOG_TAG, "conference bridge skipped call=$callId partner=$partnerId", it) }
+    }
+
     private inner class NativeAccount(
         private val id: SipAccountId,
         private val username: String,
@@ -682,6 +712,7 @@ internal class Pjsua2EndpointBackend : EndpointBackend {
                 callDialogs.remove(id)
                 calls.remove(id)
                 locallyHeldCallIds.remove(id)
+                conferencePartners.remove(id)?.let { conferencePartners.remove(it) }
                 delete()
             }
         }
@@ -755,6 +786,7 @@ internal class Pjsua2EndpointBackend : EndpointBackend {
                     if (!muted) ep.audDevManager().captureDevMedia.startTransmit(audio)
                     Log.i(MEDIA_LOG_TAG, "call=$id attached port=${audio.portId}")
                 }.onFailure { Log.e(MEDIA_LOG_TAG, "call=$id attach failed", it) }
+                bridgeConference(id)
             } else if (isOnHold) {
                 // PJSIP's conference connections survive a SIP hold unless explicitly detached.
                 // Leaving the held call connected can consume the sound device while a consultation

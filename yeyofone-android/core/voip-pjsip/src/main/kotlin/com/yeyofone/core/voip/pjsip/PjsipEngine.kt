@@ -114,6 +114,10 @@ class PjsipEngine internal constructor(
         withContext(dispatcher) { backend.setHeld(callId, held) }
     }
 
+    override suspend fun mergeCalls(callId: String, otherCallId: String) {
+        withContext(dispatcher) { backend.mergeCalls(callId, otherCallId) }
+    }
+
     /** Enabled audio codecs in the order they are offered, for diagnostics. Empty until the engine runs. */
     suspend fun audioCodecs(): List<AudioCodecInfo> {
         if (state.value != EngineState.Running) return emptyList()

@@ -24,6 +24,7 @@ import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material.icons.automirrored.outlined.Backspace
 import androidx.compose.material.icons.filled.AddIcCall
 import androidx.compose.material.icons.filled.AutoAwesome
+import androidx.compose.material.icons.filled.CallMerge
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.FiberManualRecord
 import androidx.compose.material.icons.filled.KeyboardArrowRight
@@ -85,6 +86,8 @@ fun CallOptionsScreen(
     onSelectRoute: (AudioRoute) -> Unit,
     heldCallerName: String,
     consultationSession: CallSession?,
+    conferenceMerged: Boolean,
+    onMergeCalls: () -> Unit,
     onStartConsultation: (String) -> Unit,
     onCompleteTransfer: () -> Unit,
     onReturnToCaller: () -> Unit,
@@ -95,6 +98,8 @@ fun CallOptionsScreen(
     var destination by remember { mutableStateOf("") }
     var showRoutePicker by remember { mutableStateOf(false) }
     var comingSoon by remember { mutableStateOf<String?>(null) }
+    // Add call and Consult transfer share the dial-and-hold flow; only Consult transfer can complete a transfer.
+    var addingCall by remember { mutableStateOf(false) }
 
     Column(Modifier.fillMaxSize().systemBarsPadding()) {
         Row(
@@ -105,15 +110,19 @@ fun CallOptionsScreen(
             IconButton(onClick = onCancel) {
                 Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.cancel), tint = CallTextPrimary)
             }
-            val title = if (consultationSession != null || enteringDestination) R.string.consult_transfer else R.string.more_options
+            val title = when {
+                consultationSession != null || enteringDestination ->
+                    if (addingCall || conferenceMerged) R.string.add_call else R.string.consult_transfer
+                else -> R.string.more_options
+            }
             Text(stringResource(title), fontSize = 18.sp, fontWeight = FontWeight.Bold, color = CallTextPrimary)
             Spacer(Modifier.size(48.dp))
         }
 
         when {
             consultationSession != null -> {
-                ConsultationCenter(consultationSession, heldCallerName, Modifier.weight(1f))
-                ConsultationTray(consultationSession, onCompleteTransfer, onReturnToCaller)
+                ConsultationCenter(consultationSession, heldCallerName, conferenceMerged, Modifier.weight(1f))
+                ConsultationTray(consultationSession, conferenceMerged, addingCall, onMergeCalls, onCompleteTransfer, onReturnToCaller)
             }
             enteringDestination -> {
                 ConsultDestinationCenter(
@@ -125,6 +134,7 @@ fun CallOptionsScreen(
                 )
                 ConsultDestinationTray(
                     enabled = destination.isNotBlank() && held,
+                    addingCall = addingCall,
                     onStart = {
                         onStartConsultation(destination)
                         enteringDestination = false
@@ -156,12 +166,15 @@ fun CallOptionsScreen(
                         },
                     )
                     OptionDivider()
-                    val addCallTitle = stringResource(R.string.add_call)
                     CallOptionRow(
                         icon = Icons.Default.AddIcCall,
-                        title = addCallTitle,
+                        title = stringResource(R.string.add_call),
                         subtitle = stringResource(R.string.call_options_add_call_subtitle),
-                        onClick = { comingSoon = addCallTitle },
+                        onClick = {
+                            if (!held) onHoldChange(true)
+                            addingCall = true
+                            enteringDestination = true
+                        },
                     )
                     OptionDivider()
                     val aiTitle = stringResource(R.string.ai_assistant)
@@ -274,7 +287,7 @@ private fun ConsultDestinationCenter(
 }
 
 @Composable
-private fun ConsultDestinationTray(enabled: Boolean, onStart: () -> Unit) {
+private fun ConsultDestinationTray(enabled: Boolean, addingCall: Boolean, onStart: () -> Unit) {
     Column(
         Modifier.fillMaxWidth()
             .padding(start = 16.dp, end = 16.dp, bottom = 16.dp)
@@ -285,7 +298,7 @@ private fun ConsultDestinationTray(enabled: Boolean, onStart: () -> Unit) {
     ) {
         PrimaryCallActionButton(
             icon = Icons.Default.PersonAdd,
-            label = stringResource(R.string.start_consultation),
+            label = stringResource(if (addingCall) R.string.add_call else R.string.start_consultation),
             backgroundColor = AccentGreen,
             onClick = onStart,
             enabled = enabled,
@@ -294,8 +307,31 @@ private fun ConsultDestinationTray(enabled: Boolean, onStart: () -> Unit) {
 }
 
 @Composable
-private fun ConsultationCenter(session: CallSession, heldCallerName: String, modifier: Modifier = Modifier) {
+private fun ConsultationCenter(session: CallSession, heldCallerName: String, merged: Boolean, modifier: Modifier = Modifier) {
     val identity = session.remoteUri.toSipIdentity()
+    if (merged) {
+        Column(
+            modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = 32.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center,
+        ) {
+            Text(
+                stringResource(R.string.conference_title),
+                fontSize = 22.sp,
+                fontWeight = FontWeight.Bold,
+                color = CallTextPrimary,
+                textAlign = TextAlign.Center,
+            )
+            Spacer(Modifier.height(8.dp))
+            Text(
+                stringResource(R.string.conference_with, heldCallerName, identity.displayName),
+                fontSize = 15.sp,
+                color = CallTextSecondary,
+                textAlign = TextAlign.Center,
+            )
+        }
+        return
+    }
     Column(
         modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = 32.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -326,7 +362,15 @@ private fun ConsultationCenter(session: CallSession, heldCallerName: String, mod
 }
 
 @Composable
-private fun ConsultationTray(session: CallSession, onCompleteTransfer: () -> Unit, onReturnToCaller: () -> Unit) {
+private fun ConsultationTray(
+    session: CallSession,
+    merged: Boolean,
+    addingCall: Boolean,
+    onMergeCalls: () -> Unit,
+    onCompleteTransfer: () -> Unit,
+    onReturnToCaller: () -> Unit,
+) {
+    val connected = session.state == CallState.Connected
     Column(
         Modifier.fillMaxWidth()
             .padding(start = 16.dp, end = 16.dp, bottom = 16.dp)
@@ -335,15 +379,32 @@ private fun ConsultationTray(session: CallSession, onCompleteTransfer: () -> Uni
             .padding(start = 24.dp, top = 32.dp, end = 24.dp, bottom = 32.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        PrimaryCallActionButton(
-            icon = Icons.Default.Check,
-            label = stringResource(R.string.complete_transfer),
-            backgroundColor = AccentGreen,
-            onClick = onCompleteTransfer,
-            enabled = session.state == CallState.Connected,
+        if (!merged) {
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
+                PrimaryCallActionButton(
+                    icon = Icons.Default.CallMerge,
+                    label = stringResource(R.string.merge_calls),
+                    backgroundColor = AccentBlue,
+                    onClick = onMergeCalls,
+                    enabled = connected,
+                )
+                if (!addingCall) {
+                    PrimaryCallActionButton(
+                        icon = Icons.Default.Check,
+                        label = stringResource(R.string.complete_transfer),
+                        backgroundColor = AccentGreen,
+                        onClick = onCompleteTransfer,
+                        enabled = connected,
+                    )
+                }
+            }
+            Spacer(Modifier.height(28.dp))
+        }
+        SecondaryCallActionButton(
+            Icons.AutoMirrored.Filled.ArrowBack,
+            stringResource(if (merged) R.string.remove_from_call else R.string.return_to_caller),
+            onReturnToCaller,
         )
-        Spacer(Modifier.height(28.dp))
-        SecondaryCallActionButton(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.return_to_caller), onReturnToCaller)
     }
 }
 

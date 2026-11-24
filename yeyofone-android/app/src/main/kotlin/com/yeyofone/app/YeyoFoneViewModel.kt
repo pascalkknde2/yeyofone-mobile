@@ -79,7 +79,16 @@ data class YeyoFoneUiState(
     val selectedRoute: AudioRoute? = null,
     val activeCallId: CallId? = null,
     val consultationCallId: CallId? = null,
+    /** True once the consultation call has been merged into a three-way conference. */
+    val conferenceMerged: Boolean = false,
     val dismissedIncomingCalls: Set<CallId> = emptySet(),
+)
+
+private data class CallSelection(
+    val active: CallId?,
+    val consultation: CallId?,
+    val dismissed: Set<CallId>,
+    val merged: Boolean,
 )
 
 private data class CoreUiState(
@@ -123,6 +132,7 @@ class YeyoFoneViewModel(
     private val screen = MutableStateFlow<AppScreen>(AppScreen.Home)
     private val activeCallId = MutableStateFlow<CallId?>(null)
     private val consultationCallId = MutableStateFlow<CallId?>(null)
+    private val conferenceMerged = MutableStateFlow(false)
     private val dismissedIncomingCalls = MutableStateFlow<Set<CallId>>(emptySet())
 
     // Re-subscribes to each account's preferences whenever the account list itself changes;
@@ -152,8 +162,8 @@ class YeyoFoneViewModel(
 
     val uiState: StateFlow<YeyoFoneUiState> = combine(
         coreUiState,
-        combine(activeCallId, consultationCallId, dismissedIncomingCalls) { active, consultation, dismissed ->
-            Triple(active, consultation, dismissed)
+        combine(activeCallId, consultationCallId, dismissedIncomingCalls, conferenceMerged) { active, consultation, dismissed, merged ->
+            CallSelection(active, consultation, dismissed, merged)
         },
     ) { core, callSelection ->
         YeyoFoneUiState(
@@ -162,9 +172,10 @@ class YeyoFoneViewModel(
             sessions = core.sessions,
             availableRoutes = core.routes.first,
             selectedRoute = core.routes.second,
-            activeCallId = callSelection.first,
-            consultationCallId = callSelection.second,
-            dismissedIncomingCalls = callSelection.third,
+            activeCallId = callSelection.active,
+            consultationCallId = callSelection.consultation,
+            conferenceMerged = callSelection.merged,
+            dismissedIncomingCalls = callSelection.dismissed,
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), YeyoFoneUiState())
 
@@ -177,6 +188,11 @@ class YeyoFoneViewModel(
             calls.sessions.collect { sessions ->
                 if (consultationCallId.value != null && sessions.all { it.state.isTerminal() }) {
                     consultationCallId.value = null
+                }
+                // The conference is over once the consultation leg is gone.
+                val consultation = sessions.firstOrNull { it.id == consultationCallId.value }
+                if (conferenceMerged.value && (consultation == null || consultation.state.isTerminal())) {
+                    conferenceMerged.value = false
                 }
             }
         }
@@ -346,9 +362,22 @@ class YeyoFoneViewModel(
         placeCall(accountId, destination)?.let { consultationCallId.value = it }
     }
 
+    /** Joins the held call and the consultation call into one three-way conference. */
+    fun mergeCalls(callId: CallId, consultationId: CallId) = launch {
+        try {
+            calls.mergeCalls(callId, consultationId)
+            conferenceMerged.value = true
+        } catch (error: CancellationException) {
+            throw error
+        } catch (error: Exception) {
+            runCatching { Log.w("YeyoFoneCall", "Merge into conference failed", error) }
+        }
+    }
+
     fun returnToCaller(callId: CallId, consultation: CallSession) = launch {
         if (!consultation.state.isTerminal()) calls.end(consultation.id)
         media.setHeld(callId, false)
+        conferenceMerged.value = false
         consultationCallId.value = null
     }
 
