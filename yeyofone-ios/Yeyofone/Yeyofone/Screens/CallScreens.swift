@@ -223,7 +223,6 @@ struct IncomingCallScreen: View {
             }
             .padding(.horizontal, 24)
             .frame(maxWidth: .infinity)
-            .background(Palette.keypadBackground)
 
             CallTray(background: Palette.glass) {
                 HStack {
