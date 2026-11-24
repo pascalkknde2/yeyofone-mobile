@@ -111,7 +111,7 @@ private struct ContactCard: View {
         }
         .buttonStyle(.plain)
         .padding(16)
-        .background(RoundedRectangle(cornerRadius: 16).fill(Palette.cardWhite))
+        .background(RoundedRectangle(cornerRadius: 16).fill(Palette.glass))
         .shadow(color: .black.opacity(0.05), radius: 3, y: 1)
     }
 }

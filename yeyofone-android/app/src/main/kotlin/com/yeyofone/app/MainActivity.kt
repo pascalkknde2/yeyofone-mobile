@@ -119,6 +119,7 @@ import com.yeyofone.app.ui.theme.TextSecondary
 import com.yeyofone.app.ui.theme.AppBackdrop
 import com.yeyofone.app.ui.theme.YeyoFoneTheme
 import com.yeyofone.app.ui.theme.CardWhite
+import com.yeyofone.app.ui.theme.GlassCard
 import com.yeyofone.app.ui.theme.AppearancePreferences
 import com.yeyofone.app.ui.theme.Appearance
 import com.yeyofone.app.ui.theme.isAppInDarkTheme
@@ -1397,7 +1398,7 @@ private fun CheckRow(
 @Composable
 private fun EditorCard(content: @Composable ColumnScope.() -> Unit) {
     Column(
-        Modifier.fillMaxWidth().background(CardWhite, RoundedCornerShape(20.dp)).padding(16.dp),
+        Modifier.fillMaxWidth().background(GlassCard, RoundedCornerShape(20.dp)).padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
         content = content,
     )

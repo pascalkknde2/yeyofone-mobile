@@ -129,7 +129,7 @@ struct SettingsScreen: View {
                                     if index < entries.count - 1 { RowDivider(leading: 66) }
                                 }
                             }
-                            .background(RoundedRectangle(cornerRadius: 16).fill(Palette.cardWhite))
+                            .background(RoundedRectangle(cornerRadius: 16).fill(Palette.glass))
                         }
                     }
                     if visible.isEmpty {
@@ -747,7 +747,7 @@ struct RecordingsScreen: View {
                         }
                         .padding(20)
                     }
-                    SearchField(placeholder: "Search recordings…", text: $query, background: Palette.cardWhite)
+                    SearchField(placeholder: "Search recordings…", text: $query, background: Palette.glass)
                         .clipShape(Capsule())
                     Text("Recent Recordings").sectionLabelStyle().padding(.leading, 4)
                     VStack(spacing: 8) {
@@ -765,7 +765,7 @@ struct RecordingsScreen: View {
                     .frame(maxWidth: .infinity)
                     .padding(.horizontal, 24)
                     .padding(.vertical, 36)
-                    .background(RoundedRectangle(cornerRadius: 20).fill(Palette.cardWhite))
+                    .background(RoundedRectangle(cornerRadius: 20).fill(Palette.glass))
                 }
                 .padding(.horizontal, 20)
                 .padding(.top, 24)

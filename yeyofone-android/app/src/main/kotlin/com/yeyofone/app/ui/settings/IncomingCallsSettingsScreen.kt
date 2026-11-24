@@ -34,6 +34,7 @@ import com.yeyofone.app.ForwardingClient
 import com.yeyofone.app.R
 import com.yeyofone.app.RingtonePreference
 import com.yeyofone.app.ui.theme.*
+import com.yeyofone.app.ui.theme.GlassCard
 
 private val RingtoneOrange get() = AccentOrange
 private val RingtoneOrangeLight get() = OrangeLight
@@ -185,7 +186,7 @@ fun IncomingCallsSettingsScreen(
 private fun IncomingGroup(title: String, content: @Composable () -> Unit) {
     Column {
         Text(title.uppercase(), Modifier.padding(start = 4.dp, bottom = 8.dp), fontSize = 12.sp, fontWeight = FontWeight.Bold, color = InactiveGray, letterSpacing = 1.sp)
-        Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp)).background(CardWhite)) { content() }
+        Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp)).background(GlassCard)) { content() }
     }
 }
 

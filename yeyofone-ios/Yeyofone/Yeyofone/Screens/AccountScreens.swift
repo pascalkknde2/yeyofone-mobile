@@ -80,7 +80,7 @@ private struct AccountCard: View {
                 .tint(Palette.accentGreen)
         }
         .padding(16)
-        .background(RoundedRectangle(cornerRadius: 16).fill(Palette.cardWhite))
+        .background(RoundedRectangle(cornerRadius: 16).fill(Palette.glass))
         .shadow(color: .black.opacity(0.05), radius: 3, y: 1)
         .contentShape(Rectangle())
     }
@@ -271,7 +271,7 @@ private struct DetailSection<Content: View>: View {
                 .padding(.leading, 4)
             VStack(spacing: 0) { content }
                 .padding(.vertical, 8)
-                .background(RoundedRectangle(cornerRadius: 16).fill(Palette.cardWhite))
+                .background(RoundedRectangle(cornerRadius: 16).fill(Palette.glass))
                 .shadow(color: .black.opacity(0.05), radius: 3, y: 1)
         }
     }
@@ -543,7 +543,7 @@ private struct EditorCard<Content: View>: View {
     var body: some View {
         VStack(spacing: 12) { content }
             .padding(16)
-            .background(RoundedRectangle(cornerRadius: 20).fill(Palette.cardWhite))
+            .background(RoundedRectangle(cornerRadius: 20).fill(Palette.glass))
     }
 }
 
@@ -629,7 +629,7 @@ private struct ConfirmPage: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(22)
-            .background(RoundedRectangle(cornerRadius: 20).fill(Palette.cardWhite))
+            .background(RoundedRectangle(cornerRadius: 20).fill(Palette.glass))
             PageButton(title: actionTitle, color: Palette.accentRed, action: onConfirm)
             Button("Cancel", action: onCancel)
                 .appFont(size: 16, weight: .medium)

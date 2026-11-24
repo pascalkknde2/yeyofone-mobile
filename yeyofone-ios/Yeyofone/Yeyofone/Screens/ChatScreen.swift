@@ -134,7 +134,7 @@ struct ChatScreen: View {
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 10)
-        .background(Palette.cardWhite)
+        .background(Palette.glass)
     }
 
     private func send() {
@@ -181,7 +181,7 @@ private struct MessageBubble: View {
             .fixedSize(horizontal: false, vertical: true)
             .padding(.horizontal, 14)
             .padding(.vertical, 10)
-            .background(shape.fill(outgoing ? Palette.accentBlue : Palette.cardWhite))
+            .background(shape.fill(outgoing ? Palette.accentBlue : Palette.glass))
             .shadow(color: .black.opacity(outgoing ? 0.12 : 0.06), radius: outgoing ? 4 : 2, y: 1)
             .frame(maxWidth: 280, alignment: outgoing ? .trailing : .leading)
             if !outgoing { Spacer(minLength: 60) }
@@ -231,7 +231,7 @@ private struct TypingIndicator: View {
             }
             .padding(.horizontal, 16)
             .padding(.vertical, 12)
-            .background(UnevenRoundedRectangle(topLeadingRadius: 18, bottomLeadingRadius: 4, bottomTrailingRadius: 18, topTrailingRadius: 18).fill(Palette.cardWhite))
+            .background(UnevenRoundedRectangle(topLeadingRadius: 18, bottomLeadingRadius: 4, bottomTrailingRadius: 18, topTrailingRadius: 18).fill(Palette.glass))
             .shadow(color: .black.opacity(0.06), radius: 2, y: 1)
             Spacer()
         }

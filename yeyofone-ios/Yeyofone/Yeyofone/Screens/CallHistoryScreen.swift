@@ -99,7 +99,7 @@ struct CallHistoryItem: View {
                         .appFont(size: 9, weight: .bold)
                         .foregroundStyle(badgeColor)
                         .frame(width: 18, height: 18)
-                        .background(Circle().fill(Palette.cardWhite))
+                        .background(Circle().fill(Palette.glass))
                 }
             VStack(alignment: .leading, spacing: 2) {
                 Text(call.contactName)
@@ -118,7 +118,7 @@ struct CallHistoryItem: View {
                 .accessibilityLabel("Call \(call.contactName)")
         }
         .padding(14)
-        .background(RoundedRectangle(cornerRadius: 16).fill(Palette.cardWhite))
+        .background(RoundedRectangle(cornerRadius: 16).fill(Palette.glass))
         .shadow(color: .black.opacity(0.05), radius: 3, y: 1)
         .contentShape(Rectangle())
         .onTapGesture(perform: onCall)

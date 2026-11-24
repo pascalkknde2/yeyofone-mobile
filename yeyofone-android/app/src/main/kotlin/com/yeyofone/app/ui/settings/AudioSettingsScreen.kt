@@ -36,6 +36,7 @@ import com.yeyofone.app.R
 import com.yeyofone.app.RingtonePreference
 import com.yeyofone.app.label
 import com.yeyofone.app.ui.theme.*
+import com.yeyofone.app.ui.theme.GlassCard
 import com.yeyofone.core.model.AudioRoute
 
 @Composable
@@ -160,7 +161,7 @@ private fun AudioHeader(title: String, onBack: () -> Unit) {
 private fun AudioGroup(title: String, content: @Composable () -> Unit) {
     Column {
         Text(title.uppercase(), Modifier.padding(start = 4.dp, bottom = 8.dp), fontSize = 12.sp, fontWeight = FontWeight.Bold, color = InactiveGray, letterSpacing = 1.sp)
-        Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp)).background(CardWhite)) { content() }
+        Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp)).background(GlassCard)) { content() }
     }
 }
 

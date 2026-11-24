@@ -63,6 +63,7 @@ import com.yeyofone.app.ui.theme.SuccessLight
 import com.yeyofone.app.ui.theme.TextPrimary
 import com.yeyofone.app.ui.theme.TextSecondary
 import com.yeyofone.app.ui.theme.CardWhite
+import com.yeyofone.app.ui.theme.GlassCard
 import com.yeyofone.core.account.ContactDraft
 import com.yeyofone.core.model.Contact
 import com.yeyofone.core.model.ContactId
@@ -169,7 +170,7 @@ private fun EmptyState(title: String, subtitle: String) {
 private fun ContactCard(contact: Contact, onCall: () -> Unit, onToggleFavorite: () -> Unit, onEdit: () -> Unit) {
     Row(
         Modifier.fillMaxWidth().shadow(2.dp, RoundedCornerShape(16.dp))
-            .clip(RoundedCornerShape(16.dp)).background(CardWhite)
+            .clip(RoundedCornerShape(16.dp)).background(GlassCard)
             .clickable(onClick = onCall).padding(16.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(14.dp),

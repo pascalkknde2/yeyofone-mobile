@@ -52,6 +52,7 @@ import com.yeyofone.app.ui.theme.CallTextPrimary
 import com.yeyofone.app.ui.theme.CallTextSecondary
 import com.yeyofone.app.ui.theme.PrimaryLight
 import com.yeyofone.app.ui.theme.CardWhite
+import com.yeyofone.app.ui.theme.GlassCard
 import com.yeyofone.app.ui.theme.AccentBlue
 
 @Composable
@@ -103,7 +104,7 @@ fun IncomingCallScreen(
                 PulsingRings()
                 Box(
                     Modifier.size(156.dp).background(PrimaryLight, CircleShape).padding(8.dp)
-                        .clip(CircleShape).background(CardWhite)
+                        .clip(CircleShape).background(GlassCard)
                         .border(1.dp, AccentBlue.copy(alpha = 0.1f), CircleShape),
                     contentAlignment = Alignment.Center,
                 ) {
@@ -141,7 +142,7 @@ fun IncomingCallScreen(
         Column(
             Modifier.fillMaxWidth().background(KeypadBackground)
                 .shadow(4.dp, RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp))
-                .background(CardWhite, RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp))
+                .background(GlassCard, RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp))
                 .padding(start = 24.dp, top = 32.dp, end = 24.dp, bottom = 48.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {

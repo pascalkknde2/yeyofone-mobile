@@ -78,6 +78,7 @@ import com.yeyofone.app.ui.theme.SuccessLight
 import com.yeyofone.app.ui.theme.TextPrimary
 import com.yeyofone.app.ui.theme.TextSecondary
 import com.yeyofone.app.ui.theme.CardWhite
+import com.yeyofone.app.ui.theme.GlassCard
 import com.yeyofone.app.ui.theme.Appearance
 import com.yeyofone.app.ui.theme.AppearancePreferences
 import com.yeyofone.app.ui.theme.Purple
@@ -285,7 +286,7 @@ private fun SettingsSection(title: String, entries: List<SettingEntry>) {
             fontWeight = FontWeight.SemiBold,
             letterSpacing = 0.5.sp,
         )
-        Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(CardWhite)) {
+        Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(GlassCard)) {
             entries.forEachIndexed { index, entry ->
                 SettingRow(entry, entry.action ?: {})
                 if (index < entries.lastIndex) {

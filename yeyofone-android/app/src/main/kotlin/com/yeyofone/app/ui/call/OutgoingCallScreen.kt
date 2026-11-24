@@ -67,6 +67,7 @@ import com.yeyofone.app.ui.theme.CallBackground
 import com.yeyofone.app.ui.theme.CallTextPrimary
 import com.yeyofone.app.ui.theme.CallTextSecondary
 import com.yeyofone.app.ui.theme.CardWhite
+import com.yeyofone.app.ui.theme.GlassCard
 import com.yeyofone.app.ui.theme.BorderLight
 import com.yeyofone.core.model.CallSession
 import com.yeyofone.core.model.CallState
@@ -184,7 +185,7 @@ private fun CallerIdentity(name: String, status: String) {
         ) {
             Box(Modifier.size(136.dp).scale(pulseScale).background(AccentGreen.copy(alpha = pulseAlpha), CircleShape))
             Box(
-                Modifier.size(120.dp).clip(CircleShape).background(CardWhite)
+                Modifier.size(120.dp).clip(CircleShape).background(GlassCard)
                     .border(1.dp, AccentGreen.copy(alpha = 0.2f), CircleShape),
                 contentAlignment = Alignment.Center,
             ) {
@@ -213,7 +214,7 @@ private fun CallActionButton(
     val background = when {
         destructive -> AccentRed
         active -> AccentBlue
-        else -> CardWhite
+        else -> GlassCard
     }
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,

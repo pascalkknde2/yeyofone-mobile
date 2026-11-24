@@ -101,7 +101,7 @@ private struct CallerIdentity: View {
                     .appFont(size: 48, weight: .semibold)
                     .foregroundStyle(Palette.textPrimary)
                     .frame(width: 120, height: 120)
-                    .background(Circle().fill(Palette.cardWhite))
+                    .background(Circle().fill(Palette.glass))
                     .overlay(Circle().stroke(Palette.accentGreen.opacity(0.2), lineWidth: 1))
             }
             .frame(width: 150, height: 150)
@@ -138,7 +138,7 @@ private struct CallActionButton: View {
     let action: () -> Void
 
     var body: some View {
-        let background: Color = destructive ? Palette.accentRed : (active ? Palette.accentBlue : Palette.cardWhite)
+        let background: Color = destructive ? Palette.accentRed : (active ? Palette.accentBlue : Palette.glass)
         let border: Color = destructive ? Palette.accentRed : (active ? Palette.accentBlue : Palette.borderLight)
         let tint: Color = destructive || active ? .white : Palette.textPrimary
         Button(action: action) {
@@ -201,7 +201,7 @@ struct IncomingCallScreen: View {
                         .appFont(size: 56, weight: .bold)
                         .foregroundStyle(Palette.textPrimary)
                         .frame(width: 140, height: 140)
-                        .background(Circle().fill(Palette.cardWhite))
+                        .background(Circle().fill(Palette.glass))
                         .overlay(Circle().stroke(Palette.accentBlue.opacity(0.1), lineWidth: 1))
                         .padding(8)
                         .background(Circle().fill(Palette.primaryLight))
@@ -225,7 +225,7 @@ struct IncomingCallScreen: View {
             .frame(maxWidth: .infinity)
             .background(Palette.keypadBackground)
 
-            CallTray(background: Palette.cardWhite) {
+            CallTray(background: Palette.glass) {
                 HStack {
                     PrimaryCallActionButton(icon: "phone.down.fill", label: "Decline", color: Palette.accentRed) {
                         store.declineIncoming()
@@ -281,7 +281,7 @@ struct CallEndedScreen: View {
                         .appFont(size: 48, weight: .bold)
                         .foregroundStyle(Palette.textPrimary)
                         .frame(width: 136, height: 136)
-                        .background(Circle().fill(Palette.cardWhite))
+                        .background(Circle().fill(Palette.glass))
                         .overlay(Circle().stroke(accent.opacity(0.25), lineWidth: 2))
                     Text(summary.callerName)
                         .appFont(size: 32, weight: .bold)
@@ -310,7 +310,7 @@ struct CallEndedScreen: View {
                     }
                     .padding(.horizontal, 28)
                     .padding(.vertical, 16)
-                    .background(RoundedRectangle(cornerRadius: 20).fill(Palette.cardWhite))
+                    .background(RoundedRectangle(cornerRadius: 20).fill(Palette.glass))
                     .overlay(RoundedRectangle(cornerRadius: 20).stroke(Palette.borderLight, lineWidth: 1))
                     .padding(.top, 28)
                 }
@@ -320,7 +320,7 @@ struct CallEndedScreen: View {
             .scrollBounceBehavior(.basedOnSize)
             .defaultScrollAnchor(.center)
 
-            CallTray(background: Palette.cardWhite) {
+            CallTray(background: Palette.glass) {
                 PrimaryCallActionButton(icon: "phone.fill", label: "Call Again", color: Palette.accentGreen) {
                     store.callAgain()
                 }
@@ -428,7 +428,7 @@ struct CallOptionsScreen: View {
                             }
                         }
                     }
-                    .background(RoundedRectangle(cornerRadius: 20).fill(Palette.cardWhite))
+                    .background(RoundedRectangle(cornerRadius: 20).fill(Palette.glass))
                     .padding(.horizontal, 24)
                     .padding(.vertical, 16)
                 }

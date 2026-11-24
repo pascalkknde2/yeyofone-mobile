@@ -26,6 +26,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.yeyofone.app.R
 import com.yeyofone.app.ui.theme.*
+import com.yeyofone.app.ui.theme.GlassCard
 
 private val VideoOrange get() = AccentOrange
 private val VideoOrangeLight get() = OrangeLight
@@ -49,7 +50,7 @@ fun VideoSettingsScreen(onBack: () -> Unit) {
         Column(Modifier.fillMaxSize().padding(bottom = insets.calculateBottomPadding())) {
             Row(
                 Modifier.fillMaxWidth()
-                    .background(CardWhite)
+                    .background(GlassCard)
                     .statusBarsPadding()
                     .padding(start = 12.dp, end = 20.dp, top = 8.dp, bottom = 8.dp),
                 verticalAlignment = Alignment.CenterVertically,
@@ -129,7 +130,7 @@ fun VideoSettingsScreen(onBack: () -> Unit) {
                                             drawCircle(if (layout == index) AccentBlue else BorderLight, style = Stroke(2.dp.toPx()))
                                             if (layout == index) drawCircle(AccentBlue, radius = size.minDimension / 2)
                                         }
-                                        if (layout == index) Box(Modifier.size(8.dp).clip(CircleShape).background(CardWhite))
+                                        if (layout == index) Box(Modifier.size(8.dp).clip(CircleShape).background(GlassCard))
                                     }
                                     Column(Modifier.weight(1f).padding(start = 12.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                                         Text(stringResource(title), fontSize = 15.sp, fontWeight = FontWeight.Medium, color = TextPrimary)
@@ -152,7 +153,7 @@ private fun VideoLabel(text: String) {
 
 @Composable
 private fun VideoGroup(content: @Composable () -> Unit) {
-    Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp)).background(CardWhite)) { content() }
+    Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp)).background(GlassCard)) { content() }
 }
 
 @Composable

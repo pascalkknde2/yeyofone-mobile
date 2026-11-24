@@ -41,6 +41,7 @@ import androidx.compose.ui.unit.sp
 import androidx.core.content.edit
 import com.yeyofone.app.R
 import com.yeyofone.app.ui.theme.*
+import com.yeyofone.app.ui.theme.GlassCard
 import java.util.Locale
 
 private data class AppLanguage(val tag: String, val label: Int, val flag: String)
@@ -165,7 +166,7 @@ private fun LanguageSection(title: String, content: @Composable ColumnScope.() -
             letterSpacing = 1.sp,
         )
         Column(
-            Modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp)).background(CardWhite)
+            Modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp)).background(GlassCard)
                 .border(1.dp, BorderLight.copy(alpha = .55f), RoundedCornerShape(20.dp)),
             content = content,
         )

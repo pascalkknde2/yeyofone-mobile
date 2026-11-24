@@ -69,6 +69,7 @@ import com.yeyofone.app.ui.theme.PrimaryLight
 import com.yeyofone.app.ui.theme.TextPrimary
 import com.yeyofone.app.ui.theme.TextSecondary
 import com.yeyofone.app.ui.theme.CardWhite
+import com.yeyofone.app.ui.theme.GlassCard
 
 @Composable
 fun ChatHeader(contact: ChatContact, onBack: () -> Unit, onVoiceCall: () -> Unit, onVideoCall: () -> Unit) {
@@ -106,7 +107,7 @@ fun ChatHeader(contact: ChatContact, onBack: () -> Unit, onVoiceCall: () -> Unit
 @Composable
 fun MessageBubble(message: ChatMessage, onPlayVoice: () -> Unit) {
     val outgoing = message.isOutgoing
-    val bubble = if (outgoing) AccentBlue else CardWhite
+    val bubble = if (outgoing) AccentBlue else GlassCard
     val foreground = if (outgoing) Color.White else TextPrimary
     val meta = if (outgoing) Color.White.copy(alpha = 0.78f) else InactiveGray
     val shape = if (outgoing) RoundedCornerShape(18.dp, 18.dp, 4.dp, 18.dp)
@@ -174,7 +175,7 @@ fun TypingIndicator() {
     Row(Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
         Row(
             Modifier.shadow(2.dp, RoundedCornerShape(18.dp, 18.dp, 18.dp, 4.dp))
-                .clip(RoundedCornerShape(18.dp, 18.dp, 18.dp, 4.dp)).background(CardWhite)
+                .clip(RoundedCornerShape(18.dp, 18.dp, 18.dp, 4.dp)).background(GlassCard)
                 .padding(horizontal = 16.dp, vertical = 12.dp),
             horizontalArrangement = Arrangement.spacedBy(4.dp),
         ) {
@@ -201,7 +202,7 @@ private fun TypingDot(delay: Int) {
 @Composable
 fun ChatInputBar(text: String, onTextChange: (String) -> Unit, onSend: () -> Unit, onAttach: () -> Unit) {
     Row(
-        Modifier.fillMaxWidth().background(CardWhite).padding(horizontal = 12.dp, vertical = 10.dp),
+        Modifier.fillMaxWidth().background(GlassCard).padding(horizontal = 12.dp, vertical = 10.dp),
         verticalAlignment = Alignment.Bottom,
         horizontalArrangement = Arrangement.spacedBy(10.dp),
     ) {

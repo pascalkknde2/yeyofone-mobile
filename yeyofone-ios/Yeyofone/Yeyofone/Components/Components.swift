@@ -134,7 +134,7 @@ private struct DialKeyButton: View {
 private struct DialKeyStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .background(Circle().fill(configuration.isPressed ? Palette.keypadBackground : Palette.cardWhite))
+            .background(Circle().fill(configuration.isPressed ? Palette.keypadBackground : Palette.glass))
             .overlay(Circle().stroke(Palette.borderLight.opacity(0.4), lineWidth: 1))
             .shadow(color: .black.opacity(configuration.isPressed ? 0.04 : 0.08), radius: configuration.isPressed ? 1 : 3, y: 1)
             .scaleEffect(configuration.isPressed ? 0.96 : 1)
@@ -215,7 +215,7 @@ struct SecondaryCallActionButton: View {
                     .appFont(size: 20)
                     .foregroundStyle(Palette.textPrimary)
                     .frame(width: 56, height: 56)
-                    .background(Circle().fill(Palette.cardWhite))
+                    .background(Circle().fill(Palette.glass))
                     .shadow(color: .black.opacity(0.1), radius: 4, y: 2)
                 Text(label)
                     .appFont(size: 11, weight: .medium)
@@ -364,7 +364,7 @@ struct GroupSection<Content: View>: View {
                 .sectionLabelStyle()
                 .padding(.leading, 4)
             VStack(spacing: 0) { content }
-                .background(RoundedRectangle(cornerRadius: 20).fill(Palette.cardWhite))
+                .background(RoundedRectangle(cornerRadius: 20).fill(Palette.glass))
                 .overlay {
                     if bordered {
                         RoundedRectangle(cornerRadius: 20).stroke(Palette.borderLight.opacity(0.55), lineWidth: 1)

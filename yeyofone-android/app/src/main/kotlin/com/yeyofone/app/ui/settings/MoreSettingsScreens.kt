@@ -83,6 +83,7 @@ import com.yeyofone.app.ui.theme.AccentOrange
 import com.yeyofone.app.ui.theme.BackgroundGray
 import com.yeyofone.app.ui.theme.BorderLight
 import com.yeyofone.app.ui.theme.CardWhite
+import com.yeyofone.app.ui.theme.GlassCard
 import com.yeyofone.app.ui.theme.InactiveGray
 import com.yeyofone.app.ui.theme.OrangeLight
 import com.yeyofone.app.ui.theme.PrimaryLight
@@ -457,7 +458,7 @@ internal fun MoreSection(title: String, content: @Composable ColumnScope.() -> U
             letterSpacing = 1.sp,
         )
         Column(
-            Modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp)).background(CardWhite)
+            Modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp)).background(GlassCard)
                 .border(1.dp, BorderLight.copy(alpha = .55f), RoundedCornerShape(20.dp)),
             content = content,
         )

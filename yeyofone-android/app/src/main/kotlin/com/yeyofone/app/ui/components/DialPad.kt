@@ -31,6 +31,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.sp
 import com.yeyofone.app.ui.theme.CallTextPrimary
+import com.yeyofone.app.ui.theme.GlassCard
 import com.yeyofone.app.ui.theme.InactiveGray
 import com.yeyofone.app.ui.theme.BorderLight
 import com.yeyofone.app.ui.theme.KeypadBackground
@@ -67,7 +68,7 @@ private fun DialKeyButton(key: DialKey, onClick: () -> Unit) {
     val scale by animateFloatAsState(if (pressed) 0.96f else 1f, label = "key press")
     Box(
         Modifier.size(72.dp).scale(scale).shadow(if (pressed) 1.dp else 3.dp, CircleShape)
-            .clip(CircleShape).background(if (pressed) KeypadBackground else CardWhite)
+            .clip(CircleShape).background(if (pressed) KeypadBackground else GlassCard)
             .border(1.dp, BorderLight.copy(alpha = 0.4f), CircleShape)
             .clickable(interactionSource = interaction, indication = null, role = Role.Button, onClick = onClick),
         contentAlignment = Alignment.Center,
