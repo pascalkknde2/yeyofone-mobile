@@ -437,25 +437,43 @@ struct CallOptionsScreen: View {
     @State private var enteringDestination = false
     @State private var destination = ""
     @State private var showRoutePicker = false
-    @State private var comingSoon: String?
+    // Add call and Consult transfer share the dial-and-hold flow; only Consult transfer can complete a transfer.
+    @State private var addingCall = false
 
     var body: some View {
         let held = store.activeCall?.held ?? false
         VStack(spacing: 0) {
-            CenteredBackHeader(title: store.consultationCall != nil || enteringDestination ? "Consult transfer" : "More options") {
-                if enteringDestination { enteringDestination = false; store.setHeld(false) }
+            CenteredBackHeader(title: headerTitle) {
+                if enteringDestination { enteringDestination = false; addingCall = false; store.setHeld(false) }
                 store.callPage = .main
             }
 
             if let consultation = store.consultationCall {
                 consultationCenter(consultation)
                 CallTray {
-                    PrimaryCallActionButton(icon: "checkmark", label: "Complete transfer", color: Palette.accentGreen,
-                                            enabled: consultation.state == .connected) {
-                        store.completeTransfer()
+                    if !store.conferenceMerged {
+                        HStack {
+                            Spacer()
+                            PrimaryCallActionButton(icon: "arrow.triangle.merge", label: "Merge", color: Palette.accentBlue,
+                                                    enabled: consultation.state == .connected) {
+                                store.mergeCalls()
+                            }
+                            if !addingCall {
+                                Spacer()
+                                PrimaryCallActionButton(icon: "checkmark", label: "Complete transfer", color: Palette.accentGreen,
+                                                        enabled: consultation.state == .connected) {
+                                    store.completeTransfer()
+                                }
+                            }
+                            Spacer()
+                        }
                     }
-                    SecondaryCallActionButton(icon: "arrow.left", label: "Return to caller") { store.returnToCaller() }
-                        .padding(.top, 28)
+                    SecondaryCallActionButton(icon: "arrow.left",
+                                              label: store.conferenceMerged ? "Remove from call" : "Return to caller") {
+                        addingCall = false
+                        store.returnToCaller()
+                    }
+                    .padding(.top, store.conferenceMerged ? 0 : 28)
                 }
             } else if enteringDestination {
                 ScrollView {
@@ -479,7 +497,7 @@ struct CallOptionsScreen: View {
                 .scrollBounceBehavior(.basedOnSize)
                 .defaultScrollAnchor(.center)
                 CallTray {
-                    PrimaryCallActionButton(icon: "person.badge.plus", label: "Start consultation", color: Palette.accentGreen,
+                    PrimaryCallActionButton(icon: "person.badge.plus", label: addingCall ? "Add call" : "Start consultation", color: Palette.accentGreen,
                                             enabled: !destination.trimmingCharacters(in: .whitespaces).isEmpty && held) {
                         store.startConsultation(to: destination)
                         enteringDestination = false
@@ -502,7 +520,9 @@ struct CallOptionsScreen: View {
                         RowDivider(leading: 18)
                         OptionRow(icon: "phone.badge.plus", title: "Add call",
                                   subtitle: String(localized: "Bring someone else into this conversation")) {
-                            comingSoon = String(localized: "Add call")
+                            if !held { store.setHeld(true) }
+                            addingCall = true
+                            enteringDestination = true
                         }
                         RowDivider(leading: 18)
                         let assistant = store.activeCall?.assistant ?? false
@@ -533,11 +553,6 @@ struct CallOptionsScreen: View {
                 }
             }
         }
-        .alert("Coming soon", isPresented: Binding(get: { comingSoon != nil }, set: { if !$0 { comingSoon = nil } })) {
-            Button("OK", role: .cancel) {}
-        } message: {
-            Text("\(comingSoon ?? "") isn't available yet. We'll let you know in the app when it is.")
-        }
         .confirmationDialog("Output device", isPresented: $showRoutePicker, titleVisibility: .visible) {
             ForEach(store.availableRoutes) { route in
                 Button(route == store.selectedRoute ? "\(route.label) ✓" : route.label) { store.selectedRoute = route }
@@ -545,9 +560,22 @@ struct CallOptionsScreen: View {
         }
     }
 
+    private var headerTitle: LocalizedStringKey {
+        guard store.consultationCall != nil || enteringDestination else { return "More options" }
+        return addingCall || store.conferenceMerged ? "Add call" : "Consult transfer"
+    }
+
     private func consultationCenter(_ session: CallSession) -> some View {
         VStack(spacing: 8) {
             Spacer()
+            if store.conferenceMerged {
+                Text("Conference call")
+                    .appFont(size: 22, weight: .bold)
+                    .foregroundStyle(Palette.textPrimary)
+                Text("\(store.activeCall?.remoteName ?? "") and \(session.remoteName) are on this call")
+                    .appFont(size: 15)
+                    .foregroundStyle(Palette.textSecondary)
+            } else {
             // A bare extension has no separate display name; don't repeat it as "1002 · Ext. 1002".
             (session.remoteName == session.remoteNumber
                 ? Text("Consultation: \(session.remoteName)")
@@ -561,6 +589,7 @@ struct CallOptionsScreen: View {
                 .appFont(size: 13)
                 .foregroundStyle(Palette.textSecondary)
                 .padding(.top, 16)
+            }
             Spacer()
         }
         .multilineTextAlignment(.center)
