@@ -243,7 +243,7 @@ struct EnterpriseScreen: View {
     var body: some View {
         SettingsPageLayout(title: "Enterprise Sign In", onBack: { store.screen = .settings }) {
             HeroCard(icon: "building.2.fill", title: "Sign in with your work account",
-                     subtitle: "Your company's phone settings, set up for you in one step.")
+                     subtitle: "Your company's phone settings, set up for you in one step.", premium: true)
             FeatureList(title: "How it works", features: [
                 Feature(icon: "envelope.fill", tint: Palette.accentBlue, background: Palette.primaryLight,
                         title: "Enter your work email", subtitle: String(localized: "We find your company's phone system")),
@@ -266,7 +266,7 @@ struct TranslateScreen: View {
     var body: some View {
         SettingsPageLayout(title: "Translate", onBack: { store.screen = .settings }) {
             HeroCard(icon: "character.bubble.fill", title: "Talk across languages",
-                     subtitle: "Understand callers who speak another language, live during the call.")
+                     subtitle: "Understand callers who speak another language, live during the call.", premium: true)
             FeatureList(title: "How it will work", features: [
                 Feature(icon: "captions.bubble.fill", tint: Palette.accentBlue, background: Palette.primaryLight,
                         title: "Live captions", subtitle: String(localized: "See what the caller says in your language")),

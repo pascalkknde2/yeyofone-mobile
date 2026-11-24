@@ -166,7 +166,7 @@ fun PremiumScreen(onBack: () -> Unit) {
 @Composable
 fun EnterpriseScreen(onAddAccount: () -> Unit, onBack: () -> Unit) {
     SettingsPage(stringResource(R.string.settings_enterprise), onBack) {
-        item { HeroCard(Icons.Default.Business, stringResource(R.string.enterprise_title), stringResource(R.string.enterprise_intro)) }
+        item { HeroCard(Icons.Default.Business, stringResource(R.string.enterprise_title), stringResource(R.string.enterprise_intro), premium = true) }
         item {
             FeatureList(
                 R.string.enterprise_section_how,
@@ -186,7 +186,7 @@ fun EnterpriseScreen(onAddAccount: () -> Unit, onBack: () -> Unit) {
 @Composable
 fun TranslateScreen(onLanguage: () -> Unit, onBack: () -> Unit) {
     SettingsPage(stringResource(R.string.settings_translate), onBack) {
-        item { HeroCard(Icons.Default.Translate, stringResource(R.string.translate_title), stringResource(R.string.translate_intro)) }
+        item { HeroCard(Icons.Default.Translate, stringResource(R.string.translate_title), stringResource(R.string.translate_intro), premium = true) }
         item {
             FeatureList(
                 R.string.translate_section_how,
