@@ -22,7 +22,10 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material.icons.automirrored.outlined.Backspace
+import androidx.compose.material.icons.filled.AddIcCall
+import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.FiberManualRecord
 import androidx.compose.material.icons.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PersonAdd
@@ -90,6 +93,7 @@ fun CallOptionsScreen(
     var enteringDestination by remember { mutableStateOf(false) }
     var destination by remember { mutableStateOf("") }
     var showRoutePicker by remember { mutableStateOf(false) }
+    var comingSoon by remember { mutableStateOf<String?>(null) }
 
     Column(Modifier.fillMaxSize().systemBarsPadding()) {
         Row(
@@ -150,6 +154,30 @@ fun CallOptionsScreen(
                             enteringDestination = true
                         },
                     )
+                    OptionDivider()
+                    val addCallTitle = stringResource(R.string.add_call)
+                    CallOptionRow(
+                        icon = Icons.Default.AddIcCall,
+                        title = addCallTitle,
+                        subtitle = stringResource(R.string.call_options_add_call_subtitle),
+                        onClick = { comingSoon = addCallTitle },
+                    )
+                    OptionDivider()
+                    val aiTitle = stringResource(R.string.ai_assistant)
+                    CallOptionRow(
+                        icon = Icons.Default.AutoAwesome,
+                        title = aiTitle,
+                        subtitle = stringResource(R.string.call_options_ai_subtitle),
+                        onClick = { comingSoon = aiTitle },
+                    )
+                    OptionDivider()
+                    val recordTitle = stringResource(R.string.record_call)
+                    CallOptionRow(
+                        icon = Icons.Default.FiberManualRecord,
+                        title = recordTitle,
+                        subtitle = stringResource(R.string.call_options_record_subtitle),
+                        onClick = { comingSoon = recordTitle },
+                    )
                     if (availableRoutes.size > 1) {
                         OptionDivider()
                         CallOptionRow(
@@ -162,6 +190,15 @@ fun CallOptionsScreen(
                 }
             }
         }
+    }
+
+    comingSoon?.let { feature ->
+        AlertDialog(
+            onDismissRequest = { comingSoon = null },
+            title = { Text(stringResource(R.string.coming_soon_title)) },
+            text = { Text(stringResource(R.string.coming_soon_message, feature)) },
+            confirmButton = { TextButton(onClick = { comingSoon = null }) { Text(stringResource(R.string.ok)) } },
+        )
     }
 
     if (showRoutePicker) {

@@ -358,6 +358,7 @@ struct CallOptionsScreen: View {
     @State private var enteringDestination = false
     @State private var destination = ""
     @State private var showRoutePicker = false
+    @State private var comingSoon: String?
 
     var body: some View {
         let held = store.activeCall?.held ?? false
@@ -419,6 +420,21 @@ struct CallOptionsScreen: View {
                             if !held { store.setHeld(true) }
                             enteringDestination = true
                         }
+                        RowDivider(leading: 18)
+                        OptionRow(icon: "phone.badge.plus", title: "Add call",
+                                  subtitle: String(localized: "Bring someone else into this conversation")) {
+                            comingSoon = String(localized: "Add call")
+                        }
+                        RowDivider(leading: 18)
+                        OptionRow(icon: "sparkles", title: "AI assistant",
+                                  subtitle: String(localized: "Live notes, summary and follow-ups")) {
+                            comingSoon = String(localized: "AI assistant")
+                        }
+                        RowDivider(leading: 18)
+                        OptionRow(icon: "record.circle", title: "Record",
+                                  subtitle: String(localized: "Save this call as a recording")) {
+                            comingSoon = String(localized: "Record")
+                        }
                         if store.availableRoutes.count > 1 {
                             RowDivider(leading: 18)
                             OptionRow(icon: "speaker.wave.2.fill", title: "Output device", subtitle: store.selectedRoute.label) {
@@ -431,6 +447,11 @@ struct CallOptionsScreen: View {
                     .padding(.vertical, 16)
                 }
             }
+        }
+        .alert("Coming soon", isPresented: Binding(get: { comingSoon != nil }, set: { if !$0 { comingSoon = nil } })) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text("\(comingSoon ?? "") isn't available yet. We'll let you know in the app when it is.")
         }
         .confirmationDialog("Output device", isPresented: $showRoutePicker, titleVisibility: .visible) {
             ForEach(store.availableRoutes) { route in

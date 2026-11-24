@@ -128,6 +128,15 @@
     <string name="call_options_hold_subtitle">Put this call on hold</string>
     <string name="call_options_resume_subtitle">Resume the held call</string>
     <string name="call_options_consult_subtitle">Call someone else privately, then complete or return</string>
+    <string name="add_call">Add call</string>
+    <string name="call_options_add_call_subtitle">Bring someone else into this conversation</string>
+    <string name="ai_assistant">AI assistant</string>
+    <string name="call_options_ai_subtitle">Live notes, summary and follow-ups</string>
+    <string name="record_call">Record</string>
+    <string name="call_options_record_subtitle">Save this call as a recording</string>
+    <string name="coming_soon_title">Coming soon</string>
+    <string name="coming_soon_message">%1$s isn\'t available yet. We\'ll let you know in the app when it is.</string>
+    <string name="ok">OK</string>
     <string name="consultation_destination">Consultation destination</string>
     <string name="start_consultation">Start consultation</string>
     <string name="consultation_call">Consultation: %1$s</string>
