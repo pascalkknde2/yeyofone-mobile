@@ -423,10 +423,10 @@ internal fun SettingsPage(
     content: androidx.compose.foundation.lazy.LazyListScope.() -> Unit,
 ) {
     BackHandler(onBack = onBack)
-    Scaffold(containerColor = BackgroundGray, snackbarHost = { snackbar?.let { SnackbarHost(it) } }) { insets ->
+    Scaffold(containerColor = Color.Transparent, snackbarHost = { snackbar?.let { SnackbarHost(it) } }) { insets ->
         Column(Modifier.fillMaxSize().padding(bottom = insets.calculateBottomPadding())) {
             Row(
-                Modifier.fillMaxWidth().background(CardWhite).statusBarsPadding()
+                Modifier.fillMaxWidth().statusBarsPadding()
                     .padding(start = 12.dp, top = 8.dp, end = 20.dp, bottom = 8.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {

@@ -26,7 +26,6 @@ struct SettingsPageLayout<Content: View>: View {
                     .padding(.bottom, 32)
             }
         }
-        .background(Palette.backgroundGray)
     }
 }
 
@@ -42,18 +41,18 @@ struct ChoiceRow: View {
             HStack(spacing: 12) {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(verbatim: title)
-                        .font(.system(size: 15, weight: .medium))
+                        .appFont(size: 15, weight: .medium)
                         .foregroundStyle(Palette.textPrimary)
                     if let subtitle {
                         Text(verbatim: subtitle)
-                            .font(.system(size: 13))
+                            .appFont(size: 13)
                             .foregroundStyle(Palette.textSecondary)
                     }
                 }
                 Spacer(minLength: 0)
                 if selected {
                     Image(systemName: "checkmark")
-                        .font(.system(size: 15, weight: .semibold))
+                        .appFont(size: 15, weight: .semibold)
                         .foregroundStyle(Palette.accentBlue)
                 }
             }
@@ -72,7 +71,7 @@ struct PageNote: View {
 
     var body: some View {
         Text(text)
-            .font(.system(size: 13))
+            .appFont(size: 13)
             .foregroundStyle(Palette.textSecondary)
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.horizontal, 4)
@@ -89,7 +88,7 @@ struct PageButton: View {
     var body: some View {
         Button(action: action) {
             Text(title)
-                .font(.system(size: 16, weight: .semibold))
+                .appFont(size: 16, weight: .semibold)
                 .foregroundStyle(.white)
                 .frame(maxWidth: .infinity, minHeight: 52)
                 .background(RoundedRectangle(cornerRadius: 16).fill(color.opacity(enabled ? 1 : 0.4)))
@@ -107,15 +106,15 @@ private struct HeroCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             Image(systemName: icon)
-                .font(.system(size: 22, weight: .semibold))
+                .appFont(size: 22, weight: .semibold)
                 .foregroundStyle(.white)
                 .frame(width: 48, height: 48)
                 .background(RoundedRectangle(cornerRadius: 14).fill(.white.opacity(0.18)))
             Text(title)
-                .font(.system(size: 22, weight: .bold))
+                .appFont(size: 22, weight: .bold)
                 .foregroundStyle(.white)
             Text(subtitle)
-                .font(.system(size: 14))
+                .appFont(size: 14)
                 .foregroundStyle(.white.opacity(0.9))
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -203,11 +202,11 @@ struct PremiumScreen: View {
             GroupSection(title: "Your plan") {
                 HStack {
                     Text("Current plan")
-                        .font(.system(size: 15, weight: .medium))
+                        .appFont(size: 15, weight: .medium)
                         .foregroundStyle(Palette.textPrimary)
                     Spacer()
                     Text("Free")
-                        .font(.system(size: 15))
+                        .appFont(size: 15)
                         .foregroundStyle(Palette.textSecondary)
                 }
                 .padding(.horizontal, 20)

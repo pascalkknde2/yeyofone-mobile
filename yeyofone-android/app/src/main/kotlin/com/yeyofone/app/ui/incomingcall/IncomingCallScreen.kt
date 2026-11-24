@@ -69,7 +69,7 @@ fun IncomingCallScreen(
     // number (see CALL-FEATURES-AUDIT.md CONT-05).
     val caller = remoteUri.toSipIdentity().let { it.copy(displayName = contactName ?: it.displayName) }
     Column(
-        Modifier.fillMaxSize().background(CardWhite).systemBarsPadding(),
+        Modifier.fillMaxSize().systemBarsPadding(),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Column(

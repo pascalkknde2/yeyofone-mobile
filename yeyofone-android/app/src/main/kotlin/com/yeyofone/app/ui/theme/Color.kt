@@ -19,6 +19,8 @@ private fun pick(light: Long, dark: Long) = Color(if (Palette.isDark) dark else 
 val BackgroundGray get() = pick(0xFFF4F7F9, 0xFF0B1120)
 val KeypadBackground get() = pick(0xFFF8FAFC, 0xFF0F172A)
 val CardWhite get() = pick(0xFFFFFFFF, 0xFF1E293B)
+/** Surfaces on the backdrop artwork. Currently the same as CardWhite; one place to restyle them. */
+val GlassCard get() = CardWhite
 val TextPrimary get() = pick(0xFF0F172A, 0xFFF1F5F9)
 /** Text on a [TextPrimary] fill: white in light mode, dark slate in dark mode. */
 val TextOnPrimary get() = pick(0xFFFFFFFF, 0xFF0F172A)
@@ -43,7 +45,7 @@ val PurpleLight get() = pick(0xFFF5F3FF, 0xFF2E1065)
 val Pink get() = pick(0xFFDB2777, 0xFFF472B6)
 val PinkLight get() = pick(0xFFFDF2F8, 0xFF500724)
 val CheckGreen get() = pick(0xFF22C55E, 0xFF4ADE80)
-val NavBackground get() = CardWhite
+val NavBackground get() = GlassCard
 /** Unselected bottom navigation icons: gray in light mode, white in dark mode. */
 val NavInactive get() = pick(0xFF94A3B8, 0xFFFFFFFF)
 val CallBackground get() = BackgroundGray

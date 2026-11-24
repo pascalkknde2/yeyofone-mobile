@@ -76,7 +76,7 @@ fun InCallKeypadScreen(
         }
     }
 
-    Column(Modifier.fillMaxSize().background(CallBackground).systemBarsPadding()) {
+    Column(Modifier.fillMaxSize().systemBarsPadding()) {
         Row(
             Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically,

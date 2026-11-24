@@ -55,6 +55,7 @@ import com.yeyofone.app.ui.theme.AccentRed
 import com.yeyofone.app.ui.theme.BackgroundGray
 import com.yeyofone.app.ui.theme.BorderLight
 import com.yeyofone.app.ui.theme.CardWhite
+import com.yeyofone.app.ui.theme.GlassCard
 import com.yeyofone.app.ui.theme.DangerLight
 import com.yeyofone.app.ui.theme.InactiveGray
 import com.yeyofone.app.ui.theme.PrimaryLight
@@ -86,7 +87,7 @@ fun MainScreen(
     onToggleDoNotDisturb: () -> Unit = {},
 ) {
     Scaffold(
-        containerColor = CardWhite,
+        containerColor = Color.Transparent,
         bottomBar = { BottomNavigationBar(HOME_NAVIGATION, onNavigationItemSelected) },
     ) { padding ->
         LazyColumn(
@@ -145,7 +146,7 @@ fun MainScreen(
 @Composable
 private fun MainHeader(name: String, extension: String?, online: Boolean, doNotDisturb: Boolean) {
     Row(
-        Modifier.fillMaxWidth().background(CardWhite).padding(start = 20.dp, end = 20.dp, top = 24.dp),
+        Modifier.fillMaxWidth().padding(start = 20.dp, end = 20.dp, top = 24.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -167,7 +168,7 @@ private fun MainHeader(name: String, extension: String?, online: Boolean, doNotD
                 )
             }
         }
-        Box(Modifier.size(52.dp).background(CardWhite, CircleShape).border(2.dp, BorderLight, CircleShape), contentAlignment = Alignment.Center) {
+        Box(Modifier.size(52.dp).background(GlassCard, CircleShape).border(2.dp, BorderLight, CircleShape), contentAlignment = Alignment.Center) {
             Text(name.initials(), fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = AccentBlue)
             Box(
                 Modifier.align(Alignment.BottomEnd).size(12.dp).clip(CircleShape)
@@ -237,7 +238,7 @@ private fun AccountStatusCard(account: SipAccount?, doNotDisturb: Boolean, onTog
 private fun SearchBar(onClick: () -> Unit, modifier: Modifier = Modifier) {
     Row(
         modifier.fillMaxWidth().shadow(6.dp, RoundedCornerShape(20.dp), ambientColor = Color.Black.copy(alpha = 0.08f), spotColor = Color.Black.copy(alpha = 0.08f))
-            .clip(RoundedCornerShape(20.dp)).background(CardWhite).border(1.dp, BorderLight, RoundedCornerShape(20.dp))
+            .clip(RoundedCornerShape(20.dp)).background(GlassCard).border(1.dp, BorderLight, RoundedCornerShape(20.dp))
             .clickable(onClick = onClick).padding(horizontal = 18.dp, vertical = 16.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -292,7 +293,7 @@ private fun RecentCallRow(call: CallLog, onCall: () -> Unit, modifier: Modifier 
     val missed = call.callType == CallType.MISSED
     val tint = if (missed) AccentRed else AccentGreen
     Row(
-        modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(CardWhite)
+        modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(GlassCard)
             .border(1.dp, BorderLight.copy(alpha = 0.6f), RoundedCornerShape(16.dp))
             .clickable(onClick = onCall).padding(14.dp),
         verticalAlignment = Alignment.CenterVertically,

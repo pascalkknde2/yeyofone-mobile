@@ -87,11 +87,11 @@ struct SettingsScreen: View {
             HStack {
                 if searching {
                     TextField("Search settings", text: $query)
-                        .font(.system(size: 17))
+                        .appFont(size: 17)
                         .autocorrectionDisabled()
                 } else {
                     Text("Settings")
-                        .font(.system(size: 24, weight: .bold))
+                        .appFont(size: 24, weight: .bold)
                         .tracking(-0.5)
                         .foregroundStyle(Palette.textPrimary)
                 }
@@ -101,7 +101,7 @@ struct SettingsScreen: View {
                     if !searching { query = "" }
                 } label: {
                     Image(systemName: searching ? "xmark" : "magnifyingglass")
-                        .font(.system(size: 18, weight: .medium))
+                        .appFont(size: 18, weight: .medium)
                         .foregroundStyle(Palette.textPrimary)
                         .frame(width: 44, height: 44)
                 }
@@ -110,7 +110,6 @@ struct SettingsScreen: View {
             .padding(.leading, 24)
             .padding(.trailing, 12)
             .padding(.vertical, 10)
-            .background(Palette.cardWhite)
 
             ScrollView {
                 VStack(spacing: 20) {
@@ -139,7 +138,7 @@ struct SettingsScreen: View {
                             .padding(.vertical, 48)
                     }
                     Text("YeyoFone • Version \(AppInfo.version)")
-                        .font(.system(size: 12))
+                        .appFont(size: 12)
                         .foregroundStyle(Palette.inactiveGray)
                         .padding(.vertical, 10)
                 }
@@ -148,22 +147,21 @@ struct SettingsScreen: View {
                 .padding(.bottom, 32)
             }
         }
-        .background(Palette.backgroundGray)
     }
 
     private var premiumBanner: some View {
         Button { store.screen = .premium } label: {
             HStack(spacing: 14) {
                 Image(systemName: "star.fill")
-                    .font(.system(size: 20))
+                    .appFont(size: 20)
                     .foregroundStyle(.white)
                     .frame(width: 44, height: 44)
                     .background(Circle().fill(.white.opacity(0.3)))
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Premium Features")
-                        .font(.system(size: 16, weight: .bold))
+                        .appFont(size: 16, weight: .bold)
                     Text("Unlock HD calls, unlimited recording & more")
-                        .font(.system(size: 12))
+                        .appFont(size: 12)
                         .opacity(0.9)
                 }
                 .foregroundStyle(.white)
@@ -184,16 +182,16 @@ struct SettingsScreen: View {
             IconTile(icon: entry.icon, tint: entry.color, size: 36, corner: 10)
             VStack(alignment: .leading, spacing: 2) {
                 Text(entry.title)
-                    .font(.system(size: 15, weight: .medium))
+                    .appFont(size: 15, weight: .medium)
                     .foregroundStyle(Palette.textPrimary)
                 Text(entry.subtitle)
-                    .font(.system(size: 13))
+                    .appFont(size: 13)
                     .foregroundStyle(Palette.textSecondary)
             }
             Spacer(minLength: 8)
             if let badge = entry.badge {
                 Text(badge.uppercased())
-                    .font(.system(size: 10, weight: .bold))
+                    .appFont(size: 10, weight: .bold)
                     .foregroundStyle(Palette.accentGreen)
                     .padding(.horizontal, 8)
                     .padding(.vertical, 3)
@@ -251,12 +249,14 @@ struct AudioSettingsScreen: View {
                             IconTile(icon: "speaker.wave.2.fill", tint: Palette.accentBlue, background: Palette.primaryLight)
                             VStack(alignment: .leading, spacing: 4) {
                                 Text("Speaker volume")
-                                    .font(.system(size: 15, weight: .semibold))
+                                    .appFont(size: 15, weight: .semibold)
                                     .foregroundStyle(Palette.textPrimary)
                                 HStack(spacing: 8) {
-                                    Image(systemName: "speaker.fill").font(.system(size: 13))
-                                    Slider(value: $volume).tint(Palette.accentBlue)
-                                    Image(systemName: "speaker.wave.3.fill").font(.system(size: 13))
+                                    Image(systemName: "speaker.fill").appFont(size: 13)
+                                    Slider(value: $volume)
+                                        .tint(Palette.accentBlue)
+                                        .onChange(of: volume) { _, value in store.setSpeakerVolume(value) }
+                                    Image(systemName: "speaker.wave.3.fill").appFont(size: 13)
                                 }
                                 .foregroundStyle(Palette.textSecondary)
                             }
@@ -285,7 +285,6 @@ struct AudioSettingsScreen: View {
                 .padding(.bottom, 32)
             }
         }
-        .background(Palette.backgroundGray)
     }
 }
 
@@ -327,7 +326,7 @@ struct VideoSettingsScreen: View {
                             LinearGradient(colors: [Palette.cardGradientStart, Palette.cardGradientEnd], startPoint: .topLeading, endPoint: .bottomTrailing)
                             RadialGradient(colors: [.white.opacity(0.1), .clear], center: .center, startRadius: 0, endRadius: 180)
                             Image(systemName: "video.fill")
-                                .font(.system(size: 40))
+                                .appFont(size: 40)
                                 .foregroundStyle(.white.opacity(0.2))
                         }
                         .frame(height: 200)
@@ -358,7 +357,7 @@ struct VideoSettingsScreen: View {
                                 let active = resolution == index
                                 Button { resolution = index } label: {
                                     Text(resolutions[index])
-                                        .font(.system(size: 13, weight: .semibold))
+                                        .appFont(size: 13, weight: .semibold)
                                         .foregroundStyle(active ? Palette.accentBlue : Palette.textSecondary)
                                         .padding(.horizontal, 14)
                                         .padding(.vertical, 9)
@@ -379,10 +378,10 @@ struct VideoSettingsScreen: View {
                                     RadioDot(selected: layout == index)
                                     VStack(alignment: .leading, spacing: 2) {
                                         Text(layouts[index].0)
-                                            .font(.system(size: 15, weight: .medium))
+                                            .appFont(size: 15, weight: .medium)
                                             .foregroundStyle(Palette.textPrimary)
                                         Text(layouts[index].1)
-                                            .font(.system(size: 12))
+                                            .appFont(size: 12)
                                             .foregroundStyle(Palette.inactiveGray)
                                     }
                                     Spacer()
@@ -400,7 +399,6 @@ struct VideoSettingsScreen: View {
                 .padding(.bottom, 32)
             }
         }
-        .background(Palette.backgroundGray)
     }
 }
 
@@ -525,7 +523,6 @@ struct IncomingCallsSettingsScreen: View {
                 .padding(.bottom, 32)
             }
         }
-        .background(Palette.backgroundGray)
     }
 }
 
@@ -543,7 +540,7 @@ private struct ForwardingPage: View {
             GroupSection(title: "Call Forwarding") {
                 Toggle("Enable call forwarding", isOn: $enabled)
                     .tint(Palette.accentGreen)
-                    .font(.system(size: 15, weight: .medium))
+                    .appFont(size: 15, weight: .medium)
                     .foregroundStyle(Palette.textPrimary)
                     .padding(.horizontal, 20)
                     .padding(.vertical, 12)
@@ -551,14 +548,14 @@ private struct ForwardingPage: View {
                 TextField("Forward to number", text: $number)
                     .keyboardType(.phonePad)
                     .disabled(!enabled)
-                    .font(.system(size: 16))
+                    .appFont(size: 16)
                     .padding(.horizontal, 20)
                     .padding(.vertical, 14)
                     .opacity(enabled ? 1 : 0.5)
             }
             if let error {
                 Text(verbatim: error)
-                    .font(.system(size: 13))
+                    .appFont(size: 13)
                     .foregroundStyle(Palette.accentRed)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.horizontal, 4)
@@ -672,7 +669,7 @@ struct LanguageSettingsScreen: View {
                     }
                     if restartNeeded {
                         Text("Restart YeyoFone to use the new language.")
-                            .font(.system(size: 13))
+                            .appFont(size: 13)
                             .foregroundStyle(Palette.textSecondary)
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .padding(.horizontal, 4)
@@ -694,7 +691,6 @@ struct LanguageSettingsScreen: View {
                 .padding(.bottom, 32)
             }
         }
-        .background(Palette.backgroundGray)
     }
 
     private var accentLabel: String {
@@ -704,14 +700,14 @@ struct LanguageSettingsScreen: View {
 
     private func languageRow(_ language: AppLanguage, trailing: String?, tint: Color) -> some View {
         HStack(spacing: 12) {
-            Text(language.flag).font(.system(size: 20))
+            Text(language.flag).appFont(size: 20)
             Text(language.label)
-                .font(.system(size: 15, weight: .medium))
+                .appFont(size: 15, weight: .medium)
                 .foregroundStyle(Palette.textPrimary)
             Spacer()
             if let trailing {
                 Image(systemName: trailing)
-                    .font(.system(size: 14, weight: .semibold))
+                    .appFont(size: 14, weight: .semibold)
                     .foregroundStyle(tint)
             }
         }
@@ -736,16 +732,16 @@ struct RecordingsScreen: View {
                         VStack(alignment: .leading, spacing: 0) {
                             HStack {
                                 Text("Storage Used")
-                                    .font(.system(size: 14, weight: .semibold))
+                                    .appFont(size: 14, weight: .semibold)
                                     .foregroundStyle(Palette.textPrimary)
                                 Spacer()
                                 Text(verbatim: "0 B / \(totalStorage)")
-                                    .font(.system(size: 13))
+                                    .appFont(size: 13)
                                     .foregroundStyle(Palette.textSecondary)
                             }
                             Capsule().fill(Palette.borderLight).frame(height: 8).padding(.top, 12)
                             Text("\(0) recordings saved")
-                                .font(.system(size: 12))
+                                .appFont(size: 12)
                                 .foregroundStyle(Palette.inactiveGray)
                                 .padding(.top, 8)
                         }
@@ -756,13 +752,13 @@ struct RecordingsScreen: View {
                     Text("Recent Recordings").sectionLabelStyle().padding(.leading, 4)
                     VStack(spacing: 8) {
                         Image(systemName: "mic.fill")
-                            .font(.system(size: 28))
+                            .appFont(size: 28)
                             .foregroundStyle(Palette.inactiveGray)
                         (query.isEmpty ? Text("No recordings yet") : Text("No matches"))
-                            .font(.system(size: 16, weight: .semibold))
+                            .appFont(size: 16, weight: .semibold)
                             .foregroundStyle(Palette.textPrimary)
                         (query.isEmpty ? Text("Saved recordings on this device will appear here.") : Text("Try another name."))
-                            .font(.system(size: 13))
+                            .appFont(size: 13)
                             .foregroundStyle(Palette.textSecondary)
                     }
                     .multilineTextAlignment(.center)
@@ -776,7 +772,6 @@ struct RecordingsScreen: View {
                 .padding(.bottom, 32)
             }
         }
-        .background(Palette.backgroundGray)
     }
 
     private var totalStorage: String {

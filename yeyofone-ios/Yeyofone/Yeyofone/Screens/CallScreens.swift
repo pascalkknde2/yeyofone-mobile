@@ -30,7 +30,7 @@ struct OutgoingCallScreen: View {
                 }
                 .accessibilityLabel(session.held ? Text("Resume") : Text("Hold"))
             }
-            .font(.system(size: 18, weight: .semibold))
+            .appFont(size: 18, weight: .semibold)
             .foregroundStyle(Palette.textPrimary)
             .padding(.horizontal, 16)
             .padding(.vertical, 6)
@@ -76,7 +76,6 @@ struct OutgoingCallScreen: View {
                 }
             }
         }
-        .background(Palette.backgroundGray)
     }
 
     private func status(at date: Date) -> String {
@@ -99,7 +98,7 @@ private struct CallerIdentity: View {
                     .frame(width: 136, height: 136)
                     .scaleEffect(pulse ? 1.1 : 1)
                 Text(name.initials)
-                    .font(.system(size: 48, weight: .semibold))
+                    .appFont(size: 48, weight: .semibold)
                     .foregroundStyle(Palette.textPrimary)
                     .frame(width: 120, height: 120)
                     .background(Circle().fill(Palette.cardWhite))
@@ -110,7 +109,7 @@ private struct CallerIdentity: View {
                 withAnimation(.easeInOut(duration: 1).repeatForever(autoreverses: true)) { pulse = true }
             }
             Text(name)
-                .font(.system(size: 32, weight: .bold))
+                .appFont(size: 32, weight: .bold)
                 .tracking(-0.5)
                 .foregroundStyle(Palette.textPrimary)
                 .multilineTextAlignment(.center)
@@ -121,7 +120,7 @@ private struct CallerIdentity: View {
                     .frame(width: 8, height: 8)
                     .shadow(color: Palette.accentGreen, radius: 3)
                 Text(status)
-                    .font(.system(size: 16, weight: .medium))
+                    .appFont(size: 16, weight: .medium)
                     .monospacedDigit()
                     .foregroundStyle(Palette.textSecondary)
             }
@@ -139,13 +138,13 @@ private struct CallActionButton: View {
     let action: () -> Void
 
     var body: some View {
-        let background: Color = destructive ? Palette.accentRed : (active ? Palette.primaryLight : Palette.cardWhite)
-        let border: Color = destructive ? Palette.accentRed : (active ? Palette.primaryBorder : Palette.borderLight)
-        let tint: Color = destructive ? .white : (active ? Palette.accentBlue : Palette.textPrimary)
+        let background: Color = destructive ? Palette.accentRed : (active ? Palette.accentBlue : Palette.cardWhite)
+        let border: Color = destructive ? Palette.accentRed : (active ? Palette.accentBlue : Palette.borderLight)
+        let tint: Color = destructive || active ? .white : Palette.textPrimary
         Button(action: action) {
             VStack(spacing: 12) {
                 Image(systemName: icon)
-                    .font(.system(size: 22))
+                    .appFont(size: 22)
                     .foregroundStyle(tint.opacity(enabled || destructive ? 1 : 0.4))
                     .frame(width: 64, height: 64)
                     .background(Circle().fill(background.opacity(enabled ? 1 : 0.45)))
@@ -153,10 +152,10 @@ private struct CallActionButton: View {
                     .shadow(color: destructive ? Palette.accentRed.opacity(0.4) : .black.opacity(0.05),
                             radius: destructive ? 10 : 3, y: destructive ? 4 : 1)
                 Text(label)
-                    .font(.system(size: 12, weight: .semibold))
+                    .appFont(size: 12, weight: .semibold)
                     .tracking(0.5)
                     .textCase(.uppercase)
-                    .foregroundStyle(Palette.textSecondary)
+                    .foregroundStyle(active ? Palette.accentBlue : Palette.textSecondary)
             }
             .frame(maxWidth: .infinity)
         }
@@ -177,9 +176,9 @@ struct IncomingCallScreen: View {
         let name = caller.flatMap { store.contactName(for: $0.remoteNumber) } ?? caller?.remoteName ?? ""
         VStack(spacing: 0) {
             HStack(spacing: 8) {
-                Image(systemName: "phone.fill").font(.system(size: 13))
+                Image(systemName: "phone.fill").appFont(size: 13)
                 Text("INCOMING CALL")
-                    .font(.system(size: 13, weight: .bold))
+                    .appFont(size: 13, weight: .bold)
                     .tracking(1)
             }
             .foregroundStyle(Palette.accentGreen)
@@ -190,7 +189,6 @@ struct IncomingCallScreen: View {
             .shadow(color: .black.opacity(0.06), radius: 2, y: 1)
             .padding(.vertical, 16)
             .frame(maxWidth: .infinity)
-            .background(Palette.cardWhite)
 
             VStack(spacing: 0) {
                 Spacer()
@@ -200,7 +198,7 @@ struct IncomingCallScreen: View {
                         .frame(width: 172, height: 172)
                         .scaleEffect(ring ? 1.15 : 1)
                     Text(name.initials)
-                        .font(.system(size: 56, weight: .bold))
+                        .appFont(size: 56, weight: .bold)
                         .foregroundStyle(Palette.textPrimary)
                         .frame(width: 140, height: 140)
                         .background(Circle().fill(Palette.cardWhite))
@@ -212,13 +210,13 @@ struct IncomingCallScreen: View {
                     withAnimation(.linear(duration: 2).repeatForever(autoreverses: false)) { ring = true }
                 }
                 Text(name)
-                    .font(.system(size: 36, weight: .bold))
+                    .appFont(size: 36, weight: .bold)
                     .tracking(-0.5)
                     .foregroundStyle(Palette.textPrimary)
                     .multilineTextAlignment(.center)
                     .padding(.top, 32)
                 Text("Ext. \(caller?.remoteNumber ?? "")")
-                    .font(.system(size: 18, weight: .medium))
+                    .appFont(size: 18, weight: .medium)
                     .foregroundStyle(Palette.textSecondary)
                     .padding(.top, 8)
                 Spacer()
@@ -241,7 +239,6 @@ struct IncomingCallScreen: View {
             }
             .background(Palette.keypadBackground)
         }
-        .background(Palette.cardWhite)
     }
 }
 
@@ -257,16 +254,16 @@ struct CallEndedScreen: View {
             HStack {
                 Button { store.dismissSummary() } label: {
                     Image(systemName: "xmark")
-                        .font(.system(size: 18, weight: .semibold))
+                        .appFont(size: 18, weight: .semibold)
                         .foregroundStyle(Palette.textPrimary)
                         .frame(width: 48, height: 48)
                 }
                 .accessibilityLabel("Close")
                 Spacer()
                 HStack(spacing: 6) {
-                    Image(systemName: "phone.down.fill").font(.system(size: 12))
+                    Image(systemName: "phone.down.fill").appFont(size: 12)
                     (summary.missed ? Text("Missed") : Text("CALL ENDED"))
-                        .font(.system(size: 12, weight: .bold))
+                        .appFont(size: 12, weight: .bold)
                 }
                 .foregroundStyle(accent)
                 .padding(.horizontal, 14)
@@ -281,27 +278,27 @@ struct CallEndedScreen: View {
             ScrollView {
                 VStack(spacing: 0) {
                     Text(summary.callerName.initials)
-                        .font(.system(size: 48, weight: .bold))
+                        .appFont(size: 48, weight: .bold)
                         .foregroundStyle(Palette.textPrimary)
                         .frame(width: 136, height: 136)
                         .background(Circle().fill(Palette.cardWhite))
                         .overlay(Circle().stroke(accent.opacity(0.25), lineWidth: 2))
                     Text(summary.callerName)
-                        .font(.system(size: 32, weight: .bold))
+                        .appFont(size: 32, weight: .bold)
                         .tracking(-0.5)
                         .foregroundStyle(Palette.textPrimary)
                         .multilineTextAlignment(.center)
                         .padding(.top, 24)
                     if !summary.callerNumber.isEmpty, summary.callerNumber != summary.callerName {
                         Text(summary.callerNumber)
-                            .font(.system(size: 16, weight: .medium))
+                            .appFont(size: 16, weight: .medium)
                             .foregroundStyle(Palette.textSecondary)
                             .padding(.top, 4)
                     }
                     HStack(spacing: 8) {
                         Circle().fill(accent).frame(width: 8, height: 8)
                         Text(summary.missed ? CallType.missed.label : (summary.direction == .incoming ? CallType.incoming.label : CallType.outgoing.label))
-                            .font(.system(size: 16, weight: .medium))
+                            .appFont(size: 16, weight: .medium)
                             .foregroundStyle(Palette.textSecondary)
                     }
                     .padding(.top, 10)
@@ -340,18 +337,17 @@ struct CallEndedScreen: View {
                 #endif
             }
         }
-        .background(Palette.backgroundGray)
     }
 
     private func detail(_ label: LocalizedStringKey, _ value: String) -> some View {
         VStack(spacing: 4) {
             Text(label)
-                .font(.system(size: 11, weight: .semibold))
+                .appFont(size: 11, weight: .semibold)
                 .tracking(0.5)
                 .textCase(.uppercase)
                 .foregroundStyle(Palette.textSecondary)
             Text(value)
-                .font(.system(size: 15, weight: .semibold, design: .monospaced))
+                .appFont(size: 15, weight: .semibold, design: .monospaced)
                 .foregroundStyle(Palette.textPrimary)
         }
     }
@@ -387,13 +383,13 @@ struct CallOptionsScreen: View {
                 ScrollView {
                     VStack(spacing: 16) {
                         Text("Consultation destination")
-                            .font(.system(size: 15, weight: .medium))
+                            .appFont(size: 15, weight: .medium)
                             .foregroundStyle(Palette.textSecondary)
                             .padding(.bottom, 8)
                         DialedNumberDisplay(number: destination) { destination = String(destination.dropLast()) }
                         if !held {
                             Text("Waiting for the original call to be placed on hold…")
-                                .font(.system(size: 12))
+                                .appFont(size: 12)
                                 .foregroundStyle(Palette.textSecondary)
                         }
                         DialPad(rowSpacing: 16) { destination += $0 }
@@ -438,7 +434,6 @@ struct CallOptionsScreen: View {
                 }
             }
         }
-        .background(Palette.backgroundGray)
         .confirmationDialog("Output device", isPresented: $showRoutePicker, titleVisibility: .visible) {
             ForEach(store.availableRoutes) { route in
                 Button(route == store.selectedRoute ? "\(route.label) ✓" : route.label) { store.selectedRoute = route }
@@ -453,13 +448,13 @@ struct CallOptionsScreen: View {
             (session.remoteName == session.remoteNumber
                 ? Text("Consultation: \(session.remoteName)")
                 : Text("Consultation: \(session.remoteName) · Ext. \(session.remoteNumber)"))
-                .font(.system(size: 22, weight: .bold))
+                .appFont(size: 22, weight: .bold)
                 .foregroundStyle(Palette.textPrimary)
             Text(session.state.label)
-                .font(.system(size: 15))
+                .appFont(size: 15)
                 .foregroundStyle(Palette.textSecondary)
             Text("\(store.activeCall?.remoteName ?? "") is on hold")
-                .font(.system(size: 13))
+                .appFont(size: 13)
                 .foregroundStyle(Palette.textSecondary)
                 .padding(.top, 16)
             Spacer()
@@ -482,10 +477,10 @@ private struct OptionRow: View {
                 IconTile(icon: icon, tint: Palette.accentBlue, background: Palette.primaryLight)
                 VStack(alignment: .leading, spacing: 2) {
                     Text(title)
-                        .font(.system(size: 15, weight: .semibold))
+                        .appFont(size: 15, weight: .semibold)
                         .foregroundStyle(Palette.textPrimary)
                     Text(subtitle)
-                        .font(.system(size: 13))
+                        .appFont(size: 13)
                         .foregroundStyle(Palette.textSecondary)
                         .multilineTextAlignment(.leading)
                 }
@@ -515,7 +510,7 @@ struct InCallKeypadScreen: View {
             HStack {
                 Button { store.callPage = .main } label: {
                     Image(systemName: "arrow.left")
-                        .font(.system(size: 18, weight: .semibold))
+                        .appFont(size: 18, weight: .semibold)
                         .foregroundStyle(Palette.textPrimary)
                         .frame(width: 48, height: 48)
                 }
@@ -523,11 +518,11 @@ struct InCallKeypadScreen: View {
                 Spacer()
                 VStack(spacing: 2) {
                     Text(session.remoteName)
-                        .font(.system(size: 18, weight: .bold))
+                        .appFont(size: 18, weight: .bold)
                         .foregroundStyle(Palette.textPrimary)
                     TimelineView(.periodic(from: .now, by: 1)) { context in
                         Text(status(at: context.date))
-                            .font(.system(size: 13, weight: .medium))
+                            .appFont(size: 13, weight: .medium)
                             .monospacedDigit()
                             .foregroundStyle(Palette.textSecondary)
                     }
@@ -541,14 +536,14 @@ struct InCallKeypadScreen: View {
             ScrollView {
                 VStack(spacing: 16) {
                     Text(tones)
-                        .font(.system(size: 32, weight: .medium))
+                        .appFont(size: 32, weight: .medium)
                         .tracking(1)
                         .foregroundStyle(Palette.textPrimary)
                         .lineLimit(1)
                         .frame(height: 44)
                     if session.held {
                         Text("Resume the call to send keypad tones")
-                            .font(.system(size: 12))
+                            .appFont(size: 12)
                             .foregroundStyle(Palette.accentRed)
                             .multilineTextAlignment(.center)
                     }
@@ -578,7 +573,6 @@ struct InCallKeypadScreen: View {
                 }
             }
         }
-        .background(Palette.backgroundGray)
     }
 
     private func status(at date: Date) -> String {
@@ -601,7 +595,7 @@ struct TransferCallScreen: View {
             ScrollView {
                 VStack(spacing: 16) {
                     Text("Transferring call with \(callerName)")
-                        .font(.system(size: 15, weight: .medium))
+                        .appFont(size: 15, weight: .medium)
                         .foregroundStyle(Palette.textSecondary)
                         .multilineTextAlignment(.center)
                         .padding(.bottom, 8)
@@ -630,6 +624,5 @@ struct TransferCallScreen: View {
                 }
             }
         }
-        .background(Palette.backgroundGray)
     }
 }

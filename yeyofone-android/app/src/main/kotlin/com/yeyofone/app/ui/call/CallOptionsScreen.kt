@@ -91,7 +91,7 @@ fun CallOptionsScreen(
     var destination by remember { mutableStateOf("") }
     var showRoutePicker by remember { mutableStateOf(false) }
 
-    Column(Modifier.fillMaxSize().background(CallBackground).systemBarsPadding()) {
+    Column(Modifier.fillMaxSize().systemBarsPadding()) {
         Row(
             Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically,

@@ -110,9 +110,9 @@ fun IncomingCallsSettingsScreen(
         return
     }
 
-    Scaffold(containerColor = BackgroundGray) { insets ->
+    Scaffold(containerColor = Color.Transparent) { insets ->
         Column(Modifier.fillMaxSize().padding(insets)) {
-            Row(Modifier.fillMaxWidth().background(CardWhite).padding(start = 12.dp, end = 20.dp, top = 8.dp, bottom = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+            Row(Modifier.fillMaxWidth().padding(start = 12.dp, end = 20.dp, top = 8.dp, bottom = 8.dp), verticalAlignment = Alignment.CenterVertically) {
                 IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.back), tint = TextPrimary) }
                 Text(stringResource(R.string.incoming_calls_title), fontSize = 20.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
             }

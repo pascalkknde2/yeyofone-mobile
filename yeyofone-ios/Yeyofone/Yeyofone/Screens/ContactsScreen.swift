@@ -27,7 +27,7 @@ struct ContactsScreen: View {
                 TabHeader(title: "Contacts") {
                     Button { adding = true } label: {
                         Image(systemName: "plus")
-                            .font(.system(size: 20, weight: .medium))
+                            .appFont(size: 20, weight: .medium)
                             .foregroundStyle(Palette.textPrimary)
                             .frame(width: 44, height: 44)
                     }
@@ -38,7 +38,6 @@ struct ContactsScreen: View {
                     .padding(.bottom, 16)
             }
             .padding(.top, 6)
-            .background(Palette.cardWhite)
 
             if store.contacts.isEmpty {
                 EmptyStateView(title: "No contacts yet", subtitle: "Tap + to add your first contact")
@@ -60,7 +59,6 @@ struct ContactsScreen: View {
                 }
             }
         }
-        .background(Palette.backgroundGray)
         .sheet(isPresented: $adding) {
             ContactEditSheet(contact: nil) { store.saveContact($0) }
         }
@@ -81,11 +79,11 @@ private struct ContactCard: View {
             InitialsAvatar(name: contact.displayName)
             VStack(alignment: .leading, spacing: 2) {
                 Text(contact.displayName)
-                    .font(.system(size: 15, weight: .semibold))
+                    .appFont(size: 15, weight: .semibold)
                     .foregroundStyle(Palette.textPrimary)
                     .lineLimit(1)
                 Text(contact.number)
-                    .font(.system(size: 13))
+                    .appFont(size: 13)
                     .foregroundStyle(Palette.textSecondary)
             }
             .padding(.leading, 4)
@@ -104,7 +102,7 @@ private struct ContactCard: View {
             .accessibilityLabel("Edit contact")
             Button(action: onCall) {
                 Image(systemName: "phone.fill")
-                    .font(.system(size: 14))
+                    .appFont(size: 14)
                     .foregroundStyle(Palette.accentGreen)
                     .frame(width: 40, height: 40)
                     .background(Circle().fill(Palette.successLight))

@@ -194,7 +194,7 @@ struct TeamRoomScreen: View {
                 RoomStrip(room: room)
             }
             Text("Conference preview · Sample participants · Nothing you share is sent to anyone")
-                .font(.system(size: 12))
+                .appFont(size: 12)
                 .foregroundStyle(RoomColor.note)
                 .multilineTextAlignment(.center)
             controls
@@ -226,11 +226,11 @@ struct TeamRoomScreen: View {
         HStack(alignment: .center, spacing: 10) {
             VStack(alignment: .leading, spacing: 2) {
                 Text(verbatim: "\(String(localized: "Weekly catch-up")) · \(room.time)")
-                    .font(.system(size: 12, weight: .medium))
+                    .appFont(size: 12, weight: .medium)
                     .foregroundStyle(RoomColor.subtle)
                     .monospacedDigit()
                 Text("Team room")
-                    .font(.system(size: 20, weight: .semibold))
+                    .appFont(size: 20, weight: .semibold)
                     .foregroundStyle(.white)
                     .accessibilityAddTraits(.isHeader)
             }
@@ -247,7 +247,7 @@ struct TeamRoomScreen: View {
     private func headerButton(_ label: LocalizedStringResource, systemImage: String, selected: Bool, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Image(systemName: systemImage)
-                .font(.system(size: 16, weight: .semibold))
+                .appFont(size: 16, weight: .semibold)
                 .foregroundStyle(.white)
                 .frame(width: 40, height: 40)
                 .background(Circle().fill(selected ? RoomColor.blue : RoomColor.surface))
@@ -269,7 +269,7 @@ struct TeamRoomScreen: View {
         let selected = room.stage == stage
         return Button { room.stage = stage } label: {
             Text(title)
-                .font(.system(size: 14, weight: .semibold))
+                .appFont(size: 14, weight: .semibold)
                 .foregroundStyle(selected ? .white : RoomColor.subtle)
                 .frame(maxWidth: .infinity, minHeight: 34)
                 .background(Capsule().fill(selected ? RoomColor.control : .clear))
@@ -303,7 +303,7 @@ struct TeamRoomScreen: View {
         }
         return Button(action: action) {
             Image(systemName: systemImage)
-                .font(.system(size: 19, weight: .semibold))
+                .appFont(size: 19, weight: .semibold)
                 .foregroundStyle(ink)
                 .frame(width: 52, height: 52)
                 .background(Circle().fill(fill))
@@ -319,7 +319,7 @@ private struct RoomAvatar: View {
 
     var body: some View {
         Text(verbatim: person.initials)
-            .font(.system(size: size * 0.36, weight: .semibold))
+            .appFont(size: size * 0.36, weight: .semibold)
             .foregroundStyle(.white)
             .frame(width: size, height: size)
             .background(Circle().fill(Color(hex: person.color)))
@@ -334,7 +334,7 @@ private struct RoomBadge: View {
 
     var body: some View {
         Image(systemName: systemImage)
-            .font(.system(size: 11, weight: .bold))
+            .appFont(size: 11, weight: .bold)
             .foregroundStyle(ink)
             .frame(width: 24, height: 24)
             .background(Circle().fill(fill))
@@ -354,9 +354,9 @@ private struct RoomStage: View {
             }
             if let error = room.mediaError {
                 HStack(spacing: 8) {
-                    Text(error).font(.system(size: 14))
+                    Text(error).appFont(size: 14)
                     Button { room.mediaError = nil } label: {
-                        Image(systemName: "xmark").font(.system(size: 12, weight: .bold)).frame(width: 26, height: 26)
+                        Image(systemName: "xmark").appFont(size: 12, weight: .bold).frame(width: 26, height: 26)
                     }
                     .accessibilityLabel(Text("Dismiss notification"))
                 }
@@ -390,7 +390,7 @@ private struct RoomStage: View {
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
             Text(verbatim: person.id == "you" ? "\(person.name) (\(String(localized: "You")))" : person.name)
-                .font(.system(size: 14, weight: .semibold))
+                .appFont(size: 14, weight: .semibold)
                 .foregroundStyle(.white)
                 .padding(.horizontal, 12)
                 .padding(.vertical, 6)
@@ -403,13 +403,13 @@ private struct RoomStage: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
                 Label { Text("Sarah’s agenda · Share preview") } icon: { Image(systemName: "square.and.arrow.up") }
-                    .font(.system(size: 13, weight: .semibold))
+                    .appFont(size: 13, weight: .semibold)
                     .foregroundStyle(RoomColor.accent)
                 VStack(alignment: .leading, spacing: 0) {
                     Text("A little focus.")
                     Text("A better conversation.")
                 }
-                .font(.system(size: 26, weight: .bold))
+                .appFont(size: 26, weight: .bold)
                 .foregroundStyle(RoomColor.ink)
                 .padding(.vertical, 20)
                 VStack(alignment: .leading, spacing: 10) {
@@ -418,7 +418,7 @@ private struct RoomStage: View {
                             Text(verbatim: "\(index + 1).")
                             Text(title)
                         }
-                        .font(.system(size: 17, weight: room.topic == index ? .semibold : .regular))
+                        .appFont(size: 17, weight: room.topic == index ? .semibold : .regular)
                         .foregroundStyle(room.topic == index ? RoomColor.accent : RoomColor.ink3)
                     }
                 }
@@ -462,7 +462,7 @@ private struct RoomStrip: View {
                 }
                 HStack(spacing: 4) {
                     Text(verbatim: you ? String(localized: "You") : person.name)
-                        .font(.system(size: 13, weight: .medium))
+                        .appFont(size: 13, weight: .medium)
                         .foregroundStyle(.white)
                         .lineLimit(1)
                         .shadow(color: .black.opacity(0.5), radius: 1, y: 1)
@@ -496,19 +496,19 @@ private struct RoomNotes: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 12) {
                 Text("Agenda")
-                    .font(.system(size: 17, weight: .semibold))
+                    .appFont(size: 17, weight: .semibold)
                     .foregroundStyle(RoomColor.ink)
                 ForEach(Array(TeamRoom.topics.enumerated()), id: \.offset) { index, title in
                     let current = room.topic == index
                     Button { room.topic = index } label: {
                         HStack(spacing: 12) {
                             Text(verbatim: "\(index + 1)")
-                                .font(.system(size: 13, weight: .bold))
+                                .appFont(size: 13, weight: .bold)
                                 .foregroundStyle(current ? .white : RoomColor.inkMuted)
                                 .frame(width: 26, height: 26)
                                 .background(Circle().fill(current ? RoomColor.accent : RoomColor.paperMuted))
                             Text(title)
-                                .font(.system(size: 15, weight: current ? .semibold : .regular))
+                                .appFont(size: 15, weight: current ? .semibold : .regular)
                                 .foregroundStyle(current ? RoomColor.accent : RoomColor.ink)
                             Spacer(minLength: 0)
                         }
@@ -519,7 +519,7 @@ private struct RoomNotes: View {
                     .accessibilityAddTraits(current ? .isSelected : [])
                 }
                 Text("Decisions & next steps")
-                    .font(.system(size: 14, weight: .semibold))
+                    .appFont(size: 14, weight: .semibold)
                     .foregroundStyle(RoomColor.ink)
                     .padding(.top, 8)
                 ZStack(alignment: .topLeading) {
@@ -539,11 +539,11 @@ private struct RoomNotes: View {
                         }
                         .accessibilityLabel(Text("Decisions & next steps"))
                 }
-                .font(.system(size: 15))
+                .appFont(size: 15)
                 .background(RoundedRectangle(cornerRadius: 10).fill(RoomColor.paper2))
                 .overlay(RoundedRectangle(cornerRadius: 10).stroke(RoomColor.border))
                 Text("Private preview notes · Cleared when you leave")
-                    .font(.system(size: 12))
+                    .appFont(size: 12)
                     .foregroundStyle(RoomColor.inkMuted)
             }
             .padding(18)
@@ -565,7 +565,7 @@ private struct RoomPanel: View {
                     HStack(spacing: 6) {
                         Text("Participants")
                         Text(verbatim: "\(room.participants.count)")
-                            .font(.system(size: 12, weight: .bold))
+                            .appFont(size: 12, weight: .bold)
                             .padding(.horizontal, 7)
                             .padding(.vertical, 1)
                             .background(Capsule().fill(RoomColor.paperMuted))
@@ -582,7 +582,7 @@ private struct RoomPanel: View {
         let selected = room.panel == panel
         return Button { room.panel = panel } label: {
             label()
-                .font(.system(size: 14, weight: .semibold))
+                .appFont(size: 14, weight: .semibold)
                 .foregroundStyle(selected ? RoomColor.accent : RoomColor.inkMuted)
                 .frame(maxWidth: .infinity, minHeight: 38)
                 .background(RoundedRectangle(cornerRadius: 10).fill(selected ? RoomColor.tint : .clear))
@@ -627,7 +627,7 @@ private struct RoomPanel: View {
                         rosterRow(person) {
                             Button { room.joined.append(person.id) } label: {
                                 Text("Admit")
-                                    .font(.system(size: 13, weight: .semibold))
+                                    .appFont(size: 13, weight: .semibold)
                                     .foregroundStyle(.white)
                                     .padding(.horizontal, 14)
                                     .padding(.vertical, 7)
@@ -645,7 +645,7 @@ private struct RoomPanel: View {
 
     private func sectionTitle(_ text: Text) -> some View {
         text
-            .font(.system(size: 12, weight: .semibold))
+            .appFont(size: 12, weight: .semibold)
             .textCase(.uppercase)
             .foregroundStyle(RoomColor.inkMuted)
             .padding(.top, 8)
@@ -656,12 +656,12 @@ private struct RoomPanel: View {
             RoomAvatar(person: person, size: 36)
             VStack(alignment: .leading, spacing: 1) {
                 Text(verbatim: person.id == "you" ? "\(person.name) (\(String(localized: "You")))" : person.name)
-                    .font(.system(size: 15, weight: .semibold))
+                    .appFont(size: 15, weight: .semibold)
                     .lineLimit(1)
                 Group {
                     if room.handUp(person) { Text("Hand raised") } else { Text(person.role) }
                 }
-                .font(.system(size: 13))
+                .appFont(size: 13)
                 .foregroundStyle(RoomColor.inkMuted)
             }
             Spacer(minLength: 0)
@@ -680,11 +680,11 @@ private struct RoomPanel: View {
                                 RoomAvatar(person: person, size: 32)
                                 VStack(alignment: .leading, spacing: 3) {
                                     Text(verbatim: message.from == "you" ? String(localized: "You") : person.name)
-                                        .font(.system(size: 13, weight: .semibold))
+                                        .appFont(size: 13, weight: .semibold)
                                     Group {
                                         if let sample = message.sample { Text(sample) } else { Text(verbatim: message.text) }
                                     }
-                                    .font(.system(size: 15))
+                                    .appFont(size: 15)
                                     .foregroundStyle(RoomColor.ink3)
                                 }
                                 Spacer(minLength: 0)
@@ -721,7 +721,7 @@ private struct RoomPanel: View {
             .padding(.horizontal, 16)
             .padding(.top, 10)
             Text("Preview chat · Messages stay on this device")
-                .font(.system(size: 12))
+                .appFont(size: 12)
                 .foregroundStyle(RoomColor.inkMuted)
                 .padding(.vertical, 8)
         }

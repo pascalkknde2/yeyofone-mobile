@@ -17,6 +17,8 @@ import com.yeyofone.core.model.SipServerConfiguration
 import com.yeyofone.core.model.TransportProtocol
 import com.yeyofone.core.model.VoipError
 import com.yeyofone.core.model.TransferState
+import com.yeyofone.core.model.AudioRoute
+import com.yeyofone.core.voip.AudioRouteManager
 import com.yeyofone.core.voip.NativeCallEvent
 import com.yeyofone.core.voip.CallHistoryRepository
 import com.yeyofone.core.voip.NativeMediaEvent
@@ -37,6 +39,70 @@ import kotlin.test.assertTrue
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class CallCoordinatorTest {
+    private class TestAudioRoutes(val onPrepare: () -> Unit = {}) : AudioRouteManager {
+        override val availableRoutes = MutableStateFlow<List<AudioRoute>>(emptyList())
+        override val selectedRoute = MutableStateFlow<AudioRoute?>(null)
+        var prepared = false
+        var releases = 0
+        override suspend fun prepareForCall() { onPrepare(); prepared = true }
+        override suspend fun releaseAfterCall() {
+            if (prepared) releases++
+            prepared = false
+        }
+        override suspend fun select(route: AudioRoute) = Unit
+    }
+
+    @Test
+    fun `auto-answer prepares audio before answering without a view model`() = runTest {
+        val id = SipAccountId("one")
+        val gateway = FakeGateway()
+        val routes = TestAudioRoutes { assertTrue(gateway.answered.isEmpty()) }
+        val coordinator = CallCoordinator(
+            FakeAccounts(mapOf(id to account(id))), gateway, backgroundScope,
+            preferences = FakePreferences(id to AccountPreferences(autoAnswer = true)), audioRoutes = routes,
+        )
+        runCurrent()
+        gateway.emit("incoming-bt", id, PJSIP_INV_STATE_INCOMING, 0, direction = CallDirection.INCOMING)
+        runCurrent()
+        assertTrue(routes.prepared)
+        assertEquals(listOf("incoming-bt"), gateway.answered)
+        gateway.emit("incoming-bt", id, PJSIP_INV_STATE_DISCONNECTED, 200, direction = CallDirection.INCOMING)
+        runCurrent()
+        assertEquals(1, routes.releases)
+        assertTrue(coordinator.sessions.value.single().state is CallState.Disconnected)
+    }
+
+    @Test
+    fun `ending one of two calls preserves audio until the last call ends`() = runTest {
+        val id = SipAccountId("one")
+        val gateway = FakeGateway()
+        val routes = TestAudioRoutes()
+        val coordinator = CallCoordinator(FakeAccounts(mapOf(id to account(id))), gateway, backgroundScope, audioRoutes = routes)
+        runCurrent()
+        val first = coordinator.call(id, "1001")
+        val second = coordinator.call(id, "1002")
+        runCurrent()
+        gateway.emit(first.value, id, PJSIP_INV_STATE_DISCONNECTED, 200)
+        runCurrent()
+        assertTrue(routes.prepared)
+        assertEquals(0, routes.releases)
+        gateway.emit(second.value, id, PJSIP_INV_STATE_DISCONNECTED, 200)
+        runCurrent()
+        assertEquals(1, routes.releases)
+        assertTrue(!routes.prepared)
+    }
+
+    @Test
+    fun `failed call setup releases audio even without a native call event`() = runTest {
+        val id = SipAccountId("missing")
+        val routes = TestAudioRoutes()
+        val coordinator = CallCoordinator(FakeAccounts(emptyMap()), FakeGateway(), backgroundScope, audioRoutes = routes)
+        runCurrent()
+        assertFailsWith<IllegalStateException> { coordinator.call(id, "1001") }
+        assertEquals(1, routes.releases)
+        assertTrue(!routes.prepared)
+    }
+
     @Test
     fun `call reaches Connected when native reports CONFIRMED`() = runTest {
         val id = SipAccountId("one")

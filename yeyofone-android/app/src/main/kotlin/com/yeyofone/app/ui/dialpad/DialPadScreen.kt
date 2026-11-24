@@ -76,7 +76,7 @@ fun DialPadScreen(
         if (granted) viewModel.numberToCall()?.let(onCall)
     }
 
-    BoxWithConstraints(Modifier.fillMaxSize().background(KeypadBackground).systemBarsPadding()) {
+    BoxWithConstraints(Modifier.fillMaxSize().systemBarsPadding()) {
         val contentHeight = maxOf(maxHeight, 680.dp)
         Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
             Column(Modifier.fillMaxWidth().height(contentHeight)) {

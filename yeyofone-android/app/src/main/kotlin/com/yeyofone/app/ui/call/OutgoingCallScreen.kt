@@ -66,9 +66,7 @@ import com.yeyofone.app.ui.theme.AccentRed
 import com.yeyofone.app.ui.theme.CallBackground
 import com.yeyofone.app.ui.theme.CallTextPrimary
 import com.yeyofone.app.ui.theme.CallTextSecondary
-import com.yeyofone.app.ui.theme.PrimaryLight
 import com.yeyofone.app.ui.theme.CardWhite
-import com.yeyofone.app.ui.theme.PrimaryBorder
 import com.yeyofone.app.ui.theme.BorderLight
 import com.yeyofone.core.model.CallSession
 import com.yeyofone.core.model.CallState
@@ -101,7 +99,7 @@ fun OutgoingCallScreen(
     }
 
     Column(
-        Modifier.fillMaxSize().background(CallBackground).systemBarsPadding(),
+        Modifier.fillMaxSize().systemBarsPadding(),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Row(
@@ -214,7 +212,7 @@ private fun CallActionButton(
 ) {
     val background = when {
         destructive -> AccentRed
-        active -> PrimaryLight
+        active -> AccentBlue
         else -> CardWhite
     }
     Column(
@@ -229,18 +227,18 @@ private fun CallActionButton(
                     spotColor = if (destructive) AccentRed.copy(alpha = 0.4f) else Color.Black.copy(alpha = 0.05f))
                 .clip(CircleShape)
                 .background(if (enabled) background else background.copy(alpha = 0.45f))
-                .border(1.dp, if (destructive) AccentRed else if (active) PrimaryBorder else BorderLight, CircleShape),
+                .border(1.dp, if (destructive) AccentRed else if (active) AccentBlue else BorderLight, CircleShape),
             contentAlignment = Alignment.Center,
         ) {
             Icon(
                 icon,
                 null,
-                tint = if (destructive) Color.White else (if (active) AccentBlue else CallTextPrimary).copy(alpha = if (enabled) 1f else 0.4f),
+                tint = if (destructive || active) Color.White else CallTextPrimary.copy(alpha = if (enabled) 1f else 0.4f),
                 modifier = Modifier.size(24.dp),
             )
         }
         Spacer(Modifier.height(12.dp))
-        Text(label.uppercase(), fontSize = 12.sp, letterSpacing = 0.5.sp, fontWeight = FontWeight.SemiBold, color = CallTextSecondary)
+        Text(label.uppercase(), fontSize = 12.sp, letterSpacing = 0.5.sp, fontWeight = FontWeight.SemiBold, color = if (active) AccentBlue else CallTextSecondary)
     }
 }
 

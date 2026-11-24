@@ -83,10 +83,10 @@ fun LanguageSettingsScreen(onBack: () -> Unit) {
         return
     }
 
-    Scaffold(containerColor = BackgroundGray) { insets ->
+    Scaffold(containerColor = Color.Transparent) { insets ->
         Column(Modifier.fillMaxSize().padding(bottom = insets.calculateBottomPadding())) {
             Row(
-                Modifier.fillMaxWidth().background(CardWhite).statusBarsPadding()
+                Modifier.fillMaxWidth().statusBarsPadding()
                     .padding(start = 12.dp, top = 8.dp, end = 20.dp, bottom = 8.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {

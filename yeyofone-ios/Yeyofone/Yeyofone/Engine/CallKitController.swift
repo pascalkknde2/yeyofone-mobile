@@ -62,7 +62,13 @@ final class CallKitController: NSObject {
         update.supportsDTMF = true
         update.supportsGrouping = false
         update.supportsUngrouping = false
-        AudioController.configureSession()
+        do {
+            try AudioController.configureSession()
+        } catch {
+            EngineLog.note("Incoming audio configuration failed: \(error.localizedDescription)")
+            completion(.unavailable)
+            return
+        }
         provider.reportNewIncomingCall(with: id, update: update) { error in
             Task { @MainActor in
                 EngineLog.note("CallKit report \(id): \(error.map { "\(($0 as NSError).domain) \(($0 as NSError).code) \($0.localizedDescription)" } ?? "accepted")")
@@ -125,7 +131,11 @@ extension CallKitController: CXProviderDelegate {
     nonisolated func provider(_ provider: CXProvider, perform action: CXAnswerCallAction) {
         MainActor.assumeIsolated {
             EngineLog.note("CallKit answer action")
-            AudioController.configureSession()
+            do {
+                try AudioController.configureSession()
+            } catch {
+                EngineLog.note("CallKit audio configuration failed: \(error.localizedDescription)")
+            }
             handlers.answer(action.callUUID) { answered in
                 if answered { action.fulfill() } else { action.fail() }
             }

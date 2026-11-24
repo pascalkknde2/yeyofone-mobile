@@ -44,6 +44,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -83,11 +84,11 @@ fun ContactsScreen(
     }
 
     Scaffold(
-        containerColor = BackgroundGray,
+        containerColor = Color.Transparent,
         bottomBar = { BottomNavigationBar(CONTACTS_NAVIGATION, onNavigationItemSelected) },
     ) { padding ->
         Column(Modifier.fillMaxSize().padding(bottom = padding.calculateBottomPadding())) {
-            Column(Modifier.fillMaxWidth().background(CardWhite).statusBarsPadding()) {
+            Column(Modifier.fillMaxWidth().statusBarsPadding()) {
                 Row(
                     Modifier.fillMaxWidth().padding(start = 24.dp, top = 14.dp, end = 12.dp, bottom = 14.dp),
                     verticalAlignment = Alignment.CenterVertically,

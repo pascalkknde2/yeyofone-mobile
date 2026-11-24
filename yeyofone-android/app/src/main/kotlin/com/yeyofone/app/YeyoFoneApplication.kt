@@ -67,7 +67,7 @@ class YeyoFoneApplication : Application() {
     val engineUnsupported: Boolean
         get() = (engine.state.value as? EngineState.Failed)?.error?.safeMessage == PjsipEngine.NATIVE_LIBRARY_UNAVAILABLE
     val callManager by lazy {
-        CallCoordinator(accountRepository, engine, applicationScope, callHistory, accountPreferences, handoff = engine)
+        CallCoordinator(accountRepository, engine, applicationScope, callHistory, accountPreferences, handoff = engine, audioRoutes = audioRouteManager)
     }
     /** Continue calls across this account's devices (see HandoffCoordinator). */
     val handoff by lazy {

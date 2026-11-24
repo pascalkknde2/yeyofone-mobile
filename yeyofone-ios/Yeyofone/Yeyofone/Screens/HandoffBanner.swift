@@ -16,17 +16,17 @@ struct HandoffBanner: View {
         VStack(alignment: .leading, spacing: 12) {
             HStack(spacing: 12) {
                 Image(systemName: "laptopcomputer.and.iphone")
-                    .font(.system(size: 18, weight: .semibold))
+                    .appFont(size: 18, weight: .semibold)
                     .foregroundStyle(Color(hex: 0x93C5FD))
                     .frame(width: 40, height: 40)
                     .background(RoundedRectangle(cornerRadius: 12).fill(Color(hex: 0x1E3A5F)))
                     .accessibilityHidden(true)
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Continue call on this device?")
-                        .font(.system(size: 15, weight: .semibold))
+                        .appFont(size: 15, weight: .semibold)
                         .foregroundStyle(.white)
                     Text(verbatim: "\(offer.remoteName ?? offer.remote) · \(String(localized: "On your \(offer.deviceName)"))")
-                        .font(.system(size: 13))
+                        .appFont(size: 13)
                         .foregroundStyle(Color(hex: 0xCBD5E1))
                         .lineLimit(1)
                 }
@@ -46,7 +46,7 @@ struct HandoffBanner: View {
                         .background(Capsule().fill(Color(hex: 0x10B981)))
                 }
             }
-            .font(.system(size: 14, weight: .semibold))
+            .appFont(size: 14, weight: .semibold)
             .buttonStyle(PressScaleStyle())
         }
         .padding(14)

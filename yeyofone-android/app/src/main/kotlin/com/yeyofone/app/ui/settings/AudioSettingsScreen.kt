@@ -68,7 +68,7 @@ fun AudioSettingsScreen(
         return
     }
 
-    Scaffold(containerColor = BackgroundGray) { insets ->
+    Scaffold(containerColor = Color.Transparent) { insets ->
         Column(Modifier.fillMaxSize().padding(bottom = insets.calculateBottomPadding())) {
             AudioHeader(stringResource(R.string.audio_title), onBack)
             LazyColumn(
@@ -141,7 +141,7 @@ private fun Intent.ringtoneExtra(): Uri? = if (Build.VERSION.SDK_INT >= Build.VE
 @Composable
 private fun AudioHeader(title: String, onBack: () -> Unit) {
     Row(
-        Modifier.fillMaxWidth().background(CardWhite).statusBarsPadding()
+        Modifier.fillMaxWidth().statusBarsPadding()
             .padding(start = 12.dp, end = 20.dp, top = 8.dp, bottom = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {

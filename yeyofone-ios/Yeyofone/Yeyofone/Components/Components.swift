@@ -19,7 +19,7 @@ struct BottomNavigationBar: View {
                 let isSelected = tab == selected
                 Button { onSelect(tab) } label: {
                     Image(systemName: isSelected ? tab.selectedIcon : tab.icon)
-                        .font(.system(size: 19, weight: .medium))
+                        .appFont(size: 19, weight: .medium)
                         .foregroundStyle(isSelected ? Color.white : Palette.navInactive)
                         .frame(width: 44, height: 44)
                         .background(Circle().fill(isSelected ? Palette.accentBlue : .clear))
@@ -34,7 +34,7 @@ struct BottomNavigationBar: View {
         }
         .padding(.vertical, 8)
         .padding(.horizontal, 6)
-        .background(Capsule().fill(Palette.cardWhite))
+        .background(Capsule().fill(Palette.glass))
         .overlay(Capsule().stroke(Palette.borderLight.opacity(0.6), lineWidth: 1))
         .shadow(color: .black.opacity(0.08), radius: 10, y: 4)
         .padding(.horizontal, 20)
@@ -115,11 +115,11 @@ private struct DialKeyButton: View {
         Button(action: action) {
             VStack(spacing: 2) {
                 Text(key.number)
-                    .font(.system(size: ["*", "0", "#"].contains(key.number) ? 28 : 24, weight: .medium))
+                    .appFont(size: ["*", "0", "#"].contains(key.number) ? 28 : 24, weight: .medium)
                     .foregroundStyle(Palette.textPrimary)
                 if let letters = key.letters {
                     Text(letters)
-                        .font(.system(size: key.number == "0" ? 10 : 9, weight: .semibold))
+                        .appFont(size: key.number == "0" ? 10 : 9, weight: .semibold)
                         .tracking(1)
                         .foregroundStyle(Palette.inactiveGray)
                 }
@@ -151,7 +151,7 @@ struct DialedNumberDisplay: View {
     var body: some View {
         VStack(spacing: 8) {
             (number.isEmpty ? Text(placeholder) : Text(verbatim: number))
-                .font(.system(size: number.isEmpty ? 16 : 32, weight: number.isEmpty ? .regular : .medium))
+                .appFont(size: number.isEmpty ? 16 : 32, weight: number.isEmpty ? .regular : .medium)
                 .tracking(number.isEmpty ? 0 : 1)
                 .foregroundStyle(number.isEmpty ? Palette.inactiveGray : Palette.textPrimary)
                 .lineLimit(2)
@@ -159,7 +159,7 @@ struct DialedNumberDisplay: View {
                 .minimumScaleFactor(0.6)
             Button(action: onBackspace) {
                 Image(systemName: "delete.left")
-                    .font(.system(size: 24))
+                    .appFont(size: 24)
                     .foregroundStyle(Palette.textSecondary)
                     .frame(width: 48, height: 48)
             }
@@ -184,13 +184,13 @@ struct PrimaryCallActionButton: View {
         Button(action: action) {
             VStack(spacing: 16) {
                 Image(systemName: icon)
-                    .font(.system(size: 28, weight: .semibold))
+                    .appFont(size: 28, weight: .semibold)
                     .foregroundStyle(.white)
                     .frame(width: 72, height: 72)
                     .background(Circle().fill(color))
                     .shadow(color: color.opacity(0.3), radius: 8, y: 4)
                 Text(label)
-                    .font(.system(size: 14, weight: .semibold))
+                    .appFont(size: 14, weight: .semibold)
                     .tracking(0.5)
                     .textCase(.uppercase)
                     .foregroundStyle(Palette.textSecondary)
@@ -212,13 +212,13 @@ struct SecondaryCallActionButton: View {
         Button(action: action) {
             VStack(spacing: 6) {
                 Image(systemName: icon)
-                    .font(.system(size: 20))
+                    .appFont(size: 20)
                     .foregroundStyle(Palette.textPrimary)
                     .frame(width: 56, height: 56)
                     .background(Circle().fill(Palette.cardWhite))
                     .shadow(color: .black.opacity(0.1), radius: 4, y: 2)
                 Text(label)
-                    .font(.system(size: 11, weight: .medium))
+                    .appFont(size: 11, weight: .medium)
                     .foregroundStyle(Palette.textSecondary)
             }
         }
@@ -257,20 +257,19 @@ struct BackHeader: View {
         HStack(spacing: 4) {
             Button(action: onBack) {
                 Image(systemName: "arrow.left")
-                    .font(.system(size: 18, weight: .semibold))
+                    .appFont(size: 18, weight: .semibold)
                     .foregroundStyle(Palette.textPrimary)
                     .frame(width: 44, height: 44)
             }
             .accessibilityLabel("Back")
             Text(title)
-                .font(.system(size: 20, weight: .bold))
+                .appFont(size: 20, weight: .bold)
                 .foregroundStyle(Palette.textPrimary)
             Spacer()
         }
         .padding(.leading, 8)
         .padding(.trailing, 20)
         .padding(.vertical, 6)
-        .background(Palette.cardWhite)
     }
 }
 
@@ -284,13 +283,13 @@ struct CenteredBackHeader: View {
         HStack {
             Button(action: onBack) {
                 Image(systemName: icon)
-                    .font(.system(size: 18, weight: .semibold))
+                    .appFont(size: 18, weight: .semibold)
                     .foregroundStyle(Palette.textPrimary)
                     .frame(width: 48, height: 48)
             }
             Spacer()
             Text(title)
-                .font(.system(size: 18, weight: .bold))
+                .appFont(size: 18, weight: .bold)
                 .foregroundStyle(Palette.textPrimary)
             Spacer()
             Color.clear.frame(width: 48, height: 48)
@@ -308,7 +307,7 @@ struct TabHeader<Trailing: View>: View {
     var body: some View {
         HStack {
             Text(title)
-                .font(.system(size: 24, weight: .bold))
+                .appFont(size: 24, weight: .bold)
                 .tracking(-0.5)
                 .foregroundStyle(Palette.textPrimary)
             Spacer()
@@ -329,7 +328,7 @@ struct InitialsAvatar: View {
 
     var body: some View {
         Text(name.initials)
-            .font(.system(size: fontSize, weight: .bold))
+            .appFont(size: fontSize, weight: .bold)
             .foregroundStyle(foreground)
             .frame(width: size, height: size)
             .background(Circle().fill(background))
@@ -345,7 +344,7 @@ struct IconTile: View {
 
     var body: some View {
         Image(systemName: icon)
-            .font(.system(size: size * 0.45, weight: .medium))
+            .appFont(size: size * 0.45, weight: .medium)
             .foregroundStyle(tint)
             .frame(width: size, height: size)
             .background(RoundedRectangle(cornerRadius: corner).fill(background ?? tint.opacity(0.08)))
@@ -400,10 +399,10 @@ struct IconRow<Accessory: View>: View {
             IconTile(icon: icon, tint: tint, background: tileBackground)
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
-                    .font(.system(size: 15, weight: .semibold))
+                    .appFont(size: 15, weight: .semibold)
                     .foregroundStyle(Palette.textPrimary)
                 Text(subtitle)
-                    .font(.system(size: 13))
+                    .appFont(size: 13)
                     .foregroundStyle(Palette.textSecondary)
             }
             Spacer(minLength: 8)
@@ -424,7 +423,7 @@ extension IconRow where Accessory == Chevron {
 struct Chevron: View {
     var body: some View {
         Image(systemName: "chevron.right")
-            .font(.system(size: 13, weight: .semibold))
+            .appFont(size: 13, weight: .semibold)
             .foregroundStyle(Palette.inactiveGray)
     }
 }
@@ -459,7 +458,7 @@ struct ChipTabs: View {
                 let selected = selection == index
                 Button { selection = index } label: {
                     Text(titles[index])
-                        .font(.system(size: fontSize, weight: .semibold))
+                        .appFont(size: fontSize, weight: .semibold)
                         .foregroundStyle(selected ? Palette.accentBlue : Palette.textSecondary)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 8)
@@ -484,7 +483,7 @@ struct SearchField: View {
         HStack(spacing: 10) {
             Image(systemName: "magnifyingglass").foregroundStyle(Palette.inactiveGray)
             TextField(placeholder, text: $text)
-                .font(.system(size: 15))
+                .appFont(size: 15)
                 .foregroundStyle(Palette.textPrimary)
                 .autocorrectionDisabled()
             if !text.isEmpty {
@@ -506,11 +505,11 @@ struct EmptyStateView: View {
     var body: some View {
         VStack(spacing: 8) {
             Text(title)
-                .font(.system(size: 16, weight: .semibold))
+                .appFont(size: 16, weight: .semibold)
                 .foregroundStyle(Palette.textSecondary)
             if let subtitle {
                 Text(subtitle)
-                    .font(.system(size: 14))
+                    .appFont(size: 14)
                     .foregroundStyle(Palette.inactiveGray)
             }
         }
@@ -528,7 +527,7 @@ struct ToastModifier: ViewModifier {
         content.overlay(alignment: .bottom) {
             if let message {
                 Text(message)
-                    .font(.system(size: 14, weight: .medium))
+                    .appFont(size: 14, weight: .medium)
                     .foregroundStyle(Palette.textOnPrimary)
                     .padding(.horizontal, 18)
                     .padding(.vertical, 12)

@@ -23,14 +23,14 @@ struct DialPadScreen: View {
             HStack {
                 Button { store.screen = .home } label: {
                     Image(systemName: "chevron.left")
-                        .font(.system(size: 20, weight: .semibold))
+                        .appFont(size: 20, weight: .semibold)
                         .frame(width: 44, height: 44)
                 }
                 .accessibilityLabel("Back")
                 Spacer()
                 Button { store.select(.contacts) } label: {
                     Image(systemName: "person.badge.plus")
-                        .font(.system(size: 19))
+                        .appFont(size: 19)
                         .frame(width: 44, height: 44)
                 }
                 .accessibilityLabel("Add contact")
@@ -54,7 +54,6 @@ struct DialPadScreen: View {
                 .padding(.top, 28)
                 .padding(.bottom, 24)
         }
-        .background(Palette.keypadBackground)
     }
 
     private var callButton: some View {
@@ -72,7 +71,7 @@ struct DialPadScreen: View {
                 number = ""
             } label: {
                 Image(systemName: "phone.fill")
-                    .font(.system(size: 28))
+                    .appFont(size: 28)
                     .foregroundStyle(.white.opacity(number.isEmpty ? 0.65 : 1))
                     .frame(width: 72, height: 72)
                     .background(Circle().fill(Palette.accentGreen))

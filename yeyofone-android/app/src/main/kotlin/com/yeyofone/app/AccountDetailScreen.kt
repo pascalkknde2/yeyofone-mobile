@@ -54,7 +54,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.yeyofone.app.ui.theme.AccentGreen
 import com.yeyofone.app.ui.theme.AccentOrange
 import com.yeyofone.app.ui.theme.AccentRed
-import com.yeyofone.app.ui.theme.BackgroundGray
 import com.yeyofone.app.ui.theme.BorderLight
 import com.yeyofone.app.ui.theme.InactiveGray
 import com.yeyofone.app.ui.theme.PrimaryLight
@@ -74,7 +73,7 @@ import kotlinx.coroutines.withContext
 private val Ink get() = TextPrimary
 private val Gray get() = TextSecondary
 private val GrayMid get() = InactiveGray
-private val PageBackground get() = BackgroundGray
+private val PageBackground get() = androidx.compose.ui.graphics.Color.Transparent
 private val Success get() = AccentGreen
 private val Warning get() = AccentOrange
 private val Danger get() = AccentRed
@@ -132,6 +131,7 @@ fun AccountDetail(account: SipAccount, viewModel: YeyoFoneViewModel) {
             containerColor = MaterialTheme.colorScheme.background,
             topBar = {
                 CenterAlignedTopAppBar(
+                    colors = androidx.compose.material3.TopAppBarDefaults.centerAlignedTopAppBarColors(containerColor = androidx.compose.ui.graphics.Color.Transparent),
                     title = {
                         Text(stringResource(R.string.account_details), style = MaterialTheme.typography.titleLarge)
                     },

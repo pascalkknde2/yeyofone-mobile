@@ -160,7 +160,7 @@ fun SettingsScreen(
     }
 
     Scaffold(
-        containerColor = BackgroundGray,
+        containerColor = Color.Transparent,
         bottomBar = { BottomNavigationBar(SETTINGS_NAVIGATION, onNavigationItemSelected) },
     ) { padding ->
         Column(Modifier.fillMaxSize().padding(bottom = padding.calculateBottomPadding())) {
@@ -216,7 +216,7 @@ private fun SettingsHeader(
     onSearchToggle: () -> Unit,
 ) {
     Row(
-        Modifier.fillMaxWidth().background(CardWhite).statusBarsPadding()
+        Modifier.fillMaxWidth().statusBarsPadding()
             .padding(start = 24.dp, top = 14.dp, end = 12.dp, bottom = 14.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {

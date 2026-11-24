@@ -45,7 +45,7 @@ fun VideoSettingsScreen(onBack: () -> Unit) {
         R.string.gallery_view to R.string.gallery_view_subtitle,
     )
 
-    Scaffold(containerColor = BackgroundGray) { insets ->
+    Scaffold(containerColor = Color.Transparent) { insets ->
         Column(Modifier.fillMaxSize().padding(bottom = insets.calculateBottomPadding())) {
             Row(
                 Modifier.fillMaxWidth()

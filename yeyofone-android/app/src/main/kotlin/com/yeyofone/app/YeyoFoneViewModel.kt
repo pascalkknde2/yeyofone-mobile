@@ -113,7 +113,6 @@ class YeyoFoneViewModel(
     fun continueHandoff(offer: HandoffOffer) = launch {
         val coordinator = handoff ?: return@launch
         screen.value = AppScreen.Dial(offer.accountId, "")
-        audioRoutes.prepareForCall()
         activeCallId.value = runCatching { coordinator.takeOver(offer) }.getOrNull()
     }
 
@@ -291,7 +290,6 @@ class YeyoFoneViewModel(
     // An exception escaping viewModelScope.launch kills the app; placing a call can legitimately
     // fail (account disabled or not registered with the SIP stack, engine stopped), so report it instead.
     private suspend fun placeCall(accountId: SipAccountId, destination: String): CallId? = try {
-        audioRoutes.prepareForCall()
         calls.call(accountId, destination)
     } catch (error: CancellationException) {
         throw error
@@ -306,7 +304,6 @@ class YeyoFoneViewModel(
     }
 
     fun answer(callId: CallId) = launch {
-        audioRoutes.prepareForCall()
         activeCallId.value = callId
         calls.answer(callId)
     }
@@ -320,7 +317,6 @@ class YeyoFoneViewModel(
      */
     fun answerWaitingCall(waitingCallId: CallId, currentCallId: CallId?) = launch {
         if (currentCallId != null) media.setHeld(currentCallId, true)
-        audioRoutes.prepareForCall()
         activeCallId.value = waitingCallId
         calls.answer(waitingCallId)
     }
@@ -359,7 +355,19 @@ class YeyoFoneViewModel(
     fun observeMedia(callId: CallId): StateFlow<MediaState> = media.observe(callId)
     fun setMuted(callId: CallId, muted: Boolean) = launch { media.setMuted(callId, muted) }
     fun setHeld(callId: CallId, held: Boolean) = launch { media.setHeld(callId, held) }
-    fun selectAudioRoute(route: AudioRoute) = launch { audioRoutes.select(route) }
+    private val mutableAudioRouteErrors = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
+    val audioRouteErrors: SharedFlow<Unit> = mutableAudioRouteErrors.asSharedFlow()
+
+    fun selectAudioRoute(route: AudioRoute) = launch {
+        try {
+            audioRoutes.select(route)
+        } catch (error: CancellationException) {
+            throw error
+        } catch (error: Exception) {
+            runCatching { Log.w("YeyoFoneAudioRoute", "Could not select audio device", error) }
+            mutableAudioRouteErrors.tryEmit(Unit)
+        }
+    }
 
     private fun launch(block: suspend () -> Unit) = viewModelScope.launch { block() }
 
