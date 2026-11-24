@@ -228,7 +228,7 @@ struct SecondaryCallActionButton: View {
 
 /// Card-colored tray with rounded top corners holding a call screen's main actions.
 struct CallTray<Content: View>: View {
-    var background: Color = Palette.backgroundGray
+    var background: Color = Palette.glass
     @ViewBuilder let content: Content
 
     var body: some View {

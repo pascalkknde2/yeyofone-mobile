@@ -66,7 +66,6 @@ import com.yeyofone.app.data.model.toSipIdentity
 import com.yeyofone.app.ui.theme.AccentBlue
 import com.yeyofone.app.ui.theme.AccentGreen
 import com.yeyofone.app.ui.theme.AccentRed
-import com.yeyofone.app.ui.theme.CallBackground
 import com.yeyofone.app.ui.theme.CallTextPrimary
 import com.yeyofone.app.ui.theme.CallTextSecondary
 import com.yeyofone.app.ui.theme.CardWhite
@@ -134,7 +133,7 @@ fun OutgoingCallScreen(
             Modifier.fillMaxWidth()
                 .padding(start = 16.dp, end = 16.dp, bottom = 16.dp)
                 .shadow(4.dp, RoundedCornerShape(32.dp))
-                .background(CallBackground, RoundedCornerShape(32.dp))
+                .background(GlassCard, RoundedCornerShape(32.dp))
                 .padding(start = 24.dp, top = 32.dp, end = 24.dp, bottom = 32.dp),
             verticalArrangement = Arrangement.spacedBy(24.dp),
         ) {
