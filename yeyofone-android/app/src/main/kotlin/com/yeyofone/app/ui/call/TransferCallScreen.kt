@@ -43,6 +43,7 @@ import androidx.compose.ui.unit.sp
 import com.yeyofone.app.R
 import com.yeyofone.app.ui.components.DialPad
 import com.yeyofone.app.ui.components.PrimaryCallActionButton
+import com.yeyofone.app.ui.theme.Palette
 import com.yeyofone.app.ui.theme.AccentBlue
 import com.yeyofone.app.ui.theme.GlassCard
 import com.yeyofone.app.ui.theme.CallTextPrimary
@@ -115,7 +116,7 @@ fun TransferCallScreen(
         Row(
             Modifier.fillMaxWidth()
                 .padding(start = 16.dp, end = 16.dp, bottom = 16.dp)
-                .shadow(4.dp, RoundedCornerShape(32.dp))
+                .shadow(if (Palette.isDark) 0.dp else 4.dp, RoundedCornerShape(32.dp))
                 .background(GlassCard, RoundedCornerShape(32.dp))
                 .padding(start = 24.dp, top = 32.dp, end = 24.dp, bottom = 32.dp),
             horizontalArrangement = Arrangement.SpaceEvenly,

@@ -63,6 +63,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.yeyofone.app.R
 import com.yeyofone.app.data.model.toSipIdentity
+import com.yeyofone.app.ui.theme.Palette
 import com.yeyofone.app.ui.theme.AccentBlue
 import com.yeyofone.app.ui.theme.AccentGreen
 import com.yeyofone.app.ui.theme.AccentRed
@@ -132,7 +133,7 @@ fun OutgoingCallScreen(
         Column(
             Modifier.fillMaxWidth()
                 .padding(start = 16.dp, end = 16.dp, bottom = 16.dp)
-                .shadow(4.dp, RoundedCornerShape(32.dp))
+                .shadow(if (Palette.isDark) 0.dp else 4.dp, RoundedCornerShape(32.dp))
                 .background(GlassCard, RoundedCornerShape(32.dp))
                 .padding(start = 24.dp, top = 32.dp, end = 24.dp, bottom = 32.dp),
             verticalArrangement = Arrangement.spacedBy(24.dp),
@@ -219,7 +220,8 @@ private fun CallActionButton(
     val background = when {
         destructive -> AccentRed
         active -> AccentBlue
-        else -> GlassCard
+        // Translucent glass on the translucent tray would read as a second, differently coloured frame in dark mode.
+        else -> if (Palette.isDark) Color.Transparent else GlassCard
     }
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -231,7 +233,7 @@ private fun CallActionButton(
     ) {
         Box(
             Modifier.size(64.dp)
-                .shadow(if (destructive) 10.dp else 3.dp, CircleShape,
+                .shadow(if (destructive) 10.dp else if (Palette.isDark) 0.dp else 3.dp, CircleShape,
                     ambientColor = if (destructive) AccentRed.copy(alpha = 0.4f) else Color.Black.copy(alpha = 0.05f),
                     spotColor = if (destructive) AccentRed.copy(alpha = 0.4f) else Color.Black.copy(alpha = 0.05f))
                 .clip(CircleShape)

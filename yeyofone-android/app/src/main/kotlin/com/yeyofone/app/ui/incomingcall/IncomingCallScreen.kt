@@ -44,6 +44,7 @@ import com.yeyofone.app.R
 import com.yeyofone.app.data.model.toSipIdentity
 import com.yeyofone.app.ui.components.PrimaryCallActionButton
 import com.yeyofone.app.ui.components.SecondaryCallActionButton
+import com.yeyofone.app.ui.theme.Palette
 import com.yeyofone.app.ui.theme.AccentGreen
 import com.yeyofone.app.ui.theme.AccentRed
 import com.yeyofone.app.ui.theme.SuccessLight
@@ -141,7 +142,7 @@ fun IncomingCallScreen(
         Column(
             Modifier.fillMaxWidth()
                 .padding(start = 16.dp, end = 16.dp, bottom = 16.dp)
-                .shadow(4.dp, RoundedCornerShape(32.dp))
+                .shadow(if (Palette.isDark) 0.dp else 4.dp, RoundedCornerShape(32.dp))
                 .background(GlassCard, RoundedCornerShape(32.dp))
                 .padding(start = 24.dp, top = 32.dp, end = 24.dp, bottom = 32.dp),
             horizontalAlignment = Alignment.CenterHorizontally,

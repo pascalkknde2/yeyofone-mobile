@@ -58,6 +58,7 @@ import com.yeyofone.app.statusLabel
 import com.yeyofone.app.ui.components.DialPad
 import com.yeyofone.app.ui.components.PrimaryCallActionButton
 import com.yeyofone.app.ui.components.SecondaryCallActionButton
+import com.yeyofone.app.ui.theme.Palette
 import com.yeyofone.app.ui.theme.AccentBlue
 import com.yeyofone.app.ui.theme.AccentGreen
 import com.yeyofone.app.ui.theme.BorderLight
@@ -277,7 +278,7 @@ private fun ConsultDestinationTray(enabled: Boolean, onStart: () -> Unit) {
     Column(
         Modifier.fillMaxWidth()
             .padding(start = 16.dp, end = 16.dp, bottom = 16.dp)
-            .shadow(4.dp, RoundedCornerShape(32.dp))
+            .shadow(if (Palette.isDark) 0.dp else 4.dp, RoundedCornerShape(32.dp))
             .background(GlassCard, RoundedCornerShape(32.dp))
             .padding(start = 24.dp, top = 32.dp, end = 24.dp, bottom = 32.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -329,7 +330,7 @@ private fun ConsultationTray(session: CallSession, onCompleteTransfer: () -> Uni
     Column(
         Modifier.fillMaxWidth()
             .padding(start = 16.dp, end = 16.dp, bottom = 16.dp)
-            .shadow(4.dp, RoundedCornerShape(32.dp))
+            .shadow(if (Palette.isDark) 0.dp else 4.dp, RoundedCornerShape(32.dp))
             .background(GlassCard, RoundedCornerShape(32.dp))
             .padding(start = 24.dp, top = 32.dp, end = 24.dp, bottom = 32.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
