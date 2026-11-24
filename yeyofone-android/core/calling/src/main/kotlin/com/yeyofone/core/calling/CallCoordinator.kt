@@ -288,6 +288,16 @@ class CallCoordinator(
         }
     }
 
+    override suspend fun startRecording(callId: CallId, path: String) {
+        val session = sessions.value.firstOrNull { it.id == callId } ?: error("Call does not exist")
+        check(session.state == CallState.Connected) { "Only a connected call can be recorded" }
+        gateway.startRecording(callId.value, path)
+    }
+
+    override suspend fun stopRecording(callId: CallId) {
+        gateway.stopRecording(callId.value)
+    }
+
     override suspend fun mergeCalls(callId: CallId, otherCallId: CallId) {
         require(callId != otherCallId) { "A conference needs two different calls" }
         commandMutex.withLock {

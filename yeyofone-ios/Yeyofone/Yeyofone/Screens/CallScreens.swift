@@ -40,6 +40,16 @@ struct OutgoingCallScreen: View {
                     TimelineView(.periodic(from: .now, by: 1)) { context in
                         CallerIdentity(name: session.remoteName, status: status(at: context.date))
                     }
+                    if session.recording {
+                        HStack(spacing: 8) {
+                            Circle().fill(Palette.accentRed).frame(width: 8, height: 8)
+                            Text("Recording")
+                                .appFont(size: 12, weight: .bold)
+                                .foregroundStyle(Palette.accentRed)
+                        }
+                        .padding(.horizontal, 14).padding(.vertical, 6)
+                        .background(Capsule().fill(Palette.accentRed.opacity(0.12)))
+                    }
                 }
                 .padding(.horizontal, 24)
                 .padding(.vertical, 16)
@@ -431,9 +441,12 @@ struct CallOptionsScreen: View {
                             comingSoon = String(localized: "AI assistant")
                         }
                         RowDivider(leading: 18)
-                        OptionRow(icon: "record.circle", title: "Record",
-                                  subtitle: String(localized: "Save this call as a recording")) {
-                            comingSoon = String(localized: "Record")
+                        let recording = store.activeCall?.recording ?? false
+                        OptionRow(icon: "record.circle", title: recording ? "Stop recording" : "Record",
+                                  subtitle: recording ? String(localized: "This call is being recorded")
+                                                      : String(localized: "Save this call as a recording"),
+                                  iconTint: recording ? Palette.accentRed : Palette.accentBlue) {
+                            store.setRecording(!recording)
                         }
                         if store.availableRoutes.count > 1 {
                             RowDivider(leading: 18)
@@ -488,12 +501,13 @@ private struct OptionRow: View {
     let icon: String
     let title: LocalizedStringKey
     let subtitle: String
+    var iconTint: Color = Palette.accentBlue
     let action: () -> Void
 
     var body: some View {
         Button(action: action) {
             HStack(spacing: 14) {
-                IconTile(icon: icon, tint: Palette.accentBlue, background: Palette.primaryLight)
+                IconTile(icon: icon, tint: iconTint, background: Palette.primaryLight)
                 VStack(alignment: .leading, spacing: 2) {
                     Text(title)
                         .appFont(size: 15, weight: .semibold)

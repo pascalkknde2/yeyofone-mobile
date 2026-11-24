@@ -487,7 +487,30 @@ final class AppStore {
             return
         }
         if let consultation = consultationCall { engine.hangup(token: consultation.token) }
+        if call.recording { engine.recordStop(token: call.token) }
         engine.hangup(token: call.token)
+    }
+
+    /// Starts or stops recording the active call to Documents/recordings (a WAV named for the other party).
+    func setRecording(_ on: Bool) {
+        guard let engine, let call = activeCall, call.token != 0, call.recording != on else { return }
+        if on {
+            let folder = URL.documentsDirectory.appending(path: "recordings", directoryHint: .isDirectory)
+            try? FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+            let who = call.remoteName.replacingOccurrences(of: "[^A-Za-z0-9._-]+", with: "-", options: .regularExpression)
+                .trimmingCharacters(in: CharacterSet(charactersIn: "-"))
+            let formatter = DateFormatter()
+            formatter.locale = Locale(identifier: "en_US_POSIX")
+            formatter.dateFormat = "yyyyMMdd-HHmmss"
+            let stamp = formatter.string(from: .now)
+            let file = folder.appending(path: "\(who.isEmpty ? "call" : who)-\(stamp).wav")
+            engine.recordStart(token: call.token, path: file.path) { [weak self] code in
+                if code == 0 { self?.activeCall?.recording = true }
+            }
+        } else {
+            engine.recordStop(token: call.token)
+            activeCall?.recording = false
+        }
     }
 
     func sendDtmf(_ digit: String) {

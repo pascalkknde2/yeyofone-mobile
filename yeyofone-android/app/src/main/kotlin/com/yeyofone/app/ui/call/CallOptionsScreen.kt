@@ -62,6 +62,7 @@ import com.yeyofone.app.ui.components.SecondaryCallActionButton
 import com.yeyofone.app.ui.theme.Palette
 import com.yeyofone.app.ui.theme.AccentBlue
 import com.yeyofone.app.ui.theme.AccentGreen
+import com.yeyofone.app.ui.theme.AccentRed
 import com.yeyofone.app.ui.theme.BorderLight
 import com.yeyofone.app.ui.theme.CallTextPrimary
 import com.yeyofone.app.ui.theme.CallTextSecondary
@@ -88,6 +89,8 @@ fun CallOptionsScreen(
     consultationSession: CallSession?,
     conferenceMerged: Boolean,
     onMergeCalls: () -> Unit,
+    recording: Boolean,
+    onRecordingChange: (Boolean) -> Unit,
     onStartConsultation: (String) -> Unit,
     onCompleteTransfer: () -> Unit,
     onReturnToCaller: () -> Unit,
@@ -185,12 +188,14 @@ fun CallOptionsScreen(
                         onClick = { comingSoon = aiTitle },
                     )
                     OptionDivider()
-                    val recordTitle = stringResource(R.string.record_call)
                     CallOptionRow(
                         icon = Icons.Default.FiberManualRecord,
-                        title = recordTitle,
-                        subtitle = stringResource(R.string.call_options_record_subtitle),
-                        onClick = { comingSoon = recordTitle },
+                        title = stringResource(if (recording) R.string.stop_recording else R.string.record_call),
+                        subtitle = stringResource(
+                            if (recording) R.string.call_options_recording_subtitle else R.string.call_options_record_subtitle,
+                        ),
+                        iconTint = if (recording) AccentRed else AccentBlue,
+                        onClick = { onRecordingChange(!recording) },
                     )
                     if (availableRoutes.size > 1) {
                         OptionDivider()
@@ -414,13 +419,19 @@ private fun CallOptionsGroup(content: @Composable () -> Unit) {
 }
 
 @Composable
-private fun CallOptionRow(icon: ImageVector, title: String, subtitle: String, onClick: () -> Unit) {
+private fun CallOptionRow(
+    icon: ImageVector,
+    title: String,
+    subtitle: String,
+    iconTint: androidx.compose.ui.graphics.Color = AccentBlue,
+    onClick: () -> Unit,
+) {
     Row(
         Modifier.fillMaxWidth().clickable(onClick = onClick).padding(horizontal = 18.dp, vertical = 16.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Box(Modifier.size(40.dp).clip(RoundedCornerShape(12.dp)).background(PrimaryLight), contentAlignment = Alignment.Center) {
-            Icon(icon, null, tint = AccentBlue, modifier = Modifier.size(20.dp))
+            Icon(icon, null, tint = iconTint, modifier = Modifier.size(20.dp))
         }
         Column(Modifier.weight(1f).padding(start = 14.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
             Text(title, fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = CallTextPrimary)
