@@ -68,7 +68,12 @@ final class AppStore {
     /// A call on another device of the account that can be continued here ("Continue call on this device?").
     var handoffOffer: HandoffOffer?
     var incomingCall: CallSession?
-    var consultationCall: CallSession?
+    var consultationCall: CallSession? {
+        // The conference is over once the second leg is gone.
+        didSet { if consultationCall == nil { conferenceMerged = false } }
+    }
+    /// The active call and the consultation call have been merged into a three-way conference.
+    var conferenceMerged = false
     var callPage: CallPage = .main
     var endedSummary: CallSummary?
     /// The AI assistant's notes for the call in `endedSummary`, once it has started on them.
@@ -588,6 +593,25 @@ final class AppStore {
             guard let self, code != 0 else { return }
             pendingTransfers.remove(call.token)
             notice = String(localized: "Transfer failed")
+        }
+    }
+
+    /// Joins the held call and the consultation call into one three-way conference.
+    func mergeCalls() {
+        guard let call = activeCall, let consultation = consultationCall, consultation.state == .connected else { return }
+        guard let engine else {
+            conferenceMerged = true
+            return
+        }
+        engine.merge(first: call.token, second: consultation.token) { [weak self] code in
+            guard let self else { return }
+            if code == 0 {
+                conferenceMerged = true
+                activeCall?.held = false
+                if activeCall?.connectedAt != nil { activeCall?.state = .connected }
+            } else {
+                notice = String(localized: "Could not merge the calls")
+            }
         }
     }
 

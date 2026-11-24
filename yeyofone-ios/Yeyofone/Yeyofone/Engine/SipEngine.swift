@@ -255,6 +255,11 @@ nonisolated final class SipEngine: Thread, @unchecked Sendable {
         }
     }
 
+    /// Joins two connected calls into one three-way conference, resuming whichever is on hold.
+    func merge(first: UInt64, second: UInt64, completion: Completion? = nil) {
+        run(completion) { yv_call_merge($0, first, second) }
+    }
+
     /// Records both sides of the call to a WAV file at `path` until `recordStop`.
     func recordStart(token: UInt64, path: String, completion: Completion? = nil) {
         run(completion) { handle in
