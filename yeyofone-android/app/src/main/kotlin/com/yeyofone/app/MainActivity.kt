@@ -353,8 +353,10 @@ private fun AccountsApp(
     } else null
     // The attended-transfer consultation leg is our own outgoing call, already shown (with its
     // Complete/Return actions) by CallOptionsScreen - it must never surface as a "waiting" call.
+    // Everyone on (or being added to) a conference is shown on the conference stage, never as a waiting call.
     val waitingCall = nonTerminal.firstOrNull {
-        it.id != activeCall?.id && it.id != primaryRinging?.id && it.id != state.consultationCallId
+        it.id != activeCall?.id && it.id != primaryRinging?.id && it.id != state.consultationCallId &&
+            it.id != state.pendingConferenceCallId && it.id !in state.conferenceCallIds
     }
     // Outgoing calls keep using AppScreen.Dial's own OutgoingCallScreen rendering below; only an
     // incoming call (ringing, or already answered) uses the IncomingCallScreen wrapper.
