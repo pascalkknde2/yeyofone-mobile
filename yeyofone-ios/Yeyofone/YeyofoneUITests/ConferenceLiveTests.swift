@@ -79,7 +79,8 @@ final class ConferenceLiveTests: XCTestCase {
         XCTAssertTrue(timer.waitForExistence(timeout: 30) || conference.waitForExistence(timeout: 30), "Call didn't connect")
         snap("3-connected")
         XCTAssertTrue(conference.waitForExistence(timeout: 60), "Organiser's conference screen never appeared")
-        sleep(10)
+        // Stay long enough for someone to speak into this phone (YF_STAY_SECONDS, 10 by default).
+        sleep(UInt32(environment["YF_STAY_SECONDS"] ?? "10") ?? 10)
         snap("4-in-conference")
         button(named: "Hang up").tap()
         snap("5-ended")

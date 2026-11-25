@@ -680,7 +680,7 @@ final class AppStore {
                 // Token 0 reads the microphone; skip it while muted so silence isn't shown as speech.
                 if !(activeCall?.muted ?? false) { sources.append(("you", 0)) }
                 let now = Date()
-                for (id, token) in sources where await engine.level(token: token) > 15 { lastLoud[id] = now }
+                for (id, token) in sources where await engine.level(token: token) > 8 { lastLoud[id] = now }
                 // Keep the ring on briefly after a voice drops so it doesn't flicker between words.
                 let current = Set(lastLoud.filter { now.timeIntervalSince($0.value) < 0.5 }.keys)
                 if current != speaking { speaking = current }
