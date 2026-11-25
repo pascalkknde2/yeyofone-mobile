@@ -571,7 +571,7 @@ final class AppStore {
         }
     }
 
-    func startConsultation(to destination: String) {
+    func startConsultation(to destination: String, keepingCallLive: Bool = false) {
         let number = destination.trimmingCharacters(in: .whitespaces)
         guard !number.isEmpty, activeCall != nil, consultationCall == nil else { return }
         guard let engine else {
@@ -583,7 +583,7 @@ final class AppStore {
         let token = newCallToken()
         consultationCall = CallSession(token: token, remoteName: contactName(for: number) ?? number,
                                        remoteNumber: number, direction: .outgoing, state: .calling)
-        engine.startCall(account: accountToken, token: token, uri: sipUri(number, account: account)) { [weak self] code in
+        engine.startCall(account: accountToken, token: token, uri: sipUri(number, account: account), keepingCallLive: keepingCallLive) { [weak self] code in
             guard let self, code != 0, consultationCall?.token == token else { return }
             consultationCall = nil
             notice = String(localized: "Call failed")
@@ -633,7 +633,7 @@ final class AppStore {
     func addPerson(_ contact: Contact) {
         guard activeCall != nil, consultationCall == nil, !conferenceMerged else { return }
         addingPerson = true
-        startConsultation(to: contact.number)
+        startConsultation(to: contact.number, keepingCallLive: true)
         if consultationCall == nil { addingPerson = false }
         callPage = .main
     }

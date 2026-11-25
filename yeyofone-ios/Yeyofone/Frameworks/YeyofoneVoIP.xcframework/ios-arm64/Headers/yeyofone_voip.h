@@ -25,6 +25,8 @@ int32_t yv_call_answer_deferred(struct YvHandle*, uint64_t token) YV_NOEXCEPT;
 int32_t yv_call_reject(struct YvHandle*, uint64_t token, int32_t status) YV_NOEXCEPT;
 int32_t yv_call_reject(struct YvHandle*, uint64_t token, int32_t status) YV_NOEXCEPT;
 int32_t yv_call_start(struct YvHandle*, uint64_t account, uint64_t token, const uint8_t* uri, uint32_t len, int32_t audio) YV_NOEXCEPT;
+/* Like yv_call_start, but the call in progress may stay live (not on hold), to dial someone into a conference. */
+int32_t yv_call_start_live(struct YvHandle*, uint64_t account, uint64_t token, const uint8_t* uri, uint32_t len, int32_t audio) YV_NOEXCEPT;
 int32_t yv_call_snapshot(struct YvHandle*, uint64_t token, struct YvCall*) YV_NOEXCEPT;
 int32_t yv_call_hangup(struct YvHandle*, uint64_t token) YV_NOEXCEPT;
 struct YvCallControls { int32_t held; int32_t transfer_pending; int32_t transfer_code; };
