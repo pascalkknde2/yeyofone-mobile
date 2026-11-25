@@ -580,6 +580,18 @@
   font-size: 14px;
   font-weight: 600;
 }
+.room-control-buttons .room-quality button[aria-checked="true"] {
+  background: var(--room-tint);
+}
+.room-control-buttons .room-quality button[aria-checked="true"] span {
+  color: var(--room-accent-strong);
+}
+.room-quality__note {
+  margin: 4px 8px 6px;
+  color: var(--room-ink-muted);
+  font-size: 12px;
+  line-height: 1.4;
+}
 .room-share__menu small {
   color: var(--room-ink-muted);
   font-size: 12px;

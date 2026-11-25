@@ -81,3 +81,44 @@ test("the speaking badge needs a clear rise and a clear fall", () => {
   expect(nextTalking(0.03, true)).toBe(true); // stays on between thresholds
   expect(nextTalking(0.01, true)).toBe(false);
 });
+
+import {
+  levelForNetwork,
+  levelLabelForHeight,
+  resolveLevel,
+  videoConstraints,
+} from "../src/roomMedia";
+
+test("the camera starts at 4K when nothing is known about the network", () => {
+  expect(levelForNetwork(null)).toBe("2160p");
+  expect(resolveLevel("auto", null)).toBe("2160p");
+  expect(videoConstraints("2160p")).toMatchObject({
+    width: { ideal: 3840 },
+    height: { ideal: 2160 },
+  });
+});
+
+test("auto steps the camera down as the network gets slower", () => {
+  expect(levelForNetwork({ downlink: 10 })).toBe("2160p");
+  expect(levelForNetwork({ downlink: 6 })).toBe("1080p");
+  expect(levelForNetwork({ downlink: 3 })).toBe("720p");
+  expect(levelForNetwork({ downlink: 1.5 })).toBe("480p");
+  expect(levelForNetwork({ downlink: 0.4 })).toBe("360p");
+  expect(levelForNetwork({ effectiveType: "3g" })).toBe("480p");
+  expect(levelForNetwork({ downlink: 10, rtt: 600 })).toBe("1080p");
+  expect(levelForNetwork({ downlink: 10, saveData: true })).toBe("480p");
+  expect(levelForNetwork({ offline: true })).toBe("360p");
+});
+
+test("a level picked by hand is used as it is", () => {
+  expect(resolveLevel("720p", { downlink: 10 })).toBe("720p");
+  expect(resolveLevel("2160p", { downlink: 0.4 })).toBe("2160p");
+});
+
+test("the delivered height is named as a quality level", () => {
+  expect(levelLabelForHeight(2160)).toBe("4K");
+  expect(levelLabelForHeight(1080)).toBe("1080p");
+  expect(levelLabelForHeight(720)).toBe("720p");
+  expect(levelLabelForHeight(480)).toBe("480p");
+  expect(levelLabelForHeight(undefined)).toBe("");
+});
