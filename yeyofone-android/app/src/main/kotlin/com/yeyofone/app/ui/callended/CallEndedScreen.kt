@@ -144,18 +144,15 @@ fun CallEndedScreen(
             }
         }
 
-        Column(
-            Modifier.fillMaxWidth()
-                .padding(start = 16.dp, end = 16.dp, bottom = 16.dp)
-                .shadow(if (Palette.isDark) 0.dp else 4.dp, RoundedCornerShape(32.dp))
-                .background(GlassCard, RoundedCornerShape(32.dp))
-                .padding(start = 24.dp, top = 32.dp, end = 24.dp, bottom = 32.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
+        // No surrounding card: the two actions sit side by side on the screen background.
+        Row(
+            Modifier.fillMaxWidth().padding(start = 24.dp, end = 24.dp, top = 16.dp, bottom = 40.dp),
+            horizontalArrangement = Arrangement.SpaceEvenly,
+            verticalAlignment = Alignment.Top,
         ) {
             PrimaryCallActionButton(Icons.Default.Call, stringResource(R.string.call_again), AccentGreen, onCallAgain)
             if (onSendMessage != null) {
-                Spacer(Modifier.height(28.dp))
-                SecondaryCallActionButton(Icons.Outlined.ChatBubbleOutline, stringResource(R.string.send_message), onSendMessage)
+                PrimaryCallActionButton(Icons.Outlined.ChatBubbleOutline, stringResource(R.string.send_message), AccentBlue, onSendMessage)
             }
         }
     }

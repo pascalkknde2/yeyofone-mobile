@@ -397,12 +397,15 @@ struct CallEndedScreen: View {
             .scrollBounceBehavior(.basedOnSize)
             .defaultScrollAnchor(.center)
 
-            CallTray(background: Palette.glass) {
+            // No surrounding card: the two actions sit side by side on the screen background.
+            HStack(alignment: .top) {
+                Spacer()
                 PrimaryCallActionButton(icon: "phone.fill", label: "Call Again", color: Palette.accentGreen) {
                     store.callAgain()
                 }
                 #if DEBUG
-                SecondaryCallActionButton(icon: "bubble.left", label: "Send message") {
+                Spacer()
+                PrimaryCallActionButton(icon: "bubble.left.fill", label: "Send message", color: Palette.accentBlue) {
                     store.chatContactName = summary.callerName
                     store.chatContactOnline = false
                     store.chatMessages = []
@@ -410,9 +413,12 @@ struct CallEndedScreen: View {
                     store.endedSummary = nil
                     store.screen = .chat
                 }
-                .padding(.top, 28)
                 #endif
+                Spacer()
             }
+            .padding(.horizontal, 24)
+            .padding(.top, 16)
+            .padding(.bottom, 40)
         }
     }
 
