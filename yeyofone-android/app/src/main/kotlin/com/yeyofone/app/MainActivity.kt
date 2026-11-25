@@ -80,6 +80,9 @@ import com.yeyofone.app.data.model.toSipIdentity
 import com.yeyofone.app.data.repository.CallRepository
 import com.yeyofone.app.ui.accounts.AccountsScreen
 import com.yeyofone.app.ui.call.CallOptionsScreen
+import com.yeyofone.app.ui.call.ConferenceScreen
+import com.yeyofone.app.ui.call.ConferenceUi
+import com.yeyofone.app.ui.call.ContactPickerScreen
 import com.yeyofone.app.ui.call.OutgoingCallScreen
 import com.yeyofone.app.ui.call.TransferCallScreen
 import com.yeyofone.app.ui.call.InCallKeypadScreen
@@ -492,7 +495,7 @@ private fun AccountsApp(
                     availableRoutes = state.availableRoutes,
                     selectedRoute = state.selectedRoute,
                     consultationSession = consultationSession,
-                    conferenceMerged = state.conferenceMerged,
+                    conference = conferenceUi(viewModel, state, contacts, activeSession),
                     speakingIds = speaking,
                     recording = activeSession.id in state.recordingCallIds,
                     assistant = activeSession.id in state.assistantCallIds,
@@ -791,7 +794,7 @@ private fun IncomingCallScreen(
             availableRoutes = state.availableRoutes,
             selectedRoute = state.selectedRoute,
             consultationSession = consultationSession,
-            conferenceMerged = state.conferenceMerged,
+            conference = conferenceUi(viewModel, state, contacts, current),
                     speakingIds = speaking,
             recording = current.id in state.recordingCallIds,
             assistant = current.id in state.assistantCallIds,
@@ -927,7 +930,7 @@ private fun OutgoingCallHost(
     availableRoutes: List<AudioRoute>,
     selectedRoute: AudioRoute?,
     consultationSession: CallSession?,
-    conferenceMerged: Boolean,
+    conference: ConferenceUi,
     speakingIds: Set<String>,
     recording: Boolean,
     onRecordingChange: (Boolean) -> Unit,
@@ -949,7 +952,28 @@ private fun OutgoingCallHost(
     var transferOpen by remember(session.id) { mutableStateOf(false) }
     var moreOpen by remember(session.id) { mutableStateOf(false) }
     var keypadOpen by remember(session.id) { mutableStateOf(false) }
+    var pickingPerson by remember(session.id) { mutableStateOf(false) }
     when {
+        pickingPerson -> ContactPickerScreen(
+            contacts = conference.contacts,
+            alreadyInCall = conference.numbersInCall + session.remoteUri.toSipIdentity().extension,
+            onPick = {
+                conference.onAdd(it)
+                pickingPerson = false
+                moreOpen = false
+            },
+            onBack = { pickingPerson = false },
+        )
+        conference.active -> ConferenceScreen(
+            conference = conference,
+            muted = media.muted,
+            speakerOn = speakerOn,
+            onSpeakerChange = onSpeakerChange,
+            recording = recording,
+            onRecordingChange = onRecordingChange,
+            speakingIds = speakingIds,
+            onAddPerson = { pickingPerson = true },
+        )
         keypadOpen -> InCallKeypadScreen(
             session = session,
             media = media,
@@ -973,9 +997,7 @@ private fun OutgoingCallHost(
             onSelectRoute = onSelectRoute,
             heldCallerName = session.remoteUri.toSipIdentity().displayName,
             consultationSession = consultationSession,
-            conferenceMerged = conferenceMerged,
-            muted = media.muted,
-            speakingIds = speakingIds,
+            onAddPerson = { pickingPerson = true },
             recording = recording,
             onRecordingChange = onRecordingChange,
             assistant = assistant,
@@ -1464,3 +1486,22 @@ private fun editorFieldColors() = OutlinedTextFieldDefaults.colors(
     focusedContainerColor = BackgroundGray,
     unfocusedContainerColor = BackgroundGray,
 )
+
+/** Gathers who is on the conference and the actions the conference screen and add-people flow call. */
+private fun conferenceUi(
+    viewModel: YeyoFoneViewModel,
+    state: YeyoFoneUiState,
+    contacts: List<Contact>,
+    active: CallSession,
+): ConferenceUi {
+    val byId = state.sessions.associateBy { it.id }
+    return ConferenceUi(
+        members = state.conferenceCallIds.mapNotNull { byId[it] },
+        pending = state.pendingConferenceCallId?.let { byId[it] },
+        contacts = contacts,
+        onAdd = { viewModel.addToConference(active.id, active.accountId, it.number) },
+        onRemove = viewModel::removeFromConference,
+        onEnd = viewModel::endConference,
+        onMute = viewModel::setConferenceMuted,
+    )
+}

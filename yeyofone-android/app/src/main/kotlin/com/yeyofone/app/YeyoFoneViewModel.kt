@@ -15,6 +15,7 @@ import com.yeyofone.core.model.AccountPreferences
 import com.yeyofone.core.model.AudioRoute
 import com.yeyofone.core.model.CallId
 import com.yeyofone.core.model.CallSession
+import com.yeyofone.core.model.CallState
 import com.yeyofone.core.model.Contact
 import com.yeyofone.core.model.ContactId
 import com.yeyofone.core.model.ForwardingState
@@ -83,6 +84,10 @@ data class YeyoFoneUiState(
     val consultationCallId: CallId? = null,
     /** True once the consultation call has been merged into a three-way conference. */
     val conferenceMerged: Boolean = false,
+    /** Everyone joined into the conference, in the order they joined. Empty when there is none. */
+    val conferenceCallIds: List<CallId> = emptyList(),
+    /** Someone being added to the conference who has not answered yet. */
+    val pendingConferenceCallId: CallId? = null,
     /** Calls currently being recorded to a file. */
     val recordingCallIds: Set<CallId> = emptySet(),
     /** Calls where the AI assistant is on; its notes are made when the call ends. */
@@ -100,6 +105,8 @@ private data class CallSelection(
     val recording: Set<CallId>,
     val assistant: Set<CallId>,
     val notes: Map<CallId, com.yeyofone.app.ai.NotesState>,
+    val conferenceMembers: List<CallId>,
+    val pendingConference: CallId?,
 )
 
 private data class CoreUiState(
@@ -145,6 +152,9 @@ class YeyoFoneViewModel(
     private val activeCallId = MutableStateFlow<CallId?>(null)
     private val consultationCallId = MutableStateFlow<CallId?>(null)
     private val conferenceMerged = MutableStateFlow(false)
+    private val conferenceMembers = MutableStateFlow<List<CallId>>(emptyList())
+    private val pendingConferenceCall = MutableStateFlow<CallId?>(null)
+    private var autoMergingCall: CallId? = null
     private val recordingCallIds = MutableStateFlow<Set<CallId>>(emptySet())
     private val assistantCallIds = MutableStateFlow<Set<CallId>>(emptySet())
     private val callNotes = MutableStateFlow<Map<CallId, com.yeyofone.app.ai.NotesState>>(emptyMap())
@@ -154,7 +164,7 @@ class YeyoFoneViewModel(
     private val dismissedIncomingCalls = MutableStateFlow<Set<CallId>>(emptySet())
 
     private val _speaking = MutableStateFlow<Set<String>>(emptySet())
-    /** Who is talking in the conference: "you", "held" (the original caller) and/or "consult". */
+    /** Who is talking in the conference: "you" and/or the call id of each person. */
     val speaking: StateFlow<Set<String>> = _speaking
 
     // Re-subscribes to each account's preferences whenever the account list itself changes;
@@ -186,9 +196,11 @@ class YeyoFoneViewModel(
         coreUiState,
         combine(
             activeCallId, consultationCallId, dismissedIncomingCalls, conferenceMerged,
-            combine(recordingCallIds, assistantCallIds, callNotes) { r, a, n -> Triple(r, a, n) },
+            combine(recordingCallIds, assistantCallIds, callNotes, conferenceMembers, pendingConferenceCall) { r, a, n, m, p ->
+                CallSelection(null, null, emptySet(), false, r, a, n, m, p)
+            },
         ) { active, consultation, dismissed, merged, extras ->
-            CallSelection(active, consultation, dismissed, merged, extras.first, extras.second, extras.third)
+            extras.copy(active = active, consultation = consultation, dismissed = dismissed, merged = merged)
         },
     ) { core, callSelection ->
         YeyoFoneUiState(
@@ -203,6 +215,8 @@ class YeyoFoneViewModel(
             recordingCallIds = callSelection.recording,
             assistantCallIds = callSelection.assistant,
             callNotes = callSelection.notes,
+            conferenceCallIds = callSelection.conferenceMembers,
+            pendingConferenceCallId = callSelection.pendingConference,
             dismissedIncomingCalls = callSelection.dismissed,
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), YeyoFoneUiState())
@@ -226,11 +240,7 @@ class YeyoFoneViewModel(
                 // A recording ends with its call (the engine finalizes the file on disconnect).
                 val live = sessions.filter { !it.state.isTerminal() }.map { it.id }.toSet()
                 if (!live.containsAll(recordingCallIds.value)) recordingCallIds.update { it intersect live }
-                // The conference is over once the consultation leg is gone.
-                val consultation = sessions.firstOrNull { it.id == consultationCallId.value }
-                if (conferenceMerged.value && (consultation == null || consultation.state.isTerminal())) {
-                    conferenceMerged.value = false
-                }
+                updateConference(sessions)
             }
         }
     }
@@ -243,12 +253,11 @@ class YeyoFoneViewModel(
             val lastLoud = mutableMapOf<String, Long>()
             while (true) {
                 val now = android.os.SystemClock.elapsedRealtime()
-                val held = activeCallId.value
-                val consult = consultationCallId.value
+                val members = conferenceMembers.value + listOfNotNull(pendingConferenceCall.value)
+                val first = members.firstOrNull()
                 val levels = buildMap {
-                    if (held != null) put("held", runCatching { calls.inputLevel(held) }.getOrDefault(0f))
-                    if (consult != null) put("consult", runCatching { calls.inputLevel(consult) }.getOrDefault(0f))
-                    put("you", if (held != null && media.observe(held).value.muted) 0f else runCatching { calls.inputLevel(null) }.getOrDefault(0f))
+                    members.forEach { put(it.value, runCatching { calls.inputLevel(it) }.getOrDefault(0f)) }
+                    put("you", if (first != null && media.observe(first).value.muted) 0f else runCatching { calls.inputLevel(null) }.getOrDefault(0f))
                 }
                 levels.forEach { (id, level) -> if (level > SPEAKING_LEVEL) lastLoud[id] = now }
                 // Keep the ring on briefly after a voice drops so it doesn't flicker between words.
@@ -256,6 +265,66 @@ class YeyoFoneViewModel(
                 kotlinx.coroutines.delay(200)
             }
         }
+    }
+
+    /**
+     * Keeps the conference in step with the calls: drops people who hung up, ends the conference when
+     * fewer than two remain, and joins a person being added as soon as they answer.
+     */
+    private fun updateConference(sessions: List<CallSession>) {
+        val byId = sessions.associateBy { it.id }
+        val live = conferenceMembers.value.filter { byId[it]?.state?.isTerminal() == false }
+        if (live != conferenceMembers.value) conferenceMembers.value = live
+        val pending = pendingConferenceCall.value
+        val pendingSession = pending?.let { byId[it] }
+        if (pending != null && (pendingSession == null || pendingSession.state.isTerminal())) {
+            pendingConferenceCall.value = null
+            if (autoMergingCall == pending) autoMergingCall = null
+        }
+        if (live.size < 2 && pendingConferenceCall.value == null && (live.isNotEmpty() || conferenceMerged.value)) {
+            conferenceMembers.value = emptyList()
+            conferenceMerged.value = false
+        }
+        if (pendingSession != null && pendingSession.state == CallState.Connected && live.isNotEmpty() && autoMergingCall != pending) {
+            autoMergingCall = pending
+            val anchor = live.first()
+            viewModelScope.launch {
+                try {
+                    calls.mergeCalls(anchor, pendingSession.id)
+                    // Someone joining while you are muted must not hear you either.
+                    if (media.observe(anchor).value.muted) media.setMuted(pendingSession.id, true)
+                    conferenceMembers.update { if (pendingSession.id in it) it else it + pendingSession.id }
+                    conferenceMerged.value = true
+                    consultationCallId.value = null
+                    pendingConferenceCall.value = null
+                } catch (error: CancellationException) {
+                    throw error
+                } catch (error: Exception) {
+                    runCatching { Log.w("YeyoFoneCall", "Adding to conference failed", error) }
+                    runCatching { calls.end(pendingSession.id) }
+                } finally {
+                    autoMergingCall = null
+                }
+            }
+        }
+    }
+
+    /** Calls [destination] and joins them to the conference (starting one with [activeId]) once they answer. */
+    fun addToConference(activeId: CallId, accountId: SipAccountId, destination: String) = launch {
+        val id = placeCall(accountId, destination) ?: return@launch
+        if (conferenceMembers.value.isEmpty()) conferenceMembers.value = listOf(activeId)
+        pendingConferenceCall.value = id
+    }
+
+    fun removeFromConference(callId: CallId) = launch { calls.end(callId) }
+
+    fun endConference() = launch {
+        (conferenceMembers.value + listOfNotNull(pendingConferenceCall.value)).forEach { runCatching { calls.end(it) } }
+    }
+
+    /** Mutes or unmutes the microphone for everyone in the conference. */
+    fun setConferenceMuted(muted: Boolean) = launch {
+        (conferenceMembers.value + listOfNotNull(pendingConferenceCall.value)).forEach { media.setMuted(it, muted) }
     }
 
     fun showHome() { screen.value = AppScreen.Home }
@@ -483,6 +552,8 @@ class YeyoFoneViewModel(
     fun mergeCalls(callId: CallId, consultationId: CallId) = launch {
         try {
             calls.mergeCalls(callId, consultationId)
+            conferenceMembers.value = listOf(callId, consultationId)
+            consultationCallId.value = null
             conferenceMerged.value = true
         } catch (error: CancellationException) {
             throw error
@@ -495,6 +566,7 @@ class YeyoFoneViewModel(
         if (!consultation.state.isTerminal()) calls.end(consultation.id)
         media.setHeld(callId, false)
         conferenceMerged.value = false
+        conferenceMembers.value = emptyList()
         consultationCallId.value = null
     }
 
