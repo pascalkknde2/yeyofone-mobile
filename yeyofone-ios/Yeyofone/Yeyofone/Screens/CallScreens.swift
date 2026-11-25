@@ -437,43 +437,35 @@ struct CallOptionsScreen: View {
     @State private var enteringDestination = false
     @State private var destination = ""
     @State private var showRoutePicker = false
-    // Add call and Consult transfer share the dial-and-hold flow; only Consult transfer can complete a transfer.
-    @State private var addingCall = false
 
     var body: some View {
         let held = store.activeCall?.held ?? false
         VStack(spacing: 0) {
             CenteredBackHeader(title: headerTitle) {
-                if enteringDestination { enteringDestination = false; addingCall = false; store.setHeld(false) }
+                if enteringDestination { enteringDestination = false; store.setHeld(false) }
                 store.callPage = .main
             }
 
             if let consultation = store.consultationCall {
                 consultationCenter(consultation)
                 CallTray {
-                    if !store.conferenceMerged {
-                        HStack {
-                            Spacer()
-                            PrimaryCallActionButton(icon: "arrow.triangle.merge", label: "Merge", color: Palette.accentBlue,
-                                                    enabled: consultation.state == .connected) {
-                                store.mergeCalls()
-                            }
-                            if !addingCall {
-                                Spacer()
-                                PrimaryCallActionButton(icon: "checkmark", label: "Complete transfer", color: Palette.accentGreen,
-                                                        enabled: consultation.state == .connected) {
-                                    store.completeTransfer()
-                                }
-                            }
-                            Spacer()
+                    HStack {
+                        Spacer()
+                        PrimaryCallActionButton(icon: "arrow.triangle.merge", label: "Merge", color: Palette.accentBlue,
+                                                enabled: consultation.state == .connected) {
+                            store.mergeCalls()
                         }
+                        Spacer()
+                        PrimaryCallActionButton(icon: "checkmark", label: "Complete transfer", color: Palette.accentGreen,
+                                                enabled: consultation.state == .connected) {
+                            store.completeTransfer()
+                        }
+                        Spacer()
                     }
-                    SecondaryCallActionButton(icon: "arrow.left",
-                                              label: store.conferenceMerged ? "Remove from call" : "Return to caller") {
-                        addingCall = false
+                    SecondaryCallActionButton(icon: "arrow.left", label: "Return to caller") {
                         store.returnToCaller()
                     }
-                    .padding(.top, store.conferenceMerged ? 0 : 28)
+                    .padding(.top, 28)
                 }
             } else if enteringDestination {
                 ScrollView {
@@ -497,7 +489,7 @@ struct CallOptionsScreen: View {
                 .scrollBounceBehavior(.basedOnSize)
                 .defaultScrollAnchor(.center)
                 CallTray {
-                    PrimaryCallActionButton(icon: "person.badge.plus", label: addingCall ? "Add call" : "Start consultation", color: Palette.accentGreen,
+                    PrimaryCallActionButton(icon: "person.badge.plus", label: "Start consultation", color: Palette.accentGreen,
                                             enabled: !destination.trimmingCharacters(in: .whitespaces).isEmpty && held) {
                         store.startConsultation(to: destination)
                         enteringDestination = false
@@ -520,9 +512,8 @@ struct CallOptionsScreen: View {
                         RowDivider(leading: 18)
                         OptionRow(icon: "phone.badge.plus", title: "Add call",
                                   subtitle: String(localized: "Bring someone else into this conversation")) {
-                            if !held { store.setHeld(true) }
-                            addingCall = true
-                            enteringDestination = true
+                            // Nobody is put on hold: the new person is dialled while the call carries on.
+                            store.callPage = .addPerson
                         }
                         RowDivider(leading: 18)
                         let assistant = store.activeCall?.assistant ?? false
@@ -562,19 +553,12 @@ struct CallOptionsScreen: View {
 
     private var headerTitle: LocalizedStringKey {
         guard store.consultationCall != nil || enteringDestination else { return "More options" }
-        return addingCall || store.conferenceMerged ? "Add call" : "Consult transfer"
+        return "Consult transfer"
     }
 
     private func consultationCenter(_ session: CallSession) -> some View {
         VStack(spacing: 8) {
             Spacer()
-            if store.conferenceMerged {
-                ConferenceStage(participants: [
-                    .init(id: "you", name: String(localized: "You"), isSelf: true, muted: store.activeCall?.muted ?? false),
-                    .init(id: "held", name: store.activeCall?.remoteName ?? "", isSelf: false, muted: false),
-                    .init(id: "consult", name: session.remoteName, isSelf: false, muted: false),
-                ], speakingIDs: [])
-            } else {
             // A bare extension has no separate display name; don't repeat it as "1002 · Ext. 1002".
             (session.remoteName == session.remoteNumber
                 ? Text("Consultation: \(session.remoteName)")
@@ -588,69 +572,11 @@ struct CallOptionsScreen: View {
                 .appFont(size: 13)
                 .foregroundStyle(Palette.textSecondary)
                 .padding(.top, 16)
-            }
             Spacer()
         }
         .multilineTextAlignment(.center)
         .padding(.horizontal, 32)
         .frame(maxWidth: .infinity)
-    }
-}
-
-struct ConferenceParticipant: Identifiable {
-    let id: String
-    let name: String
-    let isSelf: Bool
-    let muted: Bool
-}
-
-/// Participant stage: a spotlight tile plus a strip for three or more people, side-by-side tiles for two.
-/// A blue ring marks whoever is speaking; a red badge marks muted people.
-private struct ConferenceStage: View {
-    let participants: [ConferenceParticipant]
-    let speakingIDs: Set<String>
-
-    var body: some View {
-        let spotlight = participants.first { speakingIDs.contains($0.id) && !$0.isSelf } ?? participants.first { !$0.isSelf }
-        VStack(spacing: 4) {
-            Text("Conference call").appFont(size: 22, weight: .bold).foregroundStyle(Palette.textPrimary)
-            Text("\(participants.count) people on this call")
-                .appFont(size: 14).foregroundStyle(Palette.textSecondary).padding(.bottom, 16)
-            if participants.count > 2, let spotlight {
-                tile(spotlight, large: true).frame(height: 170)
-                HStack(spacing: 12) {
-                    ForEach(participants.filter { $0.id != spotlight.id }) { tile($0, large: false).frame(height: 110) }
-                }
-            } else {
-                HStack(spacing: 12) {
-                    ForEach(participants) { tile($0, large: false).frame(height: 150) }
-                }
-            }
-        }
-        .padding(.horizontal, 20)
-    }
-
-    private func tile(_ p: ConferenceParticipant, large: Bool) -> some View {
-        let speaking = speakingIDs.contains(p.id)
-        let initials = p.name.split(whereSeparator: { " .-_".contains($0) }).prefix(2).compactMap { $0.first }.map(String.init).joined().uppercased()
-        return ZStack(alignment: .topTrailing) {
-            VStack(spacing: 8) {
-                Text(initials.isEmpty ? "?" : initials)
-                    .appFont(size: large ? 26 : 18, weight: .bold)
-                    .foregroundStyle(Palette.textPrimary)
-                    .frame(width: large ? 72 : 52, height: large ? 72 : 52)
-                    .background(Circle().fill(Palette.primaryLight))
-                Text(p.name).appFont(size: 13, weight: .semibold).foregroundStyle(Palette.textPrimary).lineLimit(1).padding(.horizontal, 8)
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            if p.muted {
-                Image(systemName: "mic.slash.fill")
-                    .font(.system(size: 12, weight: .bold)).foregroundStyle(.white)
-                    .frame(width: 24, height: 24).background(Circle().fill(Palette.accentRed)).padding(8)
-            }
-        }
-        .background(RoundedRectangle(cornerRadius: 20).fill(Palette.glass))
-        .overlay(RoundedRectangle(cornerRadius: 20).stroke(speaking ? Palette.accentBlue : Palette.borderLight, lineWidth: speaking ? 3 : 1))
     }
 }
 

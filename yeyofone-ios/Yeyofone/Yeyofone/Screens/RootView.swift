@@ -19,7 +19,9 @@ struct RootView: View {
                 IncomingCallScreen()
             } else if let call = store.activeCall {
                 switch store.callPage {
-                case .main: OutgoingCallScreen(session: call)
+                case .main:
+                    if store.conferenceMerged || store.addingPerson { ConferenceScreen(session: call) } else { OutgoingCallScreen(session: call) }
+                case .addPerson: ContactPickerScreen()
                 case .options: CallOptionsScreen()
                 case .transfer: TransferCallScreen(callerName: call.remoteName)
                 case .keypad: InCallKeypadScreen(session: call)
