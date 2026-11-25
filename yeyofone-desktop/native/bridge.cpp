@@ -337,6 +337,10 @@ public:
                     auto stream=getAudioMedia(item.index);
                     stream.adjustRxLevel(receive_gain);
                     auto& devices=endpoint.audDevManager();
+#if defined(__APPLE__) && TARGET_OS_IOS
+                    // The iPhone microphone reaches the call very quietly; boost what it captures in software.
+                    devices.getCaptureDevMedia().adjustRxLevel(3.0f);
+#endif
                     if(!playback_connected){stream.startTransmit(devices.getPlaybackDevMedia());playback_connected=true;}
                     const bool send=info.state==PJSIP_INV_STATE_CONFIRMED && !muted && !cancelled;
                     if(send&&!capture_connected){devices.getCaptureDevMedia().startTransmit(stream);capture_connected=true;}

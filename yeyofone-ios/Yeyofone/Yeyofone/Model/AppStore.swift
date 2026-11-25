@@ -65,7 +65,12 @@ final class AppStore {
     var forwardingDestination: String?
 
     var activeCall: CallSession? {
-        didSet { if activeCall == nil { remoteRoster = nil } }
+        didSet {
+            if activeCall == nil { remoteRoster = nil }
+            #if DEBUG
+            if (activeCall == nil) != (oldValue == nil) { updateLevelLogging() }
+            #endif
+        }
     }
     /// The conference someone else organised that this phone is part of, as its organiser shared it.
     var remoteRoster: ConferenceRoster?
@@ -613,6 +618,26 @@ final class AppStore {
             notice = String(localized: "Transfer failed")
         }
     }
+
+    #if DEBUG
+    private var levelLogTask: Task<Void, Never>?
+
+    /// Debug only: while a call is up, prints this phone's microphone level and the level of the
+    /// incoming voice twice a second (0-255), to see whether the microphone is being captured.
+    private func updateLevelLogging() {
+        levelLogTask?.cancel()
+        guard activeCall != nil, let engine else { return }
+        levelLogTask = Task { [weak self] in
+            while !Task.isCancelled {
+                guard let self, let call = activeCall, call.token != 0 else { return }
+                let mic = await engine.level(token: 0)
+                let remote = await engine.level(token: call.token)
+                print("MICLEVEL \(Date().formatted(.dateTime.hour().minute().second())) mic=\(mic) remote=\(remote) muted=\(call.muted) held=\(call.held) route=\(selectedRoute)")
+                try? await Task.sleep(for: .milliseconds(500))
+            }
+        }
+    }
+    #endif
 
     /// Picks up the roster an organiser sent this phone; only believed from the person on the call.
     private func receiveRoster(from user: String, data: Data) {
