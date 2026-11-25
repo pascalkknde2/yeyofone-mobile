@@ -303,6 +303,10 @@ export function ConferenceRoom({ onClose }: { onClose: () => void }) {
   const [quality, setQuality] = useState<VideoChoice>("auto");
   const [network, setNetwork] = useState<NetworkHint>(() => readNetworkHint());
   const [delivered, setDelivered] = useState("");
+  // Which camera to use. A built-in camera is often 720p; an iPhone (Continuity Camera) or
+  // a webcam can do much better, so the quality menu lists every camera that is connected.
+  const [cameras, setCameras] = useState<MediaDeviceInfo[]>([]);
+  const [cameraId, setCameraId] = useState("");
   const [qualityMenu, setQualityMenu] = useState(false);
   const qualityBox = useRef<HTMLDivElement>(null);
   const qualityButton = useRef<HTMLButtonElement>(null);
@@ -396,12 +400,7 @@ export function ConferenceRoom({ onClose }: { onClose: () => void }) {
     },
     [],
   );
-  async function toggleCamera() {
-    if (camera) {
-      captures.stop("camera");
-      setCamera(false);
-      return;
-    }
+  async function startCamera(id: string) {
     if (!navigator.mediaDevices?.getUserMedia) {
       setMediaError("Camera and microphone aren’t available in this window.");
       return;
@@ -410,15 +409,46 @@ export function ConferenceRoom({ onClose }: { onClose: () => void }) {
       captures.set(
         "camera",
         await navigator.mediaDevices.getUserMedia({
-          video: videoConstraints(level),
+          video: {
+            ...videoConstraints(level),
+            ...(id ? { deviceId: { exact: id } } : {}),
+          },
         }),
       );
       setCamera(true);
       setMediaError("");
+      void listCameras();
     } catch (error) {
       setMediaError(mediaFailure(error, "camera"));
     }
   }
+  async function toggleCamera() {
+    if (camera) {
+      captures.stop("camera");
+      setCamera(false);
+      return;
+    }
+    await startCamera(cameraId);
+  }
+  // Camera names are only given out once camera access has been allowed.
+  async function listCameras() {
+    try {
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      setCameras(devices.filter((device) => device.kind === "videoinput"));
+    } catch {
+      /* Keep the list we have. */
+    }
+  }
+  function chooseCamera(id: string) {
+    setCameraId(id);
+    if (camera) void startCamera(id);
+  }
+  useEffect(() => {
+    void listCameras();
+    navigator.mediaDevices?.addEventListener?.("devicechange", listCameras);
+    return () =>
+      navigator.mediaDevices?.removeEventListener?.("devicechange", listCameras);
+  }, []);
   // Re-apply the quality to a running camera when the level changes, and read back what the
   // camera really delivers (a camera that can't do 4K gives its best).
   useEffect(() => {
@@ -950,6 +980,35 @@ export function ConferenceRoom({ onClose }: { onClose: () => void }) {
                           </button>
                         );
                       },
+                    )}
+                    {cameras.length > 1 && (
+                      <>
+                        <p className="room-quality__heading">{t("Camera")}</p>
+                        {cameras.map((device, index) => {
+                          const current =
+                            captures.get("camera")?.getVideoTracks()[0]
+                              ?.getSettings().deviceId ?? cameraId;
+                          return (
+                            <button
+                              key={device.deviceId || index}
+                              role="menuitemradio"
+                              aria-checked={
+                                camera
+                                  ? device.deviceId === current
+                                  : device.deviceId === cameraId
+                              }
+                              onClick={() => {
+                                chooseCamera(device.deviceId);
+                                closeQualityMenu();
+                              }}
+                            >
+                              <span>
+                                {device.label || `${t("Camera")} ${index + 1}`}
+                              </span>
+                            </button>
+                          );
+                        })}
+                      </>
                     )}
                     <p className="room-quality__note">
                       {t(
