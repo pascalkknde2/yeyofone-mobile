@@ -155,6 +155,8 @@ class YeyoFoneViewModel(
     private val conferenceMembers = MutableStateFlow<List<CallId>>(emptyList())
     private val pendingConferenceCall = MutableStateFlow<CallId?>(null)
     private var autoMergingCall: CallId? = null
+    /** True while a person is being dialled for the conference, so it isn't dissolved before they appear. */
+    private var addingToConference = false
     private val recordingCallIds = MutableStateFlow<Set<CallId>>(emptySet())
     private val assistantCallIds = MutableStateFlow<Set<CallId>>(emptySet())
     private val callNotes = MutableStateFlow<Map<CallId, com.yeyofone.app.ai.NotesState>>(emptyMap())
@@ -281,7 +283,7 @@ class YeyoFoneViewModel(
             pendingConferenceCall.value = null
             if (autoMergingCall == pending) autoMergingCall = null
         }
-        if (live.size < 2 && pendingConferenceCall.value == null && (live.isNotEmpty() || conferenceMerged.value)) {
+        if (live.size < 2 && pendingConferenceCall.value == null && !addingToConference && (live.isNotEmpty() || conferenceMerged.value)) {
             conferenceMembers.value = emptyList()
             conferenceMerged.value = false
         }
@@ -311,8 +313,14 @@ class YeyoFoneViewModel(
 
     /** Calls [destination] and joins them to the conference (starting one with [activeId]) once they answer. */
     fun addToConference(activeId: CallId, accountId: SipAccountId, destination: String) = launch {
-        val id = placeCall(accountId, destination) ?: return@launch
+        // Show the conference stage straight away; the new person appears as "Calling…" once dialling starts.
         if (conferenceMembers.value.isEmpty()) conferenceMembers.value = listOf(activeId)
+        addingToConference = true
+        val id = try { placeCall(accountId, destination) } finally { addingToConference = false }
+        if (id == null) {
+            if (pendingConferenceCall.value == null && !conferenceMerged.value) conferenceMembers.value = emptyList()
+            return@launch
+        }
         pendingConferenceCall.value = id
     }
 

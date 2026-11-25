@@ -133,6 +133,7 @@
     <string name="merge_calls">Merge</string>
     <string name="add_people_title">Add people</string>
     <string name="add_people_no_contacts">No contacts to add. Save people in Contacts first, then add them here.</string>
+    <string name="conference_active">Active</string>
     <string name="conference_you">You</string>
     <string name="conference_count">%1$d people on this call</string>
     <string name="conference_title">Conference call</string>

@@ -10,6 +10,8 @@ private struct ConferencePerson: Identifiable {
     let isSelf: Bool
     let muted: Bool
     let status: LocalizedStringKey?
+    /// True while the person is still being called, so their avatar is dimmed.
+    let connecting: Bool
     let removable: Bool
 }
 
@@ -50,12 +52,13 @@ struct ConferenceScreen: View {
     }
 
     private func participants() -> [ConferencePerson] {
-        var list = [ConferencePerson(id: "you", name: String(localized: "You"), isSelf: true, muted: session.muted, status: nil, removable: false),
-                    ConferencePerson(id: "first", name: session.remoteName, isSelf: false, muted: false, status: nil, removable: false)]
+        // Nobody in a conference is on hold: someone who has answered is simply "Active".
+        var list = [ConferencePerson(id: "you", name: String(localized: "You"), isSelf: true, muted: session.muted, status: nil, connecting: false, removable: false),
+                    ConferencePerson(id: "first", name: session.remoteName, isSelf: false, muted: false, status: "Active", connecting: false, removable: false)]
         if let other = store.consultationCall {
-            let connecting = !store.conferenceMerged
+            let active = store.conferenceMerged || other.state == .connected || other.state == .held
             list.append(ConferencePerson(id: "second", name: other.remoteName, isSelf: false, muted: false,
-                                         status: connecting ? LocalizedStringKey(other.state.label) : nil, removable: true))
+                                         status: active ? "Active" : LocalizedStringKey(other.state.label), connecting: !active, removable: true))
         }
         return list
     }
@@ -71,7 +74,7 @@ struct ConferenceScreen: View {
                     .frame(width: size, height: size)
                     .background(Circle().fill(Palette.primaryLight))
                     .overlay(Circle().stroke(Palette.accentBlue, lineWidth: store.speaking.contains(p.id) ? 3 : 0).padding(-6))
-                    .opacity(p.status != nil ? 0.55 : 1)
+                    .opacity(p.connecting ? 0.55 : 1)
                 if p.muted {
                     Image(systemName: "mic.slash.fill").font(.system(size: 12, weight: .bold)).foregroundStyle(.white)
                         .frame(width: 24, height: 24).background(Circle().fill(Palette.accentRed))
