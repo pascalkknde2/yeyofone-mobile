@@ -5,9 +5,16 @@ import { moveInMenu, useCloseOnOutsideClick } from "./menuKeys";
 import { useCalls } from "./useCalls";
 import {
   LocalCaptures,
+  VIDEO_LEVELS,
+  levelLabelForHeight,
   mediaFailure,
   micLevel,
   nextTalking,
+  readNetworkHint,
+  resolveLevel,
+  videoConstraints,
+  type NetworkHint,
+  type VideoChoice,
 } from "./roomMedia";
 
 type RoomIcon =
@@ -27,6 +34,7 @@ type RoomIcon =
   | "pin"
   | "send"
   | "chat"
+  | "signal"
   | "screen"
   | "agenda";
 function LiveVideo({
@@ -187,6 +195,15 @@ function RoomGlyph({ name, size = 22 }: { name: RoomIcon; size?: number }) {
           <path d="M16 17H8" />
         </>
       )}
+      {name === "signal" && (
+        <>
+          <path d="M2 20h.01" />
+          <path d="M7 20v-4" />
+          <path d="M12 20v-8" />
+          <path d="M17 20V8" />
+          <path d="M22 4v16" />
+        </>
+      )}
       {name === "chat" && (
         <path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z" />
       )}
@@ -281,6 +298,36 @@ export function ConferenceRoom({ onClose }: { onClose: () => void }) {
   const [shareOnStage, setShareOnStage] = useState(true);
   const [shareMenu, setShareMenu] = useState(false);
   const [mediaError, setMediaError] = useState("");
+  // Camera quality: starts at 4K; "Auto" steps down when the network looks slow, or the
+  // user picks a lower level by hand.
+  const [quality, setQuality] = useState<VideoChoice>("auto");
+  const [network, setNetwork] = useState<NetworkHint>(() => readNetworkHint());
+  const [delivered, setDelivered] = useState("");
+  const [qualityMenu, setQualityMenu] = useState(false);
+  const qualityBox = useRef<HTMLDivElement>(null);
+  const qualityButton = useRef<HTMLButtonElement>(null);
+  const level = resolveLevel(quality, network);
+  const levelInfo = VIDEO_LEVELS.find((item) => item.id === level)!;
+  const networkKnown = network !== null;
+  function closeQualityMenu() {
+    setQualityMenu(false);
+    qualityButton.current?.focus();
+  }
+  useCloseOnOutsideClick(qualityMenu, qualityBox, () => setQualityMenu(false));
+  useEffect(() => {
+    const update = () => setNetwork(readNetworkHint());
+    const connection = (
+      navigator as Navigator & { connection?: EventTarget }
+    ).connection;
+    connection?.addEventListener("change", update);
+    window.addEventListener("online", update);
+    window.addEventListener("offline", update);
+    return () => {
+      connection?.removeEventListener("change", update);
+      window.removeEventListener("online", update);
+      window.removeEventListener("offline", update);
+    };
+  }, []);
   const shareBox = useRef<HTMLDivElement>(null);
   const shareButton = useRef<HTMLButtonElement>(null);
   function closeShareMenu() {
@@ -362,7 +409,9 @@ export function ConferenceRoom({ onClose }: { onClose: () => void }) {
     try {
       captures.set(
         "camera",
-        await navigator.mediaDevices.getUserMedia({ video: true }),
+        await navigator.mediaDevices.getUserMedia({
+          video: videoConstraints(level),
+        }),
       );
       setCamera(true);
       setMediaError("");
@@ -370,6 +419,27 @@ export function ConferenceRoom({ onClose }: { onClose: () => void }) {
       setMediaError(mediaFailure(error, "camera"));
     }
   }
+  // Re-apply the quality to a running camera when the level changes, and read back what the
+  // camera really delivers (a camera that can't do 4K gives its best).
+  useEffect(() => {
+    if (!camera) {
+      setDelivered("");
+      return;
+    }
+    const track = captures.get("camera")?.getVideoTracks()[0];
+    if (!track) return;
+    let current = true;
+    void track
+      .applyConstraints(videoConstraints(level))
+      .catch(() => {})
+      .finally(() => {
+        if (current)
+          setDelivered(levelLabelForHeight(track.getSettings().height));
+      });
+    return () => {
+      current = false;
+    };
+  }, [camera, level]);
   async function toggleMic() {
     if (!muted) {
       stopMic();
@@ -833,6 +903,64 @@ export function ConferenceRoom({ onClose }: { onClose: () => void }) {
               >
                 <RoomGlyph name="hand" />
               </button>
+              <div className="room-share" ref={qualityBox}>
+                <button
+                  ref={qualityButton}
+                  className="has-count"
+                  aria-label={t("Video quality")}
+                  title={t("Video quality")}
+                  aria-haspopup="menu"
+                  aria-expanded={qualityMenu}
+                  onClick={() => setQualityMenu(!qualityMenu)}
+                >
+                  <RoomGlyph name="signal" />
+                  <b>{camera && delivered ? delivered : levelInfo.label}</b>
+                </button>
+                {qualityMenu && (
+                  <div
+                    className="room-share__menu room-quality"
+                    role="menu"
+                    aria-label={t("Video quality")}
+                    onKeyDown={(e) => moveInMenu(e, closeQualityMenu)}
+                  >
+                    {(["auto", ...VIDEO_LEVELS.map((item) => item.id)] as const).map(
+                      (id, index) => {
+                        const item = VIDEO_LEVELS.find((l) => l.id === id);
+                        return (
+                          <button
+                            key={id}
+                            role="menuitemradio"
+                            aria-checked={quality === id}
+                            autoFocus={index === 0}
+                            onClick={() => {
+                              setQuality(id);
+                              closeQualityMenu();
+                            }}
+                          >
+                            <span>
+                              {item
+                                ? item.label
+                                : `${t("Auto")} · ${levelInfo.label}`}
+                              <small>
+                                {item
+                                  ? `${item.width}×${item.height}`
+                                  : t("Lowers itself on a slow connection")}
+                              </small>
+                            </span>
+                          </button>
+                        );
+                      },
+                    )}
+                    <p className="room-quality__note">
+                      {t(
+                        networkKnown
+                          ? "Auto follows your connection speed."
+                          : "This window can’t measure your connection. Starts at 4K; lower it if video stutters.",
+                      )}
+                    </p>
+                  </div>
+                )}
+              </div>
               <span className="room-control-sep" aria-hidden="true" />
               <span className="room-timer" role="timer" aria-label={t("Call duration")}>
                 <i aria-hidden="true" />
