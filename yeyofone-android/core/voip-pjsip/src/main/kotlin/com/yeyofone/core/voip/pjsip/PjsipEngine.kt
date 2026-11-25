@@ -122,6 +122,8 @@ class PjsipEngine internal constructor(
         withContext(dispatcher) { backend.stopRecording(callId) }
     }
 
+    override suspend fun inputLevel(callId: String?): Float = withContext(dispatcher) { backend.inputLevel(callId) }
+
     override suspend fun mergeCalls(callId: String, otherCallId: String) {
         withContext(dispatcher) { backend.mergeCalls(callId, otherCallId) }
     }

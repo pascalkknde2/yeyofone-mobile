@@ -298,6 +298,8 @@ class CallCoordinator(
         gateway.stopRecording(callId.value)
     }
 
+    override suspend fun inputLevel(callId: CallId?): Float = gateway.inputLevel(callId?.value)
+
     override suspend fun mergeCalls(callId: CallId, otherCallId: CallId) {
         require(callId != otherCallId) { "A conference needs two different calls" }
         commandMutex.withLock {
