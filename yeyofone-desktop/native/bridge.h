@@ -21,6 +21,7 @@ struct YvRegistration {
 struct YvCall { uint64_t token; uint64_t account_token; uint64_t sequence; int32_t state; int32_t sip_code; int32_t audio_active; int32_t audio_error; int32_t muted; int32_t media_active; int32_t recording; int32_t native_code; int32_t failure_kind; int32_t incoming; int32_t caller_len; uint8_t caller[65]; uint64_t connected_ms; };
 int32_t yv_call_list(struct YvHandle*, struct YvCall* output, uint32_t capacity, uint32_t* count) YV_NOEXCEPT;
 int32_t yv_call_answer(struct YvHandle*, uint64_t token) YV_NOEXCEPT;
+int32_t yv_call_answer_deferred(struct YvHandle*, uint64_t token) YV_NOEXCEPT;
 int32_t yv_call_reject(struct YvHandle*, uint64_t token, int32_t status) YV_NOEXCEPT;
 int32_t yv_call_reject(struct YvHandle*, uint64_t token, int32_t status) YV_NOEXCEPT;
 int32_t yv_call_start(struct YvHandle*, uint64_t account, uint64_t token, const uint8_t* uri, uint32_t len, int32_t audio) YV_NOEXCEPT;

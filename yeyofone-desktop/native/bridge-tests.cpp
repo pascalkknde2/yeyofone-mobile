@@ -18,6 +18,11 @@ int main() {
         wrong_thread.join();
         require(result == -4);
         require(yv_start(handle, 0) == 0);
+        // Updating cached devices while idle must not open the microphone or speaker.
+        refresh_audio_routes(handle, true);
+        require(!handle->endpoint->audDevManager().sndIsActive());
+        require(yv_pump(handle) == 0);
+        require(!handle->endpoint->audDevManager().sndIsActive());
         YvCallControls controls{};
         require(yv_call_controls(handle,123,&controls)==-6);
         require(yv_call_hold(handle,123,1)==-6);

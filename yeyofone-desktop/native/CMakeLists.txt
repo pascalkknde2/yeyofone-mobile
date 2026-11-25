@@ -4,6 +4,9 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
 set(BUILD_TESTING OFF CACHE BOOL "" FORCE)
+# Apple Clang searches /usr/local/include before -isystem paths. Keep the pinned
+# imported OpenSSL headers as ordinary -I paths, ahead of unrelated host installs.
+set(CMAKE_NO_SYSTEM_FROM_IMPORTED ON)
 set(OPENSSL_USE_STATIC_LIBS TRUE)
 find_package(OpenSSL 3.5.9 EXACT REQUIRED CONFIG
   PATHS "${OPENSSL_ROOT_DIR}/lib/cmake/OpenSSL" NO_DEFAULT_PATH)
