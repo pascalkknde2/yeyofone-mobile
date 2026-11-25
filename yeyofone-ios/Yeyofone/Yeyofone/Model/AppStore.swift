@@ -43,7 +43,7 @@ enum Tab: Int, CaseIterable {
 }
 
 /// Which page of the in-call flow is showing over the active call.
-enum CallPage { case main, options, transfer, keypad }
+enum CallPage { case main, options, transfer, keypad, addPerson }
 
 @Observable
 final class AppStore {
@@ -70,10 +70,13 @@ final class AppStore {
     var incomingCall: CallSession?
     var consultationCall: CallSession? {
         // The conference is over once the second leg is gone.
-        didSet { if consultationCall == nil { conferenceMerged = false } }
+        didSet { if consultationCall == nil { conferenceMerged = false; addingPerson = false } }
     }
     /// The active call and the consultation call have been merged into a three-way conference.
     var conferenceMerged = false
+    /// Someone is being added to the call: they are dialled while the call carries on and join once they answer.
+    var addingPerson = false
+    private var mergeInFlight = false
     var callPage: CallPage = .main
     var endedSummary: CallSummary?
     /// The AI assistant's notes for the call in `endedSummary`, once it has started on them.
@@ -596,17 +599,45 @@ final class AppStore {
         }
     }
 
+    /// Calls a contact without holding anyone; they are merged into the conference as soon as they answer.
+    /// The calling engine joins two other people to you (a three-way call), so only one can be added.
+    func addPerson(_ contact: Contact) {
+        guard activeCall != nil, consultationCall == nil, !conferenceMerged else { return }
+        addingPerson = true
+        startConsultation(to: contact.number)
+        if consultationCall == nil { addingPerson = false }
+        callPage = .main
+    }
+
+    /// Mutes or unmutes your microphone for everyone in the conference.
+    func setConferenceMuted(_ muted: Bool) {
+        setMuted(muted)
+        if let consultation = consultationCall, consultation.token != 0 {
+            engine?.mute(token: consultation.token, muted: muted)
+            consultationCall?.muted = muted
+        }
+    }
+
     /// Joins the held call and the consultation call into one three-way conference.
     func mergeCalls() {
-        guard let call = activeCall, let consultation = consultationCall, consultation.state == .connected else { return }
+        guard let call = activeCall, let consultation = consultationCall, consultation.state == .connected,
+              !conferenceMerged, !mergeInFlight else { return }
+        mergeInFlight = true
         guard let engine else {
+            mergeInFlight = false
             conferenceMerged = true
+            addingPerson = false
+            callPage = .main
             return
         }
         engine.merge(first: call.token, second: consultation.token) { [weak self] code in
             guard let self else { return }
+            mergeInFlight = false
             if code == 0 {
                 conferenceMerged = true
+                addingPerson = false
+                callPage = .main
+                if call.muted { engine.mute(token: consultation.token, muted: true) }
                 activeCall?.held = false
                 if activeCall?.connectedAt != nil { activeCall?.state = .connected }
             } else {
@@ -934,7 +965,10 @@ final class AppStore {
             announce(call)
         } else if let current = consultationCall, current.token == call.token {
             let updated = Self.merge(current, call)
-            if updated != current { consultationCall = updated }
+            if updated != current {
+                consultationCall = updated
+                if addingPerson, updated.state == .connected { mergeCalls() }
+            }
         } else if let current = incomingCall, current.token == call.token {
             let updated = Self.merge(current, call)
             if updated != current { incomingCall = updated }
