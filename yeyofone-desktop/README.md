@@ -37,6 +37,15 @@ cargo clippy --workspace --all-targets --locked -- -D warnings
 bun run tauri build
 ```
 
+A plain `bun run tauri build` makes the UI-only preview: it has no SIP engine, so accounts cannot register and calls are unavailable. For a build that registers accounts and makes calls, build the native artifacts and enable the feature, as the macOS release workflow does:
+
+```sh
+python3 scripts/build-native.py --cmake "$PWD/.native-tools/bin/cmake"
+bun run tauri build --features native-voip --bundles app
+```
+
+Re-run `scripts/build-native.py` whenever `native/` changes (for example `native/bridge.cpp`); otherwise the Rust build stops with `Stale bridge build`.
+
 The macOS `.app` bundle is the only platform artifact verified so far. Linux x86_64 build support is being brought up; Linux runtime and package verification still need to be done on a Linux machine. Windows packaging has not been verified. See `docs/PHASE-02-REPORT.md`, `docs/IPC.md` and `docs/linux-desktop.md`.
 
 ## Native VoIP build foundation
