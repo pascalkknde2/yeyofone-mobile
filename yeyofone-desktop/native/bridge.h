@@ -33,6 +33,8 @@ int32_t yv_call_hold(struct YvHandle*, uint64_t token, int32_t held) YV_NOEXCEPT
 int32_t yv_call_merge(struct YvHandle*, uint64_t first, uint64_t second) YV_NOEXCEPT;
 int32_t yv_call_transfer(struct YvHandle*, uint64_t token, const uint8_t* uri, uint32_t len, uint64_t consultation) YV_NOEXCEPT;
 int32_t yv_call_mute(struct YvHandle*, uint64_t token, int32_t muted) YV_NOEXCEPT;
+/* Signal level 0-255 of what a call receives (token 0: the microphone); negative on error. */
+int32_t yv_call_level(struct YvHandle*, uint64_t token) YV_NOEXCEPT;
 int32_t yv_call_record_start(struct YvHandle*, uint64_t token, const uint8_t* path, uint32_t len) YV_NOEXCEPT;
 int32_t yv_call_record_stop(struct YvHandle*, uint64_t token) YV_NOEXCEPT;
 int32_t yv_call_dtmf(struct YvHandle*, uint64_t token, const uint8_t* digits, uint32_t len) YV_NOEXCEPT;

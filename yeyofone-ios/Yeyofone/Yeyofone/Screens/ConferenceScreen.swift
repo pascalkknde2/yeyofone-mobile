@@ -27,7 +27,7 @@ struct ConferenceScreen: View {
             ScrollView {
                 VStack(spacing: 24) {
                     // With more than two people the first other person is the spotlight.
-                    if people.count > 2, let spotlight = people.first(where: { !$0.isSelf }) {
+                    if people.count > 2, let spotlight = people.first(where: { store.speaking.contains($0.id) && !$0.isSelf }) ?? people.first(where: { !$0.isSelf }) {
                         tile(spotlight, large: true)
                         HStack(alignment: .top, spacing: 12) {
                             ForEach(people.filter { $0.id != spotlight.id }) { tile($0, large: false) }
@@ -70,6 +70,7 @@ struct ConferenceScreen: View {
                     .foregroundStyle(Palette.textPrimary)
                     .frame(width: size, height: size)
                     .background(Circle().fill(Palette.primaryLight))
+                    .overlay(Circle().stroke(Palette.accentBlue, lineWidth: store.speaking.contains(p.id) ? 3 : 0).padding(-6))
                     .opacity(p.status != nil ? 0.55 : 1)
                 if p.muted {
                     Image(systemName: "mic.slash.fill").font(.system(size: 12, weight: .bold)).foregroundStyle(.white)

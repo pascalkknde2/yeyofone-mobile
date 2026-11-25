@@ -316,6 +316,7 @@ public:
     void onCallState(pj::OnCallStateParam& event) noexcept override {capture_error(event.e);capture_elsewhere(event.e);update();route();}
     void onCallMediaState(pj::OnCallMediaStateParam&) noexcept override {update();route();if(peer)peer->route();}
     // Takes any held call off hold, then links the two calls' audio both ways.
+    int input_level(){return media_index<0?-6:static_cast<int>(getAudioMedia(media_index).getRxLevel());}
     void merge_with(NativeCall& other){
         auto ready=[](NativeCall& c){return c.getInfo().state==PJSIP_INV_STATE_CONFIRMED&&!c.controls.transfer_pending&&!c.hold_pending&&!c.cancelled;};
         if(&other==this||peer||other.peer||!ready(*this)||!ready(other))throw pj::Error(PJ_EINVALIDOP,"merge","","",0);
@@ -706,6 +707,15 @@ extern "C" int32_t yv_call_mute(YvHandle* h,uint64_t token,int32_t muted) noexce
     if(auto code=check(h))return code;if(muted!=0&&muted!=1)return -6;
     auto found=h->calls.find(token);if(found==h->calls.end())return -6;
     try{found->second->mute(muted!=0);return 0;}catch(const pj::Error& e){return e.status;}catch(...){return -1;}
+}
+// Signal level (0-255) of what a call is receiving, or of the microphone when token is 0; negative on error.
+extern "C" int32_t yv_call_level(YvHandle* h,uint64_t token) noexcept {
+    if(auto code=check(h))return code;
+    try{
+        if(token==0){if(!h->endpoint)return -6;return static_cast<int32_t>(h->endpoint->audDevManager().getCaptureDevMedia().getRxLevel());}
+        auto found=h->calls.find(token);if(found==h->calls.end())return -6;
+        return found->second->input_level();
+    }catch(const pj::Error& e){return e.status>0?-e.status:e.status;}catch(...){return -1;}
 }
 // Releasing the sound device uses the null device, not "no device": PJSIP 2.14+ queues conference
 // bridge operations (such as removing a stopped recorder) and runs them on the bridge's clock. With
