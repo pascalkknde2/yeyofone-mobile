@@ -92,8 +92,8 @@ fun CallEndedScreen(
             verticalArrangement = Arrangement.Center,
         ) {
             Box(
-                Modifier.size(136.dp).clip(CircleShape).background(GlassCard)
-                    .border(2.dp, accent.copy(alpha = 0.25f), CircleShape),
+                Modifier.size(136.dp).clip(CircleShape).background(accent.copy(alpha = 0.14f))
+                    .border(2.dp, accent.copy(alpha = 0.3f), CircleShape),
                 contentAlignment = Alignment.Center,
             ) {
                 Text(summary.callerName.initials(), fontSize = 48.sp, fontWeight = FontWeight.Bold, color = CallTextPrimary)
@@ -127,14 +127,14 @@ fun CallEndedScreen(
             }
             Spacer(Modifier.height(28.dp))
             Row(
-                Modifier.clip(RoundedCornerShape(20.dp)).background(GlassCard)
-                    .border(1.dp, BorderLight, RoundedCornerShape(20.dp))
+                Modifier.clip(RoundedCornerShape(20.dp)).background(accent.copy(alpha = 0.1f))
+                    .border(1.dp, accent.copy(alpha = 0.25f), RoundedCornerShape(20.dp))
                     .padding(horizontal = 28.dp, vertical = 16.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(28.dp),
             ) {
                 DetailColumn(stringResource(R.string.duration), summary.formattedDuration)
-                Box(Modifier.width(1.dp).height(32.dp).background(BorderLight))
+                Box(Modifier.width(1.dp).height(32.dp).background(accent.copy(alpha = 0.25f)))
                 DetailColumn(stringResource(R.string.time), summary.timestamp)
             }
             Spacer(Modifier.height(24.dp))

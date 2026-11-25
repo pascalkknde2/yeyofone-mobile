@@ -354,8 +354,8 @@ struct CallEndedScreen: View {
                         .appFont(size: 48, weight: .bold)
                         .foregroundStyle(Palette.textPrimary)
                         .frame(width: 136, height: 136)
-                        .background(Circle().fill(Palette.glass))
-                        .overlay(Circle().stroke(accent.opacity(0.25), lineWidth: 2))
+                        .background(Circle().fill(accent.opacity(0.14)))
+                        .overlay(Circle().stroke(accent.opacity(0.3), lineWidth: 2))
                     Text(summary.callerName)
                         .appFont(size: 32, weight: .bold)
                         .tracking(-0.5)
@@ -378,13 +378,13 @@ struct CallEndedScreen: View {
 
                     HStack(spacing: 28) {
                         detail("Duration", DurationFormat.clock(summary.duration))
-                        Rectangle().fill(Palette.borderLight).frame(width: 1, height: 32)
+                        Rectangle().fill(accent.opacity(0.25)).frame(width: 1, height: 32)
                         detail("Time", summary.endedAt.formatted(.dateTime.hour(.twoDigits(amPM: .omitted)).minute(.twoDigits)))
                     }
                     .padding(.horizontal, 28)
                     .padding(.vertical, 16)
-                    .background(RoundedRectangle(cornerRadius: 20).fill(Palette.glass))
-                    .overlay(RoundedRectangle(cornerRadius: 20).stroke(Palette.borderLight, lineWidth: 1))
+                    .background(RoundedRectangle(cornerRadius: 20).fill(accent.opacity(0.1)))
+                    .overlay(RoundedRectangle(cornerRadius: 20).stroke(accent.opacity(0.25), lineWidth: 1))
                     .padding(.top, 28)
 
                     if let notes = store.endedNotes {
