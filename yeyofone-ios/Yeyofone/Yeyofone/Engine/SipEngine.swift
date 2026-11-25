@@ -255,6 +255,13 @@ nonisolated final class SipEngine: Thread, @unchecked Sendable {
         }
     }
 
+    /// How loud a call's incoming voice (or, with token 0, the microphone) is right now, 0-255; negative on error.
+    func level(token: UInt64) async -> Int32 {
+        await withCheckedContinuation { continuation in
+            run({ continuation.resume(returning: $0) }) { yv_call_level($0, token) }
+        }
+    }
+
     /// Joins two connected calls into one three-way conference, resuming whichever is on hold.
     func merge(first: UInt64, second: UInt64, completion: Completion? = nil) {
         run(completion) { yv_call_merge($0, first, second) }

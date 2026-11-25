@@ -73,7 +73,12 @@ final class AppStore {
         didSet { if consultationCall == nil { conferenceMerged = false; addingPerson = false } }
     }
     /// The active call and the consultation call have been merged into a three-way conference.
-    var conferenceMerged = false
+    var conferenceMerged = false {
+        didSet { if conferenceMerged != oldValue { updateSpeakerDetection() } }
+    }
+    /// Who is talking in the conference: "you", "first" (the original caller) and/or "second".
+    var speaking: Set<String> = []
+    private var speakerTask: Task<Void, Never>?
     /// Someone is being added to the call: they are dialled while the call carries on and join once they answer.
     var addingPerson = false
     private var mergeInFlight = false
@@ -596,6 +601,30 @@ final class AppStore {
             guard let self, code != 0 else { return }
             pendingTransfers.remove(call.token)
             notice = String(localized: "Transfer failed")
+        }
+    }
+
+    /// While a conference is up, samples each voice's level a few times a second to find who is talking.
+    private func updateSpeakerDetection() {
+        speakerTask?.cancel()
+        speaking = []
+        guard conferenceMerged, let engine else { return }
+        speakerTask = Task { [weak self] in
+            var lastLoud: [String: Date] = [:]
+            while !Task.isCancelled {
+                guard let self else { return }
+                var sources: [(String, UInt64)] = []
+                if let token = activeCall?.token, token != 0 { sources.append(("first", token)) }
+                if let token = consultationCall?.token, token != 0 { sources.append(("second", token)) }
+                // Token 0 reads the microphone; skip it while muted so silence isn't shown as speech.
+                if !(activeCall?.muted ?? false) { sources.append(("you", 0)) }
+                let now = Date()
+                for (id, token) in sources where await engine.level(token: token) > 15 { lastLoud[id] = now }
+                // Keep the ring on briefly after a voice drops so it doesn't flicker between words.
+                let current = Set(lastLoud.filter { now.timeIntervalSince($0.value) < 0.5 }.keys)
+                if current != speaking { speaking = current }
+                try? await Task.sleep(for: .milliseconds(200))
+            }
         }
     }
 
