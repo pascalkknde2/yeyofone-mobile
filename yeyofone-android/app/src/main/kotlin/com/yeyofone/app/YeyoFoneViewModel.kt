@@ -706,5 +706,5 @@ class YeyoFoneViewModel(
 private fun com.yeyofone.core.model.CallState.isTerminal(): Boolean =
     this is com.yeyofone.core.model.CallState.Disconnected || this is com.yeyofone.core.model.CallState.Failed
 
-private const val SPEAKING_LEVEL = 0.06f
+private const val SPEAKING_LEVEL = 0.03f
 private const val SPEAKING_HOLD_MS = 500L
