@@ -1525,6 +1525,7 @@ private fun conferenceUi(
         onEnd = { if (remote != null) viewModel.end(active.id) else viewModel.endConference() },
         onMute = { muted -> if (remote != null) viewModel.setMuted(active.id, muted) else viewModel.setConferenceMuted(muted) },
         remote = remote,
+        remoteSpeaking = if (remote != null) remoteRoster?.speaking.orEmpty().toSet() else emptySet(),
         selfExtension = selfExtension,
     )
 }

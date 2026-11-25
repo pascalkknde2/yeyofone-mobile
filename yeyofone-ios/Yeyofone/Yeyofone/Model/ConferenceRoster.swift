@@ -15,11 +15,24 @@ struct ConferenceRoster: Codable, Equatable {
     let host: String
     var ended = false
     let members: [RosterMember]
+    /// Extensions of the people talking right now, as seen by the organiser.
+    var speaking: [String] = []
 
-    init(host: String, members: [RosterMember], ended: Bool = false) {
+    init(host: String, members: [RosterMember], ended: Bool = false, speaking: [String] = []) {
         self.host = host
         self.members = members
         self.ended = ended
+        self.speaking = speaking
+    }
+
+    // Older builds don't send `ended` or `speaking`, so both are optional on the wire.
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        v = try c.decode(Int.self, forKey: .v)
+        host = try c.decode(String.self, forKey: .host)
+        ended = try c.decodeIfPresent(Bool.self, forKey: .ended) ?? false
+        members = try c.decode([RosterMember].self, forKey: .members)
+        speaking = try c.decodeIfPresent([String].self, forKey: .speaking) ?? []
     }
 
     func json() -> Data? { try? JSONEncoder().encode(self) }
@@ -34,7 +47,8 @@ struct ConferenceRoster: Codable, Equatable {
                 .trimmingCharacters(in: .whitespaces).prefix(40))
             return RosterMember(ext: member.ext, name: name.isEmpty ? member.ext : name, calling: member.calling)
         }
-        return ConferenceRoster(host: roster.host, members: members, ended: roster.ended)
+        return ConferenceRoster(host: roster.host, members: members, ended: roster.ended,
+                                speaking: roster.speaking.prefix(8).filter(isExtension))
     }
 
     private static func isExtension(_ text: String) -> Bool {

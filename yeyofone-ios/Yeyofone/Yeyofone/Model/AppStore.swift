@@ -681,7 +681,16 @@ final class AppStore {
             RosterMember(ext: first.remoteNumber, name: first.remoteName, calling: false),
             RosterMember(ext: second.remoteNumber, name: second.remoteName, calling: calling),
         ]
-        let roster = ConferenceRoster(host: account.username, members: members)
+        // Who is talking, as extensions, so people on the conference can light the same rings.
+        let talking = speaking.compactMap { id -> String? in
+            switch id {
+            case "you": return account.username
+            case "first": return first.remoteNumber
+            case "second": return second.remoteNumber
+            default: return nil
+            }
+        }
+        let roster = ConferenceRoster(host: account.username, members: members, speaking: talking)
         // The person still being called isn't told yet; they join the conference when they answer.
         let recipients: Set<String> = calling ? [first.remoteNumber] : [first.remoteNumber, second.remoteNumber]
         recipients.forEach { send(roster, to: $0) }
@@ -708,7 +717,7 @@ final class AppStore {
                 for (id, token) in sources where await engine.level(token: token) > 8 { lastLoud[id] = now }
                 // Keep the ring on briefly after a voice drops so it doesn't flicker between words.
                 let current = Set(lastLoud.filter { now.timeIntervalSince($0.value) < 0.5 }.keys)
-                if current != speaking { speaking = current }
+                if current != speaking { speaking = current; scheduleRosterShare() }
                 try? await Task.sleep(for: .milliseconds(200))
             }
         }
