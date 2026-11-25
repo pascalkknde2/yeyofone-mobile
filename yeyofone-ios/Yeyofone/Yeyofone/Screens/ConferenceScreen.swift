@@ -51,7 +51,23 @@ struct ConferenceScreen: View {
         .onAppear { if session.recording, recordingStart == nil { recordingStart = Date() } }
     }
 
+    /// Set when someone else organised the conference; this phone shows their roster and can't add or remove people.
+    private var remote: ConferenceRoster? {
+        guard let roster = store.remoteRoster, roster.host == session.remoteNumber else { return nil }
+        return roster
+    }
+
     private func participants() -> [ConferencePerson] {
+        if let remote {
+            let myExtension = store.selfExtension
+            var list = [ConferencePerson(id: "you", name: String(localized: "You"), isSelf: true, muted: session.muted, status: nil, connecting: false, removable: false)]
+            for member in remote.members where member.ext != myExtension {
+                let name = store.contactName(for: member.ext) ?? member.name
+                list.append(ConferencePerson(id: member.ext, name: name, isSelf: false, muted: false,
+                                             status: member.calling ? "Calling…" : "Active", connecting: member.calling, removable: false))
+            }
+            return list
+        }
         // Nobody in a conference is on hold: someone who has answered is simply "Active".
         var list = [ConferencePerson(id: "you", name: String(localized: "You"), isSelf: true, muted: session.muted, status: nil, connecting: false, removable: false),
                     ConferencePerson(id: "first", name: session.remoteName, isSelf: false, muted: false, status: "Active", connecting: false, removable: false)]
@@ -99,10 +115,10 @@ struct ConferenceScreen: View {
 
     private func toolbar(count: Int) -> some View {
         let toolbarBackground = Color(red: 0.11, green: 0.115, blue: 0.13)
-        let canAdd = !store.conferenceMerged && store.consultationCall == nil
+        let canAdd = remote == nil && !store.conferenceMerged && store.consultationCall == nil
         return HStack {
             toolbarButton(session.muted ? "mic.slash.fill" : "mic.fill", tint: session.muted ? Palette.accentRed : .white, label: session.muted ? "Unmute" : "Mute") {
-                store.setConferenceMuted(!session.muted)
+                if remote != nil { store.setMuted(!session.muted) } else { store.setConferenceMuted(!session.muted) }
             }
             Spacer(minLength: 0)
             toolbarButton("speaker.wave.2.fill", tint: store.selectedRoute == .speaker ? Palette.accentBlue : .white, label: "Speaker") {
@@ -115,10 +131,12 @@ struct ConferenceScreen: View {
             }
             .foregroundStyle(.white).frame(height: 44)
             Spacer(minLength: 0)
-            toolbarButton("person.badge.plus", tint: canAdd ? .white : .white.opacity(0.3), label: "Add call") {
-                if canAdd { store.callPage = .addPerson }
+            if remote == nil {
+                toolbarButton("person.badge.plus", tint: canAdd ? .white : .white.opacity(0.3), label: "Add call") {
+                    if canAdd { store.callPage = .addPerson }
+                }
+                Spacer(minLength: 0)
             }
-            Spacer(minLength: 0)
             Button { store.setRecording(!session.recording) } label: {
                 HStack(spacing: 6) {
                     Image(systemName: "circle.fill").font(.system(size: 14)).foregroundStyle(session.recording ? Palette.accentRed : .white)

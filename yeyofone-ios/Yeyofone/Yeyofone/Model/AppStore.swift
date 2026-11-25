@@ -64,17 +64,27 @@ final class AppStore {
     }
     var forwardingDestination: String?
 
-    var activeCall: CallSession?
+    var activeCall: CallSession? {
+        didSet { if activeCall == nil { remoteRoster = nil } }
+    }
+    /// The conference someone else organised that this phone is part of, as its organiser shared it.
+    var remoteRoster: ConferenceRoster?
+    /// Extensions already sent the current roster, so they can be told when the conference ends.
+    private var rosterRecipients: Set<String> = []
+    private var rosterTask: Task<Void, Never>?
     /// A call on another device of the account that can be continued here ("Continue call on this device?").
     var handoffOffer: HandoffOffer?
     var incomingCall: CallSession?
     var consultationCall: CallSession? {
         // The conference is over once the second leg is gone.
-        didSet { if consultationCall == nil { conferenceMerged = false; addingPerson = false } }
+        didSet {
+            if consultationCall == nil { conferenceMerged = false; addingPerson = false }
+            scheduleRosterShare()
+        }
     }
     /// The active call and the consultation call have been merged into a three-way conference.
     var conferenceMerged = false {
-        didSet { if conferenceMerged != oldValue { updateSpeakerDetection() } }
+        didSet { if conferenceMerged != oldValue { updateSpeakerDetection(); scheduleRosterShare() } }
     }
     /// Who is talking in the conference: "you", "first" (the original caller) and/or "second".
     var speaking: Set<String> = []
@@ -604,6 +614,57 @@ final class AppStore {
         }
     }
 
+    /// Picks up the roster an organiser sent this phone; only believed from the person on the call.
+    private func receiveRoster(from user: String, data: Data) {
+        guard let roster = ConferenceRoster.parse(data), roster.host == user,
+              let call = activeCall, call.remoteNumber == user else { return }
+        remoteRoster = roster.ended ? nil : roster
+    }
+
+    /// Shares who is on the conference with each person on it, after a short pause so quick
+    /// changes go out as one message.
+    private func scheduleRosterShare() {
+        rosterTask?.cancel()
+        rosterTask = Task { [weak self] in
+            try? await Task.sleep(for: .milliseconds(150))
+            guard !Task.isCancelled else { return }
+            self?.shareRoster()
+        }
+    }
+
+    private func shareRoster() {
+        guard let engine, let account = callingAccount, let accountToken = accountTokens[account.id] else { return }
+        func send(_ roster: ConferenceRoster, to user: String) {
+            if let data = roster.json() { engine.sendPeerMessage(account: accountToken, user: user, body: data) }
+        }
+        guard let first = activeCall, first.token != 0 else {
+            rosterRecipients.removeAll()
+            return
+        }
+        let second = consultationCall
+        let inConference = conferenceMerged || (addingPerson && second != nil)
+        guard inConference, let second else {
+            // No conference any more: tell everyone who was told about it.
+            let ended = ConferenceRoster(host: account.username, members: [], ended: true)
+            rosterRecipients.forEach { send(ended, to: $0) }
+            rosterRecipients.removeAll()
+            return
+        }
+        let calling = !(conferenceMerged || second.state == .connected)
+        let members = [
+            RosterMember(ext: account.username, name: account.displayName.isEmpty ? account.username : account.displayName, calling: false),
+            RosterMember(ext: first.remoteNumber, name: first.remoteName, calling: false),
+            RosterMember(ext: second.remoteNumber, name: second.remoteName, calling: calling),
+        ]
+        let roster = ConferenceRoster(host: account.username, members: members)
+        // The person still being called isn't told yet; they join the conference when they answer.
+        let recipients: Set<String> = calling ? [first.remoteNumber] : [first.remoteNumber, second.remoteNumber]
+        recipients.forEach { send(roster, to: $0) }
+        let ended = ConferenceRoster(host: account.username, members: [], ended: true)
+        rosterRecipients.subtracting(recipients).forEach { send(ended, to: $0) }
+        rosterRecipients = recipients
+    }
+
     /// While a conference is up, samples each voice's level a few times a second to find who is talking.
     private func updateSpeakerDetection() {
         speakerTask?.cancel()
@@ -639,6 +700,9 @@ final class AppStore {
     }
 
     /// Mutes or unmutes your microphone for everyone in the conference.
+    /// This phone's own extension, from the account it calls with.
+    var selfExtension: String { callingAccount?.username ?? "" }
+
     func setConferenceMuted(_ muted: Bool) {
         setMuted(muted)
         if let consultation = consultationCall, consultation.token != 0 {
@@ -907,6 +971,9 @@ final class AppStore {
             },
             onHandoff: { account, data in
                 Task { @MainActor [weak self] in self?.receiveHandoff(account: account, data: data) }
+            },
+            onPeerMessage: { _, user, data in
+                Task { @MainActor [weak self] in self?.receiveRoster(from: user, data: data) }
             }
         )
         self.engine = engine

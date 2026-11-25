@@ -74,13 +74,22 @@ data class ConferenceUi(
     val onRemove: (CallId) -> Unit,
     val onEnd: () -> Unit,
     val onMute: (Boolean) -> Unit,
+    /**
+     * Set when someone else organised the conference: the roster they shared, with this phone's own
+     * extension in [selfExtension]. This phone then shows the same screen but can't add or remove people.
+     */
+    val remote: List<RemotePerson>? = null,
+    val selfExtension: String = "",
 ) {
-    val active: Boolean get() = members.isNotEmpty()
+    val active: Boolean get() = members.isNotEmpty() || remote != null
 
     /** Numbers already on the call, so the picker doesn't offer them again. */
     val numbersInCall: Set<String>
         get() = (members + listOfNotNull(pending)).map { it.remoteUri.toSipIdentity().extension }.toSet()
 }
+
+/** A person on a conference organised by someone else. */
+data class RemotePerson(val ext: String, val name: String, val calling: Boolean)
 
 private class Person(
     val id: String,
@@ -113,7 +122,14 @@ fun ConferenceScreen(
         val identity = session.remoteUri.toSipIdentity()
         return conference.contacts.firstOrNull { it.number == identity.extension }?.displayName ?: identity.displayName
     }
-    val people = buildList {
+    val remote = conference.remote
+    val people = if (remote != null) buildList {
+        add(Person("you", null, stringResource(R.string.conference_you), true, muted, null))
+        remote.filter { it.ext != conference.selfExtension }.forEach {
+            val status = if (it.calling) R.string.calling_status else R.string.conference_active
+            add(Person(it.ext, null, it.name, false, false, status, it.calling))
+        }
+    } else buildList {
         add(Person("you", null, stringResource(R.string.conference_you), true, muted, null))
         // Nobody in a conference is on hold: someone who has answered is simply "Active".
         fun statusOf(s: CallSession): Pair<Int, Boolean> =
@@ -166,7 +182,7 @@ fun ConferenceScreen(
             speakerOn = speakerOn,
             onSpeakerChange = onSpeakerChange,
             count = people.size,
-            onAddPerson = onAddPerson,
+            onAddPerson = if (remote == null) onAddPerson else null,
             recording = recording,
             onRecordingChange = onRecordingChange,
             onEnd = conference.onEnd,
@@ -179,14 +195,21 @@ private fun PersonTile(person: Person, speaking: Boolean, large: Boolean, onRemo
     val size = if (large) 112.dp else 72.dp
     Column(Modifier.width(if (large) 160.dp else 96.dp), horizontalAlignment = Alignment.CenterHorizontally) {
         Box(contentAlignment = Alignment.Center) {
+            // Dim by colour rather than a layer alpha, and only draw the ring while speaking.
+            val tone = if (person.connecting) 0.55f else 1f
             Box(
                 Modifier.size(size + 12.dp)
-                    .border(if (speaking) 3.dp else 0.dp, if (speaking) AccentBlue else Color.Transparent, CircleShape)
+                    .then(if (speaking) Modifier.border(3.dp, AccentBlue, CircleShape) else Modifier)
                     .padding(6.dp)
-                    .clip(CircleShape).background(PrimaryLight).alpha(if (person.connecting) 0.55f else 1f),
+                    .background(PrimaryLight.copy(alpha = tone), CircleShape),
                 contentAlignment = Alignment.Center,
             ) {
-                Text(initialsOf(person.name), fontSize = if (large) 36.sp else 24.sp, fontWeight = FontWeight.Bold, color = CallTextPrimary)
+                Text(
+                    initialsOf(person.name),
+                    fontSize = if (large) 36.sp else 24.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = CallTextPrimary.copy(alpha = tone),
+                )
             }
             if (person.muted) {
                 Box(
@@ -223,7 +246,7 @@ private fun ConferenceToolbar(
     speakerOn: Boolean,
     onSpeakerChange: (Boolean) -> Unit,
     count: Int,
-    onAddPerson: () -> Unit,
+    onAddPerson: (() -> Unit)?,
     recording: Boolean,
     onRecordingChange: (Boolean) -> Unit,
     onEnd: () -> Unit,
@@ -257,7 +280,9 @@ private fun ConferenceToolbar(
             Icon(Icons.Default.Group, stringResource(R.string.conference_count, count), tint = Color.White, modifier = Modifier.size(22.dp))
             Text(count.toString(), color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Medium)
         }
-        ToolbarIcon(Icons.Default.PersonAdd, stringResource(R.string.add_call), tint = Color.White, onClick = onAddPerson)
+        if (onAddPerson != null) {
+            ToolbarIcon(Icons.Default.PersonAdd, stringResource(R.string.add_call), tint = Color.White, onClick = onAddPerson)
+        }
         Row(
             Modifier.height(40.dp).clip(RoundedCornerShape(20.dp))
                 .background(if (recording) ToolbarSegment else Color.Transparent)

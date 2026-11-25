@@ -6,6 +6,9 @@ import com.yeyofone.core.voip.CallDialog
 internal const val HANDOFF_CONTENT_TYPE = "application/vnd.yeyofone.handoff+json"
 internal const val HANDOFF_MAX_BYTES = 1024
 
+/** Content type of conference-roster messages between apps on different extensions. */
+internal const val CONFERENCE_CONTENT_TYPE = "application/vnd.yeyofone.conference+json"
+
 /**
  * True for a received BYE or CANCEL with "Reason: SIP;cause=200", which FreeSWITCH sends with
  * "Call completed elsewhere" when another device of the account takes the call over or answers it.

@@ -490,6 +490,7 @@ private fun AccountsApp(
                 val media by viewModel.observeMedia(activeSession.id).collectAsStateWithLifecycle()
                 val consultationSession = state.sessions.firstOrNull { it.id == state.consultationCallId }
                 val speaking by viewModel.speaking.collectAsStateWithLifecycle()
+val remoteConference by viewModel.remoteConference.collectAsStateWithLifecycle()
                 OutgoingCallHost(
                     session = activeSession,
                     media = media,
@@ -497,7 +498,7 @@ private fun AccountsApp(
                     availableRoutes = state.availableRoutes,
                     selectedRoute = state.selectedRoute,
                     consultationSession = consultationSession,
-                    conference = conferenceUi(viewModel, state, contacts, activeSession),
+                    conference = conferenceUi(viewModel, state, contacts, activeSession, remoteConference),
                     speakingIds = speaking,
                     recording = activeSession.id in state.recordingCallIds,
                     assistant = activeSession.id in state.assistantCallIds,
@@ -789,6 +790,7 @@ private fun IncomingCallScreen(
         val media by viewModel.observeMedia(current.id).collectAsStateWithLifecycle()
         val consultationSession = state.sessions.firstOrNull { it.id == state.consultationCallId }
         val speaking by viewModel.speaking.collectAsStateWithLifecycle()
+val remoteConference by viewModel.remoteConference.collectAsStateWithLifecycle()
         OutgoingCallHost(
             session = current,
             media = media,
@@ -796,7 +798,7 @@ private fun IncomingCallScreen(
             availableRoutes = state.availableRoutes,
             selectedRoute = state.selectedRoute,
             consultationSession = consultationSession,
-            conference = conferenceUi(viewModel, state, contacts, current),
+            conference = conferenceUi(viewModel, state, contacts, current, remoteConference),
                     speakingIds = speaking,
             recording = current.id in state.recordingCallIds,
             assistant = current.id in state.assistantCallIds,
@@ -1495,15 +1497,27 @@ private fun conferenceUi(
     state: YeyoFoneUiState,
     contacts: List<Contact>,
     active: CallSession,
+    remoteRoster: com.yeyofone.app.conference.ConferenceRoster? = null,
 ): ConferenceUi {
     val byId = state.sessions.associateBy { it.id }
+    val selfExtension = state.accounts.firstOrNull { it.id == active.accountId }?.username.orEmpty()
+    // Conference organised by someone else: show their roster, and leaving means hanging up my call.
+    val remote = remoteRoster?.takeIf { active.remoteUri.toSipIdentity().extension == it.host }?.members?.map {
+        com.yeyofone.app.ui.call.RemotePerson(
+            it.ext,
+            contacts.firstOrNull { c -> c.number == it.ext }?.displayName ?: it.name,
+            it.calling,
+        )
+    }
     return ConferenceUi(
         members = state.conferenceCallIds.mapNotNull { byId[it] },
         pending = state.pendingConferenceCallId?.let { byId[it] },
         contacts = contacts,
         onAdd = { viewModel.addToConference(active.id, active.accountId, it.number) },
         onRemove = viewModel::removeFromConference,
-        onEnd = viewModel::endConference,
-        onMute = viewModel::setConferenceMuted,
+        onEnd = { if (remote != null) viewModel.end(active.id) else viewModel.endConference() },
+        onMute = { muted -> if (remote != null) viewModel.setMuted(active.id, muted) else viewModel.setConferenceMuted(muted) },
+        remote = remote,
+        selfExtension = selfExtension,
     )
 }
