@@ -25,6 +25,7 @@ import {
   initialRoutingPreview,
   type CallingFeature,
 } from "./CallingFeatures";
+import logoUrl from "./assets/yeyofone-logo.svg";
 
 type IconName =
   | "grid"
@@ -382,11 +383,7 @@ function App() {
     <div className="app-shell">
       <header className="topbar">
         <a className="brand" href="#" onClick={() => setPage("Statistics")}>
-          <span className="brand-dots" aria-hidden="true">
-            {Array.from({ length: 9 }, (_, i) => (
-              <i key={i} />
-            ))}
-          </span>
+          <img className="brand-logo" src={logoUrl} alt="" aria-hidden="true" />
           YeyoFone
         </a>
         <label className="search">
