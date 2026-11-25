@@ -667,8 +667,9 @@ extern "C" int32_t yv_registration(YvHandle* h,uint64_t token,YvRegistration* ou
 }
 
 namespace {
-int32_t start_call(YvHandle* h,uint64_t account,uint64_t token,const uint8_t* uri,uint32_t len,int32_t audio,const std::string& replaces) noexcept {
-    if(!h->running||!token||!uri||len==0||len>512||(audio!=0&&audio!=1)||h->calls.size()>=2||h->calls.count(token)||std::any_of(h->calls.begin(),h->calls.end(),[](const auto& x){return x.second->isActive()&&!x.second->controls.held;}))return -6;
+int32_t start_call(YvHandle* h,uint64_t account,uint64_t token,const uint8_t* uri,uint32_t len,int32_t audio,const std::string& replaces,bool allow_live=false) noexcept {
+    // A second call normally needs the first on hold. A conference add (allow_live) keeps the first call live.
+    if(!h->running||!token||!uri||len==0||len>512||(audio!=0&&audio!=1)||h->calls.size()>=2||h->calls.count(token)||(!allow_live&&std::any_of(h->calls.begin(),h->calls.end(),[](const auto& x){return x.second->isActive()&&!x.second->controls.held;})))return -6;
     auto found=h->accounts.find(account);if(found==h->accounts.end())return -6;
     try {
         std::string destination(reinterpret_cast<const char*>(uri),len);
@@ -699,6 +700,12 @@ int32_t start_call(YvHandle* h,uint64_t account,uint64_t token,const uint8_t* ur
 extern "C" int32_t yv_call_start(YvHandle* h,uint64_t account,uint64_t token,const uint8_t* uri,uint32_t len,int32_t audio) noexcept {
     if(auto code=check(h))return code;
     return start_call(h,account,token,uri,len,audio,std::string());
+}
+// Like yv_call_start, but the call already in progress may stay live (not on hold), so a person can be
+// dialled into a conference without putting anyone on hold. At most two calls exist at once.
+extern "C" int32_t yv_call_start_live(YvHandle* h,uint64_t account,uint64_t token,const uint8_t* uri,uint32_t len,int32_t audio) noexcept {
+    if(auto code=check(h))return code;
+    return start_call(h,account,token,uri,len,audio,std::string(),true);
 }
 extern "C" int32_t yv_call_start_replacing(YvHandle* h,uint64_t account,uint64_t token,const uint8_t* uri,uint32_t len,
                                            const uint8_t* call_id,uint32_t call_id_len,const uint8_t* to_tag,uint32_t to_tag_len,

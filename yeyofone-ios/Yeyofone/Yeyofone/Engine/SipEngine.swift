@@ -189,10 +189,13 @@ nonisolated final class SipEngine: Thread, @unchecked Sendable {
         run(completion) { yv_account_register($0, token, renew ? 1 : 0) }
     }
 
-    func startCall(account: UInt64, token: UInt64, uri: String, completion: Completion? = nil) {
+    /// `keepingCallLive` dials someone into a conference without putting the call in progress on hold.
+    func startCall(account: UInt64, token: UInt64, uri: String, keepingCallLive: Bool = false, completion: Completion? = nil) {
         run(completion) { handle in
             Array(uri.utf8).withUnsafeBufferPointer { bytes in
-                yv_call_start(handle, account, token, bytes.baseAddress, UInt32(bytes.count), 1)
+                keepingCallLive
+                    ? yv_call_start_live(handle, account, token, bytes.baseAddress, UInt32(bytes.count), 1)
+                    : yv_call_start(handle, account, token, bytes.baseAddress, UInt32(bytes.count), 1)
             }
         }
     }
