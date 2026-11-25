@@ -544,7 +544,9 @@ struct CallOptionsScreen: View {
                             }
                         }
                     }
-                    .background(RoundedRectangle(cornerRadius: 20).fill(Palette.glass))
+                    // A soft blue tint instead of the white card, with a faint matching border.
+                    .background(RoundedRectangle(cornerRadius: 20).fill(Palette.accentBlue.opacity(0.12)))
+                    .overlay(RoundedRectangle(cornerRadius: 20).stroke(Palette.accentBlue.opacity(0.22), lineWidth: 1))
                     .padding(.horizontal, 24)
                     .padding(.vertical, 16)
                 }
@@ -596,7 +598,7 @@ private struct OptionRow: View {
     var body: some View {
         Button(action: action) {
             HStack(spacing: 14) {
-                IconTile(icon: icon, tint: iconTint, background: Palette.primaryLight)
+                IconTile(icon: icon, tint: iconTint, background: Palette.accentBlue.opacity(0.18))
                 VStack(alignment: .leading, spacing: 2) {
                     Text(title)
                         .appFont(size: 15, weight: .semibold)

@@ -378,7 +378,11 @@ private fun ConsultationTray(
 
 @Composable
 private fun CallOptionsGroup(content: @Composable () -> Unit) {
-    Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp)).background(GlassCard)) { content() }
+    // A soft blue tint instead of the white card, with a faint matching border.
+    Column(
+        Modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp)).background(AccentBlue.copy(alpha = 0.12f))
+            .border(1.dp, AccentBlue.copy(alpha = 0.22f), RoundedCornerShape(20.dp)),
+    ) { content() }
 }
 
 @Composable
@@ -393,7 +397,7 @@ private fun CallOptionRow(
         Modifier.fillMaxWidth().clickable(onClick = onClick).padding(horizontal = 18.dp, vertical = 16.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Box(Modifier.size(40.dp).clip(RoundedCornerShape(12.dp)).background(PrimaryLight), contentAlignment = Alignment.Center) {
+        Box(Modifier.size(40.dp).clip(RoundedCornerShape(12.dp)).background(AccentBlue.copy(alpha = 0.18f)), contentAlignment = Alignment.Center) {
             Icon(icon, null, tint = iconTint, modifier = Modifier.size(20.dp))
         }
         Column(Modifier.weight(1f).padding(start = 14.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
@@ -406,5 +410,5 @@ private fun CallOptionRow(
 
 @Composable
 private fun OptionDivider() {
-    Spacer(Modifier.fillMaxWidth().padding(start = 18.dp).height(1.dp).background(BorderLight.copy(alpha = .55f)))
+    Spacer(Modifier.fillMaxWidth().padding(start = 18.dp).height(1.dp).background(AccentBlue.copy(alpha = 0.18f)))
 }
