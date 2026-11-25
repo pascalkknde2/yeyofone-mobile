@@ -586,6 +586,14 @@
 .room-control-buttons .room-quality button[aria-checked="true"] span {
   color: var(--room-accent-strong);
 }
+.room-quality__heading {
+  margin: 8px 8px 2px;
+  color: var(--room-ink-muted);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
 .room-quality__note {
   margin: 4px 8px 6px;
   color: var(--room-ink-muted);
