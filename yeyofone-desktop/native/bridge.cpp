@@ -15,6 +15,13 @@
 #include <cstring>
 #include <cmath>
 #include <deque>
+#include <chrono>
+#ifdef __APPLE__
+#include <TargetConditionals.h>
+#if TARGET_OS_OSX
+#include <CoreAudio/CoreAudio.h>
+#endif
+#endif
 #include <vector>
 #include <pjlib-util/errno.h>
 #include <pjsip/sip_errno.h>
@@ -26,6 +33,40 @@
 #endif
 
 namespace {
+// Resolve input and output separately: a Bluetooth output need not be the default mic.
+// PJSIP's default indices come from a cached device list, not a live CoreAudio query.
+std::pair<int,int> default_sound_ids() {
+    std::pair<int,int> ids{PJMEDIA_AUD_DEFAULT_CAPTURE_DEV, PJMEDIA_AUD_DEFAULT_PLAYBACK_DEV};
+#if defined(__APPLE__) && TARGET_OS_OSX
+    auto resolve = [](AudioObjectPropertySelector selector, bool input, int fallback) {
+        AudioObjectPropertyAddress address{selector, kAudioObjectPropertyScopeGlobal, kAudioObjectPropertyElementMain};
+        AudioDeviceID device = kAudioObjectUnknown;
+        UInt32 size = sizeof(device);
+        if (AudioObjectGetPropertyData(kAudioObjectSystemObject, &address, 0, nullptr, &size, &device) != noErr) return fallback;
+        char name[sizeof(pjmedia_aud_dev_info{}.name)]{};
+        address.mSelector = kAudioDevicePropertyDeviceName;
+        size = sizeof(name);
+        if (AudioObjectGetPropertyData(device, &address, 0, nullptr, &size, name) != noErr) return fallback;
+        for (unsigned i = 0; i < pjmedia_aud_dev_count(); ++i) {
+            pjmedia_aud_dev_info info{};
+            if (pjmedia_aud_dev_get_info(i, &info) == PJ_SUCCESS &&
+                std::strcmp(info.driver, "core audio") == 0 &&
+                std::strncmp(info.name, name, sizeof(name)) == 0 &&
+                (input ? info.input_count : info.output_count)) return static_cast<int>(i);
+        }
+        return fallback;
+    };
+    ids.first = resolve(kAudioHardwarePropertyDefaultInputDevice, true, ids.first);
+    ids.second = resolve(kAudioHardwarePropertyDefaultOutputDevice, false, ids.second);
+#endif
+    return ids;
+}
+void open_default_sound() {
+    const auto ids = default_sound_ids();
+    const auto status = pjsua_set_snd_dev(ids.first, ids.second);
+    if (status != PJ_SUCCESS) throw pj::Error(status, "audio route", "", "", 0);
+}
+
 std::atomic_bool occupied{false};
 std::atomic<uint64_t> incoming_serial{1};
 const char* const HANDOFF_TYPE="application/vnd.yeyofone.handoff+json";
@@ -325,13 +366,13 @@ public:
         peer=&other;other.peer=this;
         route();other.route();
     }
-    void start_ringtone() noexcept {if(!is_incoming||ringtone_active)return;try{auto& devices=endpoint.audDevManager();devices.setPlaybackDev(PJMEDIA_AUD_DEFAULT_PLAYBACK_DEV);ringtone.createToneGenerator(16000,1);pj::ToneDesc tone;tone.freq1=440;tone.freq2=480;tone.on_msec=1000;tone.off_msec=3000;tone.volume=9000;pj::ToneDescVector tones;tones.push_back(tone);ringtone.play(tones,true);ringtone.startTransmit(devices.getPlaybackDevMedia());ringtone_active=true;}catch(...){try{ringtone.stop();}catch(...){}}}
+    void start_ringtone() noexcept {if(!is_incoming||ringtone_active)return;try{auto& devices=endpoint.audDevManager();devices.setPlaybackDev(default_sound_ids().second);ringtone.createToneGenerator(16000,1);pj::ToneDesc tone;tone.freq1=440;tone.freq2=480;tone.on_msec=1000;tone.off_msec=3000;tone.volume=9000;pj::ToneDescVector tones;tones.push_back(tone);ringtone.play(tones,true);ringtone.startTransmit(devices.getPlaybackDevMedia());ringtone_active=true;}catch(...){try{ringtone.stop();}catch(...){}}}
     // UK ringback cadence (400+450 Hz: 0.4 s on, 0.2 s off, 0.4 s on, 2 s off).
     void start_ringback() noexcept {if(is_incoming||!audio||ringback_active)return;try{auto& devices=endpoint.audDevManager();if(!ringback_created){ringback.createToneGenerator(16000,1);ringback_created=true;}pj::ToneDesc first;first.freq1=400;first.freq2=450;first.on_msec=400;first.off_msec=200;first.volume=0;pj::ToneDesc second=first;second.off_msec=2000;pj::ToneDescVector tones;tones.push_back(first);tones.push_back(second);ringback.play(tones,true);ringback.startTransmit(devices.getPlaybackDevMedia());ringback_active=true;}catch(...){try{ringback.stop();}catch(...){}}}
     void stop_ringback() noexcept {if(!ringback_active)return;try{ringback.stopTransmit(endpoint.audDevManager().getPlaybackDevMedia());}catch(...){}try{ringback.stop();}catch(...){}ringback_active=false;}
     void stop_ringtone() noexcept {if(!ringtone_active)return;try{ringtone.stopTransmit(endpoint.audDevManager().getPlaybackDevMedia());}catch(...){}try{ringtone.stop();}catch(...){}ringtone_active=false;}
     void send_ringing(){if(!is_incoming)return;pj::CallOpParam p;p.statusCode=PJSIP_SC_RINGING;pj::Call::answer(p);}
-    void answer(){auto state=getInfo().state;if(!is_incoming||(state!=PJSIP_INV_STATE_INCOMING&&state!=PJSIP_INV_STATE_EARLY))throw pj::Error(PJ_EINVALIDOP,"answer","","",0);stop_ringtone();audio=true;pj::CallOpParam p(true);p.statusCode=PJSIP_SC_OK;p.opt.audioCount=1;p.opt.videoCount=0;p.opt.textCount=0;auto& d=endpoint.audDevManager();d.setCaptureDev(PJMEDIA_AUD_DEFAULT_CAPTURE_DEV);d.setPlaybackDev(PJMEDIA_AUD_DEFAULT_PLAYBACK_DEV);try{pj::Call::answer(p);}catch(...){d.setNullDev();throw;}}
+    void answer(bool defer_audio=false){auto state=getInfo().state;if(!is_incoming||(state!=PJSIP_INV_STATE_INCOMING&&state!=PJSIP_INV_STATE_EARLY))throw pj::Error(PJ_EINVALIDOP,"answer","","",0);stop_ringtone();audio=true;pj::CallOpParam p(true);p.statusCode=PJSIP_SC_OK;p.opt.audioCount=1;p.opt.videoCount=0;p.opt.textCount=0;auto& d=endpoint.audDevManager();if(defer_audio)d.setNullDev();else open_default_sound();try{pj::Call::answer(p);}catch(...){d.setNullDev();throw;}}
     void reject(){if(!is_incoming)return;auto state=getInfo().state;if(state!=PJSIP_INV_STATE_INCOMING&&state!=PJSIP_INV_STATE_EARLY)return;stop_ringtone();pj::CallOpParam p;p.statusCode=PJSIP_SC_DECLINE;pj::Call::hangup(p);cancelled=true;}
     void start_recording(const std::string& final_path) {
         auto info=getInfo();
@@ -399,10 +440,54 @@ struct YvHandle {
     bool running = false;
     bool ringtone = true;
     float receive_gain = 1.0f;
+#if defined(__APPLE__) && TARGET_OS_OSX
+    std::array<UInt32,3> audio_devices{};
+    std::chrono::steady_clock::time_point next_audio_check{};
+    bool reopen_audio = false;
+#endif
     std::map<uint64_t,std::unique_ptr<NativeCall>> calls;
     std::map<uint64_t,std::unique_ptr<NativeAccount>> accounts;
 };
 namespace {
+// Called only on the engine's owner thread. Polling avoids calling PJSIP from a CoreAudio
+// notification thread and avoids callback lifetime races during endpoint destruction.
+void refresh_audio_routes(YvHandle* h, bool immediately = false) noexcept {
+#if defined(__APPLE__) && TARGET_OS_OSX
+    const auto now = std::chrono::steady_clock::now();
+    if (!immediately && now < h->next_audio_check) return;
+    h->next_audio_check = now + std::chrono::milliseconds(500);
+    std::array<UInt32,3> devices{};
+    AudioObjectPropertyAddress address{kAudioHardwarePropertyDefaultInputDevice, kAudioObjectPropertyScopeGlobal, kAudioObjectPropertyElementMain};
+    UInt32 size = sizeof(UInt32);
+    if (AudioObjectGetPropertyData(kAudioObjectSystemObject, &address, 0, nullptr, &size, &devices[0]) != noErr) return;
+    address.mSelector = kAudioHardwarePropertyDefaultOutputDevice;
+    size = sizeof(UInt32);
+    if (AudioObjectGetPropertyData(kAudioObjectSystemObject, &address, 0, nullptr, &size, &devices[1]) != noErr) return;
+    address.mSelector = kAudioHardwarePropertyDevices;
+    if (AudioObjectGetPropertyDataSize(kAudioObjectSystemObject, &address, 0, nullptr, &devices[2]) != noErr) return;
+    if (devices == h->audio_devices && !h->reopen_audio) return;
+    try {
+        auto& audio = h->endpoint->audDevManager();
+        const bool active = audio.sndIsActive();
+        h->reopen_audio = (h->reopen_audio || active) &&
+            std::any_of(h->calls.begin(), h->calls.end(), [](const auto& call) { return call.second->isActive(); });
+        if (active) audio.setNullDev();
+        audio.refreshDevs();
+        if (h->reopen_audio) open_default_sound();
+        h->reopen_audio = false;
+        h->audio_devices = devices;
+        PJ_LOG(4, ("yeyofone", "System audio devices refreshed"));
+    } catch (const pj::Error& error) {
+        // Keep the old snapshot and reopen flag so a temporarily unavailable headset is retried.
+        PJ_LOG(2, ("yeyofone", "Audio route refresh failed (%d); will retry", error.status));
+    } catch (...) {
+        PJ_LOG(2, ("yeyofone", "Audio route refresh failed; will retry"));
+    }
+#else
+    (void)h; (void)immediately;
+#endif
+}
+
 void NativeAccount::onIncomingCall(pj::OnIncomingCallParam& event) noexcept {
  try {
   if(!owner||!owner->running||owner->calls.size()>=16||std::any_of(owner->calls.begin(),owner->calls.end(),[](const auto& item){return item.second->isActive();})){pjsua_call_answer(event.callId,PJSIP_SC_BUSY_HERE,nullptr,nullptr);return;}
@@ -477,6 +562,7 @@ extern "C" int32_t yv_stop(YvHandle* h) noexcept {
 extern "C" int32_t yv_pump(YvHandle* h) noexcept {
     if (auto code = check(h)) return code;
     if (!h->running) return 0;
+    refresh_audio_routes(h);
     try { return h->endpoint->libHandleEvents(0) < 0 ? -7 : 0; }
     catch (const pj::Error& e) { return e.status; }
     catch (...) { return -1; }
@@ -599,7 +685,7 @@ int32_t start_call(YvHandle* h,uint64_t account,uint64_t token,const uint8_t* ur
         const int port=target->port?target->port:(secure?5061:5060);
         auto& acc=*found->second;
         if(EngineEndpoint::key(host,port,acc.target_transport)!=EngineEndpoint::key(acc.target_host,acc.target_port,acc.target_transport)||secure!=(acc.target_transport==PJSIP_TRANSPORT_TLS)||target->passwd.slen || !pj_list_empty(&target->header_param))return -6;
-        if(audio){try{auto& devices=h->endpoint->audDevManager();devices.setCaptureDev(PJMEDIA_AUD_DEFAULT_CAPTURE_DEV);devices.setPlaybackDev(PJMEDIA_AUD_DEFAULT_PLAYBACK_DEV);}catch(...){h->endpoint->audDevManager().setNullDev();return -11;}}
+        if(audio){refresh_audio_routes(h, true);try{open_default_sound();}catch(...){h->endpoint->audDevManager().setNullDev();return -11;}}
         auto call=std::make_unique<NativeCall>(acc,token,*h->endpoint,audio!=0,PJSUA_INVALID_ID,false,h->receive_gain);
         auto* pointer=call.get();h->calls.emplace(token,std::move(call));
         try{pj::CallOpParam options(true);options.opt.audioCount=1;options.opt.videoCount=0;options.opt.textCount=0;
@@ -740,8 +826,8 @@ extern "C" int32_t yv_audio_device(YvHandle* h,int32_t open) noexcept {
   // Only calls that carry audio need the device; with none, leave it closed.
   if(std::none_of(h->calls.begin(),h->calls.end(),[](const auto& x){return x.second->isActive();}))return 0;
   pjsua_set_no_snd_dev();
-  pj_status_t status=pjsua_set_snd_dev(PJMEDIA_AUD_DEFAULT_CAPTURE_DEV,PJMEDIA_AUD_DEFAULT_PLAYBACK_DEV);
-  return status;
+  open_default_sound();
+  return 0;
  }catch(const pj::Error&e){return e.status;}catch(...){return -1;}
 }
 extern "C" int32_t yv_set_call_receive_gain(YvHandle* h,float gain) noexcept {
@@ -761,6 +847,10 @@ extern "C" int32_t yv_call_list(YvHandle* h,YvCall* output,uint32_t capacity,uin
 extern "C" int32_t yv_call_answer(YvHandle* h,uint64_t token) noexcept {
  if(auto code=check(h))return code;auto f=h->calls.find(token);if(f==h->calls.end()||!f->second->is_incoming)return -6;
  try{f->second->answer();return 0;}catch(const pj::Error&e){return e.status;}catch(...){return -1;}
+}
+extern "C" int32_t yv_call_answer_deferred(YvHandle* h,uint64_t token) noexcept {
+ if(auto code=check(h))return code;auto f=h->calls.find(token);if(f==h->calls.end()||!f->second->is_incoming)return -6;
+ try{f->second->answer(true);return 0;}catch(const pj::Error&e){return e.status;}catch(...){return -1;}
 }
 extern "C" int32_t yv_call_reject(YvHandle* h,uint64_t token,int32_t status) noexcept {
  if(auto code=check(h))return code;auto f=h->calls.find(token);if(f==h->calls.end()||!f->second->is_incoming)return -6;
