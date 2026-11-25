@@ -131,6 +131,8 @@
     <string name="add_call">Add call</string>
     <string name="call_options_add_call_subtitle">Bring someone else into this conversation</string>
     <string name="merge_calls">Merge</string>
+    <string name="conference_you">You</string>
+    <string name="conference_count">%1$d people on this call</string>
     <string name="conference_title">Conference call</string>
     <string name="conference_with">%1$s and %2$s are on this call</string>
     <string name="remove_from_call">Remove from call</string>

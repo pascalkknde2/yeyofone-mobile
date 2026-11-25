@@ -969,6 +969,7 @@ private fun OutgoingCallHost(
             heldCallerName = session.remoteUri.toSipIdentity().displayName,
             consultationSession = consultationSession,
             conferenceMerged = conferenceMerged,
+            muted = media.muted,
             recording = recording,
             onRecordingChange = onRecordingChange,
             assistant = assistant,

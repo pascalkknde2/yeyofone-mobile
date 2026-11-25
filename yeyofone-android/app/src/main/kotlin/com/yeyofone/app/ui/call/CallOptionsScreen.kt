@@ -2,6 +2,11 @@ package com.yeyofone.app.ui.call
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.filled.MicOff
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -88,6 +93,8 @@ fun CallOptionsScreen(
     heldCallerName: String,
     consultationSession: CallSession?,
     conferenceMerged: Boolean,
+    muted: Boolean = false,
+    speakingIds: Set<String> = emptySet(),
     onMergeCalls: () -> Unit,
     recording: Boolean,
     onRecordingChange: (Boolean) -> Unit,
@@ -125,7 +132,7 @@ fun CallOptionsScreen(
 
         when {
             consultationSession != null -> {
-                ConsultationCenter(consultationSession, heldCallerName, conferenceMerged, Modifier.weight(1f))
+                ConsultationCenter(consultationSession, heldCallerName, conferenceMerged, muted, speakingIds, Modifier.weight(1f))
                 ConsultationTray(consultationSession, conferenceMerged, addingCall, onMergeCalls, onCompleteTransfer, onReturnToCaller)
             }
             enteringDestination -> {
@@ -306,29 +313,25 @@ private fun ConsultDestinationTray(enabled: Boolean, addingCall: Boolean, onStar
 }
 
 @Composable
-private fun ConsultationCenter(session: CallSession, heldCallerName: String, merged: Boolean, modifier: Modifier = Modifier) {
+private fun ConsultationCenter(
+    session: CallSession,
+    heldCallerName: String,
+    merged: Boolean,
+    muted: Boolean,
+    speakingIds: Set<String>,
+    modifier: Modifier = Modifier,
+) {
     val identity = session.remoteUri.toSipIdentity()
     if (merged) {
-        Column(
-            modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = 32.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center,
-        ) {
-            Text(
-                stringResource(R.string.conference_title),
-                fontSize = 22.sp,
-                fontWeight = FontWeight.Bold,
-                color = CallTextPrimary,
-                textAlign = TextAlign.Center,
-            )
-            Spacer(Modifier.height(8.dp))
-            Text(
-                stringResource(R.string.conference_with, heldCallerName, identity.displayName),
-                fontSize = 15.sp,
-                color = CallTextSecondary,
-                textAlign = TextAlign.Center,
-            )
-        }
+        ConferenceStage(
+            participants = listOf(
+                Participant("you", stringResource(R.string.conference_you), isSelf = true, muted = muted),
+                Participant("held", heldCallerName),
+                Participant("consult", identity.displayName),
+            ),
+            speakingIds = speakingIds,
+            modifier = modifier,
+        )
         return
     }
     Column(
@@ -439,3 +442,70 @@ private fun CallOptionRow(
 private fun OptionDivider() {
     Spacer(Modifier.fillMaxWidth().padding(start = 18.dp).height(1.dp).background(BorderLight.copy(alpha = .55f)))
 }
+
+private data class Participant(val id: String, val name: String, val isSelf: Boolean = false, val muted: Boolean = false)
+
+/**
+ * Participant stage: one person fills the stage as a spotlight, two to four people share a 2-column
+ * grid (scrolls beyond that). A blue ring marks whoever is speaking; a badge marks muted people.
+ */
+@Composable
+private fun ConferenceStage(participants: List<Participant>, speakingIds: Set<String>, modifier: Modifier = Modifier) {
+    Column(modifier.fillMaxWidth().padding(horizontal = 20.dp), verticalArrangement = Arrangement.Center) {
+        Text(
+            stringResource(R.string.conference_title),
+            fontSize = 22.sp, fontWeight = FontWeight.Bold, color = CallTextPrimary,
+            modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center,
+        )
+        Text(
+            stringResource(R.string.conference_count, participants.size),
+            fontSize = 14.sp, color = CallTextSecondary,
+            modifier = Modifier.fillMaxWidth().padding(top = 4.dp, bottom = 20.dp), textAlign = TextAlign.Center,
+        )
+        val spotlight = participants.firstOrNull { it.id in speakingIds && !it.isSelf } ?: participants.firstOrNull { !it.isSelf }
+        if (participants.size > 2 && spotlight != null) {
+            // Spotlight on the active (or first remote) speaker, everyone else in a strip below.
+            ParticipantTile(spotlight, spotlight.id in speakingIds, Modifier.fillMaxWidth().height(170.dp), large = true)
+            Spacer(Modifier.height(12.dp))
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                participants.filter { it != spotlight }.forEach {
+                    ParticipantTile(it, it.id in speakingIds, Modifier.weight(1f).height(110.dp))
+                }
+            }
+        } else {
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                participants.forEach { ParticipantTile(it, it.id in speakingIds, Modifier.weight(1f).height(150.dp)) }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ParticipantTile(p: Participant, speaking: Boolean, modifier: Modifier = Modifier, large: Boolean = false) {
+    val shape = RoundedCornerShape(20.dp)
+    Box(
+        modifier.clip(shape).background(GlassCard)
+            .border(if (speaking) 3.dp else 1.dp, if (speaking) AccentBlue else BorderLight, shape),
+        contentAlignment = Alignment.Center,
+    ) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Box(
+                Modifier.size(if (large) 72.dp else 52.dp).clip(CircleShape).background(PrimaryLight),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(initialsOf(p.name), fontSize = if (large) 26.sp else 18.sp, fontWeight = FontWeight.Bold, color = CallTextPrimary)
+            }
+            Spacer(Modifier.height(8.dp))
+            Text(p.name, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = CallTextPrimary, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(horizontal = 8.dp))
+        }
+        if (p.muted) {
+            Box(
+                Modifier.align(Alignment.TopEnd).padding(8.dp).size(24.dp).clip(CircleShape).background(AccentRed),
+                contentAlignment = Alignment.Center,
+            ) { Icon(Icons.Default.MicOff, stringResource(R.string.mute), tint = Color.White, modifier = Modifier.size(14.dp)) }
+        }
+    }
+}
+
+private fun initialsOf(name: String): String = name.split(' ', '.', '-', '_')
+    .filter(String::isNotBlank).take(2).joinToString("") { it.first().uppercase() }.ifEmpty { "?" }
