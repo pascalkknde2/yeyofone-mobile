@@ -278,8 +278,8 @@ class YeyoFoneViewModel(
             }
         }
         viewModelScope.launch {
-            combine(conferenceMembers, pendingConferenceCall, calls.sessions, contactsRepo.observeAll()) { members, pending, sessions, contactList ->
-                RosterInputs(members, pending, sessions, contactList)
+            combine(conferenceMembers, pendingConferenceCall, calls.sessions, contactsRepo.observeAll(), _speaking) { members, pending, sessions, contactList, talking ->
+                RosterInputs(members, pending, sessions, contactList, talking)
             }.collectLatest { inputs ->
                 kotlinx.coroutines.delay(150)
                 shareRoster(gateway, inputs)
@@ -292,6 +292,7 @@ class YeyoFoneViewModel(
         val pending: CallId?,
         val sessions: List<CallSession>,
         val contacts: List<Contact>,
+        val speaking: Set<String>,
     )
 
     private suspend fun shareRoster(gateway: com.yeyofone.core.voip.SipPeerMessageGateway, inputs: RosterInputs) {
@@ -321,7 +322,11 @@ class YeyoFoneViewModel(
                 add(com.yeyofone.app.conference.RosterMember(it.remoteUri.toSipIdentity().extension, nameFor(it), it.state != CallState.Connected))
             }
         }
-        val json = com.yeyofone.app.conference.ConferenceRoster(account.username, members).toJson()
+        // Who is talking, as extensions, so people on the conference can light the same rings.
+        val talking = inputs.speaking.mapNotNull { id ->
+            if (id == "you") account.username else byId.values.firstOrNull { it.id.value == id }?.remoteUri?.toSipIdentity()?.extension
+        }
+        val json = com.yeyofone.app.conference.ConferenceRoster(account.username, members, talking).toJson()
         val recipients = live.map { it.remoteUri.toSipIdentity().extension }.toSet()
         recipients.forEach { runCatching { gateway.sendPeerMessage(account.id, it, json) } }
         // Anyone who left since the last roster is told the conference is over for them.

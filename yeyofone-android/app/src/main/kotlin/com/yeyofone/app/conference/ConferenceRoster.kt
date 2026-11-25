@@ -10,11 +10,12 @@ data class RosterMember(val ext: String, val name: String, val calling: Boolean)
  * Who is on a conference, sent by the organiser to each person on it so everyone sees the same
  * conference screen. [host] is the organiser's extension and is also one of [members].
  */
-data class ConferenceRoster(val host: String, val members: List<RosterMember>) {
+data class ConferenceRoster(val host: String, val members: List<RosterMember>, val speaking: List<String> = emptyList()) {
     fun toJson(ended: Boolean = false): String = JSONObject()
         .put("v", 1)
         .put("host", host)
         .put("ended", ended)
+        .put("speaking", JSONArray().also { array -> speaking.forEach { array.put(it) } })
         .put(
             "members",
             JSONArray().also { array ->
@@ -42,7 +43,10 @@ data class ConferenceRoster(val host: String, val members: List<RosterMember>) {
                 val name = item.optString("name").filter { !it.isISOControl() }.trim().take(40).ifBlank { ext }
                 RosterMember(ext, name, item.optBoolean("calling", false))
             }
-            ConferenceRoster(host, members) to ended
+            val talking = json.optJSONArray("speaking")?.let { list ->
+                (0 until minOf(list.length(), MAX_MEMBERS)).mapNotNull { list.optString(it).takeIf { ext -> EXTENSION.matches(ext) } }
+            }.orEmpty()
+            ConferenceRoster(host, members, talking) to ended
         }.getOrNull()
     }
 }

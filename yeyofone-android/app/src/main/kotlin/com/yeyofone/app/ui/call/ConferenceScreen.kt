@@ -79,6 +79,8 @@ data class ConferenceUi(
      * extension in [selfExtension]. This phone then shows the same screen but can't add or remove people.
      */
     val remote: List<RemotePerson>? = null,
+    /** Extensions the organiser says are talking (only used when [remote] is set). */
+    val remoteSpeaking: Set<String> = emptySet(),
     val selfExtension: String = "",
 ) {
     val active: Boolean get() = members.isNotEmpty() || remote != null
@@ -123,6 +125,10 @@ fun ConferenceScreen(
         return conference.contacts.firstOrNull { it.number == identity.extension }?.displayName ?: identity.displayName
     }
     val remote = conference.remote
+    // On someone else's conference the organiser tells me who is talking; my own extension is "you".
+    val talking = if (remote != null) {
+        conference.remoteSpeaking.map { if (it == conference.selfExtension) "you" else it }.toSet()
+    } else speakingIds
     val people = if (remote != null) buildList {
         add(Person("you", null, stringResource(R.string.conference_you), true, muted, null))
         remote.filter { it.ext != conference.selfExtension }.forEach {
@@ -162,17 +168,17 @@ fun ConferenceScreen(
         ) {
             // With more than two people the one talking (or the first other person) is the spotlight.
             val spotlight = if (people.size > 2) {
-                people.firstOrNull { it.id in speakingIds && !it.isSelf } ?: people.firstOrNull { !it.isSelf }
+                people.firstOrNull { it.id in talking && !it.isSelf } ?: people.firstOrNull { !it.isSelf }
             } else null
             if (spotlight != null) {
-                PersonTile(spotlight, spotlight.id in speakingIds, large = true, onRemove = conference.onRemove)
+                PersonTile(spotlight, spotlight.id in talking, large = true, onRemove = conference.onRemove)
                 Spacer(Modifier.height(28.dp))
             }
             val rest = if (spotlight != null) people.filter { it !== spotlight } else people
             rest.chunked(3).forEachIndexed { index, row ->
                 if (index > 0) Spacer(Modifier.height(24.dp))
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
-                    row.forEach { PersonTile(it, it.id in speakingIds, large = false, onRemove = conference.onRemove) }
+                    row.forEach { PersonTile(it, it.id in talking, large = false, onRemove = conference.onRemove) }
                 }
             }
         }
