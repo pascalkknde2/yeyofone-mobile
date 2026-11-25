@@ -98,6 +98,14 @@ struct NativeHandoffMessage {
     len: u32,
     body: [u8; 1024],
 }
+#[repr(C)]
+struct NativePeerMessage {
+    account_token: u64,
+    user_len: u32,
+    user: [u8; 32],
+    len: u32,
+    body: [u8; 1024],
+}
 impl Default for NativeCall {
     fn default() -> Self {
         Self {
@@ -171,6 +179,16 @@ unsafe extern "C" {
     ) -> i32;
     fn yv_handoff_send(handle: *mut Opaque, account: u64, body: *const u8, len: u32) -> i32;
     fn yv_handoff_next(handle: *mut Opaque, out: *mut NativeHandoffMessage) -> i32;
+    fn yv_peer_send(
+        handle: *mut Opaque,
+        account: u64,
+        user: *const u8,
+        user_len: u32,
+        body: *const u8,
+        len: u32,
+    ) -> i32;
+    fn yv_peer_next(handle: *mut Opaque, out: *mut NativePeerMessage) -> i32;
+    fn yv_call_level(handle: *mut Opaque, token: u64) -> i32;
 
     fn yv_account_add(handle: *mut Opaque, config: *const NativeAccountConfig) -> i32;
     fn yv_account_remove(handle: *mut Opaque, token: u64) -> i32;
@@ -303,6 +321,61 @@ impl Native {
             }
             code => Err(code),
         }
+    }
+    /// Sends a conference message to another extension on the account's domain.
+    pub fn peer_send(&mut self, account: u64, user: &str, body: &str) -> Result<(), i32> {
+        if user.is_empty()
+            || user.len() > 32
+            || body.is_empty()
+            || body.len() > 1024
+            || body.as_bytes().contains(&0)
+            || !user
+                .bytes()
+                .all(|b| b.is_ascii_alphanumeric() || b".+_-".contains(&b))
+        {
+            return Err(-6);
+        }
+        // SAFETY: bounded buffers stay alive through the synchronous native copy.
+        checked(unsafe {
+            yv_peer_send(
+                self.handle.as_ptr(),
+                account,
+                user.as_ptr(),
+                user.len() as u32,
+                body.as_ptr(),
+                body.len() as u32,
+            )
+        })
+    }
+    /// Next conference message as (account token, sender extension, body), if any.
+    pub fn peer_next(&mut self) -> Result<Option<(u64, String, Vec<u8>)>, i32> {
+        let mut out = NativePeerMessage {
+            account_token: 0,
+            user_len: 0,
+            user: [0; 32],
+            len: 0,
+            body: [0; 1024],
+        };
+        // SAFETY: repr(C) output matches bridge.h and is writable on the owner thread.
+        match unsafe { yv_peer_next(self.handle.as_ptr(), &mut out) } {
+            0 => Ok(None),
+            1 => {
+                let user = (out.user_len as usize).min(out.user.len());
+                let len = (out.len as usize).min(out.body.len());
+                Ok(Some((
+                    out.account_token,
+                    String::from_utf8_lossy(&out.user[..user]).into_owned(),
+                    out.body[..len].to_vec(),
+                )))
+            }
+            code => Err(code),
+        }
+    }
+    /// Signal level 0-255 of what a call receives; token 0 is the microphone.
+    pub fn call_level(&mut self, token: u64) -> Result<i32, i32> {
+        // SAFETY: live owner-thread handle and scalar token.
+        let level = unsafe { yv_call_level(self.handle.as_ptr(), token) };
+        if level < 0 { Err(level) } else { Ok(level) }
     }
     pub fn call(&mut self, token: u64) -> Result<NativeCall, i32> {
         let mut out = NativeCall::default();

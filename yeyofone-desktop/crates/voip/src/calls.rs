@@ -22,6 +22,13 @@ impl Calls {
     fn now(&self) -> u64 {
         self.origin.elapsed().as_millis() as u64
     }
+    /// The native token of a live call, if there is one with this id.
+    pub fn token_of(&self, id: &str) -> Option<u64> {
+        self.sessions
+            .get(id)
+            .filter(|s| !s.machine.terminal())
+            .map(|s| s.token)
+    }
     pub fn active_account(&self, id: &str) -> bool {
         self.sessions
             .values()

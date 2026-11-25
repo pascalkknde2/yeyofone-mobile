@@ -11,6 +11,7 @@ import "./sidebar.css";
 import { Dialer } from "./Dialer";
 import { CallBar, type CallTool } from "./CallBar";
 import { IncomingCall } from "./IncomingCall";
+import { ConferenceHost } from "./ConferenceHost";
 import { HandoffBanner } from "./HandoffBanner";
 import { CallHistory } from "./CallHistory";
 import { Voicemail } from "./Voicemail";
@@ -1061,6 +1062,7 @@ function App() {
       />
       <HandoffBanner onTakenOver={() => setDialer("")} />
       <AutoRecorder />
+      <ConferenceHost />
       <IncomingCall
         key={callTool ?? "screen"}
         hiddenId={hiddenIncoming}
