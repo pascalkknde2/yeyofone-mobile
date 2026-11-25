@@ -12,6 +12,8 @@ import SwiftUI
 struct RootView: View {
     @Environment(AppStore.self) private var store
     @Environment(\.scenePhase) private var scenePhase
+    /// The opening animation plays once per launch, and not when a call is already ringing.
+    @State private var showSplash = true
 
     var body: some View {
         Group {
@@ -33,6 +35,14 @@ struct RootView: View {
             }
         }
         .background(AppBackdrop())
+        .overlay {
+            if showSplash {
+                AnimatedSplashView { showSplash = false }
+                    .transition(.opacity)
+                    .zIndex(1)
+            }
+        }
+        .onAppear { if store.incomingCall != nil { showSplash = false } }
         .animation(.easeInOut(duration: 0.2), value: store.incomingCall?.id)
         .animation(.easeInOut(duration: 0.2), value: store.activeCall?.id)
         .animation(.easeInOut(duration: 0.2), value: store.endedSummary)

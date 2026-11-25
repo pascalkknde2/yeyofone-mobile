@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- What the window shows before the first screen is drawn: the brand blue with the bird. -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:drawable="@color/splash_background" />
+    <item
+        android:drawable="@drawable/ic_splash_logo"
+        android:width="288dp"
+        android:height="288dp"
+        android:gravity="center" />
+</layer-list>

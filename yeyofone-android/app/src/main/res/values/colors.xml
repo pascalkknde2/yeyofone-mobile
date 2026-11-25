@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Brand blue behind the splash screen. -->
+    <color name="splash_background">#2A4CE5</color>
+</resources>

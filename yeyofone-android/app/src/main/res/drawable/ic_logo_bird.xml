@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The YeyoFone bird (Yeyofone-logo-icon.svg), cropped to its own size for the animated splash. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="30.737177dp"
+    android:height="29.200335dp"
+    android:viewportWidth="30.737177"
+    android:viewportHeight="29.200335">
+    <group
+        android:translateX="-13.335026"
+        android:translateY="-125.82801">
+        <path
+            android:fillColor="#FF1B58"
+            android:pathData="M32.846526,125.82801 L43.289828,126.16743 L32.846526,136.1554 Z M32.087894,126.38562 L32.087894,136.67662 L22.379519,136.67662 C25.690143,133.32112 28.864909,129.83364 32.087894,126.38562 Z M42.732678,127.77956 L44.072204,128.24019 L39.235825,131.11289 Z M16.535575,128.91898 L18.657439,128.91898 L23.600515,134.32508 L21.300836,136.67662 L16.535575,136.67662 C16.535921,134.08905 16.535575,131.50521 16.535575,128.91898 Z M15.776905,129.39172 L15.776905,131.63415 L13.335028,131.63415 Z M17.069019,137.45239 L31.91008,137.45239 L27.773048,148.76162 Z M32.087894,139.19783 L32.087894,155.02835 L27.251477,152.38591 C28.864102,147.98935 30.4745,143.59547 32.087894,139.19783 Z" />
+    </group>
+</vector>

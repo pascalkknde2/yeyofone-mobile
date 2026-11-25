@@ -4,8 +4,8 @@
     <style name="Theme.YeyoFone.Base" parent="android:style/Theme.Material.NoActionBar">
         <item name="android:fontFamily">sans</item>
         <item name="android:colorAccent">#3B82F6</item>
-        <item name="android:windowBackground">#0B1120</item>
-        <item name="android:statusBarColor">#0B1120</item>
+        <item name="android:windowBackground">@drawable/splash_window_background</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
         <item name="android:navigationBarColor">#0B1120</item>
         <item name="android:windowLightStatusBar">false</item>
     </style>
