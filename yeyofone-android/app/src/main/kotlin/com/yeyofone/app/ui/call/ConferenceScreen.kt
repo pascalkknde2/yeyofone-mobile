@@ -59,6 +59,7 @@ import com.yeyofone.app.ui.theme.CallTextSecondary
 import com.yeyofone.app.ui.theme.PrimaryLight
 import com.yeyofone.core.model.CallId
 import com.yeyofone.core.model.CallSession
+import com.yeyofone.core.model.CallState
 import com.yeyofone.core.model.Contact
 import kotlinx.coroutines.delay
 
@@ -88,6 +89,8 @@ private class Person(
     val isSelf: Boolean,
     val muted: Boolean,
     val statusRes: Int?,
+    /** True while the person is still being called, so their avatar is dimmed. */
+    val connecting: Boolean = false,
 )
 
 /**
@@ -112,8 +115,18 @@ fun ConferenceScreen(
     }
     val people = buildList {
         add(Person("you", null, stringResource(R.string.conference_you), true, muted, null))
-        conference.members.forEach { add(Person(it.id.value, it.id, nameOf(it), false, false, null)) }
-        conference.pending?.let { add(Person(it.id.value, it.id, nameOf(it), false, false, it.state.statusLabel())) }
+        // Nobody in a conference is on hold: someone who has answered is simply "Active".
+        fun statusOf(s: CallSession): Pair<Int, Boolean> =
+            if (s.state == CallState.Connected || s.state == CallState.Held) R.string.conference_active to false
+            else s.state.statusLabel() to true
+        conference.members.forEach {
+            val (status, connecting) = statusOf(it)
+            add(Person(it.id.value, it.id, nameOf(it), false, false, status, connecting))
+        }
+        conference.pending?.let {
+            val (status, connecting) = statusOf(it)
+            add(Person(it.id.value, it.id, nameOf(it), false, false, status, connecting))
+        }
     }
 
     Column(Modifier.fillMaxSize().systemBarsPadding(), horizontalAlignment = Alignment.CenterHorizontally) {
@@ -170,7 +183,7 @@ private fun PersonTile(person: Person, speaking: Boolean, large: Boolean, onRemo
                 Modifier.size(size + 12.dp)
                     .border(if (speaking) 3.dp else 0.dp, if (speaking) AccentBlue else Color.Transparent, CircleShape)
                     .padding(6.dp)
-                    .clip(CircleShape).background(PrimaryLight).alpha(if (person.statusRes != null) 0.55f else 1f),
+                    .clip(CircleShape).background(PrimaryLight).alpha(if (person.connecting) 0.55f else 1f),
                 contentAlignment = Alignment.Center,
             ) {
                 Text(initialsOf(person.name), fontSize = if (large) 36.sp else 24.sp, fontWeight = FontWeight.Bold, color = CallTextPrimary)
