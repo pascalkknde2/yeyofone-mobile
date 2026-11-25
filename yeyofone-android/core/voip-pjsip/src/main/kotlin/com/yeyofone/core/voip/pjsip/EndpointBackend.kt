@@ -42,6 +42,7 @@ internal interface EndpointBackend {
     fun stopRecording(callId: String) = Unit
     fun mergeCalls(callId: String, otherCallId: String): Unit =
         error("Conference is not supported by this backend")
+    fun inputLevel(callId: String?): Float = 0f
     fun setCallEventListener(callback: (NativeCallEvent) -> Unit) = Unit
     fun setMediaEventListener(callback: (NativeMediaEvent) -> Unit) = Unit
     fun setTransferEventListener(callback: (NativeTransferEvent) -> Unit) = Unit

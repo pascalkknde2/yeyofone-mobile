@@ -484,6 +484,7 @@ private fun AccountsApp(
             } else {
                 val media by viewModel.observeMedia(activeSession.id).collectAsStateWithLifecycle()
                 val consultationSession = state.sessions.firstOrNull { it.id == state.consultationCallId }
+                val speaking by viewModel.speaking.collectAsStateWithLifecycle()
                 OutgoingCallHost(
                     session = activeSession,
                     media = media,
@@ -492,6 +493,7 @@ private fun AccountsApp(
                     selectedRoute = state.selectedRoute,
                     consultationSession = consultationSession,
                     conferenceMerged = state.conferenceMerged,
+                    speakingIds = speaking,
                     recording = activeSession.id in state.recordingCallIds,
                     assistant = activeSession.id in state.assistantCallIds,
                     onAssistantChange = { on -> viewModel.setAssistant(activeSession.id, on, if (on) newRecordingFile(context, activeSession) else null) },
@@ -781,6 +783,7 @@ private fun IncomingCallScreen(
     if (current.state != CallState.Incoming && current.state != CallState.Ringing && !current.state.isTerminal()) {
         val media by viewModel.observeMedia(current.id).collectAsStateWithLifecycle()
         val consultationSession = state.sessions.firstOrNull { it.id == state.consultationCallId }
+        val speaking by viewModel.speaking.collectAsStateWithLifecycle()
         OutgoingCallHost(
             session = current,
             media = media,
@@ -789,6 +792,7 @@ private fun IncomingCallScreen(
             selectedRoute = state.selectedRoute,
             consultationSession = consultationSession,
             conferenceMerged = state.conferenceMerged,
+                    speakingIds = speaking,
             recording = current.id in state.recordingCallIds,
             assistant = current.id in state.assistantCallIds,
             onAssistantChange = { on -> viewModel.setAssistant(current.id, on, if (on) newRecordingFile(context, current) else null) },
@@ -924,6 +928,7 @@ private fun OutgoingCallHost(
     selectedRoute: AudioRoute?,
     consultationSession: CallSession?,
     conferenceMerged: Boolean,
+    speakingIds: Set<String>,
     recording: Boolean,
     onRecordingChange: (Boolean) -> Unit,
     assistant: Boolean,
@@ -970,6 +975,7 @@ private fun OutgoingCallHost(
             consultationSession = consultationSession,
             conferenceMerged = conferenceMerged,
             muted = media.muted,
+            speakingIds = speakingIds,
             recording = recording,
             onRecordingChange = onRecordingChange,
             assistant = assistant,

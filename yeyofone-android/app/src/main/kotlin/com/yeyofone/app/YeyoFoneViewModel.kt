@@ -37,6 +37,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.flow.flatMapLatest
@@ -152,6 +153,10 @@ class YeyoFoneViewModel(
     private val assistantStartedRecording = mutableSetOf<CallId>()
     private val dismissedIncomingCalls = MutableStateFlow<Set<CallId>>(emptySet())
 
+    private val _speaking = MutableStateFlow<Set<String>>(emptySet())
+    /** Who is talking in the conference: "you", "held" (the original caller) and/or "consult". */
+    val speaking: StateFlow<Set<String>> = _speaking
+
     // Re-subscribes to each account's preferences whenever the account list itself changes;
     // CallCoordinator reads the same repository to enforce Allow Incoming/DND/Auto-Answer, so
     // this is just the UI's read-side view of that persisted state (see CALL-FEATURES-AUDIT.md
@@ -203,6 +208,7 @@ class YeyoFoneViewModel(
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), YeyoFoneUiState())
 
     init {
+        startSpeakerDetection()
         // completeTransfer() hands both legs to the PBX and never clears the consultation, so
         // forget it once no call is live; otherwise the next call's More screen reopens the old,
         // ended consultation. (While a call is still live, an ended consultation is kept so the
@@ -225,6 +231,29 @@ class YeyoFoneViewModel(
                 if (conferenceMerged.value && (consultation == null || consultation.state.isTerminal())) {
                     conferenceMerged.value = false
                 }
+            }
+        }
+    }
+
+    /** While a conference is up, samples each voice's level a few times a second to find who is talking. */
+    private fun startSpeakerDetection() = viewModelScope.launch {
+        conferenceMerged.collectLatest { merged ->
+            _speaking.value = emptySet()
+            if (!merged) return@collectLatest
+            val lastLoud = mutableMapOf<String, Long>()
+            while (true) {
+                val now = android.os.SystemClock.elapsedRealtime()
+                val held = activeCallId.value
+                val consult = consultationCallId.value
+                val levels = buildMap {
+                    if (held != null) put("held", runCatching { calls.inputLevel(held) }.getOrDefault(0f))
+                    if (consult != null) put("consult", runCatching { calls.inputLevel(consult) }.getOrDefault(0f))
+                    put("you", if (held != null && media.observe(held).value.muted) 0f else runCatching { calls.inputLevel(null) }.getOrDefault(0f))
+                }
+                levels.forEach { (id, level) -> if (level > SPEAKING_LEVEL) lastLoud[id] = now }
+                // Keep the ring on briefly after a voice drops so it doesn't flicker between words.
+                _speaking.value = lastLoud.filterValues { now - it < SPEAKING_HOLD_MS }.keys
+                kotlinx.coroutines.delay(200)
             }
         }
     }
@@ -511,3 +540,6 @@ class YeyoFoneViewModel(
 
 private fun com.yeyofone.core.model.CallState.isTerminal(): Boolean =
     this is com.yeyofone.core.model.CallState.Disconnected || this is com.yeyofone.core.model.CallState.Failed
+
+private const val SPEAKING_LEVEL = 0.06f
+private const val SPEAKING_HOLD_MS = 500L

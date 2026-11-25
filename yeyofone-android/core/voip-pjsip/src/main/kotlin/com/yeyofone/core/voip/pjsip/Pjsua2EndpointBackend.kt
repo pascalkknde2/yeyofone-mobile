@@ -566,6 +566,13 @@ internal class Pjsua2EndpointBackend : EndpointBackend {
         bridgeConference(callId)
     }
 
+    override fun inputLevel(callId: String?): Float = runCatching {
+        val ep = endpoint ?: return 0f
+        val media = if (callId == null) ep.audDevManager().captureDevMedia else calls[callId]?.getAudioMedia(-1) ?: return 0f
+        // PJSUA reports the signal level of what the port feeds the bridge on a 0..255 scale.
+        (media.rxLevel.toFloat() / 255f).coerceIn(0f, 1f)
+    }.getOrDefault(0f)
+
     override fun startRecording(callId: String, path: String) {
         checkNotNull(calls[callId]) { "Native call does not exist" }
         check(!recorders.containsKey(callId)) { "Call is already being recorded" }

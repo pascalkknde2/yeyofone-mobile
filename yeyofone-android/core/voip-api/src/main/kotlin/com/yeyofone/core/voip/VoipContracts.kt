@@ -121,6 +121,8 @@ interface SipCallGateway {
     suspend fun stopRecording(callId: String): Unit = error("Recording is not supported")
     /** Joins two connected calls into one three-way audio conference. */
     suspend fun mergeCalls(callId: String, otherCallId: String): Unit = error("Conference is not supported")
+    /** How loud the call's incoming voice (or, with a null id, the microphone) is right now, 0..1. */
+    suspend fun inputLevel(callId: String?): Float = 0f
 }
 
 interface CallManager {
@@ -136,6 +138,8 @@ interface CallManager {
     suspend fun stopRecording(callId: CallId): Unit = error("Recording is not supported")
     /** Joins two connected calls into one three-way conference; the first one may be on hold. */
     suspend fun mergeCalls(callId: CallId, otherCallId: CallId): Unit = error("Conference is not supported")
+    /** How loud the call's incoming voice (or, with a null id, the microphone) is right now, 0..1. */
+    suspend fun inputLevel(callId: CallId?): Float = 0f
 }
 
 interface CallHistoryRepository {
