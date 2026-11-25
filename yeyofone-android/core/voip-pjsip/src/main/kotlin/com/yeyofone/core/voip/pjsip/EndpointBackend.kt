@@ -4,6 +4,7 @@ import com.yeyofone.core.model.SipAccount
 import com.yeyofone.core.model.SipAccountId
 import com.yeyofone.core.voip.CallDialog
 import com.yeyofone.core.voip.HandoffMessage
+import com.yeyofone.core.voip.PeerMessage
 import com.yeyofone.core.voip.NativeCallEvent
 import com.yeyofone.core.voip.NativeMediaEvent
 import com.yeyofone.core.voip.NativeRegistrationEvent
@@ -49,6 +50,8 @@ internal interface EndpointBackend {
     fun audioCodecs(): List<AudioCodecInfo> = emptyList()
     fun setHandoffListener(callback: (HandoffMessage) -> Unit) = Unit
     fun sendHandoff(accountId: SipAccountId, body: String): Unit = error("Call handoff is not supported")
+    fun setPeerMessageListener(callback: (PeerMessage) -> Unit) = Unit
+    fun sendPeerMessage(accountId: SipAccountId, toUser: String, body: String): Unit = error("Peer messages are not supported")
     fun callDialog(callId: String): CallDialog? = null
     fun makeReplacingCall(
         accountId: SipAccountId,

@@ -80,6 +80,7 @@ nonisolated final class SipEngine: Thread, @unchecked Sendable {
     private let onSnapshot: @Sendable (EngineSnapshot) -> Void
     private let onStartFailure: @Sendable (Int32) -> Void
     private let onHandoff: @Sendable (UInt64, Data) -> Void
+    private let onPeerMessage: @Sendable (UInt64, String, Data) -> Void
 
     // Owned by the engine thread only.
     private var accountTokens: Set<UInt64> = []
@@ -87,10 +88,12 @@ nonisolated final class SipEngine: Thread, @unchecked Sendable {
     private var callBuffer = [YvCall](repeating: YvCall(), count: 16)
 
     init(onSnapshot: @escaping @Sendable (EngineSnapshot) -> Void, onStartFailure: @escaping @Sendable (Int32) -> Void,
-         onHandoff: @escaping @Sendable (UInt64, Data) -> Void) {
+         onHandoff: @escaping @Sendable (UInt64, Data) -> Void,
+         onPeerMessage: @escaping @Sendable (UInt64, String, Data) -> Void = { _, _, _ in }) {
         self.onSnapshot = onSnapshot
         self.onStartFailure = onStartFailure
         self.onHandoff = onHandoff
+        self.onPeerMessage = onPeerMessage
         super.init()
         name = "YeyoFone SIP"
         qualityOfService = .userInteractive
@@ -112,6 +115,7 @@ nonisolated final class SipEngine: Thread, @unchecked Sendable {
         var lastPoll = Date.distantPast
         var event = YvEvent()
         var message = YvHandoffMessage()
+        var peer = YvPeerMessage()
         while !isCancelled {
             let pending = lock.withLock {
                 let current = jobs
@@ -124,6 +128,12 @@ nonisolated final class SipEngine: Thread, @unchecked Sendable {
             while yv_handoff_next(handle, &message) == 1 {
                 let length = min(Int(message.len), 1024)
                 onHandoff(message.account_token, withUnsafeBytes(of: message.body) { Data($0.prefix(length)) })
+            }
+            while yv_peer_next(handle, &peer) == 1 {
+                let userLength = min(Int(peer.user_len), 32)
+                let user = withUnsafeBytes(of: peer.user) { String(decoding: $0.prefix(userLength), as: UTF8.self) }
+                let length = min(Int(peer.len), 1024)
+                onPeerMessage(peer.account_token, user, withUnsafeBytes(of: peer.body) { Data($0.prefix(length)) })
             }
             if Date().timeIntervalSince(lastPoll) >= 0.1 || !pending.isEmpty {
                 publish(handle)
@@ -288,6 +298,18 @@ nonisolated final class SipEngine: Thread, @unchecked Sendable {
         run(nil) { handle in
             body.withUnsafeBytes { bytes in
                 yv_handoff_send(handle, account, bytes.bindMemory(to: UInt8.self).baseAddress, UInt32(bytes.count))
+            }
+        }
+    }
+
+    /// Sends a conference roster to another extension of the account's domain.
+    func sendPeerMessage(account: UInt64, user: String, body: Data) {
+        let userBytes = Array(user.utf8)
+        run(nil) { handle in
+            userBytes.withUnsafeBufferPointer { u in
+                body.withUnsafeBytes { bytes in
+                    yv_peer_send(handle, account, u.baseAddress, UInt32(u.count), bytes.bindMemory(to: UInt8.self).baseAddress, UInt32(bytes.count))
+                }
             }
         }
     }

@@ -14,6 +14,7 @@ import com.yeyofone.core.model.TransportProtocol
 import com.yeyofone.core.model.signalingPolicyViolation
 import com.yeyofone.core.voip.CallDialog
 import com.yeyofone.core.voip.HandoffMessage
+import com.yeyofone.core.voip.PeerMessage
 import com.yeyofone.core.voip.NativeCallEvent
 import com.yeyofone.core.voip.NativeMediaEvent
 import com.yeyofone.core.voip.NativeRegistrationEvent
@@ -76,11 +77,22 @@ internal class Pjsua2EndpointBackend : EndpointBackend {
     private var mediaEventCallback: ((NativeMediaEvent) -> Unit)? = null
     private var transferEventCallback: ((NativeTransferEvent) -> Unit)? = null
     private var handoffCallback: ((HandoffMessage) -> Unit)? = null
+    private var peerMessageCallback: ((PeerMessage) -> Unit)? = null
     // Dialog identifiers of live calls, kept here because a NativeCall is deleted when it ends.
     private val callDialogs = ConcurrentHashMap<String, CallDialog>()
 
     override fun setHandoffListener(callback: (HandoffMessage) -> Unit) {
         handoffCallback = callback
+    }
+
+    override fun setPeerMessageListener(callback: (PeerMessage) -> Unit) {
+        peerMessageCallback = callback
+    }
+
+    override fun sendPeerMessage(accountId: SipAccountId, toUser: String, body: String) {
+        require(body.isNotEmpty() && body.toByteArray().size <= HANDOFF_MAX_BYTES) { "Peer message too large" }
+        require(Regex("[A-Za-z0-9._+-]{1,32}").matches(toUser)) { "Invalid recipient" }
+        checkNotNull(accounts[accountId]) { "Native account does not exist" }.sendPeerMessage(toUser, body)
     }
 
     override fun sendHandoff(accountId: SipAccountId, body: String) {
@@ -674,13 +686,49 @@ internal class Pjsua2EndpointBackend : EndpointBackend {
             }
         }
 
+        // One buddy per recipient extension, reused for later messages.
+        private val peerBuddies = HashMap<String, Buddy>()
+
+        fun sendPeerMessage(toUser: String, body: String) {
+            val buddy = peerBuddies.getOrPut(toUser) {
+                Buddy().also { buddy ->
+                    val config = BuddyConfig().apply { uri = "sip:$toUser@$domain"; subscribe = false }
+                    try {
+                        buddy.create(this, config)
+                    } finally {
+                        config.delete()
+                    }
+                }
+            }
+            val prm = SendInstantMessageParam().apply {
+                contentType = CONFERENCE_CONTENT_TYPE
+                content = body
+            }
+            try {
+                buddy.sendInstantMessage(prm)
+            } finally {
+                prm.delete()
+            }
+        }
+
         fun releaseBuddy() {
             self?.delete()
             self = null
+            peerBuddies.values.forEach { runCatching { it.delete() } }
+            peerBuddies.clear()
         }
 
         // Keeps call-handoff messages from this account's own address; other messages are ignored.
         override fun onInstantMessage(prm: OnInstantMessageParam) {
+            if (prm.contentType.equals(CONFERENCE_CONTENT_TYPE, ignoreCase = true)) {
+                val body = prm.msgBody ?: return
+                if (body.isEmpty() || body.toByteArray().size > HANDOFF_MAX_BYTES) return
+                val from = Regex("sips?:([^@;>\\s]+)@([^;>:\\s]+)", RegexOption.IGNORE_CASE).find(prm.fromUri.orEmpty()) ?: return
+                // Only people on this account's own domain can send conference messages.
+                if (!from.groupValues[2].equals(domain, ignoreCase = true)) return
+                peerMessageCallback?.invoke(PeerMessage(id, from.groupValues[1], body))
+                return
+            }
             val listener = handoffCallback ?: return
             if (!prm.contentType.equals(HANDOFF_CONTENT_TYPE, ignoreCase = true)) return
             val body = prm.msgBody ?: return

@@ -94,6 +94,12 @@ int32_t yv_handoff_send(struct YvHandle*, uint64_t account, const uint8_t* body,
 /* Next handoff message received from the same account (oldest first). Returns 1 with a message, 0 when none. */
 struct YvHandoffMessage { uint64_t account_token; uint32_t len; uint8_t body[1024]; };
 int32_t yv_handoff_next(struct YvHandle*, struct YvHandoffMessage*) YV_NOEXCEPT;
+/* Conference rosters between apps on different extensions: a SIP MESSAGE to another extension on the
+   account's domain (user is the extension, up to 32 characters of letters, digits and . _ + -). */
+int32_t yv_peer_send(struct YvHandle*, uint64_t account, const uint8_t* user, uint32_t user_len, const uint8_t* body, uint32_t len) YV_NOEXCEPT;
+/* Next roster received from another extension of the same domain (oldest first). Returns 1 with a message, 0 when none. */
+struct YvPeerMessage { uint64_t account_token; uint32_t user_len; uint8_t user[32]; uint32_t len; uint8_t body[1024]; };
+int32_t yv_peer_next(struct YvHandle*, struct YvPeerMessage*) YV_NOEXCEPT;
 #ifdef __cplusplus
 }
 #endif

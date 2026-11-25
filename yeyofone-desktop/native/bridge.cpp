@@ -71,6 +71,7 @@ std::atomic_bool occupied{false};
 std::atomic<uint64_t> incoming_serial{1};
 const char* const HANDOFF_TYPE="application/vnd.yeyofone.handoff+json";
 constexpr size_t HANDOFF_MAX=1024;
+const char* const CONFERENCE_TYPE="application/vnd.yeyofone.conference+json";
 // SIP token characters (RFC 3261) that are safe inside a Replaces header value.
 bool token_char(unsigned char c){return std::isalnum(c)||std::strchr("-.!%*_+`'~",c)!=nullptr;}
 bool valid_token(const uint8_t* p,uint32_t len,uint32_t max,bool call_id){
@@ -106,6 +107,8 @@ public:
     std::string target_host,username,own_uri;
     int target_port=0,target_transport=0;
     std::deque<std::string> handoff;
+    // Conference rosters from other extensions on this domain: (sender user, JSON body).
+    std::deque<std::pair<std::string,std::string>> peer;
     const uint64_t token;
     pj::TransportId transport = PJSUA_INVALID_ID;
     NativeAccount(uint64_t t,EngineEndpoint* e,YvHandle* h) : endpoint(e), owner(h), token(t) { latest.token = t; }
@@ -118,6 +121,19 @@ public:
     // Keeps handoff messages from this account's own address; everything else is ignored.
     void onInstantMessage(pj::OnInstantMessageParam& event) noexcept override {
         try {
+            if(lower(event.contentType)==CONFERENCE_TYPE){
+                if(event.msgBody.empty()||event.msgBody.size()>HANDOFF_MAX)return;
+                const auto from=lower(event.fromUri);
+                const auto sip=from.find("sip:");if(sip==std::string::npos)return;
+                const auto at=from.find('@',sip+4);if(at==std::string::npos)return;
+                const auto user=from.substr(sip+4,at-(sip+4));
+                const auto host=from.substr(at+1,from.find_first_of(">;:",at+1)-(at+1));
+                if(user.empty()||user.size()>32||host!=lower(target_host))return;
+                std::lock_guard<std::mutex> lock(mutex);
+                if(peer.size()>=16)peer.pop_front();
+                peer.emplace_back(user,event.msgBody);
+                return;
+            }
             if(lower(event.contentType)!=HANDOFF_TYPE||event.msgBody.empty()||event.msgBody.size()>HANDOFF_MAX)return;
             const auto from=lower(event.fromUri);
             const auto at=from.find("sip:"+lower(username)+"@");
@@ -130,6 +146,7 @@ public:
             handoff.push_back(event.msgBody);
         } catch (...) {}
     }
+    bool next_peer(std::pair<std::string,std::string>& out){std::lock_guard<std::mutex> lock(mutex);if(peer.empty())return false;out=std::move(peer.front());peer.pop_front();return true;}
     bool next_handoff(std::string& out){std::lock_guard<std::mutex> lock(mutex);if(handoff.empty())return false;out=std::move(handoff.front());handoff.pop_front();return true;}
     YvRegistration snapshot() { std::lock_guard<std::mutex> lock(mutex); return latest; }
 };
@@ -744,6 +761,35 @@ extern "C" int32_t yv_handoff_next(YvHandle* h,YvHandoffMessage* out) noexcept {
             *out=YvHandoffMessage{};out->account_token=item.first;
             out->len=static_cast<uint32_t>(std::min(body.size(),sizeof(out->body)));
             std::copy(body.begin(),body.begin()+out->len,out->body);
+            return 1;
+        }
+        return 0;
+    }catch(...){return -1;}
+}
+// Sends a conference roster (JSON) to another extension on the account's domain.
+extern "C" int32_t yv_peer_send(YvHandle* h,uint64_t account,const uint8_t* user,uint32_t user_len,const uint8_t* body,uint32_t len) noexcept {
+    if(auto code=check(h))return code;
+    if(!h->running||!user||user_len==0||user_len>32||!body||len==0||len>HANDOFF_MAX)return -6;
+    for(uint32_t i=0;i<user_len;++i){const char c=static_cast<char>(user[i]);if(!(std::isalnum(static_cast<unsigned char>(c))||c=='.'||c=='_'||c=='+'||c=='-'))return -6;}
+    for(uint32_t i=0;i<len;++i)if(body[i]==0)return -6;
+    auto found=h->accounts.find(account);if(found==h->accounts.end())return -6;
+    try{
+        std::string to="sip:"+std::string(reinterpret_cast<const char*>(user),user_len)+"@"+found->second->target_host,text(reinterpret_cast<const char*>(body),len);
+        pj_str_t to_str=pj_str(&to[0]),mime=pj_str(const_cast<char*>(CONFERENCE_TYPE)),content=pj_str(&text[0]);
+        return pjsua_im_send(found->second->getId(),&to_str,&mime,&content,nullptr,nullptr);
+    }catch(const pj::Error& e){return e.status;}catch(...){return -1;}
+}
+extern "C" int32_t yv_peer_next(YvHandle* h,YvPeerMessage* out) noexcept {
+    if(auto code=check(h))return code;if(!out)return -3;
+    try{
+        std::pair<std::string,std::string> item;
+        for(auto& account:h->accounts){
+            if(!account.second->next_peer(item))continue;
+            *out=YvPeerMessage{};out->account_token=account.first;
+            out->user_len=static_cast<uint32_t>(std::min(item.first.size(),sizeof(out->user)));
+            std::copy(item.first.begin(),item.first.begin()+out->user_len,out->user);
+            out->len=static_cast<uint32_t>(std::min(item.second.size(),sizeof(out->body)));
+            std::copy(item.second.begin(),item.second.begin()+out->len,out->body);
             return 1;
         }
         return 0;

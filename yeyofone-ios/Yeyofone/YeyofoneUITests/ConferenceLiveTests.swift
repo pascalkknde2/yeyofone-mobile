@@ -66,6 +66,25 @@ final class ConferenceLiveTests: XCTestCase {
         snap("10-ended")
     }
 
+    /// Waits for someone else to add this phone to a conference, accepts, stays for 25 seconds, then hangs up.
+    func testJoinsConferenceAsThirdPerson() throws {
+        snap("1-waiting")
+        XCTAssertTrue(app.staticTexts["INCOMING CALL"].waitForExistence(timeout: 180), "No incoming call arrived")
+        snap("2-incoming")
+        button(named: "Accept").tap()
+        allowMicrophoneIfAsked()
+        // When the organiser shares the conference this phone shows the conference screen instead of a call timer.
+        let timer = app.staticTexts.matching(NSPredicate(format: "label MATCHES %@", "^[0-9]{2}:[0-9]{2}$")).firstMatch
+        let conference = app.staticTexts["Conference call"]
+        XCTAssertTrue(timer.waitForExistence(timeout: 30) || conference.waitForExistence(timeout: 30), "Call didn't connect")
+        snap("3-connected")
+        XCTAssertTrue(conference.waitForExistence(timeout: 60), "Organiser's conference screen never appeared")
+        sleep(10)
+        snap("4-in-conference")
+        button(named: "Hang up").tap()
+        snap("5-ended")
+    }
+
     // MARK: Helpers
 
     private func snap(_ name: String) {

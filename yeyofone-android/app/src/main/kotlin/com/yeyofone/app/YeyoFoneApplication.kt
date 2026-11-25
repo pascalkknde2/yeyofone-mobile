@@ -52,6 +52,8 @@ class YeyoFoneApplication : Application() {
             ),
         )
     }
+    /** Messages between this app and apps on other extensions (conference rosters). */
+    val peerMessages: com.yeyofone.core.voip.SipPeerMessageGateway get() = engine
     val registration by lazy {
         RegistrationCoordinator(
             accountRepository,

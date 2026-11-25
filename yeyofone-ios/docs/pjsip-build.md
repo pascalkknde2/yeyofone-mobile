@@ -6,7 +6,7 @@ The iOS app calls PJSIP through the same C bridge as the desktop app (`yeyofone-
 
 - PJPROJECT 2.17, archive `https://codeload.github.com/pjsip/pjproject/tar.gz/refs/tags/2.17`
 - Archive SHA-256: `065fe06c06788d97c35f563796d59f00ce52fe9558a52d7b490a042a966facce` (the same archive as `yeyofone-desktop/native/sources.lock.json`)
-- Bridge: `bridge.cpp` SHA-256 `1b2a99bec6e66155fdbef269d136ad4d1b89566835014054e6f175118168a295`, `bridge.h` SHA-256 `a375feb338effa84363e9ed771b405ab796b00abca448944890ccd7b5d6f6782`
+- Bridge: `bridge.cpp` SHA-256 `d19a2c9f67f3ad32699bcb56c1e6a5c73db610f9b391a3493a88b3bad2a7ab2a`, `bridge.h` SHA-256 `877d68f6b97e4f2038a4f6f2134d8536d86b169f468d6ec24a51d68042340434`
 - Toolchain: Xcode 26.4.1, iOS SDK 26.4, minimum iOS 17.0
 - Built: 9 October 2026 on macOS (Intel)
 

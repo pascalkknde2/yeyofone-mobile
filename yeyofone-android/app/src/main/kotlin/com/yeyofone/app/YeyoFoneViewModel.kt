@@ -16,6 +16,7 @@ import com.yeyofone.core.model.AudioRoute
 import com.yeyofone.core.model.CallId
 import com.yeyofone.core.model.CallSession
 import com.yeyofone.core.model.CallState
+import com.yeyofone.app.data.model.toSipIdentity
 import com.yeyofone.core.model.Contact
 import com.yeyofone.core.model.ContactId
 import com.yeyofone.core.model.ForwardingState
@@ -39,6 +40,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.flow.flatMapLatest
@@ -128,6 +130,7 @@ class YeyoFoneViewModel(
     private val contactsRepo: ContactRepository,
     private val handoff: HandoffCoordinator? = null,
     private val notesProcessor: com.yeyofone.app.ai.CallNotesProcessor? = null,
+    private val peers: com.yeyofone.core.voip.SipPeerMessageGateway? = null,
 ) : ViewModel() {
     /** Calls on this account's other devices that can be continued here. */
     val handoffOffers: StateFlow<List<HandoffOffer>> = handoff?.offers ?: MutableStateFlow(emptyList())
@@ -164,6 +167,12 @@ class YeyoFoneViewModel(
     /** Recordings the assistant started itself, so turning it off stops only those. */
     private val assistantStartedRecording = mutableSetOf<CallId>()
     private val dismissedIncomingCalls = MutableStateFlow<Set<CallId>>(emptySet())
+
+    private val _remoteConference = MutableStateFlow<com.yeyofone.app.conference.ConferenceRoster?>(null)
+    /** The conference someone else organised that this phone is part of, shared by its organiser. */
+    val remoteConference: StateFlow<com.yeyofone.app.conference.ConferenceRoster?> = _remoteConference
+    /** Extensions already sent the current roster, so they can be told when the conference ends. */
+    private val rosterRecipients = mutableSetOf<String>()
 
     private val _speaking = MutableStateFlow<Set<String>>(emptySet())
     /** Who is talking in the conference: "you" and/or the call id of each person. */
@@ -225,6 +234,7 @@ class YeyoFoneViewModel(
 
     init {
         startSpeakerDetection()
+        startRosterSharing()
         // completeTransfer() hands both legs to the PBX and never clears the consultation, so
         // forget it once no call is live; otherwise the next call's More screen reopens the old,
         // ended consultation. (While a call is still live, an ended consultation is kept so the
@@ -243,8 +253,82 @@ class YeyoFoneViewModel(
                 val live = sessions.filter { !it.state.isTerminal() }.map { it.id }.toSet()
                 if (!live.containsAll(recordingCallIds.value)) recordingCallIds.update { it intersect live }
                 updateConference(sessions)
+                _remoteConference.value?.let { remote ->
+                    if (sessions.none { !it.state.isTerminal() && it.remoteUri.toSipIdentity().extension == remote.host }) _remoteConference.value = null
+                }
             }
         }
+    }
+
+    /**
+     * Shares who is on the conference with each person on it (so their phones show the same
+     * conference screen), and picks up rosters other organisers send to this phone.
+     */
+    private fun startRosterSharing() {
+        val gateway = peers ?: return
+        viewModelScope.launch {
+            gateway.peerMessages.collect { message ->
+                val (roster, ended) = com.yeyofone.app.conference.ConferenceRoster.parse(message.body) ?: return@collect
+                // Only believe the person I am actually on a call with.
+                val inCallWithHost = calls.sessions.value.any {
+                    !it.state.isTerminal() && it.remoteUri.toSipIdentity().extension == message.fromUser
+                }
+                if (!inCallWithHost || roster.host != message.fromUser) return@collect
+                _remoteConference.value = if (ended) null else roster
+            }
+        }
+        viewModelScope.launch {
+            combine(conferenceMembers, pendingConferenceCall, calls.sessions, contactsRepo.observeAll()) { members, pending, sessions, contactList ->
+                RosterInputs(members, pending, sessions, contactList)
+            }.collectLatest { inputs ->
+                kotlinx.coroutines.delay(150)
+                shareRoster(gateway, inputs)
+            }
+        }
+    }
+
+    private class RosterInputs(
+        val members: List<CallId>,
+        val pending: CallId?,
+        val sessions: List<CallSession>,
+        val contacts: List<Contact>,
+    )
+
+    private suspend fun shareRoster(gateway: com.yeyofone.core.voip.SipPeerMessageGateway, inputs: RosterInputs) {
+        val byId = inputs.sessions.associateBy { it.id }
+        val live = inputs.members.mapNotNull { byId[it] }.filter { !it.state.isTerminal() }
+        val pendingSession = inputs.pending?.let { byId[it] }?.takeIf { !it.state.isTerminal() }
+        val anchor = live.firstOrNull()
+        if (anchor == null || (live.size < 2 && pendingSession == null)) {
+            // No conference any more: tell everyone who was told about it.
+            val account = accounts.observeAccounts().first().firstOrNull()
+            if (rosterRecipients.isNotEmpty() && account != null) {
+                val ended = com.yeyofone.app.conference.ConferenceRoster(account.username, emptyList()).toJson(ended = true)
+                rosterRecipients.toList().forEach { runCatching { gateway.sendPeerMessage(account.id, it, ended) } }
+            }
+            rosterRecipients.clear()
+            return
+        }
+        val account = accounts.observeAccounts().first().firstOrNull { it.id == anchor.accountId } ?: return
+        fun nameFor(session: CallSession): String {
+            val identity = session.remoteUri.toSipIdentity()
+            return inputs.contacts.firstOrNull { it.number == identity.extension }?.displayName ?: identity.displayName
+        }
+        val members = buildList {
+            add(com.yeyofone.app.conference.RosterMember(account.username, account.displayName.ifBlank { account.username }, false))
+            live.forEach { add(com.yeyofone.app.conference.RosterMember(it.remoteUri.toSipIdentity().extension, nameFor(it), false)) }
+            pendingSession?.let {
+                add(com.yeyofone.app.conference.RosterMember(it.remoteUri.toSipIdentity().extension, nameFor(it), it.state != CallState.Connected))
+            }
+        }
+        val json = com.yeyofone.app.conference.ConferenceRoster(account.username, members).toJson()
+        val recipients = live.map { it.remoteUri.toSipIdentity().extension }.toSet()
+        recipients.forEach { runCatching { gateway.sendPeerMessage(account.id, it, json) } }
+        // Anyone who left since the last roster is told the conference is over for them.
+        val ended = com.yeyofone.app.conference.ConferenceRoster(account.username, emptyList()).toJson(ended = true)
+        (rosterRecipients - recipients).forEach { runCatching { gateway.sendPeerMessage(account.id, it, ended) } }
+        rosterRecipients.clear()
+        rosterRecipients.addAll(recipients)
     }
 
     /** While a conference is up, samples each voice's level a few times a second to find who is talking. */
@@ -613,6 +697,7 @@ class YeyoFoneViewModel(
                 app.contacts,
                 app.handoff,
                 com.yeyofone.app.ai.CallNotesProcessor(app),
+                app.peerMessages,
             ) as T
         }
     }
