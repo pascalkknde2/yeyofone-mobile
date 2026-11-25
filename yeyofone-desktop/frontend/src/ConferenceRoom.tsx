@@ -26,6 +26,7 @@ type RoomIcon =
   | "speaking"
   | "pin"
   | "send"
+  | "chat"
   | "screen"
   | "agenda";
 function LiveVideo({
@@ -186,6 +187,9 @@ function RoomGlyph({ name, size = 22 }: { name: RoomIcon; size?: number }) {
           <path d="M16 17H8" />
         </>
       )}
+      {name === "chat" && (
+        <path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z" />
+      )}
       {name === "send" && (
         <>
           <path d="m22 2-7 20-4-9-9-4Z" />
@@ -261,7 +265,7 @@ export function ConferenceRoom({ onClose }: { onClose: () => void }) {
   const [focused, setFocused] = useState("alex");
   const [stage, setStage] = useState<"meeting" | "notes">("meeting");
   const [panel, setPanel] = useState<"chat" | "participants">("participants");
-  const [panelOpen, setPanelOpen] = useState(() => window.innerWidth > 900);
+  const [panelOpen, setPanelOpen] = useState(false);
   const [query, setQuery] = useState("");
   // Camera, mic and screen are real local captures shown only on this device;
   // nothing is sent. Camera and mic start off so macOS only asks when you turn them on.
@@ -478,6 +482,14 @@ export function ConferenceRoom({ onClose }: { onClose: () => void }) {
   const handUp = (person: Person) => person.id === "you" && raised;
   const time = `${String(Math.floor(seconds / 60)).padStart(2, "0")}:${String(seconds % 60).padStart(2, "0")}`;
 
+  function togglePanel(which: "chat" | "participants") {
+    if (panelOpen && panel === which) setPanelOpen(false);
+    else {
+      setPanel(which);
+      setPanelOpen(true);
+    }
+  }
+
   function sendMessage() {
     const text = draft.trim();
     if (!text) return;
@@ -510,53 +522,52 @@ export function ConferenceRoom({ onClose }: { onClose: () => void }) {
         <section className="room-meeting">
           <header className="room-header">
             <div className="room-title">
-              <span>
-                {t("Weekly catch-up")} · {time}
-              </span>
               <h2 id="conference-title" ref={title} tabIndex={-1}>
                 {t("Team room")}
               </h2>
-            </div>
-            <div className="room-tabs" role="group" aria-label={t("View")}>
-              {(["notes", "meeting"] as const).map((id) => (
-                <button
-                  key={id}
-                  aria-pressed={stage === id}
-                  className={stage === id ? "selected" : ""}
-                  onClick={() => setStage(id)}
-                >
-                  {t(id === "notes" ? "Notes" : "Meeting")}
-                </button>
-              ))}
-            </div>
-            <div className="room-header-actions">
-              <button
-                aria-label={t(
-                  panelOpen ? "Hide room panel" : "Show room panel",
+              <span className="room-title__count">
+                <RoomGlyph name="people" size={16} />
+                {participants.length} {t("Participants")}
+              </span>
+              <p id="conference-preview" className="room-preview-note">
+                {t(
+                  "Conference preview · Sample participants · Nothing you share is sent to anyone",
                 )}
-                title={t(panelOpen ? "Hide room panel" : "Show room panel")}
-                aria-expanded={panelOpen}
-                aria-controls="conference-room-panel"
-                className={panelOpen ? "selected" : ""}
-                onClick={() => setPanelOpen(!panelOpen)}
-              >
-                <RoomGlyph name="people" size={20} />
-              </button>
-              <button
-                aria-label={t(fullscreen ? "Exit fullscreen" : "Fullscreen")}
-                title={t(fullscreen ? "Exit fullscreen" : "Fullscreen")}
-                aria-pressed={fullscreen}
-                onClick={toggleFullscreen}
-              >
-                <RoomGlyph name={fullscreen ? "shrink" : "expand"} size={20} />
-              </button>
-              <button
-                aria-label={t("Close conference preview")}
-                title={t("Close conference preview")}
-                onClick={closeRoom}
-              >
-                <RoomGlyph name="close" size={20} />
-              </button>
+              </p>
+            </div>
+            <div className="room-header-tools">
+              <div className="room-tabs" role="group" aria-label={t("View")}>
+                {(["notes", "meeting"] as const).map((id) => (
+                  <button
+                    key={id}
+                    aria-pressed={stage === id}
+                    className={stage === id ? "selected" : ""}
+                    onClick={() => setStage(id)}
+                  >
+                    {t(id === "notes" ? "Notes" : "Meeting")}
+                  </button>
+                ))}
+              </div>
+              <div className="room-header-actions">
+                <button
+                  aria-label={t(fullscreen ? "Exit fullscreen" : "Fullscreen")}
+                  title={t(fullscreen ? "Exit fullscreen" : "Fullscreen")}
+                  aria-pressed={fullscreen}
+                  onClick={toggleFullscreen}
+                >
+                  <RoomGlyph
+                    name={fullscreen ? "shrink" : "expand"}
+                    size={20}
+                  />
+                </button>
+                <button
+                  aria-label={t("Close conference preview")}
+                  title={t("Close conference preview")}
+                  onClick={closeRoom}
+                >
+                  <RoomGlyph name="close" size={20} />
+                </button>
+              </div>
             </div>
           </header>
 
@@ -732,12 +743,16 @@ export function ConferenceRoom({ onClose }: { onClose: () => void }) {
           )}
 
           <div className="room-controls">
-            <p id="conference-preview" className="room-preview-note">
-              {t(
-                "Conference preview · Sample participants · Nothing you share is sent to anyone",
-              )}
-            </p>
             <div className="room-control-buttons">
+              <button
+                aria-pressed={muted}
+                className={muted ? "is-off" : ""}
+                aria-label={t(muted ? "Unmute" : "Mute")}
+                title={t(muted ? "Unmute" : "Mute")}
+                onClick={() => void toggleMic()}
+              >
+                <RoomGlyph name={muted ? "mic-off" : "mic"} />
+              </button>
               <button
                 aria-pressed={!camera}
                 className={!camera ? "is-off" : ""}
@@ -747,14 +762,29 @@ export function ConferenceRoom({ onClose }: { onClose: () => void }) {
               >
                 <RoomGlyph name={camera ? "video" : "video-off"} />
               </button>
+              <span className="room-control-sep" aria-hidden="true" />
               <button
-                aria-pressed={muted}
-                className={muted ? "is-off" : ""}
-                aria-label={t(muted ? "Unmute" : "Mute")}
-                title={t(muted ? "Unmute" : "Mute")}
-                onClick={() => void toggleMic()}
+                aria-pressed={panelOpen && panel === "participants"}
+                className={`has-count${panelOpen && panel === "participants" ? " is-on" : ""}`}
+                aria-label={t("Participants")}
+                title={t("Participants")}
+                aria-expanded={panelOpen && panel === "participants"}
+                aria-controls="conference-room-panel"
+                onClick={() => togglePanel("participants")}
               >
-                <RoomGlyph name={muted ? "mic-off" : "mic"} />
+                <RoomGlyph name="people" />
+                <b>{participants.length}</b>
+              </button>
+              <button
+                aria-pressed={panelOpen && panel === "chat"}
+                className={panelOpen && panel === "chat" ? "is-on" : ""}
+                aria-label={t("Chat")}
+                title={t("Chat")}
+                aria-expanded={panelOpen && panel === "chat"}
+                aria-controls="conference-room-panel"
+                onClick={() => togglePanel("chat")}
+              >
+                <RoomGlyph name="chat" />
               </button>
               <div className="room-share" ref={shareBox}>
                 <button
@@ -803,6 +833,11 @@ export function ConferenceRoom({ onClose }: { onClose: () => void }) {
               >
                 <RoomGlyph name="hand" />
               </button>
+              <span className="room-control-sep" aria-hidden="true" />
+              <span className="room-timer" role="timer" aria-label={t("Call duration")}>
+                <i aria-hidden="true" />
+                {time}
+              </span>
               <button
                 className="room-leave"
                 aria-label={t("Leave")}
