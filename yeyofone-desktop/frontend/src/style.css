@@ -90,23 +90,10 @@ strong {
   margin-right: auto;
   letter-spacing: -1px;
 }
-.brand-dots {
-  display: grid;
-  grid-template-columns: repeat(3, 4px);
-  gap: 3px;
-  transform: rotate(0deg);
-}
-.brand-dots i {
-  width: 4px;
-  height: 4px;
-  background: var(--c-64b9eb-s);
-  border-radius: 50%;
-}
-.brand-dots i:nth-child(8) {
-  opacity: 0.55;
-}
-.brand-dots i:nth-child(9) {
-  opacity: 0.25;
+.brand-logo {
+  height: 28px;
+  width: auto;
+  display: block;
 }
 .search {
   width: 280px;
