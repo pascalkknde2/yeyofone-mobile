@@ -569,12 +569,11 @@ struct CallOptionsScreen: View {
         VStack(spacing: 8) {
             Spacer()
             if store.conferenceMerged {
-                Text("Conference call")
-                    .appFont(size: 22, weight: .bold)
-                    .foregroundStyle(Palette.textPrimary)
-                Text("\(store.activeCall?.remoteName ?? "") and \(session.remoteName) are on this call")
-                    .appFont(size: 15)
-                    .foregroundStyle(Palette.textSecondary)
+                ConferenceStage(participants: [
+                    .init(id: "you", name: String(localized: "You"), isSelf: true, muted: store.activeCall?.muted ?? false),
+                    .init(id: "held", name: store.activeCall?.remoteName ?? "", isSelf: false, muted: false),
+                    .init(id: "consult", name: session.remoteName, isSelf: false, muted: false),
+                ], speakingIDs: [])
             } else {
             // A bare extension has no separate display name; don't repeat it as "1002 · Ext. 1002".
             (session.remoteName == session.remoteNumber
@@ -595,6 +594,63 @@ struct CallOptionsScreen: View {
         .multilineTextAlignment(.center)
         .padding(.horizontal, 32)
         .frame(maxWidth: .infinity)
+    }
+}
+
+struct ConferenceParticipant: Identifiable {
+    let id: String
+    let name: String
+    let isSelf: Bool
+    let muted: Bool
+}
+
+/// Participant stage: a spotlight tile plus a strip for three or more people, side-by-side tiles for two.
+/// A blue ring marks whoever is speaking; a red badge marks muted people.
+private struct ConferenceStage: View {
+    let participants: [ConferenceParticipant]
+    let speakingIDs: Set<String>
+
+    var body: some View {
+        let spotlight = participants.first { speakingIDs.contains($0.id) && !$0.isSelf } ?? participants.first { !$0.isSelf }
+        VStack(spacing: 4) {
+            Text("Conference call").appFont(size: 22, weight: .bold).foregroundStyle(Palette.textPrimary)
+            Text("\(participants.count) people on this call")
+                .appFont(size: 14).foregroundStyle(Palette.textSecondary).padding(.bottom, 16)
+            if participants.count > 2, let spotlight {
+                tile(spotlight, large: true).frame(height: 170)
+                HStack(spacing: 12) {
+                    ForEach(participants.filter { $0.id != spotlight.id }) { tile($0, large: false).frame(height: 110) }
+                }
+            } else {
+                HStack(spacing: 12) {
+                    ForEach(participants) { tile($0, large: false).frame(height: 150) }
+                }
+            }
+        }
+        .padding(.horizontal, 20)
+    }
+
+    private func tile(_ p: ConferenceParticipant, large: Bool) -> some View {
+        let speaking = speakingIDs.contains(p.id)
+        let initials = p.name.split(whereSeparator: { " .-_".contains($0) }).prefix(2).compactMap { $0.first }.map(String.init).joined().uppercased()
+        return ZStack(alignment: .topTrailing) {
+            VStack(spacing: 8) {
+                Text(initials.isEmpty ? "?" : initials)
+                    .appFont(size: large ? 26 : 18, weight: .bold)
+                    .foregroundStyle(Palette.textPrimary)
+                    .frame(width: large ? 72 : 52, height: large ? 72 : 52)
+                    .background(Circle().fill(Palette.primaryLight))
+                Text(p.name).appFont(size: 13, weight: .semibold).foregroundStyle(Palette.textPrimary).lineLimit(1).padding(.horizontal, 8)
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            if p.muted {
+                Image(systemName: "mic.slash.fill")
+                    .font(.system(size: 12, weight: .bold)).foregroundStyle(.white)
+                    .frame(width: 24, height: 24).background(Circle().fill(Palette.accentRed)).padding(8)
+            }
+        }
+        .background(RoundedRectangle(cornerRadius: 20).fill(Palette.glass))
+        .overlay(RoundedRectangle(cornerRadius: 20).stroke(speaking ? Palette.accentBlue : Palette.borderLight, lineWidth: speaking ? 3 : 1))
     }
 }
 
