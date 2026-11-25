@@ -148,6 +148,7 @@ fn main() {
             validate_destination,
             calls_command,
             handoff_command,
+            conference_command,
             call_history_command,
             recording_file_command,
             recording_cloud_command,
@@ -532,6 +533,99 @@ async fn handoff_command(
             sequence: 0,
             data,
         })
+    }
+    #[cfg(not(feature = "native-voip"))]
+    {
+        Err(yeyofone_ipc::engine_unavailable(req.request_id))
+    }
+}
+
+#[derive(serde::Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+struct ConferenceRequest {
+    schema_version: u8,
+    request_id: String,
+    action: String,
+    account_id: Option<String>,
+    user: Option<String>,
+    body: Option<String>,
+    ids: Option<Vec<String>>,
+}
+
+/// Conference support: sending and receiving roster messages with the other people on a
+/// conference, and reading who is talking. The roster logic itself lives in the frontend.
+#[tauri::command]
+async fn conference_command(
+    request: serde_json::Value,
+    _runtime: tauri::State<'_, Runtime>,
+) -> Result<serde_json::Value, yeyofone_ipc::IpcError> {
+    let req: ConferenceRequest = serde_json::from_value(request).map_err(|_| {
+        yeyofone_ipc::registration_error(String::new(), yeyofone_ipc::ErrorCode::InvalidRequest)
+    })?;
+    let invalid = |id: &str| {
+        yeyofone_ipc::registration_error(id.to_string(), yeyofone_ipc::ErrorCode::InvalidRequest)
+    };
+    if req.schema_version != 1
+        || req.request_id.is_empty()
+        || req.request_id.len() > 64
+        || req.ids.as_ref().is_some_and(|ids| {
+            ids.len() > 8 || ids.iter().any(|id| id.is_empty() || id.len() > 64)
+        })
+    {
+        return Err(invalid(&req.request_id));
+    }
+    #[cfg(feature = "native-voip")]
+    {
+        let engine = _runtime.engine.clone();
+        let request_id = req.request_id.clone();
+        let data = tauri::async_runtime::spawn_blocking(move || {
+            use yeyofone_ipc::{ErrorCode, registration_error};
+            let fail = |_| registration_error(req.request_id.clone(), ErrorCode::CallUnavailable);
+            match req.action.as_str() {
+                "send" => {
+                    let (Some(account), Some(user), Some(body)) =
+                        (req.account_id.as_deref(), req.user.as_deref(), req.body.as_deref())
+                    else {
+                        return Err(invalid(&req.request_id));
+                    };
+                    engine.peer_send(account, user, body).map_err(fail)?;
+                    Ok(serde_json::json!([]))
+                }
+                "inbox" => {
+                    let messages = engine.peer_inbox().map_err(fail)?;
+                    Ok(serde_json::json!(
+                        messages
+                            .into_iter()
+                            .map(|m| serde_json::json!({
+                                "accountId": m.account_id,
+                                "from": m.from,
+                                "body": m.body,
+                            }))
+                            .collect::<Vec<_>>()
+                    ))
+                }
+                "levels" => {
+                    let levels = engine
+                        .levels(req.ids.as_deref().unwrap_or_default())
+                        .map_err(fail)?;
+                    Ok(serde_json::json!(
+                        levels
+                            .into_iter()
+                            .map(|(id, level)| serde_json::json!({"id": id, "level": level}))
+                            .collect::<Vec<_>>()
+                    ))
+                }
+                _ => Err(invalid(&req.request_id)),
+            }
+        })
+        .await
+        .map_err(|_| yeyofone_ipc::engine_unavailable(request_id.clone()))??;
+        Ok(serde_json::json!({
+            "schemaVersion": 1,
+            "requestId": request_id,
+            "sequence": 0,
+            "data": data,
+        }))
     }
     #[cfg(not(feature = "native-voip"))]
     {

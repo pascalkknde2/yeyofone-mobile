@@ -10,6 +10,8 @@ import { useHeldSeconds } from "./holdTimer";
 import { useRecentNumbers } from "./recentCalls";
 import type { Account } from "./useAccounts";
 import type { CallStatus as Call } from "./calls";
+import { ConferenceView, type ConferencePerson } from "./ConferenceView";
+import { useConferenceState } from "./conferenceStore";
 type CallRequest = (
   action: string,
   extra?: Record<string, unknown>,
@@ -63,6 +65,64 @@ export function CallPanel({
   const ended = main.state === "ended";
   const disabled = callsBusy || !callsAvailable || main.transferPending;
   const muted = merged ? merged.every((c) => c.muted) : talking.muted;
+  // Everyone on a conference sees the same screen: the organiser from its merged calls, the others
+  // from the roster the organiser sends.
+  const conference = useConferenceState();
+  const extensionOf = (call: Call) =>
+    call.destination.replace(/[^A-Za-z0-9._+-]/g, "");
+  const selfExtension = account?.username ?? "";
+  const remoteRoster =
+    group.kind === "single" &&
+    !ended &&
+    conference.remote?.host === extensionOf(main)
+      ? conference.remote
+      : null;
+  const conferencePeople: ConferencePerson[] | null = merged
+    ? [
+        {
+          ext: selfExtension,
+          name: account?.label ?? selfExtension,
+          self: true,
+          calling: false,
+        },
+        ...merged.map((call) => ({
+          ext: extensionOf(call),
+          name: callName(call),
+          self: false,
+          calling: false,
+          onEnd: () => void onRequest("hangup", { id: call.id }),
+        })),
+      ]
+    : remoteRoster
+      ? [
+          {
+            ext: selfExtension,
+            name: account?.label ?? selfExtension,
+            self: true,
+            calling: false,
+          },
+          ...remoteRoster.members
+            .filter((m) => m.ext !== selfExtension)
+            .map((m) => ({
+              ext: m.ext,
+              name: m.name,
+              self: false,
+              calling: m.calling,
+            })),
+        ]
+      : null;
+  const conferenceView = conferencePeople ? (
+    <ConferenceView
+      people={conferencePeople}
+      speaking={
+        remoteRoster ? new Set(remoteRoster.speaking) : conference.speaking
+      }
+      muted={muted}
+      elapsed={callTime(
+        Math.max(...(merged ?? [main]).map((c) => c.durationSeconds)),
+      )}
+    />
+  ) : null;
 
   function toggle(next: Tool) {
     setMoreOpen(false);
@@ -168,117 +228,120 @@ export function CallPanel({
       aria-label={t("Current call")}
       aria-live="polite"
     >
-      {group.kind === "single" ? (
-        <header className="call-screen__hero">
-          <span className="call-screen__avatar" aria-hidden="true">
-            {initials(callName(main))}
-          </span>
-          <div className="call-screen__name-row">
-            <h3 className="call-screen__name">{callName(main)}</h3>
-            <button
-              type="button"
-              className="call-screen__copy"
-              aria-label={t(copied ? "Copied" : "Copy number")}
-              title={t(copied ? "Copied" : "Copy number")}
-              onClick={() => void copyNumber()}
-            >
-              {copied ? <CheckIcon /> : <CopyIcon />}
-            </button>
-          </div>
-          {main.caller && main.caller !== main.destination && (
-            <p className="call-screen__number">{main.destination}</p>
-          )}
-          <p className="call-screen__account">
-            {account?.label ?? main.accountId}
-          </p>
-          <p className="call-screen__status" role="status">
-            {status(main)}
-            {muted && <span className="call-screen__muted">{t("Muted")}</span>}
-            {main.recording && (
-              <span className="call-screen__rec">● {t("Recording")}</span>
+      {conferenceView ??
+        (group.kind === "single" ? (
+          <header className="call-screen__hero">
+            <span className="call-screen__avatar" aria-hidden="true">
+              {initials(callName(main))}
+            </span>
+            <div className="call-screen__name-row">
+              <h3 className="call-screen__name">{callName(main)}</h3>
+              <button
+                type="button"
+                className="call-screen__copy"
+                aria-label={t(copied ? "Copied" : "Copy number")}
+                title={t(copied ? "Copied" : "Copy number")}
+                onClick={() => void copyNumber()}
+              >
+                {copied ? <CheckIcon /> : <CopyIcon />}
+              </button>
+            </div>
+            {main.caller && main.caller !== main.destination && (
+              <p className="call-screen__number">{main.destination}</p>
             )}
-          </p>
-          {main.reason && (
-            <p className="call-screen__note">
-              {t(reasonLabel(main.reason))}
-              {main.sipCode != null && ended && ` · SIP ${main.sipCode}`}
+            <p className="call-screen__account">
+              {account?.label ?? main.accountId}
             </p>
-          )}
-        </header>
-      ) : (
-        <header className="call-screen__people">
-          <h3 className="call-screen__title">
-            {group.kind === "merged"
-              ? `${t("Conference")} · ${t("2 people")}`
-              : t("2 calls")}
-            {group.kind === "merged" && (
-              <span>
-                {callTime(
-                  Math.max(...group.calls.map((c) => c.durationSeconds)),
-                )}
-              </span>
+            <p className="call-screen__status" role="status">
+              {status(main)}
+              {muted && (
+                <span className="call-screen__muted">{t("Muted")}</span>
+              )}
+              {main.recording && (
+                <span className="call-screen__rec">● {t("Recording")}</span>
+              )}
+            </p>
+            {main.reason && (
+              <p className="call-screen__note">
+                {t(reasonLabel(main.reason))}
+                {main.sipCode != null && ended && ` · SIP ${main.sipCode}`}
+              </p>
             )}
-          </h3>
-          <ul>
-            {(group.kind === "merged"
-              ? group.calls
-              : [group.held, group.active]
-            ).map((call) => (
-              <li key={call.id} className={call.held ? "is-held" : ""}>
-                <span className="call-screen__avatar" aria-hidden="true">
-                  {initials(callName(call))}
+          </header>
+        ) : (
+          <header className="call-screen__people">
+            <h3 className="call-screen__title">
+              {group.kind === "merged"
+                ? `${t("Conference")} · ${t("2 people")}`
+                : t("2 calls")}
+              {group.kind === "merged" && (
+                <span>
+                  {callTime(
+                    Math.max(...group.calls.map((c) => c.durationSeconds)),
+                  )}
                 </span>
-                <span className="call-screen__who">
-                  <strong>{callName(call)}</strong>
-                  <small role="status">{status(call)}</small>
-                </span>
-                {group.kind === "merged" ? (
-                  <button
-                    type="button"
-                    className="call-screen__end-one"
-                    disabled={callsBusy || !callsAvailable}
-                    onClick={() => void onRequest("hangup", { id: call.id })}
-                  >
-                    {t("End")}
-                  </button>
-                ) : (
-                  call === group.active && (
+              )}
+            </h3>
+            <ul>
+              {(group.kind === "merged"
+                ? group.calls
+                : [group.held, group.active]
+              ).map((call) => (
+                <li key={call.id} className={call.held ? "is-held" : ""}>
+                  <span className="call-screen__avatar" aria-hidden="true">
+                    {initials(callName(call))}
+                  </span>
+                  <span className="call-screen__who">
+                    <strong>{callName(call)}</strong>
+                    <small role="status">{status(call)}</small>
+                  </span>
+                  {group.kind === "merged" ? (
                     <button
                       type="button"
                       className="call-screen__end-one"
-                      disabled={disabled || call.state === "ending"}
-                      onClick={() =>
-                        void onRequest("consult_cancel", {
-                          id: group.held.id,
-                          consultId: call.id,
-                        })
-                      }
+                      disabled={callsBusy || !callsAvailable}
+                      onClick={() => void onRequest("hangup", { id: call.id })}
                     >
                       {t("End")}
                     </button>
-                  )
-                )}
-              </li>
-            ))}
-          </ul>
-          {group.kind === "consult" && (
-            <button
-              type="button"
-              className="call-screen__merge"
-              disabled={disabled || group.active.state !== "connected"}
-              onClick={() =>
-                void onRequest("consult_merge", {
-                  id: group.held.id,
-                  consultId: group.active.id,
-                })
-              }
-            >
-              <CallControlIcon name="consult" />
-              {t("Merge calls")}
-            </button>
-          )}
-        </header>
-      )}
+                  ) : (
+                    call === group.active && (
+                      <button
+                        type="button"
+                        className="call-screen__end-one"
+                        disabled={disabled || call.state === "ending"}
+                        onClick={() =>
+                          void onRequest("consult_cancel", {
+                            id: group.held.id,
+                            consultId: call.id,
+                          })
+                        }
+                      >
+                        {t("End")}
+                      </button>
+                    )
+                  )}
+                </li>
+              ))}
+            </ul>
+            {group.kind === "consult" && (
+              <button
+                type="button"
+                className="call-screen__merge"
+                disabled={disabled || group.active.state !== "connected"}
+                onClick={() =>
+                  void onRequest("consult_merge", {
+                    id: group.held.id,
+                    consultId: group.active.id,
+                  })
+                }
+              >
+                <CallControlIcon name="consult" />
+                {t("Merge calls")}
+              </button>
+            )}
+          </header>
+        ))}
 
       {talking.audioError && (
         <p className="call-screen__alert" role="alert">

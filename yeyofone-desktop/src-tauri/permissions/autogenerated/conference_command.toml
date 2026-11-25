@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-conference-command"
+description = "Enables the conference_command command without any pre-configured scope."
+commands.allow = ["conference_command"]
+
+[[permission]]
+identifier = "deny-conference-command"
+description = "Denies the conference_command command without any pre-configured scope."
+commands.deny = ["conference_command"]

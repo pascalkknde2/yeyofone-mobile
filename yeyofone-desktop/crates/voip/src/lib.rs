@@ -65,6 +65,12 @@ enum Operation {
     Dtmf(String, char),
     Control(String, String, String, String),
     Handoffs,
+    /// Sends a conference message (account id, extension, body).
+    PeerSend(String, String, String),
+    /// Takes the conference messages received since the last call.
+    PeerInbox,
+    /// Signal levels of the given calls, plus the microphone as "you".
+    Levels(Vec<String>),
     /// Take over offer (first) as a new local call (second).
     TakeOver(String, String),
 }
@@ -73,6 +79,15 @@ enum Reply {
     Registrations(Vec<RegistrationStatus>),
     Calls(Vec<yeyofone_application::calls::CallStatus>),
     Handoffs(Vec<yeyofone_application::handoff::HandoffOffer>),
+    Peers(Vec<PeerMessage>),
+    Levels(Vec<(String, i32)>),
+}
+/// A conference message from another extension.
+#[derive(Clone, Debug)]
+pub struct PeerMessage {
+    pub account_id: String,
+    pub from: String,
+    pub body: String,
 }
 struct Message {
     operation: Operation,
@@ -202,6 +217,25 @@ impl PjsipEngine {
         id: &str,
     ) -> Result<Vec<yeyofone_application::calls::CallStatus>, EngineError> {
         self.call_request(Operation::TakeOver(offer.into(), id.into()))
+    }
+    /// Sends a conference message to another extension.
+    pub fn peer_send(&self, account: &str, user: &str, body: &str) -> Result<(), EngineError> {
+        self.request(Operation::PeerSend(account.into(), user.into(), body.into()))
+            .map(|_| ())
+    }
+    /// Conference messages received since the last call.
+    pub fn peer_inbox(&self) -> Result<Vec<PeerMessage>, EngineError> {
+        match self.request(Operation::PeerInbox)? {
+            Reply::Peers(messages) => Ok(messages),
+            _ => Err(EngineError::Unavailable),
+        }
+    }
+    /// Signal levels (0-255) of the given calls and of the microphone (id "you").
+    pub fn levels(&self, ids: &[String]) -> Result<Vec<(String, i32)>, EngineError> {
+        match self.request(Operation::Levels(ids.to_vec()))? {
+            Reply::Levels(levels) => Ok(levels),
+            _ => Err(EngineError::Unavailable),
+        }
     }
     pub fn dial(
         &self,
@@ -337,6 +371,7 @@ struct Owner {
     registrations: Registrations,
     calls: calls::Calls,
     handoffs: handoff::Handoffs,
+    peers: std::collections::VecDeque<PeerMessage>,
 }
 impl Owner {
     fn transition(&mut self, next: EngineState) -> Result<(), EngineError> {
@@ -379,6 +414,7 @@ fn owner_loop(mut native: ffi::Native, receiver: mpsc::Receiver<Message>, port: 
         registrations: Registrations::new(),
         calls: calls::Calls::new(),
         handoffs: handoff::Handoffs::new(),
+        peers: std::collections::VecDeque::new(),
     };
     loop {
         match receiver.recv_timeout(Duration::from_millis(20)) {
@@ -410,6 +446,35 @@ fn owner_loop(mut native: ffi::Native, receiver: mpsc::Receiver<Message>, port: 
                         owner.stop(&mut native).map(Reply::Engine)
                     }
                     Operation::Handoffs => Ok(Reply::Handoffs(owner.handoffs.list())),
+                    Operation::PeerInbox => Ok(Reply::Peers(owner.peers.drain(..).collect())),
+                    Operation::PeerSend(account, user, body) => {
+                        match owner.registrations.accounts.get(&account) {
+                            Some(registration)
+                                if owner.application.engine() == EngineState::Running
+                                    && registration.token != 0 =>
+                            {
+                                native
+                                    .peer_send(registration.token, &user, &body)
+                                    .map(|()| Reply::Peers(Vec::new()))
+                                    .map_err(EngineError::Native)
+                            }
+                            _ => Err(EngineError::Unavailable),
+                        }
+                    }
+                    Operation::Levels(ids) => {
+                        if owner.application.engine() != EngineState::Running {
+                            Err(EngineError::Unavailable)
+                        } else {
+                            let mut levels = Vec::new();
+                            for id in ids.into_iter().take(8) {
+                                if let Some(token) = owner.calls.token_of(&id) {
+                                    levels.push((id, native.call_level(token).unwrap_or(0)));
+                                }
+                            }
+                            levels.push(("you".into(), native.call_level(0).unwrap_or(0)));
+                            Ok(Reply::Levels(levels))
+                        }
+                    }
                     Operation::TakeOver(offer, id) => {
                         if owner.application.engine() != EngineState::Running {
                             Err(EngineError::Unavailable)
@@ -478,6 +543,25 @@ fn owner_loop(mut native: ffi::Native, receiver: mpsc::Receiver<Message>, port: 
             owner
                 .handoffs
                 .poll(&mut native, &owner.registrations, &owner.calls);
+            for _ in 0..16 {
+                match native.peer_next() {
+                    Ok(Some((token, from, body))) => {
+                        let account = owner
+                            .registrations
+                            .accounts
+                            .iter()
+                            .find(|(_, r)| r.token == token)
+                            .map(|(id, _)| id.clone());
+                        if let (Some(account_id), Ok(body)) = (account, String::from_utf8(body)) {
+                            if owner.peers.len() >= 64 {
+                                owner.peers.pop_front();
+                            }
+                            owner.peers.push_back(PeerMessage { account_id, from, body });
+                        }
+                    }
+                    _ => break,
+                }
+            }
             if native.pump().is_err() {
                 owner.calls.shutdown(&mut native, &owner.registrations);
                 let _ = owner.transition(EngineState::Failed);
