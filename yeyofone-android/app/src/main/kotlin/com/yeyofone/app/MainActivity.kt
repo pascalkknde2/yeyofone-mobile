@@ -61,6 +61,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -87,6 +88,7 @@ import com.yeyofone.app.ui.call.OutgoingCallScreen
 import com.yeyofone.app.ui.call.TransferCallScreen
 import com.yeyofone.app.ui.call.InCallKeypadScreen
 import com.yeyofone.app.ui.callended.CallEndedScreen
+import com.yeyofone.app.ui.splash.AnimatedSplash
 import com.yeyofone.app.ui.callhistory.CallHistoryScreen
 import com.yeyofone.app.ui.callhistory.CallHistoryViewModel
 import com.yeyofone.app.ui.chat.ChatScreen
@@ -215,8 +217,12 @@ class MainActivity : ComponentActivity() {
         IncomingCallService.start(this)
         NotificationAccept.callIdFrom(intent)?.let { acceptRequest.value = it }
         val app = application as YeyoFoneApplication
+        val startWithSplash = savedInstanceState == null && intent?.action == Intent.ACTION_MAIN &&
+            NotificationAccept.callIdFrom(intent) == null
         setContent {
             RequestBackgroundCallPermissions()
+            // The opening animation plays on a normal launch, not when a call notification opens the app.
+            var showSplash by rememberSaveable { mutableStateOf(startWithSplash) }
             YeyoFoneTheme {
                 val dark = isAppInDarkTheme()
                 LaunchedEffect(dark) { applySystemBars(dark) }
@@ -234,6 +240,7 @@ class MainActivity : ComponentActivity() {
                         onAcceptHandled = { acceptRequest.value = null },
                     )
                 }
+                if (showSplash) AnimatedSplash(onFinished = { showSplash = false })
             }
         }
     }
