@@ -66,7 +66,7 @@ final class AppStore {
 
     var activeCall: CallSession? {
         didSet {
-            if activeCall == nil { remoteRoster = nil }
+            if activeCall == nil { remoteRoster = nil; conferenceLeft = []; endingAllCalls = false }
             #if DEBUG
             if (activeCall == nil) != (oldValue == nil) { updateLevelLogging() }
             #endif
@@ -76,6 +76,14 @@ final class AppStore {
     var remoteRoster: ConferenceRoster?
     /// The organiser of a conference I left, so the ended-call screen can offer to rejoin it.
     var leftConferenceHost: String?
+    /// People who hung up during my conference: still shown, as "Left", and let back in if they call.
+    var conferenceLeft: [RosterMember] = [] {
+        didSet { if conferenceLeft != oldValue { updateSpeakerDetection(); scheduleRosterShare() } }
+    }
+    /// I hung up the whole call, so legs ending now are not people leaving the conference.
+    private var endingAllCalls = false
+    /// The conference screen stays up while two people are merged, or while someone who left can still rejoin.
+    var inConference: Bool { conferenceMerged || (activeCall != nil && !conferenceLeft.isEmpty) }
     /// Extensions already sent the current roster, so they can be told when the conference ends.
     private var rosterRecipients: Set<String> = []
     private var rosterTask: Task<Void, Never>?
@@ -518,6 +526,7 @@ final class AppStore {
             finish(call)
             return
         }
+        endingAllCalls = true
         if let consultation = consultationCall { engine.hangup(token: consultation.token) }
         if call.recording { engine.recordStop(token: call.token) }
         engine.hangup(token: call.token)
@@ -669,32 +678,36 @@ final class AppStore {
             return
         }
         let second = consultationCall
-        let inConference = conferenceMerged || (addingPerson && second != nil)
-        guard inConference, let second else {
+        let sharing = conferenceMerged || (addingPerson && second != nil) || !conferenceLeft.isEmpty
+        guard sharing else {
             // No conference any more: tell everyone who was told about it.
             let ended = ConferenceRoster(host: account.username, members: [], ended: true)
             rosterRecipients.forEach { send(ended, to: $0) }
             rosterRecipients.removeAll()
             return
         }
-        let calling = !(conferenceMerged || second.state == .connected)
-        let members = [
+        let calling = second.map { !(conferenceMerged || $0.state == .connected) } ?? false
+        var members = [
             RosterMember(ext: account.username, name: account.displayName.isEmpty ? account.username : account.displayName, calling: false),
             RosterMember(ext: first.remoteNumber, name: first.remoteName, calling: false),
-            RosterMember(ext: second.remoteNumber, name: second.remoteName, calling: calling),
         ]
+        if let second { members.append(RosterMember(ext: second.remoteNumber, name: second.remoteName, calling: calling)) }
+        let left = conferenceLeft.filter { gone in !members.contains { $0.ext == gone.ext } }.map {
+            RosterMember(ext: $0.ext, name: contactName(for: $0.ext) ?? $0.name, calling: false)
+        }
         // Who is talking, as extensions, so people on the conference can light the same rings.
         let talking = speaking.compactMap { id -> String? in
             switch id {
             case "you": return account.username
             case "first": return first.remoteNumber
-            case "second": return second.remoteNumber
+            case "second": return second?.remoteNumber
             default: return nil
             }
         }
-        let roster = ConferenceRoster(host: account.username, members: members, speaking: talking)
+        let roster = ConferenceRoster(host: account.username, members: members, speaking: talking, left: left)
         // The person still being called isn't told yet; they join the conference when they answer.
-        let recipients: Set<String> = calling ? [first.remoteNumber] : [first.remoteNumber, second.remoteNumber]
+        var recipients: Set<String> = [first.remoteNumber]
+        if let second, !calling { recipients.insert(second.remoteNumber) }
         recipients.forEach { send(roster, to: $0) }
         let ended = ConferenceRoster(host: account.username, members: [], ended: true)
         rosterRecipients.subtracting(recipients).forEach { send(ended, to: $0) }
@@ -705,7 +718,7 @@ final class AppStore {
     private func updateSpeakerDetection() {
         speakerTask?.cancel()
         speaking = []
-        guard conferenceMerged, let engine else { return }
+        guard inConference, let engine else { return }
         speakerTask = Task { [weak self] in
             var lastLoud: [String: Date] = [:]
             while !Task.isCancelled {
@@ -733,6 +746,14 @@ final class AppStore {
         startConsultation(to: contact.number, keepingCallLive: true)
         if consultationCall == nil { addingPerson = false }
         callPage = .main
+    }
+
+    /// Calls someone who left back into the conference; they are merged in as soon as they answer.
+    func callBack(_ ext: String) {
+        guard activeCall != nil, consultationCall == nil, !conferenceMerged else { return }
+        addingPerson = true
+        startConsultation(to: ext, keepingCallLive: true)
+        if consultationCall == nil { addingPerson = false }
     }
 
     /// Mutes or unmutes your microphone for everyone in the conference.
@@ -765,6 +786,7 @@ final class AppStore {
             if code == 0 {
                 conferenceMerged = true
                 addingPerson = false
+                conferenceLeft.removeAll { $0.ext == consultation.remoteNumber || $0.ext == call.remoteNumber }
                 callPage = .main
                 if call.muted { engine.mute(token: consultation.token, muted: true) }
                 activeCall?.held = false
@@ -856,18 +878,7 @@ final class AppStore {
             AudioController.deactivateSession()
         }
         let duration = call.connectedAt.map { Date().timeIntervalSince($0) } ?? 0
-        let type: CallType = call.direction == .outgoing ? .outgoing : (answered || elsewhere ? .incoming : .missed)
-        history.insert(
-            CallLog(
-                id: UUID(),
-                contactName: call.remoteName,
-                number: call.remoteNumber,
-                callType: type,
-                timestamp: Date(),
-                duration: answered ? duration : nil
-            ),
-            at: 0
-        )
+        logHistory(call, elsewhere: elsewhere)
         guard !elsewhere else {
             notice = String(localized: "Call continued on another device")
             return
@@ -889,6 +900,30 @@ final class AppStore {
             duration: duration,
             endedAt: Date()
         )
+    }
+
+    /// Adds an ended call to the call history.
+    private func logHistory(_ call: CallSession, elsewhere: Bool = false) {
+        let answered = call.connectedAt != nil
+        let duration = call.connectedAt.map { Date().timeIntervalSince($0) } ?? 0
+        let type: CallType = call.direction == .outgoing ? .outgoing : (answered || elsewhere ? .incoming : .missed)
+        history.insert(
+            CallLog(
+                id: UUID(),
+                contactName: call.remoteName,
+                number: call.remoteNumber,
+                callType: type,
+                timestamp: Date(),
+                duration: answered ? duration : nil
+            ),
+            at: 0
+        )
+    }
+
+    /// Lists someone who hung up during my conference as having left.
+    private func markLeft(_ call: CallSession) {
+        guard !conferenceLeft.contains(where: { $0.ext == call.remoteNumber }) else { return }
+        conferenceLeft.append(RosterMember(ext: call.remoteNumber, name: call.remoteName, calling: false))
     }
 
     // MARK: Call handoff
@@ -1122,6 +1157,19 @@ final class AppStore {
         } else if let current = incomingCall, current.token == call.token {
             let updated = Self.merge(current, call)
             if updated != current { incomingCall = updated }
+        } else if call.incoming, inConference, consultationCall == nil, !conferenceMerged, !finishedCalls.contains(call.token),
+                  call.state == InviteState.incoming || call.state == InviteState.early,
+                  conferenceLeft.contains(where: { $0.ext == call.caller }) {
+            // Someone who left is calling back: answer and merge them into the conference straight away.
+            let session = CallSession(token: call.token, remoteName: contactName(for: call.caller) ?? call.caller,
+                                      remoteNumber: call.caller, direction: .incoming, state: .connecting)
+            addingPerson = true
+            consultationCall = session
+            engine?.answer(token: call.token, deferAudio: false) { [weak self] code in
+                log.info("Call \(call.token) rejoin answer: \(code)")
+                guard let self, code != 0, consultationCall?.token == call.token else { return }
+                consultationCall = nil
+            }
         } else if call.incoming, incomingCall == nil, activeCall == nil, !finishedCalls.contains(call.token),
                   call.state == InviteState.incoming || call.state == InviteState.early {
             let number = call.caller.isEmpty ? String(localized: "Unknown caller") : call.caller
@@ -1139,9 +1187,24 @@ final class AppStore {
     private func callEnded(_ call: EngineCall) {
         pendingTransfers.remove(call.token)
         stopAnnouncing(call.token)
-        if consultationCall?.token == call.token {
+        if let consultation = consultationCall, consultation.token == call.token {
+            // In a conference, someone who hangs up stays on the screen as "Left" and can rejoin.
+            if conferenceMerged, !endingAllCalls { markLeft(consultation) }
             // The original caller stays on hold until the user returns to them.
             consultationCall = nil
+            return
+        }
+        if let session = activeCall, session.token == call.token, conferenceMerged, !endingAllCalls,
+           let consultation = consultationCall, consultation.state == .connected {
+            // The first person left but the conference carries on with the second: they take over the
+            // screen, keeping the system call's id so CallKit (and the call audio) isn't ended.
+            markLeft(session)
+            var promoted = consultation
+            promoted.id = session.id
+            promoted.muted = session.muted
+            activeCall = promoted
+            consultationCall = nil
+            logHistory(session)
             return
         }
         if let session = activeCall, session.token == call.token {
