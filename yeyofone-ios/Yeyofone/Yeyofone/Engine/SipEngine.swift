@@ -319,6 +319,12 @@ nonisolated final class SipEngine: Thread, @unchecked Sendable {
         run(nil) { yv_set_ringtone($0, enabled ? 1 : 0) }
     }
 
+    /// Callers (extensions) who may still ring while another call is active; everyone else gets 486 Busy.
+    func setBusyCallers(_ users: [String]) {
+        let bytes = Array(users.joined(separator: "\n").utf8)
+        run(nil) { handle in bytes.withUnsafeBufferPointer { yv_set_busy_callers(handle, $0.baseAddress, UInt32($0.count)) } }
+    }
+
     /// Opens or closes the sound device for active calls, following CallKit's audio session activation.
     func audioDevice(open: Bool, completion: Completion? = nil) {
         run(completion) { yv_audio_device($0, open ? 1 : 0) }

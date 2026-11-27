@@ -78,7 +78,13 @@ final class AppStore {
     var leftConferenceHost: String?
     /// People who hung up during my conference: still shown, as "Left", and let back in if they call.
     var conferenceLeft: [RosterMember] = [] {
-        didSet { if conferenceLeft != oldValue { updateSpeakerDetection(); scheduleRosterShare() } }
+        didSet {
+            guard conferenceLeft != oldValue else { return }
+            updateSpeakerDetection()
+            scheduleRosterShare()
+            // The engine answers 486 Busy to calls during a call; let the people who left ring through.
+            engine?.setBusyCallers(conferenceLeft.map(\.ext))
+        }
     }
     /// I hung up the whole call, so legs ending now are not people leaving the conference.
     private var endingAllCalls = false
