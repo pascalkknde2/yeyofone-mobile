@@ -500,6 +500,8 @@ class YeyoFoneViewModel(
         val left = _leftConference.value ?: return
         _leftConference.value = null
         dismissCallSummary(left.callId)
+        // Outgoing calls are shown from the Dial screen, so open it for the new call.
+        screen.value = AppScreen.Dial(left.accountId, left.host)
         startCall(left.accountId, left.host)
     }
 

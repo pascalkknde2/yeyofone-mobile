@@ -326,6 +326,28 @@ class CallCoordinatorTest {
     }
 
     @Test
+    fun `an outgoing call reported before makeCall returns is listed once and a waiting call can still ring`() = runTest {
+        val id = SipAccountId("one")
+        val gateway = FakeGateway().apply { reportBeforeReturning = true }
+        val coordinator = CallCoordinator(
+            FakeAccounts(mapOf(id to account(id))), gateway, backgroundScope, preferences = FakePreferences(),
+        )
+        runCurrent()
+
+        val outgoing = coordinator.call(id, "1001")
+        runCurrent()
+        assertEquals(1, coordinator.sessions.value.count { it.id == outgoing })
+
+        gateway.emit(outgoing.value, id, invState = PJSIP_INV_STATE_CONFIRMED, lastStatusCode = 200)
+        gateway.emit("incoming-1", id, PJSIP_INV_STATE_INCOMING, 0, direction = CallDirection.INCOMING)
+        runCurrent()
+
+        // One call in progress plus one ringing is within capacity, so the new call isn't declined.
+        assertTrue(gateway.hungUp.isEmpty())
+        assertEquals(CallState.Incoming, coordinator.sessions.value.single { it.id.value == "incoming-1" }.state)
+    }
+
+    @Test
     fun `auto-answer does not fire for a second call while one is already in progress`() = runTest {
         val id = SipAccountId("one")
         val gateway = FakeGateway()
@@ -653,9 +675,17 @@ class CallCoordinatorTest {
         var failAnswer = false
         private var counter = 0
 
+        /** Like the real engine, reports the call's first state before makeCall returns. */
+        var reportBeforeReturning = false
+
         override suspend fun makeCall(accountId: SipAccountId, destination: String): String {
             lastDestination = destination
-            return "native-call-${counter++}"
+            val id = "native-call-${counter++}"
+            if (reportBeforeReturning) {
+                emit(id, accountId, PJSIP_INV_STATE_CALLING, 0)
+                kotlinx.coroutines.yield()
+            }
+            return id
         }
 
         override suspend fun answer(callId: String) {
@@ -744,6 +774,7 @@ class CallCoordinatorTest {
     }
 
     private companion object {
+        const val PJSIP_INV_STATE_CALLING = 1
         const val PJSIP_INV_STATE_INCOMING = 2
         const val PJSIP_INV_STATE_CONFIRMED = 5
         const val PJSIP_INV_STATE_DISCONNECTED = 6
