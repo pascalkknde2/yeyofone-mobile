@@ -100,7 +100,10 @@ class CallCoordinator(
             state = CallState.Preparing,
             createdAt = Instant.now(),
         )
-        mutableSessions.update { it + session }
+        // The engine may already have reported this call (its first event can arrive before makeCall
+        // returns), so never list it twice: a duplicate counts as a second live call and makes the
+        // next incoming call look like it is over capacity.
+        mutableSessions.update { current -> if (current.any { it.id == id }) current else current + session }
         history?.upsert(session.toHistoryEntry())
         id
     }
@@ -128,7 +131,10 @@ class CallCoordinator(
             state = CallState.Preparing,
             createdAt = Instant.now(),
         )
-        mutableSessions.update { it + session }
+        // The engine may already have reported this call (its first event can arrive before makeCall
+        // returns), so never list it twice: a duplicate counts as a second live call and makes the
+        // next incoming call look like it is over capacity.
+        mutableSessions.update { current -> if (current.any { it.id == id }) current else current + session }
         history?.upsert(session.toHistoryEntry())
         id
     }
