@@ -388,10 +388,12 @@ private fun AccountsApp(
                 (session.id == state.activeCallId || session.direction == CallDirection.INCOMING)
         }
     } else null
+    val leftConference by viewModel.leftConference.collectAsStateWithLifecycle()
     if (endedCall != null) {
         CallEndedScreen(
             summary = endedCall.toCallSummary(),
             notes = state.callNotes[endedCall.id],
+            onRejoin = if (leftConference?.callId == endedCall.id) viewModel::rejoinConference else null,
             onCallAgain = {
                 viewModel.dismissCallSummary(endedCall.id)
                 viewModel.dial(endedCall.accountId, endedCall.remoteUri.toSipIdentity().extension)
@@ -498,6 +500,7 @@ private fun AccountsApp(
                 val consultationSession = state.sessions.firstOrNull { it.id == state.consultationCallId }
                 val speaking by viewModel.speaking.collectAsStateWithLifecycle()
 val remoteConference by viewModel.remoteConference.collectAsStateWithLifecycle()
+                val conferenceLeft by viewModel.conferenceLeft.collectAsStateWithLifecycle()
                 OutgoingCallHost(
                     session = activeSession,
                     media = media,
@@ -505,7 +508,7 @@ val remoteConference by viewModel.remoteConference.collectAsStateWithLifecycle()
                     availableRoutes = state.availableRoutes,
                     selectedRoute = state.selectedRoute,
                     consultationSession = consultationSession,
-                    conference = conferenceUi(viewModel, state, contacts, activeSession, remoteConference),
+                    conference = conferenceUi(viewModel, state, contacts, activeSession, remoteConference, conferenceLeft),
                     speakingIds = speaking,
                     recording = activeSession.id in state.recordingCallIds,
                     assistant = activeSession.id in state.assistantCallIds,
@@ -798,6 +801,7 @@ private fun IncomingCallScreen(
         val consultationSession = state.sessions.firstOrNull { it.id == state.consultationCallId }
         val speaking by viewModel.speaking.collectAsStateWithLifecycle()
 val remoteConference by viewModel.remoteConference.collectAsStateWithLifecycle()
+                val conferenceLeft by viewModel.conferenceLeft.collectAsStateWithLifecycle()
         OutgoingCallHost(
             session = current,
             media = media,
@@ -805,7 +809,7 @@ val remoteConference by viewModel.remoteConference.collectAsStateWithLifecycle()
             availableRoutes = state.availableRoutes,
             selectedRoute = state.selectedRoute,
             consultationSession = consultationSession,
-            conference = conferenceUi(viewModel, state, contacts, current, remoteConference),
+            conference = conferenceUi(viewModel, state, contacts, current, remoteConference, conferenceLeft),
                     speakingIds = speaking,
             recording = current.id in state.recordingCallIds,
             assistant = current.id in state.assistantCallIds,
@@ -1505,6 +1509,7 @@ private fun conferenceUi(
     contacts: List<Contact>,
     active: CallSession,
     remoteRoster: com.yeyofone.app.conference.ConferenceRoster? = null,
+    hostLeft: List<com.yeyofone.app.conference.RosterMember> = emptyList(),
 ): ConferenceUi {
     val byId = state.sessions.associateBy { it.id }
     val selfExtension = state.accounts.firstOrNull { it.id == active.accountId }?.username.orEmpty()
@@ -1522,10 +1527,14 @@ private fun conferenceUi(
         contacts = contacts,
         onAdd = { viewModel.addToConference(active.id, active.accountId, it.number) },
         onRemove = viewModel::removeFromConference,
-        onEnd = { if (remote != null) viewModel.end(active.id) else viewModel.endConference() },
+        onEnd = { if (remote != null) viewModel.leaveConference(active.id) else viewModel.endConference() },
         onMute = { muted -> if (remote != null) viewModel.setMuted(active.id, muted) else viewModel.setConferenceMuted(muted) },
         remote = remote,
         remoteSpeaking = if (remote != null) remoteRoster?.speaking.orEmpty().toSet() else emptySet(),
         selfExtension = selfExtension,
+        left = (if (remote != null) remoteRoster?.left.orEmpty() else hostLeft).map {
+            com.yeyofone.app.ui.call.RemotePerson(it.ext, contacts.firstOrNull { c -> c.number == it.ext }?.displayName ?: it.name, false)
+        },
+        onCallBack = if (remote == null) { ext -> viewModel.addToConference(active.id, active.accountId, ext) } else null,
     )
 }
