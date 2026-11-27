@@ -91,8 +91,10 @@ struct ConferenceScreen: View {
     }
 
     private func leftPeople(_ present: [ConferencePerson]) -> [ConferencePerson] {
-        guard let remote else { return [] }
-        return remote.left.filter { gone in !present.contains { $0.id == gone.ext } }.map {
+        let gone = remote?.left ?? store.conferenceLeft
+        // On my own conference, present people's ids are "first"/"second", so compare numbers too.
+        let here = Set(present.map(\.id) + [session.remoteNumber, store.consultationCall?.remoteNumber].compactMap { $0 })
+        return gone.filter { !here.contains($0.ext) }.map {
             ConferencePerson(id: $0.ext, name: store.contactName(for: $0.ext) ?? $0.name, isSelf: false, muted: false,
                              status: "Left", connecting: false, removable: false, left: true)
         }
@@ -114,6 +116,14 @@ struct ConferenceScreen: View {
                     Image(systemName: "mic.slash.fill").font(.system(size: 12, weight: .bold)).foregroundStyle(.white)
                         .frame(width: 24, height: 24).background(Circle().fill(Palette.accentRed))
                         .offset(x: size / 2 - 12, y: size / 2 - 12)
+                }
+                if p.left, remote == nil, store.consultationCall == nil, !store.conferenceMerged {
+                    Button { store.callBack(p.id) } label: {
+                        Image(systemName: "phone.fill").font(.system(size: 12, weight: .bold)).foregroundStyle(.white)
+                            .frame(width: 28, height: 28).background(Circle().fill(Palette.accentGreen))
+                    }
+                    .accessibilityLabel("Call back into the conference")
+                    .offset(x: size / 2 - 12, y: -(size / 2 - 12))
                 }
                 if p.removable {
                     Button { store.returnToCaller() } label: {

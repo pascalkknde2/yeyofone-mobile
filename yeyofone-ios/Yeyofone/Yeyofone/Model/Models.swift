@@ -97,7 +97,9 @@ enum CallState: Equatable {
 enum CallDirection { case incoming, outgoing }
 
 struct CallSession: Identifiable, Equatable {
-    let id = UUID()
+    /// Also the CallKit call's id. A conference leg that takes over the screen keeps the id of the
+    /// call it replaces, so the system call (and its audio) carries on.
+    var id = UUID()
     /// The engine's token for this call; 0 for a call that isn't backed by the engine (previews).
     var token: UInt64 = 0
     var remoteName: String
