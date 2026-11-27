@@ -16,6 +16,8 @@
 #include <cmath>
 #include <deque>
 #include <chrono>
+#include <set>
+#include <string>
 #ifdef __APPLE__
 #include <TargetConditionals.h>
 #if TARGET_OS_OSX
@@ -460,6 +462,8 @@ struct YvHandle {
     std::unique_ptr<EngineEndpoint> endpoint;
     bool running = false;
     bool ringtone = true;
+    /* Callers (SIP user parts) let through while another call is active; everyone else gets 486. */
+    std::set<std::string> busy_callers;
     float receive_gain = 1.0f;
 #if defined(__APPLE__) && TARGET_OS_OSX
     std::array<UInt32,3> audio_devices{};
@@ -509,9 +513,22 @@ void refresh_audio_routes(YvHandle* h, bool immediately = false) noexcept {
 #endif
 }
 
+/* The user part of an incoming call's From URI ("1005" in <sip:1005@host>), or "" if there is none. */
+static std::string caller_user(int call_id) noexcept {
+ try{
+  pjsua_call_info info;if(pjsua_call_get_info(call_id,&info)!=PJ_SUCCESS)return {};
+  std::string from(info.remote_info.ptr,static_cast<size_t>(info.remote_info.slen));
+  auto start=from.find("sip:");if(start==std::string::npos){start=from.find("sips:");if(start==std::string::npos)return {};start+=5;}else start+=4;
+  auto end=from.find_first_of("@;>",start);if(end==std::string::npos||end==start||end-start>64)return {};
+  return from.substr(start,end-start);
+ }catch(...){return {};}
+}
+
 void NativeAccount::onIncomingCall(pj::OnIncomingCallParam& event) noexcept {
  try {
-  if(!owner||!owner->running||owner->calls.size()>=16||std::any_of(owner->calls.begin(),owner->calls.end(),[](const auto& item){return item.second->isActive();})){pjsua_call_answer(event.callId,PJSIP_SC_BUSY_HERE,nullptr,nullptr);return;}
+  if(!owner||!owner->running||owner->calls.size()>=16){pjsua_call_answer(event.callId,PJSIP_SC_BUSY_HERE,nullptr,nullptr);return;}
+  const bool busy=std::any_of(owner->calls.begin(),owner->calls.end(),[](const auto& item){return item.second->isActive();});
+  if(busy&&(owner->busy_callers.empty()||!owner->busy_callers.count(caller_user(event.callId)))){pjsua_call_answer(event.callId,PJSIP_SC_BUSY_HERE,nullptr,nullptr);return;}
   const uint64_t serial=incoming_serial.fetch_add(1);if(serial==0||serial>0x7fffffffffffffffULL){pjsua_call_answer(event.callId,PJSIP_SC_SERVICE_UNAVAILABLE,nullptr,nullptr);return;}
   const uint64_t token=0x8000000000000000ULL|serial;
   auto call=std::make_unique<NativeCall>(*this,token,*endpoint,false,event.callId,true,owner->receive_gain);
@@ -873,6 +890,18 @@ extern "C" int32_t yv_call_release(YvHandle* h,uint64_t token) noexcept {
 extern "C" int32_t yv_set_ringtone(YvHandle* h,int32_t enabled) noexcept {
  if(auto code=check(h))return code;if(enabled!=0&&enabled!=1)return -6;
  h->ringtone=enabled!=0;return 0;
+}
+extern "C" int32_t yv_set_busy_callers(YvHandle* h,const uint8_t* users,uint32_t len) noexcept {
+ if(auto code=check(h))return code;if(len>4096||(len>0&&!users))return -6;
+ try{
+  std::set<std::string> list;std::string current;
+  for(uint32_t i=0;i<=len;++i){
+   if(i==len||users[i]=='\n'){if(!current.empty())list.insert(current);current.clear();if(list.size()>32)return -6;continue;}
+   const unsigned char c=users[i];if(!(std::isalnum(c)||c=='+'||c=='*'||c=='#'||c=='-'||c=='_'||c=='.'))return -6;
+   current.push_back(static_cast<char>(c));if(current.size()>64)return -6;
+  }
+  h->busy_callers=std::move(list);return 0;
+ }catch(...){return -1;}
 }
 extern "C" int32_t yv_audio_device(YvHandle* h,int32_t open) noexcept {
  if(auto code=check(h))return code;if(open!=0&&open!=1)return -6;

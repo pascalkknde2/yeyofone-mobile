@@ -65,6 +65,10 @@ int32_t yv_destroy(struct YvHandle* handle) YV_NOEXCEPT;
 /* Whether incoming calls play the bridge's own ringtone (default 1). Hosts that ring through the
  * system, such as iOS CallKit, turn it off. */
 int32_t yv_set_ringtone(struct YvHandle* handle, int32_t enabled) YV_NOEXCEPT;
+/* Callers allowed to ring while another call is active, as newline-separated SIP user parts
+ * ("1005\n1002"); everyone else is answered 486 Busy as before. An empty list (the default)
+ * restores that for all callers. iOS uses it to let people who left a conference call back in. */
+int32_t yv_set_busy_callers(struct YvHandle* handle, const uint8_t* users, uint32_t len) YV_NOEXCEPT;
 /* Opens (1) or closes (0) the default sound devices for the active calls without changing their
  * media connections. iOS CallKit hosts call this when the system activates or deactivates the
  * audio session, since audio must not start before activation. */
