@@ -419,12 +419,8 @@ struct CallEndedScreen: View {
                 #if DEBUG
                 Spacer()
                 PrimaryCallActionButton(icon: "bubble.left.fill", label: "Send message", color: Palette.accentBlue) {
-                    store.chatContactName = summary.callerName
-                    store.chatContactOnline = false
-                    store.chatMessages = []
-                    store.contactTyping = false
                     store.endedSummary = nil
-                    store.screen = .chat
+                    store.openChat(number: summary.callerNumber, name: summary.callerName)
                 }
                 #endif
                 Spacer()

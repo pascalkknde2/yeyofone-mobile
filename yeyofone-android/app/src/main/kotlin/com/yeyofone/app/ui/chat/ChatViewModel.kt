@@ -18,6 +18,8 @@ data class ChatUiState(
     val messages: List<ChatMessage> = emptyList(),
     val inputText: String = "",
     val isContactTyping: Boolean = false,
+    /** Every conversation this session, keyed by [ChatContact.id] (the contact's number). */
+    val conversations: Map<String, List<ChatMessage>> = emptyMap(),
 )
 
 class ChatViewModel : ViewModel() {
@@ -31,25 +33,36 @@ class ChatViewModel : ViewModel() {
     fun sendMessage() {
         val text = mutableUiState.value.inputText.trim()
         if (text.isEmpty()) return
-        mutableUiState.value = mutableUiState.value.copy(
-            messages = mutableUiState.value.messages + ChatMessage(
-                id = UUID.randomUUID().toString(),
-                content = text,
-                timestamp = LocalTime.now().format(TIME_FORMAT),
-                isOutgoing = true,
-                status = MessageStatus.SENT,
-            ),
+        val state = mutableUiState.value
+        val messages = state.messages + ChatMessage(
+            id = UUID.randomUUID().toString(),
+            content = text,
+            timestamp = LocalTime.now().format(TIME_FORMAT),
+            isOutgoing = true,
+            status = MessageStatus.SENT,
+        )
+        mutableUiState.value = state.copy(
+            messages = messages,
             inputText = "",
             isContactTyping = false,
+            conversations = state.contact?.let { state.conversations + (it.id to messages) } ?: state.conversations,
         )
     }
 
+    /** Opens the conversation with the caller of an ended call. */
     fun openConversation(remoteUri: String) {
-        val name = remoteUri.toSipIdentity().displayName
-        mutableUiState.value = mutableUiState.value.copy(
-            contact = ChatContact(remoteUri, name, statusText = "Offline"),
-            messages = emptyList(),
-            inputText = "",
+        val identity = remoteUri.toSipIdentity()
+        openConversation(identity.extension.ifEmpty { remoteUri }, identity.displayName)
+    }
+
+    /** Opens (or reopens, keeping its messages) the conversation with [number]. */
+    fun openConversation(number: String, name: String) {
+        val state = mutableUiState.value
+        val id = number.trim()
+        mutableUiState.value = state.copy(
+            contact = ChatContact(id, name.ifBlank { id }, statusText = ""),
+            messages = state.conversations[id].orEmpty(),
+            inputText = if (state.contact?.id == id) state.inputText else "",
             isContactTyping = false,
         )
     }

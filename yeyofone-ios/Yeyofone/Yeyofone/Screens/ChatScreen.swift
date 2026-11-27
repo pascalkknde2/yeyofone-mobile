@@ -63,7 +63,7 @@ struct ChatScreen: View {
 
     private var header: some View {
         HStack(spacing: 10) {
-            Button { store.screen = .home } label: {
+            Button { store.screen = .messages } label: {
                 Image(systemName: "arrow.left").frame(width: 40, height: 40)
             }
             .accessibilityLabel("Back")
@@ -90,7 +90,7 @@ struct ChatScreen: View {
                 }
             }
             Spacer()
-            Button { store.startCall(to: store.contacts.first { $0.displayName == store.chatContactName }?.number ?? store.chatContactName) } label: {
+            Button { store.startCall(to: store.chatContactNumber.isEmpty ? store.chatContactName : store.chatContactNumber) } label: {
                 Image(systemName: "phone.fill").frame(width: 40, height: 40)
             }
             .accessibilityLabel("Voice call")

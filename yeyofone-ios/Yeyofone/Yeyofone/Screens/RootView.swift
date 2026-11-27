@@ -72,6 +72,7 @@ struct RootView: View {
                 case .dial(let destination): DialPadScreen(initialNumber: destination).id(destination)
                 case .contacts: ContactsScreen()
                 case .history: CallHistoryScreen()
+                case .messages: MessagesScreen()
                 case .chat: ChatScreen()
                 case .settings: SettingsScreen()
                 case .accounts: AccountsScreen()
@@ -105,7 +106,7 @@ struct RootView: View {
     /// The keypad, chat, account pages and settings sub-pages are full-screen on Android too.
     private var showsTabBar: Bool {
         switch store.screen {
-        case .home, .contacts, .history, .settings, .accounts: true
+        case .home, .contacts, .history, .messages, .settings, .accounts: true
         default: false
         }
     }

@@ -55,6 +55,8 @@ sealed interface AppScreen {
     data object Accounts : AppScreen
     data object Contacts : AppScreen
     data object History : AppScreen
+    /** The Chat tab's contact list; picking someone opens [Chat]. */
+    data object Messages : AppScreen
     data object Chat : AppScreen
     data object Settings : AppScreen
     data object AudioSettings : AppScreen
@@ -519,6 +521,7 @@ class YeyoFoneViewModel(
     fun showContacts() { screen.value = AppScreen.Contacts }
     fun showHistory() { screen.value = AppScreen.History }
     fun showChat() { screen.value = AppScreen.Chat }
+    fun showMessages() { screen.value = AppScreen.Messages }
     fun showSettings() { screen.value = AppScreen.Settings }
     fun showAudioSettings() { screen.value = AppScreen.AudioSettings }
     fun showVideoSettings() { screen.value = AppScreen.VideoSettings }

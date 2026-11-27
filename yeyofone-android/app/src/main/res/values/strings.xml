@@ -240,6 +240,8 @@
     <string name="play_voice_message">Play voice message</string>
     <string name="attach_file">Attach file</string>
     <string name="record_voice_message">Record voice message</string>
+    <string name="messages_empty_subtitle">Add people in Contacts to start a conversation</string>
+    <string name="cd_message_contact">Message contact</string>
     <string name="type_message">Type a message…</string>
     <string name="send_message">Send message</string>
     <string name="call_ended_title">Call Ended</string>

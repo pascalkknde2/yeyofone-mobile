@@ -92,6 +92,7 @@ import com.yeyofone.app.ui.splash.AnimatedSplash
 import com.yeyofone.app.ui.callhistory.CallHistoryScreen
 import com.yeyofone.app.ui.callhistory.CallHistoryViewModel
 import com.yeyofone.app.ui.chat.ChatScreen
+import com.yeyofone.app.ui.chat.MessagesScreen
 import com.yeyofone.app.ui.chat.ChatViewModel
 import com.yeyofone.app.ui.contacts.ContactsScreen
 import com.yeyofone.app.ui.components.BottomNavigationBar
@@ -323,6 +324,7 @@ private fun AccountsApp(
     val preferences by viewModel.accountPreferences.collectAsStateWithLifecycle()
     val forwarding by viewModel.forwardingState.collectAsStateWithLifecycle()
     val contacts by viewModel.contacts.collectAsStateWithLifecycle()
+    val chatState by chatViewModel.uiState.collectAsStateWithLifecycle()
     val callHistoryState by callHistoryViewModel.uiState.collectAsStateWithLifecycle()
 
     // Call waiting: at most one call is ever "in the foreground" (full-screen ring, or the
@@ -421,7 +423,7 @@ private fun AccountsApp(
             CALLS_NAVIGATION -> viewModel.showHistory()
             CONTACTS_NAVIGATION -> viewModel.showContacts()
             KEYPAD_NAVIGATION -> state.accounts.firstOrNull()?.let { viewModel.dial(it.id) }
-            CHAT_NAVIGATION -> viewModel.showChat()
+            CHAT_NAVIGATION -> viewModel.showMessages()
             SETTINGS_NAVIGATION -> viewModel.showSettings()
         }
     }
@@ -547,10 +549,23 @@ val remoteConference by viewModel.remoteConference.collectAsStateWithLifecycle()
             },
             onClear = callHistoryViewModel::clear,
         )
+        AppScreen.Messages -> MessagesScreen(
+            contacts = contacts,
+            conversations = chatState.conversations,
+            onOpen = { contact ->
+                chatViewModel.openConversation(contact.number, contact.displayName)
+                viewModel.showChat()
+            },
+            onNavigationItemSelected = navigateFromMenu,
+        )
         AppScreen.Chat -> ChatScreen(
             viewModel = chatViewModel,
-            onBack = viewModel::showAccounts,
-            onVoiceCall = { state.accounts.firstOrNull()?.let { viewModel.dial(it.id) } },
+            onBack = viewModel::showMessages,
+            onVoiceCall = {
+                state.accounts.firstOrNull()?.let { account ->
+                    viewModel.dial(account.id, chatState.contact?.id.orEmpty())
+                }
+            },
             onVideoCall = viewModel::openTeamRoom,
         )
         AppScreen.Settings -> SettingsScreen(

@@ -29,4 +29,27 @@ class ChatViewModelTest {
         viewModel.sendMessage()
         assertEquals(original, viewModel.uiState.value.messages)
     }
+
+    @Test
+    fun `each contact keeps its own conversation`() {
+        val viewModel = ChatViewModel()
+        viewModel.openConversation("1001", "Pascal")
+        viewModel.onInputChanged("Hi Pascal")
+        viewModel.sendMessage()
+
+        viewModel.openConversation("1005", "Moto")
+        assertEquals("Moto", viewModel.uiState.value.contact?.name)
+        assertTrue(viewModel.uiState.value.messages.isEmpty())
+
+        viewModel.openConversation("1001", "Pascal")
+        assertEquals(listOf("Hi Pascal"), viewModel.uiState.value.messages.map { it.content })
+        assertEquals(setOf("1001"), viewModel.uiState.value.conversations.keys)
+    }
+
+    @Test
+    fun `call summary conversation is keyed by the caller's extension`() {
+        val viewModel = ChatViewModel()
+        viewModel.openConversation("sip:1005@sysinfos.co.uk")
+        assertEquals("1005", viewModel.uiState.value.contact?.id)
+    }
 }

@@ -1,5 +1,6 @@
 package com.yeyofone.app.ui.chat
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.WindowInsets
@@ -56,6 +57,7 @@ fun ChatScreen(
     val scope = rememberCoroutineScope()
     val comingSoon = stringResource(R.string.feature_coming_soon)
     val unavailable = { scope.launch { snackbar.showSnackbar(comingSoon) }; Unit }
+    BackHandler(onBack = onBack)
 
     LaunchedEffect(state.messages.size, state.isContactTyping) {
         val target = state.messages.size + if (state.isContactTyping) 1 else 0

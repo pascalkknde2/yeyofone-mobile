@@ -220,6 +220,8 @@
     <string name="play_voice_message">Écouter le message vocal</string>
     <string name="attach_file">Joindre un fichier</string>
     <string name="record_voice_message">Enregistrer un message vocal</string>
+    <string name="messages_empty_subtitle">Ajoutez des personnes dans Contacts pour démarrer une conversation</string>
+    <string name="cd_message_contact">Envoyer un message au contact</string>
     <string name="type_message">Saisissez un message…</string>
     <string name="send_message">Envoyer le message</string>
     <string name="call_ended_title">Appel terminé</string>

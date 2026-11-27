@@ -219,6 +219,8 @@
     <string name="play_voice_message">Sprachnachricht abspielen</string>
     <string name="attach_file">Datei anhängen</string>
     <string name="record_voice_message">Sprachnachricht aufnehmen</string>
+    <string name="messages_empty_subtitle">Füge Personen unter Kontakte hinzu, um ein Gespräch zu beginnen</string>
+    <string name="cd_message_contact">Kontakt eine Nachricht senden</string>
     <string name="type_message">Nachricht eingeben …</string>
     <string name="send_message">Nachricht senden</string>
     <string name="call_ended_title">Anruf beendet</string>

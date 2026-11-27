@@ -17,7 +17,8 @@ import os
 nonisolated private let log = Logger(subsystem: "com.yeyofone.app", category: "sip")
 
 enum AppScreen: Equatable {
-    case home, contacts, history, chat, settings
+    /// `messages` is the Chat tab's contact list; picking someone opens `chat`.
+    case home, contacts, history, messages, chat, settings
     case dial(destination: String)
     case accounts
     case accountDetail(UUID)
@@ -136,8 +137,11 @@ final class AppStore {
         }
     }
 
-    /// Empty until a conversation is opened (e.g. from a call summary).
+    /// Empty until a conversation is opened from the contact list or a call summary.
     var chatContactName = ""
+    var chatContactNumber = ""
+    /// Every conversation this session, keyed by the contact's number.
+    var chatConversations: [String: [ChatMessage]] = [:]
     var chatContactOnline = false
     var chatMessages: [ChatMessage] = []
     var contactTyping = false
@@ -204,7 +208,7 @@ final class AppStore {
         case .dial: .keypad
         case .contacts: .contacts
         case .history: .calls
-        case .chat: .chat
+        case .messages, .chat: .chat
         case .settings, .accounts: .settings
         default: nil
         }
@@ -216,7 +220,7 @@ final class AppStore {
         case .keypad: screen = .dial(destination: "")
         case .contacts: screen = .contacts
         case .calls: screen = .history
-        case .chat: screen = .chat
+        case .chat: screen = .messages
         case .settings: screen = .settings
         }
     }
@@ -1274,6 +1278,7 @@ final class AppStore {
         case "keypad": screen = .dial(destination: "1001")
         case "contacts": screen = .contacts
         case "history": screen = .history
+        case "messages": screen = .messages
         case "chat": screen = .chat
         case "settings": screen = .settings
         case "accounts": screen = .accounts
@@ -1314,11 +1319,23 @@ final class AppStore {
 
     // MARK: Chat
 
+    /// Opens (or reopens, keeping its messages) the conversation with `number`.
+    func openChat(number: String, name: String) {
+        let key = number.trimmingCharacters(in: .whitespaces)
+        chatContactNumber = key
+        chatContactName = name.isEmpty ? key : name
+        chatContactOnline = false
+        chatMessages = chatConversations[key] ?? []
+        contactTyping = false
+        screen = .chat
+    }
+
     func sendChatMessage(_ text: String) {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return }
         let time = Date().formatted(.dateTime.hour(.twoDigits(amPM: .omitted)).minute(.twoDigits))
         chatMessages.append(ChatMessage(content: String(trimmed.prefix(2_000)), timestamp: time, isOutgoing: true))
+        if !chatContactNumber.isEmpty { chatConversations[chatContactNumber] = chatMessages }
         contactTyping = false
     }
 }

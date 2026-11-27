@@ -732,6 +732,28 @@
         }
       }
     },
+    "Add people in Contacts to start a conversation" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Füge Personen unter Kontakte hinzu, um ein Gespräch zu beginnen"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Añade personas en Contactos para iniciar una conversación"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajoutez des personnes dans Contacts pour démarrer une conversation"
+          }
+        }
+      }
+    },
     "Admit" : {
       "localizations" : {
         "de" : {
@@ -4368,6 +4390,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Réunion"
+          }
+        }
+      }
+    },
+    "Message contact" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kontakt eine Nachricht senden"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enviar mensaje al contacto"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Envoyer un message au contact"
           }
         }
       }
