@@ -107,34 +107,53 @@ struct ChatScreen: View {
 
     private var inputBar: some View {
         let canSend = !input.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-        return HStack(alignment: .bottom, spacing: 10) {
+        return HStack(alignment: .bottom, spacing: 4) {
             Button { toast = String(localized: "Coming soon") } label: {
-                Image(systemName: "paperclip")
-                    .foregroundStyle(Palette.textSecondary)
+                Image(systemName: "plus")
+                    .appFont(size: 22, weight: .medium)
+                    .foregroundStyle(Palette.accentBlue)
                     .frame(width: 40, height: 40)
-                    .background(Circle().fill(Palette.backgroundGray))
             }
             .accessibilityLabel("Attach file")
             TextField("Type a message…", text: $input, axis: .vertical)
                 .appFont(size: 15)
                 .lineLimit(1...5)
                 .tint(Palette.accentBlue)
-                .padding(.horizontal, 16)
-                .padding(.vertical, 10)
-                .background(RoundedRectangle(cornerRadius: 22).fill(Palette.backgroundGray))
-                .onSubmit(send)
-            Button(action: send) {
-                Image(systemName: "paperplane.fill")
-                    .foregroundStyle(.white)
-                    .frame(width: 40, height: 40)
-                    .background(Circle().fill(canSend ? Palette.accentBlue : Palette.inactiveGray))
+                .padding(.horizontal, 14)
+                .padding(.vertical, 9)
+                .background(RoundedRectangle(cornerRadius: 20).fill(Palette.backgroundGray))
+                .padding(.vertical, 2)
+                .onSubmit { if canSend { send() } }
+            if canSend {
+                Button(action: send) {
+                    Image(systemName: "paperplane.fill")
+                        .foregroundStyle(.white)
+                        .frame(width: 40, height: 40)
+                        .background(Circle().fill(Palette.accentBlue))
+                }
+                .padding(.leading, 4)
+                .accessibilityLabel("Send message")
+                .transition(.scale.combined(with: .opacity))
+            } else {
+                Group {
+                    Button { toast = String(localized: "Coming soon") } label: {
+                        Image(systemName: "camera").frame(width: 40, height: 40)
+                    }
+                    .accessibilityLabel("Camera")
+                    Button { toast = String(localized: "Coming soon") } label: {
+                        Image(systemName: "mic").frame(width: 40, height: 40)
+                    }
+                    .accessibilityLabel("Record voice message")
+                }
+                .appFont(size: 19)
+                .foregroundStyle(Palette.textSecondary)
+                .transition(.opacity)
             }
-            .disabled(!canSend)
-            .accessibilityLabel("Send message")
         }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 10)
-        .background(Palette.glass)
+        .animation(.easeOut(duration: 0.15), value: canSend)
+        .padding(.horizontal, 8)
+        .padding(.vertical, 8)
+        .background(Palette.glass.ignoresSafeArea(edges: .bottom))
     }
 
     private func send() {

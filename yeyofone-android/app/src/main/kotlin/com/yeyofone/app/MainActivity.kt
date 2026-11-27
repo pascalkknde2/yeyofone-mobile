@@ -552,7 +552,6 @@ val remoteConference by viewModel.remoteConference.collectAsStateWithLifecycle()
             onBack = viewModel::showAccounts,
             onVoiceCall = { state.accounts.firstOrNull()?.let { viewModel.dial(it.id) } },
             onVideoCall = viewModel::openTeamRoom,
-            onNavigationItemSelected = navigateFromMenu,
         )
         AppScreen.Settings -> SettingsScreen(
             accountCount = state.accounts.count { it.enabled },

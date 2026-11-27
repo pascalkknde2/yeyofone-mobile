@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -31,7 +32,9 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Send
-import androidx.compose.material.icons.filled.AttachFile
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.outlined.Mic
+import androidx.compose.material.icons.outlined.PhotoCamera
 import androidx.compose.material.icons.filled.Call
 import androidx.compose.material.icons.filled.Done
 import androidx.compose.material.icons.filled.DoneAll
@@ -200,18 +203,26 @@ private fun TypingDot(delay: Int) {
 }
 
 @Composable
-fun ChatInputBar(text: String, onTextChange: (String) -> Unit, onSend: () -> Unit, onAttach: () -> Unit) {
+fun ChatInputBar(
+    text: String,
+    onTextChange: (String) -> Unit,
+    onSend: () -> Unit,
+    onAttach: () -> Unit,
+    onCamera: () -> Unit,
+    onVoice: () -> Unit,
+) {
+    val canSend = text.isNotBlank()
     Row(
-        Modifier.fillMaxWidth().background(GlassCard).padding(horizontal = 12.dp, vertical = 10.dp),
+        Modifier.fillMaxWidth().background(GlassCard).navigationBarsPadding()
+            .padding(horizontal = 8.dp, vertical = 8.dp),
         verticalAlignment = Alignment.Bottom,
-        horizontalArrangement = Arrangement.spacedBy(10.dp),
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
     ) {
-        IconButton(
-            onClick = onAttach,
-            modifier = Modifier.size(40.dp).clip(CircleShape).background(BackgroundGray),
-        ) { Icon(Icons.Default.AttachFile, stringResource(R.string.attach_file), tint = TextSecondary) }
+        IconButton(onClick = onAttach, modifier = Modifier.size(44.dp)) {
+            Icon(Icons.Default.Add, stringResource(R.string.attach_file), tint = AccentBlue, modifier = Modifier.size(28.dp))
+        }
         Box(
-            Modifier.weight(1f).clip(RoundedCornerShape(22.dp)).background(BackgroundGray)
+            Modifier.weight(1f).padding(vertical = 2.dp).clip(RoundedCornerShape(20.dp)).background(BackgroundGray)
                 .padding(horizontal = 16.dp, vertical = 10.dp),
         ) {
             if (text.isEmpty()) Text(stringResource(R.string.type_message), style = MaterialTheme.typography.bodyLarge, color = InactiveGray)
@@ -222,16 +233,23 @@ fun ChatInputBar(text: String, onTextChange: (String) -> Unit, onSend: () -> Uni
                 textStyle = MaterialTheme.typography.bodyLarge.copy(color = TextPrimary, lineHeight = 20.sp),
                 cursorBrush = SolidColor(AccentBlue),
                 keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences, imeAction = ImeAction.Send),
-                keyboardActions = KeyboardActions(onSend = { onSend() }),
+                keyboardActions = KeyboardActions(onSend = { if (canSend) onSend() }),
                 maxLines = 5,
             )
         }
-        IconButton(
-            onClick = onSend,
-            enabled = text.isNotBlank(),
-            modifier = Modifier.size(40.dp).clip(CircleShape)
-                .background(if (text.isNotBlank()) AccentBlue else InactiveGray),
-        ) { Icon(Icons.AutoMirrored.Filled.Send, stringResource(R.string.send_message), tint = Color.White) }
+        if (canSend) {
+            IconButton(
+                onClick = onSend,
+                modifier = Modifier.padding(start = 4.dp).size(44.dp).clip(CircleShape).background(AccentBlue),
+            ) { Icon(Icons.AutoMirrored.Filled.Send, stringResource(R.string.send_message), tint = Color.White) }
+        } else {
+            IconButton(onClick = onCamera, modifier = Modifier.size(44.dp)) {
+                Icon(Icons.Outlined.PhotoCamera, stringResource(R.string.camera_selection), tint = TextSecondary)
+            }
+            IconButton(onClick = onVoice, modifier = Modifier.size(44.dp)) {
+                Icon(Icons.Outlined.Mic, stringResource(R.string.record_voice_message), tint = TextSecondary)
+            }
+        }
     }
 }
 

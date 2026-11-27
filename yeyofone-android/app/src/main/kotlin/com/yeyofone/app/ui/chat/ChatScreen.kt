@@ -2,7 +2,7 @@ package com.yeyofone.app.ui.chat
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.imePadding
-import androidx.compose.foundation.layout.consumeWindowInsets
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -35,8 +35,6 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.yeyofone.app.R
 import com.yeyofone.app.data.model.ChatContact
-import com.yeyofone.app.ui.components.BottomNavigationBar
-import com.yeyofone.app.ui.components.CHAT_NAVIGATION
 import com.yeyofone.app.ui.components.ChatHeader
 import com.yeyofone.app.ui.components.ChatInputBar
 import com.yeyofone.app.ui.components.MessageBubble
@@ -51,7 +49,6 @@ fun ChatScreen(
     onBack: () -> Unit,
     onVoiceCall: () -> Unit,
     onVideoCall: () -> Unit,
-    onNavigationItemSelected: (Int) -> Unit,
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val listState = rememberLazyListState()
@@ -67,14 +64,11 @@ fun ChatScreen(
 
     Scaffold(
         containerColor = Color.Transparent,
+        contentWindowInsets = WindowInsets(0),
         snackbarHost = { SnackbarHost(snackbar) },
-        bottomBar = { BottomNavigationBar(CHAT_NAVIGATION, onNavigationItemSelected) },
-    ) { padding ->
-        // Only the bottom padding is applied here; the header owns the status-bar inset.
-        val bottomPadding = PaddingValues(bottom = padding.calculateBottomPadding())
-        Column(
-            Modifier.fillMaxSize().padding(bottomPadding).consumeWindowInsets(bottomPadding).imePadding(),
-        ) {
+    ) { _ ->
+        // The header owns the status-bar inset and the input bar the navigation-bar inset.
+        Column(Modifier.fillMaxSize().imePadding()) {
             val contact = state.contact
                 ?: ChatContact("", stringResource(R.string.chat_navigation), statusText = "")
             ChatHeader(contact, onBack, onVoiceCall, onVideoCall)
@@ -107,7 +101,14 @@ fun ChatScreen(
                 if (state.isContactTyping) item { TypingIndicator() }
             }
             HorizontalDivider(thickness = 0.5.dp, color = BorderLight)
-            ChatInputBar(state.inputText, viewModel::onInputChanged, viewModel::sendMessage, unavailable)
+            ChatInputBar(
+                text = state.inputText,
+                onTextChange = viewModel::onInputChanged,
+                onSend = viewModel::sendMessage,
+                onAttach = unavailable,
+                onCamera = unavailable,
+                onVoice = unavailable,
+            )
         }
     }
 }
