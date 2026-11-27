@@ -21,6 +21,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.VolumeUp
+import androidx.compose.material.icons.filled.Call
 import androidx.compose.material.icons.filled.CallEnd
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.FiberManualRecord
@@ -53,6 +54,7 @@ import com.yeyofone.app.R
 import com.yeyofone.app.data.model.toSipIdentity
 import com.yeyofone.app.statusLabel
 import com.yeyofone.app.ui.theme.AccentBlue
+import com.yeyofone.app.ui.theme.AccentGreen
 import com.yeyofone.app.ui.theme.AccentRed
 import com.yeyofone.app.ui.theme.CallTextPrimary
 import com.yeyofone.app.ui.theme.CallTextSecondary
@@ -82,6 +84,10 @@ data class ConferenceUi(
     /** Extensions the organiser says are talking (only used when [remote] is set). */
     val remoteSpeaking: Set<String> = emptySet(),
     val selfExtension: String = "",
+    /** People who hung up during the conference, still shown as "Left". */
+    val left: List<RemotePerson> = emptyList(),
+    /** Calls someone who left back into the conference; only the organiser can. */
+    val onCallBack: ((String) -> Unit)? = null,
 ) {
     val active: Boolean get() = members.isNotEmpty() || remote != null
 
@@ -102,6 +108,8 @@ private class Person(
     val statusRes: Int?,
     /** True while the person is still being called, so their avatar is dimmed. */
     val connecting: Boolean = false,
+    /** True for someone who hung up; shown dimmed, and the organiser can call them back in. */
+    val left: Boolean = false,
 )
 
 /**
@@ -151,6 +159,14 @@ fun ConferenceScreen(
         }
     }
 
+    // Whoever left stays on the screen (unless they are already being called back in).
+    val presentExtensions = conference.numbersInCall + remote.orEmpty().map { it.ext }
+    val leftPeople = conference.left.filter { it.ext !in presentExtensions }
+        .map { Person(it.ext, null, it.name, false, false, R.string.conference_left, left = true) }
+    val present = people.size
+    val everyone = people + leftPeople
+    val onCallBack = conference.onCallBack
+
     Column(Modifier.fillMaxSize().systemBarsPadding(), horizontalAlignment = Alignment.CenterHorizontally) {
         Text(
             stringResource(R.string.conference_title),
@@ -158,7 +174,7 @@ fun ConferenceScreen(
             modifier = Modifier.padding(top = 20.dp),
         )
         Text(
-            stringResource(R.string.conference_count, people.size),
+            stringResource(R.string.conference_count, present),
             fontSize = 14.sp, color = CallTextSecondary, modifier = Modifier.padding(top = 4.dp),
         )
         Column(
@@ -167,18 +183,18 @@ fun ConferenceScreen(
             verticalArrangement = Arrangement.Center,
         ) {
             // With more than two people the one talking (or the first other person) is the spotlight.
-            val spotlight = if (people.size > 2) {
+            val spotlight = if (everyone.size > 2) {
                 people.firstOrNull { it.id in talking && !it.isSelf } ?: people.firstOrNull { !it.isSelf }
             } else null
             if (spotlight != null) {
-                PersonTile(spotlight, spotlight.id in talking, large = true, onRemove = conference.onRemove)
+                PersonTile(spotlight, spotlight.id in talking, large = true, onRemove = conference.onRemove, onCallBack = onCallBack)
                 Spacer(Modifier.height(28.dp))
             }
-            val rest = if (spotlight != null) people.filter { it !== spotlight } else people
+            val rest = if (spotlight != null) everyone.filter { it !== spotlight } else everyone
             rest.chunked(3).forEachIndexed { index, row ->
                 if (index > 0) Spacer(Modifier.height(24.dp))
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
-                    row.forEach { PersonTile(it, it.id in talking, large = false, onRemove = conference.onRemove) }
+                    row.forEach { PersonTile(it, it.id in talking, large = false, onRemove = conference.onRemove, onCallBack = onCallBack) }
                 }
             }
         }
@@ -187,7 +203,7 @@ fun ConferenceScreen(
             onMuteChange = conference.onMute,
             speakerOn = speakerOn,
             onSpeakerChange = onSpeakerChange,
-            count = people.size,
+            count = present,
             onAddPerson = if (remote == null) onAddPerson else null,
             recording = recording,
             onRecordingChange = onRecordingChange,
@@ -197,12 +213,22 @@ fun ConferenceScreen(
 }
 
 @Composable
-private fun PersonTile(person: Person, speaking: Boolean, large: Boolean, onRemove: (CallId) -> Unit) {
+private fun PersonTile(
+    person: Person,
+    speaking: Boolean,
+    large: Boolean,
+    onRemove: (CallId) -> Unit,
+    onCallBack: ((String) -> Unit)? = null,
+) {
     val size = if (large) 112.dp else 72.dp
     Column(Modifier.width(if (large) 160.dp else 96.dp), horizontalAlignment = Alignment.CenterHorizontally) {
         Box(contentAlignment = Alignment.Center) {
             // Dim by colour rather than a layer alpha, and only draw the ring while speaking.
-            val tone = if (person.connecting) 0.55f else 1f
+            val tone = when {
+                person.left -> 0.35f
+                person.connecting -> 0.55f
+                else -> 1f
+            }
             Box(
                 Modifier.size(size + 12.dp)
                     .then(if (speaking) Modifier.border(3.dp, AccentBlue, CircleShape) else Modifier)
@@ -229,6 +255,13 @@ private fun PersonTile(person: Person, speaking: Boolean, large: Boolean, onRemo
                         .clickable { onRemove(person.callId) },
                     contentAlignment = Alignment.Center,
                 ) { Icon(Icons.Default.Close, stringResource(R.string.remove_from_call), tint = Color.White, modifier = Modifier.size(14.dp)) }
+            }
+            if (person.left && onCallBack != null) {
+                Box(
+                    Modifier.align(Alignment.TopEnd).size(28.dp).clip(CircleShape).background(AccentGreen)
+                        .clickable { onCallBack(person.id) },
+                    contentAlignment = Alignment.Center,
+                ) { Icon(Icons.Default.Call, stringResource(R.string.conference_call_back), tint = Color.White, modifier = Modifier.size(16.dp)) }
             }
         }
         Spacer(Modifier.height(10.dp))

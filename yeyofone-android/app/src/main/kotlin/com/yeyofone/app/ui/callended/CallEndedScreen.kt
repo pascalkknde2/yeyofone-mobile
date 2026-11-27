@@ -31,6 +31,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Call
 import androidx.compose.material.icons.filled.CallEnd
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Groups
 import androidx.compose.material.icons.outlined.ChatBubbleOutline
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -68,6 +69,8 @@ fun CallEndedScreen(
     onCallAgain: () -> Unit,
     onSendMessage: (() -> Unit)?,
     onClose: () -> Unit,
+    /** Set when I left a conference that is still going: offers to call back into it. */
+    onRejoin: (() -> Unit)? = null,
 ) {
     BackHandler(onBack = onClose)
     val failed = summary.mediaRejected || (summary.direction == CallDirection.INCOMING && !summary.wasAnswered)
@@ -116,6 +119,10 @@ fun CallEndedScreen(
                 Box(Modifier.size(8.dp).clip(CircleShape).background(accent))
                 Text(callTypeLabel(summary), fontSize = 16.sp, fontWeight = FontWeight.Medium, color = CallTextSecondary)
             }
+            if (onRejoin != null) {
+                Spacer(Modifier.height(12.dp))
+                Text(stringResource(R.string.conference_you_left), fontSize = 15.sp, fontWeight = FontWeight.Medium, color = CallTextSecondary)
+            }
             if (summary.mediaRejected) {
                 Spacer(Modifier.height(12.dp))
                 Text(
@@ -150,7 +157,11 @@ fun CallEndedScreen(
             horizontalArrangement = Arrangement.SpaceEvenly,
             verticalAlignment = Alignment.Top,
         ) {
-            PrimaryCallActionButton(Icons.Default.Call, stringResource(R.string.call_again), AccentGreen, onCallAgain)
+            if (onRejoin != null) {
+                PrimaryCallActionButton(Icons.Default.Groups, stringResource(R.string.conference_rejoin), AccentGreen, onRejoin)
+            } else {
+                PrimaryCallActionButton(Icons.Default.Call, stringResource(R.string.call_again), AccentGreen, onCallAgain)
+            }
             if (onSendMessage != null) {
                 PrimaryCallActionButton(Icons.Outlined.ChatBubbleOutline, stringResource(R.string.send_message), AccentBlue, onSendMessage)
             }

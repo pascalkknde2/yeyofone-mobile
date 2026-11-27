@@ -13,6 +13,7 @@ import com.yeyofone.core.account.ContactRepository
 import com.yeyofone.core.account.ForwardingStateRepository
 import com.yeyofone.core.model.AccountPreferences
 import com.yeyofone.core.model.AudioRoute
+import com.yeyofone.core.model.CallDirection
 import com.yeyofone.core.model.CallId
 import com.yeyofone.core.model.CallSession
 import com.yeyofone.core.model.CallState
@@ -174,6 +175,19 @@ class YeyoFoneViewModel(
     /** Extensions already sent the current roster, so they can be told when the conference ends. */
     private val rosterRecipients = mutableSetOf<String>()
 
+    private val _conferenceLeft = MutableStateFlow<List<com.yeyofone.app.conference.RosterMember>>(emptyList())
+    /** People who hung up during my conference: still shown, as "Left", and let back in if they call. */
+    val conferenceLeft: StateFlow<List<com.yeyofone.app.conference.RosterMember>> = _conferenceLeft
+    /** Calls I removed from the conference myself, so they aren't listed as having left. */
+    private val removedFromConference = mutableSetOf<CallId>()
+    /** A call from someone who left, being answered so they can rejoin. */
+    private var rejoiningCall: CallId? = null
+
+    /** A conference someone else organised that I left, so the ended-call screen can offer to rejoin it. */
+    data class LeftConference(val callId: CallId, val accountId: SipAccountId, val host: String)
+    private val _leftConference = MutableStateFlow<LeftConference?>(null)
+    val leftConference: StateFlow<LeftConference?> = _leftConference
+
     private val _speaking = MutableStateFlow<Set<String>>(emptySet())
     /** Who is talking in the conference: "you" and/or the call id of each person. */
     val speaking: StateFlow<Set<String>> = _speaking
@@ -278,8 +292,11 @@ class YeyoFoneViewModel(
             }
         }
         viewModelScope.launch {
-            combine(conferenceMembers, pendingConferenceCall, calls.sessions, contactsRepo.observeAll(), _speaking) { members, pending, sessions, contactList, talking ->
-                RosterInputs(members, pending, sessions, contactList, talking)
+            combine(
+                combine(conferenceMembers, pendingConferenceCall, _conferenceLeft, ::Triple),
+                calls.sessions, contactsRepo.observeAll(), _speaking,
+            ) { (members, pending, left), sessions, contactList, talking ->
+                RosterInputs(members, pending, sessions, contactList, talking, left)
             }.collectLatest { inputs ->
                 kotlinx.coroutines.delay(150)
                 shareRoster(gateway, inputs)
@@ -293,6 +310,7 @@ class YeyoFoneViewModel(
         val sessions: List<CallSession>,
         val contacts: List<Contact>,
         val speaking: Set<String>,
+        val left: List<com.yeyofone.app.conference.RosterMember>,
     )
 
     private suspend fun shareRoster(gateway: com.yeyofone.core.voip.SipPeerMessageGateway, inputs: RosterInputs) {
@@ -300,7 +318,7 @@ class YeyoFoneViewModel(
         val live = inputs.members.mapNotNull { byId[it] }.filter { !it.state.isTerminal() }
         val pendingSession = inputs.pending?.let { byId[it] }?.takeIf { !it.state.isTerminal() }
         val anchor = live.firstOrNull()
-        if (anchor == null || (live.size < 2 && pendingSession == null)) {
+        if (anchor == null || (live.size < 2 && pendingSession == null && inputs.left.isEmpty())) {
             // No conference any more: tell everyone who was told about it.
             val account = accounts.observeAccounts().first().firstOrNull()
             if (rosterRecipients.isNotEmpty() && account != null) {
@@ -326,7 +344,10 @@ class YeyoFoneViewModel(
         val talking = inputs.speaking.mapNotNull { id ->
             if (id == "you") account.username else byId.values.firstOrNull { it.id.value == id }?.remoteUri?.toSipIdentity()?.extension
         }
-        val json = com.yeyofone.app.conference.ConferenceRoster(account.username, members, talking).toJson()
+        val left = inputs.left.filter { gone -> members.none { it.ext == gone.ext } }.map { gone ->
+            gone.copy(name = inputs.contacts.firstOrNull { it.number == gone.ext }?.displayName ?: gone.name)
+        }
+        val json = com.yeyofone.app.conference.ConferenceRoster(account.username, members, talking, left).toJson()
         val recipients = live.map { it.remoteUri.toSipIdentity().extension }.toSet()
         recipients.forEach { runCatching { gateway.sendPeerMessage(account.id, it, json) } }
         // Anyone who left since the last roster is told the conference is over for them.
@@ -365,16 +386,62 @@ class YeyoFoneViewModel(
     private fun updateConference(sessions: List<CallSession>) {
         val byId = sessions.associateBy { it.id }
         val live = conferenceMembers.value.filter { byId[it]?.state?.isTerminal() == false }
-        if (live != conferenceMembers.value) conferenceMembers.value = live
+        if (live != conferenceMembers.value) {
+            // Someone who hung up (rather than being removed) stays on the screen as "Left".
+            if (conferenceMerged.value) {
+                val gone = (conferenceMembers.value - live.toSet() - removedFromConference).mapNotNull { byId[it] }
+                    .map { com.yeyofone.app.conference.RosterMember(it.remoteUri.toSipIdentity().extension, it.remoteUri.toSipIdentity().displayName, false) }
+                if (gone.isNotEmpty()) _conferenceLeft.update { left -> left + gone.filter { g -> left.none { it.ext == g.ext } } }
+            }
+            // The conference carries on: the screen follows someone still on it, not the leg that hung up,
+            // and the legs that ended don't pop up their own ended-call summaries.
+            if (live.isNotEmpty()) {
+                val ended = conferenceMembers.value - live.toSet()
+                dismissedIncomingCalls.update { it + ended }
+                if (activeCallId.value in ended) activeCallId.value = live.first()
+            }
+            conferenceMembers.value = live
+        }
+        // Whoever is back on the conference is no longer listed as having left.
+        val liveExtensions = live.mapNotNull { byId[it]?.remoteUri?.toSipIdentity()?.extension }.toSet()
+        if (_conferenceLeft.value.any { it.ext in liveExtensions }) _conferenceLeft.update { left -> left.filter { it.ext !in liveExtensions } }
         val pending = pendingConferenceCall.value
         val pendingSession = pending?.let { byId[it] }
         if (pending != null && (pendingSession == null || pendingSession.state.isTerminal())) {
             pendingConferenceCall.value = null
             if (autoMergingCall == pending) autoMergingCall = null
+            if (rejoiningCall == pending) rejoiningCall = null
         }
-        if (live.size < 2 && pendingConferenceCall.value == null && !addingToConference && (live.isNotEmpty() || conferenceMerged.value)) {
+        // With people who left still listed, the conference stays up (so they can rejoin) while anyone else is on it.
+        val keepForLeft = live.isNotEmpty() && _conferenceLeft.value.isNotEmpty()
+        if (live.size < 2 && !keepForLeft && pendingConferenceCall.value == null && !addingToConference && (live.isNotEmpty() || conferenceMerged.value)) {
             conferenceMembers.value = emptyList()
             conferenceMerged.value = false
+        }
+        if (conferenceMembers.value.isEmpty() && pendingConferenceCall.value == null && !addingToConference) {
+            _conferenceLeft.value = emptyList()
+            removedFromConference.clear()
+        }
+        // Someone who left is calling back: answer and join them to the conference straight away.
+        if (conferenceMerged.value && live.isNotEmpty() && pendingConferenceCall.value == null && rejoiningCall == null) {
+            val leftExtensions = _conferenceLeft.value.map { it.ext }.toSet()
+            sessions.firstOrNull {
+                it.direction == CallDirection.INCOMING && (it.state == CallState.Incoming || it.state == CallState.Ringing) &&
+                    it.remoteUri.toSipIdentity().extension in leftExtensions
+            }?.let { returning ->
+                rejoiningCall = returning.id
+                pendingConferenceCall.value = returning.id
+                viewModelScope.launch {
+                    try {
+                        calls.answer(returning.id)
+                    } catch (error: CancellationException) {
+                        throw error
+                    } catch (error: Exception) {
+                        runCatching { Log.w("YeyoFoneCall", "Could not let someone back into the conference", error) }
+                    }
+                }
+                return
+            }
         }
         if (pendingSession != null && pendingSession.state == CallState.Connected && live.isNotEmpty() && autoMergingCall != pending) {
             autoMergingCall = pending
@@ -413,7 +480,28 @@ class YeyoFoneViewModel(
         pendingConferenceCall.value = id
     }
 
-    fun removeFromConference(callId: CallId) = launch { calls.end(callId) }
+    fun removeFromConference(callId: CallId) = launch {
+        removedFromConference += callId
+        calls.end(callId)
+    }
+
+    /** Hangs up on a conference someone else organised, remembering it so I can rejoin. */
+    fun leaveConference(callId: CallId) = launch {
+        val session = calls.sessions.value.firstOrNull { it.id == callId }
+        val host = _remoteConference.value?.host
+        if (session != null && host != null && session.remoteUri.toSipIdentity().extension == host) {
+            _leftConference.value = LeftConference(callId, session.accountId, host)
+        }
+        calls.end(callId)
+    }
+
+    /** Calls the organiser of the conference I left; their phone joins me back in. */
+    fun rejoinConference() {
+        val left = _leftConference.value ?: return
+        _leftConference.value = null
+        dismissCallSummary(left.callId)
+        startCall(left.accountId, left.host)
+    }
 
     fun endConference() = launch {
         (conferenceMembers.value + listOfNotNull(pendingConferenceCall.value)).forEach { runCatching { calls.end(it) } }
@@ -458,6 +546,7 @@ class YeyoFoneViewModel(
     fun dismissCallSummary(callId: CallId) {
         dismissedIncomingCalls.value = dismissedIncomingCalls.value + callId
         if (activeCallId.value == callId) activeCallId.value = null
+        if (_leftConference.value?.callId == callId) _leftConference.value = null
     }
 
     fun setAccountEnabled(accountId: SipAccountId, enabled: Boolean) = launch { accounts.setEnabled(accountId, enabled) }

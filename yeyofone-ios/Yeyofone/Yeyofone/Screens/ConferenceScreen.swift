@@ -13,6 +13,8 @@ private struct ConferencePerson: Identifiable {
     /// True while the person is still being called, so their avatar is dimmed.
     let connecting: Bool
     let removable: Bool
+    /// True for someone who hung up; shown dimmed as "Left".
+    var left = false
 }
 
 struct ConferenceScreen: View {
@@ -21,15 +23,17 @@ struct ConferenceScreen: View {
     @State private var recordingStart: Date?
 
     var body: some View {
-        let people = participants()
+        let present = participants()
+        // Whoever left stays on the screen, dimmed, until they rejoin.
+        let people = present + leftPeople(present)
         VStack(spacing: 0) {
             Text("Conference call").appFont(size: 20, weight: .bold).foregroundStyle(Palette.textPrimary).padding(.top, 20)
-            Text("\(people.count) people on this call")
+            Text("\(present.count) people on this call")
                 .appFont(size: 14).foregroundStyle(Palette.textSecondary).padding(.top, 4)
             ScrollView {
                 VStack(spacing: 24) {
                     // With more than two people the first other person is the spotlight.
-                    if people.count > 2, let spotlight = people.first(where: { isSpeaking($0.id) && !$0.isSelf }) ?? people.first(where: { !$0.isSelf }) {
+                    if people.count > 2, let spotlight = present.first(where: { isSpeaking($0.id) && !$0.isSelf }) ?? present.first(where: { !$0.isSelf }) {
                         tile(spotlight, large: true)
                         HStack(alignment: .top, spacing: 12) {
                             ForEach(people.filter { $0.id != spotlight.id }) { tile($0, large: false) }
@@ -45,7 +49,7 @@ struct ConferenceScreen: View {
             }
             .scrollBounceBehavior(.basedOnSize)
             .defaultScrollAnchor(.center)
-            toolbar(count: people.count)
+            toolbar(count: present.count)
         }
         .onChange(of: session.recording) { _, on in recordingStart = on ? Date() : nil }
         .onAppear { if session.recording, recordingStart == nil { recordingStart = Date() } }
@@ -86,6 +90,14 @@ struct ConferenceScreen: View {
         return list
     }
 
+    private func leftPeople(_ present: [ConferencePerson]) -> [ConferencePerson] {
+        guard let remote else { return [] }
+        return remote.left.filter { gone in !present.contains { $0.id == gone.ext } }.map {
+            ConferencePerson(id: $0.ext, name: store.contactName(for: $0.ext) ?? $0.name, isSelf: false, muted: false,
+                             status: "Left", connecting: false, removable: false, left: true)
+        }
+    }
+
     private func tile(_ p: ConferencePerson, large: Bool) -> some View {
         let size: CGFloat = large ? 112 : 72
         let initials = p.name.split(whereSeparator: { " .-_".contains($0) }).prefix(2).compactMap { $0.first }.map(String.init).joined().uppercased()
@@ -97,7 +109,7 @@ struct ConferenceScreen: View {
                     .frame(width: size, height: size)
                     .background(Circle().fill(Palette.primaryLight))
                     .overlay(Circle().stroke(Palette.accentBlue, lineWidth: isSpeaking(p.id) ? 3 : 0).padding(-6))
-                    .opacity(p.connecting ? 0.55 : 1)
+                    .opacity(p.left ? 0.35 : (p.connecting ? 0.55 : 1))
                 if p.muted {
                     Image(systemName: "mic.slash.fill").font(.system(size: 12, weight: .bold)).foregroundStyle(.white)
                         .frame(width: 24, height: 24).background(Circle().fill(Palette.accentRed))
@@ -160,7 +172,7 @@ struct ConferenceScreen: View {
             }
             .accessibilityLabel(session.recording ? Text("Stop recording") : Text("Record"))
             Spacer(minLength: 0)
-            Button { store.endCall() } label: {
+            Button { if remote != nil { store.leaveConference() } else { store.endCall() } } label: {
                 Image(systemName: "phone.down.fill").font(.system(size: 18)).foregroundStyle(.white)
                     .frame(width: 52, height: 44).background(Capsule().fill(Palette.accentRed))
             }

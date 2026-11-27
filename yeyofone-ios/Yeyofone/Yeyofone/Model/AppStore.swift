@@ -74,6 +74,8 @@ final class AppStore {
     }
     /// The conference someone else organised that this phone is part of, as its organiser shared it.
     var remoteRoster: ConferenceRoster?
+    /// The organiser of a conference I left, so the ended-call screen can offer to rejoin it.
+    var leftConferenceHost: String?
     /// Extensions already sent the current roster, so they can be told when the conference ends.
     private var rosterRecipients: Set<String> = []
     private var rosterTask: Task<Void, Never>?
@@ -780,7 +782,24 @@ final class AppStore {
         callPage = .main
     }
 
+    /// Hangs up on a conference someone else organised, remembering it so I can rejoin.
+    func leaveConference() {
+        if let call = activeCall, let roster = remoteRoster, roster.host == call.remoteNumber {
+            leftConferenceHost = roster.host
+        }
+        endCall()
+    }
+
+    /// Calls the organiser of the conference I left; their phone joins me back in.
+    func rejoinConference() {
+        guard let host = leftConferenceHost else { return }
+        leftConferenceHost = nil
+        endedSummary = nil
+        startCall(to: host)
+    }
+
     func dismissSummary() {
+        leftConferenceHost = nil
         endedSummary = nil
         endedNotes = nil
         screen = .history
@@ -788,6 +807,7 @@ final class AppStore {
 
     func callAgain() {
         guard let summary = endedSummary else { return }
+        leftConferenceHost = nil
         endedSummary = nil
         startCall(to: summary.callerNumber)
     }

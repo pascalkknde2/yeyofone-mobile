@@ -387,6 +387,13 @@ struct CallEndedScreen: View {
                     .overlay(RoundedRectangle(cornerRadius: 20).stroke(accent.opacity(0.25), lineWidth: 1))
                     .padding(.top, 28)
 
+                    if store.leftConferenceHost == summary.callerNumber {
+                        Text("You left the conference")
+                            .appFont(size: 15, weight: .medium)
+                            .foregroundStyle(Palette.textSecondary)
+                            .padding(.top, 12)
+                    }
+
                     if let notes = store.endedNotes {
                         NotesCard(state: notes).padding(.top, 24)
                     }
@@ -400,8 +407,14 @@ struct CallEndedScreen: View {
             // No surrounding card: the two actions sit side by side on the screen background.
             HStack(alignment: .top) {
                 Spacer()
-                PrimaryCallActionButton(icon: "phone.fill", label: "Call Again", color: Palette.accentGreen) {
-                    store.callAgain()
+                if store.leftConferenceHost == summary.callerNumber {
+                    PrimaryCallActionButton(icon: "person.3.fill", label: "Rejoin", color: Palette.accentGreen) {
+                        store.rejoinConference()
+                    }
+                } else {
+                    PrimaryCallActionButton(icon: "phone.fill", label: "Call Again", color: Palette.accentGreen) {
+                        store.callAgain()
+                    }
                 }
                 #if DEBUG
                 Spacer()
